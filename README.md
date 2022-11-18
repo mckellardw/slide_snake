@@ -1,7 +1,6 @@
-# `curio_STARsolo`
-Preprocessing, alignment, QC, and quantification workflow for Curio Bioscience data (SlideSeq/Seeker)
+# `slide_snake`
+Preprocessing, alignment, QC, and quantification workflow for SlideSeq data
 **David W. McKellar**
-
 
 ## Dependencies:
 - `cutadapt` [v3.4](https://cutadapt.readthedocs.io/en/stable/)
@@ -13,7 +12,7 @@ Preprocessing, alignment, QC, and quantification workflow for Curio Bioscience d
 
 ## Alignment:
 - After adapter trimming, reads are aligned with `STARsolo` and `kallisto`/`bustools` to generate count matrices
-- Outputs are in `SAMPLE_ID/STARsolo/Solo.out` & `SAMPLE_ID/kb/counts_unfiltered`
+- Outputs are in `{SAMPLE_ID}/STARsolo/Solo.out` & `{SAMPLE_ID}/kb/counts_unfiltered`
 
 ## Barcode handling:
 #### STAR
@@ -44,15 +43,27 @@ Preprocessing, alignment, QC, and quantification workflow for Curio Bioscience d
 
 ## Output file tree:
 ```
-SAMPLE_ID/
-├── cutadapt_polyA_report.txt
-├── cutadapt_polyG_report.txt
+{SAMPLE_ID}/
+├── cutadapt.log
+├── kb
+│   ├── counts_unfiltered
+│   │   ├── output.barcodes.txt
+│   │   ├── output.genes.txt
+│   │   └── output.mtx
+│   ├── inspect.corrected.bus.json
+│   ├── kallisto_align.log
+│   ├── matrix.ec
+│   ├── output.bus
+│   ├── output.corrected.bus
+│   ├── output.sorted.bus
+│   ├── run_info.json
+│   └── transcripts.txt
 ├── postTrim_fastqc_R2_out
-│   ├── SAMPLE_ID_R2_final_fastqc.html
-│   └── SAMPLE_ID_R2_final_fastqc.zip
+│   ├── {SAMPLE_ID}_R2_final_fastqc.html
+│   └── {SAMPLE_ID}_R2_final_fastqc.zip
 ├── preTrim_fastqc_R2_out
-│   ├── SAMPLE_ID_R2_fastqc.html
-│   └── SAMPLE_ID_R2_fastqc.zip
+│   ├── {SAMPLE_ID}_R2_fastqc.html
+│   └── {SAMPLE_ID}_R2_fastqc.zip
 ├── STARsolo
 │   ├── Aligned.sortedByCoord.out.bam
 │   ├── Aligned.sortedByCoord.out.bam.bai
