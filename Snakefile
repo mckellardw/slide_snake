@@ -1,7 +1,6 @@
 ########################################################################################################
-# curio_STARsolo
-#   Snakemake workflow to align and quantify Seeker/SlideSeq datasets from Curio Biosciences
-#   v1.0
+# slide_snake
+#   Snakemake workflow to align and quantify Seeker/SlideSeq datasets
 #   Written by David McKellar
 ########################################################################################################
 
@@ -45,12 +44,12 @@ QUALIMAP_EXEC = config["QUALIMAP_EXEC"]
 # Pre-run setup
 ########################################################################################################
 # Build dictionaries of chemistries & species to use for alignment
-CHEM_DICT = {}
-REF_DICT = {}
-IDX_DICT = {}
-T2G_DICT = {}
-BB_DICT = {}
-GTF_DICT = {}
+CHEM_DICT = {} # Dictionary of chemistry recipe to use for each sample
+REF_DICT = {} # Dictionary of reference genomes to use
+IDX_DICT = {} # Dictionary of kallisto indices
+T2G_DICT = {} # Dictionary of kallisto transcript-to-gene maps
+BB_DICT = {} # Dictionary of bead barcode maps
+GTF_DICT = {} # Dictionary of
 for i in range(0,SAMPLE_SHEET.shape[0]):
     tmp_sample = list(SAMPLE_SHEET["sampleID"])[i]
     CHEM_DICT[tmp_sample] = list(SAMPLE_SHEET["chemistry"])[i]
@@ -78,46 +77,25 @@ rule all:
         expand('{OUTDIR}/{sample}/Unmapped.out.mate2_blastResults.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES), # blastn results for unmapped R1 reads non-strand-split bigWigs (for
 
 # fastq preprocessing & QC
-include: "rules/mergefqs.smk"
+include: "rules/1_mergefqs.smk"
 include: "rules/trimQC.smk"
+include: "rules/1_split_bb.smk"
 
 # STAR alignment, QC, and post-processing
-include: "rules/star_align.smk"
-include: "rules/star_dedup.smk"
-include: "rules/star_qualimap.smk"
-include: "rules/star_unmapped.smk"
+include: "rules/2_star_align.smk"
+include: "rules/2_star_dedup.smk"
+include: "rules/2_star_qualimap.smk"
+include: "rules/2_star_unmapped.smk"
 
 # kallisto/bustools alignment
-include: "rules/kallisto_align.smk"
-include: "rules/kallisto_pseudobam.smk"
+include: "rules/3_kallisto_align.smk"
+include: "rules/3_kallisto_pseudobam.smk"
 
-#############################################
-## Pre-alignment set up
-#############################################
-# Unzip the whitelist file if it hasn't been done yet
-rule splitBBList:
-    input:
-        BB_map = lambda wildcards: BB_DICT[wildcards.sample]
-    output:
-        BB = "{OUTDIR}/{sample}/tmp/whitelist.txt",
-        BB_1 = "{OUTDIR}/{sample}/tmp/whitelist_1.txt",
-        BB_2 = "{OUTDIR}/{sample}/tmp/whitelist_2.txt"
-    run:
-        #load bc
-        bc_df = pd.read_csv(input.BB_map, sep="\t", header=None).iloc[:,0]
+# Post-processing, prep for downstream analyses
+# - Initialize a .h5ad object for easy loading into python later
+#   - Add spatial location!
+# - Dedup .bam file
 
-        # split for 2 separate barcodes
-        bc_1 = pd.DataFrame(bc[0:8] for bc in list(bc_df.values))
-        bc_2 = pd.DataFrame(bc[8:14] for bc in list(bc_df.values))
-
-        # save bc files in {sample}/tmp
-        bc_df.to_csv(output.BB, sep="\t", header=False, index=False) # Full bead barcode
-        bc_1.to_csv(output.BB_1, sep="\t", header=False, index=False) # Bead barcode #1
-        bc_2.to_csv(output.BB_2, sep="\t", header=False, index=False) # Bead Barcode #2
-
-#############################################
-## Additional files for visualization
-#############################################
 
 rule bamToSplitBigWig:
     input:
@@ -132,17 +110,7 @@ rule bamToSplitBigWig:
         OUTPUT_DIR = '{OUTDIR}/{sample}'
     threads:
         config['CORES']
-    conda:
-        "STARsolo"
     shell:
         """
         {params.BAM2SPLITBW} {input.BAM} {threads} {params.OUTPUT_DIR} {STAR_REF}/chrNameLength.txt
         """
-
-
-#############################################
-## Post-alignment processing
-#############################################
-# Initialize a .h5ad object for easy loading into python later
-
-# Preprocessing?
