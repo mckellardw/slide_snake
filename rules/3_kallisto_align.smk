@@ -6,7 +6,7 @@ rule kallisto_align:
     input:
         FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
         FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz',
-        BB = "{OUTDIR}/{sample}/tmp/whitelist.txt"
+        BB = "{OUTDIR}/{sample}/bb/whitelist.txt"
     output:
         BUSTEXT = temp('{OUTDIR}/{sample}/kb/output.corrected.bus'),
         TRANSCRIPTS = '{OUTDIR}/{sample}/kb/transcripts.txt',
