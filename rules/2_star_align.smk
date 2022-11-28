@@ -8,9 +8,9 @@ rule STARsolo_align:
     input:
         FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_adapterTrim.fq.gz', #*Note*- change to "_R1_Final..." to include adapter hard trimming
         FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz',
-        BB_WHITELIST = "{OUTDIR}/{sample}/tmp/whitelist.txt",
-        BB_1 = "{OUTDIR}/{sample}/tmp/whitelist_1.txt",
-        BB_2 = "{OUTDIR}/{sample}/tmp/whitelist_2.txt"
+        BB_WHITELIST = "{OUTDIR}/{sample}/bb/whitelist.txt",
+        BB_1 = "{OUTDIR}/{sample}/bb/whitelist_1.txt",
+        BB_2 = "{OUTDIR}/{sample}/bb/whitelist_2.txt"
     output:
         SORTEDBAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.out.bam', #TODO: add temp()
         UNMAPPED1 = '{OUTDIR}/{sample}/STARsolo/Unmapped.out.mate1',

@@ -78,7 +78,7 @@ rule all:
 
 # fastq preprocessing & QC
 include: "rules/1_mergefqs.smk"
-include: "rules/trimQC.smk"
+include: "rules/1_trimQC.smk"
 include: "rules/1_split_bb.smk"
 
 # STAR alignment, QC, and post-processing
