@@ -11,19 +11,20 @@ rule preTrim_FastQC_R2:
     params:
         adapters = config['FASTQC_ADAPTERS']
     threads:
-        # config['CORES']
         min([config['CORES'],8]) # 8 core max
-    shell:
-        """
-        mkdir -p {output.fastqcDir}
-        cd {output.fastqcDir}
+    run:
+        shell(
+            f"""
+            mkdir -p {output.fastqcDir}
 
-        fastqc \
-        --outdir {output.fastqcDir} \
-        --threads {threads} \
-        -a {params.adapters} \
-        {input.MERGED_R2_FQ}
-        """
+            {FASTQC_EXEC} \
+            --outdir {output.fastqcDir} \
+            --threads {threads} \
+            -a {params.adapters} \
+            {input.MERGED_R2_FQ}
+            """
+        )
+        # cd {output.fastqcDir}
 
 # TSO & polyA trimming
 rule cutadapt_R2:
@@ -46,31 +47,32 @@ rule cutadapt_R2:
         THREE_PRIME_R2_ILLUMINA_UNI = "AGATCGGAAGAG", # Illumina Universal
         FIVE_PRIME_R2_TSO = "CCCATTCACTCTGCGTTGATACCAGCTT" # rev comp of SlideSeq TSO
     threads:
-        config['CORES']
-        # min([config['CORES'],8]) # 8 core max based on recommendations from trim_galore authors
+        min([config['CORES'],8]) # 8 core max
     log:
         log = '{OUTDIR}/{sample}/cutadapt.log'
-    shell:
-        """
-        {params.CUTADAPT_EXEC} \
-        --minimum-length {params.R1_SIZE}:{params.MIN_R2_SIZE} \
-        --quality-cutoff 20 \
-        --overlap 3 \
-        --match-read-wildcards \
-        --nextseq-trim=20 \
-        -A {params.THREE_PRIME_R2_POLYA} \
-        -A {params.THREE_PRIME_R2_POLYT} \
-        -A {params.THREE_PRIME_R2_TSO} \
-        -A {params.THREE_PRIME_R2_NEXTERA} \
-        -A {params.THREE_PRIME_R2_rcNEXTERA} \
-        -A {params.THREE_PRIME_R2_ILLUMINA_UNI} \
-        -G {params.FIVE_PRIME_R2_TSO} \
-        --pair-filter=any \
- 		-o {output.FINAL_R1_FQ} \
-        -p {output.FINAL_R2_FQ} \
-        --cores {threads} \
-        {input.TRIMMED_R1_FQ} {input.TRIMMED_R2_FQ} 1> {log.log}
-        """
+    run:
+        shell(
+            f"""
+            {params.CUTADAPT_EXEC} \
+            --minimum-length {params.R1_SIZE}:{params.MIN_R2_SIZE} \
+            --quality-cutoff 20 \
+            --overlap 3 \
+            --match-read-wildcards \
+            --nextseq-trim=20 \
+            -A {params.THREE_PRIME_R2_POLYA} \
+            -A {params.THREE_PRIME_R2_POLYT} \
+            -A {params.THREE_PRIME_R2_TSO} \
+            -A {params.THREE_PRIME_R2_NEXTERA} \
+            -A {params.THREE_PRIME_R2_rcNEXTERA} \
+            -A {params.THREE_PRIME_R2_ILLUMINA_UNI} \
+            -G {params.FIVE_PRIME_R2_TSO} \
+            --pair-filter=any \
+     		-o {output.FINAL_R1_FQ} \
+            -p {output.FINAL_R2_FQ} \
+            --cores {threads} \
+            {input.TRIMMED_R1_FQ} {input.TRIMMED_R2_FQ} 1> {log.log}
+            """
+        }
         # -A {params.THREE_PRIME_R2_POLYG}X \
 
 # R1 trimming to remove the linker sequence
@@ -105,20 +107,21 @@ rule postTrim_FastQC_R1:
         fastqcDir = directory('{OUTDIR}/{sample}/postTrim_fastqc_R1_out'),
         # fastqcReport = ''
     threads:
-        # config['CORES']
         min([config['CORES'],8]) # 8 core max
     params:
         adapters = config['FASTQC_ADAPTERS']
-    shell:
-        """
-        mkdir -p {output.fastqcDir}
+    run:
+        shell(
+            f"""
+            mkdir -p {output.fastqcDir}
 
-        fastqc \
-        --outdir {output.fastqcDir} \
-        --threads {threads} \
-        -a {params.adapters} \
-        {input.FINAL_R1_FQ}
-        """
+            {FASTQC_EXEC} \
+            --outdir {output.fastqcDir} \
+            --threads {threads} \
+            -a {params.adapters} \
+            {input.FINAL_R1_FQ}
+            """
+        )
 
 # fastqc after trimming on R2
 rule postTrim_FastQC_R2:
@@ -128,17 +131,18 @@ rule postTrim_FastQC_R2:
         fastqcDir = directory('{OUTDIR}/{sample}/postTrim_fastqc_R2_out'),
         # fastqcReport = ''
     threads:
-        # config['CORES']
         min([config['CORES'],8]) # 8 core max
     params:
         adapters = config['FASTQC_ADAPTERS']
-    shell:
-        """
-        mkdir -p {output.fastqcDir}
+    run:
+        shell(
+        f"""
+            mkdir -p {output.fastqcDir}
 
-        fastqc \
-        --outdir {output.fastqcDir} \
-        --threads {threads} \
-        -a {params.adapters} \
-        {input.FINAL_R2_FQ}
-        """
+            fastqc \
+            --outdir {output.fastqcDir} \
+            --threads {threads} \
+            -a {params.adapters} \
+            {input.FINAL_R2_FQ}
+            """
+        )

@@ -12,10 +12,6 @@ rule kallisto_align:
         TRANSCRIPTS = '{OUTDIR}/{sample}/kb/transcripts.txt',
         ECMAP = temp('{OUTDIR}/{sample}/kb/matrix.ec')
     params:
-        OUTDIR = config['OUTDIR'],
-        STAR_EXEC = config['STAR_EXEC'],
-        # STAR_REF = config['STAR_REF'],
-        # UMIlen = config['UMIlen'],
         MEMLIMIT = config['MEMLIMIT']
     log:
         '{OUTDIR}/{sample}/kb/kallisto_align.log'
@@ -23,8 +19,6 @@ rule kallisto_align:
         config['CORES']
     priority:
         42
-    # conda:
-    #     "kallisto1"
     run:
         tmp_chemistry = CHEM_DICT[wildcards.sample]
         KB_IDX = IDX_DICT[wildcards.sample]
@@ -34,7 +28,7 @@ rule kallisto_align:
 
         shell(
             f"""
-            bash scripts/kb.sh {params.OUTDIR}/{wildcards.sample}/kb \
+            bash scripts/kb.sh {OUTDIR}/{wildcards.sample}/kb \
             {KB_IDX} \
             {BB_WHITELIST} \
             {KB_X} \
@@ -55,7 +49,6 @@ rule bus2mat:
         # EC = '{OUTDIR}/{sample}/kb/counts_unfiltered/output.ec.txt'
     params:
         MATDIR = directory('{OUTDIR}/{sample}/kb/counts_unfiltered'),
-        OUTDIR = config['OUTDIR'],
         BUST_EXEC = config['BUST_EXEC']
     threads:
         1
@@ -63,7 +56,7 @@ rule bus2mat:
         KB_T2G = T2G_DICT[wildcards.sample]
 
         shell(
-        f"""
+            f"""
             mkdir -p {params.MATDIR}
 
             {params.BUST_EXEC} count \

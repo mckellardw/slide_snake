@@ -61,10 +61,3 @@ PICARD_EXEC: /home/dwm269/miniconda3/envs/STARsolo/share/picard-2.26.10-0/picard
 # Resources - file paths
 ########################################################################################################
 FASTQC_ADAPTERS: resources/fastqc_adapters.txt #/home/dwm269/slide_snake/
-
-### Mouse ###
-# STAR_REF: /workdir/dwm269/genomes/mm39_all/STAR_GRCm39_GENCODEM28 # path to STAR-formatted reference genome
-# GENES_GTF: /workdir/dwm269/genomes/mm39_all/GENCODE_M28/gencode.vM28.chr_patch_hapl_scaff.annotation.gtf
-# STAR_MIRBASE_REF: /workdir/dwm269/genomes/mm39_all/STAR_mirbase_mirge
-# SPECIES: mouse # species passed to mirge3.0
-# MIRGE_LIB: /home/dwm269/usr/bin/miRge3_Lib
