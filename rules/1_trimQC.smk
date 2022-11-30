@@ -72,7 +72,7 @@ rule cutadapt_R2:
             --cores {threads} \
             {input.TRIMMED_R1_FQ} {input.TRIMMED_R2_FQ} 1> {log.log}
             """
-        }
+        )
         # -A {params.THREE_PRIME_R2_POLYG}X \
 
 # R1 trimming to remove the linker sequence
