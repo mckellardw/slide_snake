@@ -11,7 +11,8 @@
 ## ~~~~~ sample sheets ~~~~~
 # SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/slideseq_rnd1.csv
 # SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/SS_LKO_Rnd1.csv
-SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/STRSHD_Rnd2.csv
+# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/STRSHD_Rnd2.csv
+SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/SH_4_5.csv
 # SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/SS_cohen_testes.csv
 # SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/ChickenSurgerySlideSeq.csv
 
@@ -26,6 +27,7 @@ CHEMISTRY_SHEET: resources/chemistry_sheet.csv
 ########################################################################################################
 # Important directory file paths
 ########################################################################################################
+#TODO: add OUTDIR to sample sheet
 # TMPDIR: /workdir/dwm269/totalRNA/tmp # directory for temporary files
 
 # TMPDIR: /workdir/dwm269/spatial_lmna/tmp
@@ -43,7 +45,7 @@ OUTDIR: /workdir/dwm269/totalRNA/STRS-HD/data/align_out
 ########################################################################################################
 # Executables - file paths
 ########################################################################################################
-STAR_EXEC: /programs/STAR-2.7.10a/STAR # v2.7.10a /programs/STAR/STAR
+STAR_EXEC: STAR # v2.7.10a /programs/STAR/STAR
 KALLISTO_EXEC: kallisto
 BUST_EXEC: bustools
 CUTADAPT_EXEC: cutadapt

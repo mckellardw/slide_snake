@@ -62,6 +62,7 @@ for i in range(0,SAMPLE_SHEET.shape[0]):
 ########################################################################################################
 rule all:
     input:
+        expand('{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/UniqueAndMultEM.h5ad', OUTDIR=config['OUTDIR'], sample=SAMPLES), 
         expand('{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/matrix.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), #STAR count mats
         expand('{OUTDIR}/{sample}/kb/counts_unfiltered/output.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES), #kallisto count mats
         # expand('{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw_feature_bc_matrix_h5.h5', OUTDIR=config['OUTDIR'], sample=SAMPLES),
@@ -90,6 +91,9 @@ include: "rules/2_star_unmapped.smk"
 # kallisto/bustools alignment
 include: "rules/3_kallisto_align.smk"
 include: "rules/3_kallisto_pseudobam.smk"
+
+# scanpy stuff
+include: "rules/4a_scanpy_init.smk"
 
 # Post-processing, prep for downstream analyses
 # - Initialize a .h5ad object for easy loading into python later

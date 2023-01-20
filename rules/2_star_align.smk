@@ -113,45 +113,36 @@ rule compress_STAR_outs:
         )
 
 
-# convert .mtx format to .h5
-# SHout out Alex Wolf- https://falexwolf.me/2017/sparse-matrices-with-h5py/
+# filter the "raw" count matrix by the whitelist
 #TODO
-rule STAR_mtx2h5:
-    input:
-        # VELMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto/raw/spliced.mtx.gz",
-        GENEMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/matrix.mtx.gz",
-        GENEFULLMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw/matrix.mtx.gz"
-    output:
-        # VELMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto/raw_feature_bc_matrix_h5.h5",
-        GENEMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw_feature_bc_matrix_h5.h5",
-        GENEFULLMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw_feature_bc_matrix_h5.h5"
-    params:
-        # VELDIR = directory("{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto"),
-        GENEDIR = directory("{OUTDIR}/{sample}/STARsolo/Solo.out/Gene"),
-        GENEFULLDIR = directory("{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull")
-    # conda:
-    #     "STARsolo"
-    threads:
-        1
-    run:
+# rule STAR_mtx_whitelist_filter:
+#     input:
+#         # VELMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto/raw/spliced.mtx.gz",
+#         GENEMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/matrix.mtx.gz",
+#         GENEFULLMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw/matrix.mtx.gz"
+#     output:
+#         # VELMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto/raw_feature_bc_matrix_h5.h5",
+#         GENEMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw_feature_bc_matrix_h5.h5",
+#         GENEFULLMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw_feature_bc_matrix_h5.h5"
+#     params:
+#         # VELDIR = directory("{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto"),
+#         GENEDIR = directory("{OUTDIR}/{sample}/STARsolo/Solo.out/Gene"),
+#         GENEFULLDIR = directory("{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull")
+#     # conda:
+#     #     "STARsolo"
+#     threads:
+#         1
+#     run:
+        #"""mkdir {OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw_whitelist"""
 
-        X = scipy.io.mmread(input.GENEFULLMAT)
-        bcs = pd.read_csv(
-            "features.tsv.gz",
-            sep="\t",
-            header=None,
-            usecols=[1]
-        )
-        feats = pd.read_csv(
-            "features.tsv.gz",
-            sep="\t",
-            header=None,
-            usecols=[1]
-        )
-        f = h5py.File(output.GENEFULLMAT)
-        f.create_dataset('X', data=X)
+        #load raw matrix
 
-        f.close()
+        #load whitelist
+
+        #filter matrix
+
+        # save mtx 
+
 
 #TODO add executable
 rule indexSortedBAM:
