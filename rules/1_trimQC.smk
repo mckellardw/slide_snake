@@ -24,7 +24,28 @@ rule preTrim_FastQC_R2:
             {input.MERGED_R2_FQ}
             """
         )
-        # cd {output.fastqcDir}
+
+rule preTrim_FastQC_R1:
+    input:
+        MERGED_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz'
+    output:
+        fastqcDir = directory('{OUTDIR}/{sample}/preTrim_fastqc_R1_out')
+    params:
+        adapters = config['FASTQC_ADAPTERS']
+    threads:
+        min([config['CORES'],8]) # 8 core max
+    run:
+        shell(
+            f"""
+            mkdir -p {output.fastqcDir}
+
+            {FASTQC_EXEC} \
+            --outdir {output.fastqcDir} \
+            --threads {threads} \
+            -a {params.adapters} \
+            {input.MERGED_R1_FQ}
+            """
+        )
 
 # TSO & polyA trimming
 rule cutadapt_R2:
@@ -102,7 +123,7 @@ rule removeLinker_R1:
 # fastqc on R1 after linker removal & R2 trimming/filtering
 rule postTrim_FastQC_R1:
     input:
-        FINAL_R1_FQ =  '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz'
+        FINAL_R1_FQ =  '{OUTDIR}/{sample}/tmp/{sample}_R1_adapterTrim.fq.gz'
     output:
         fastqcDir = directory('{OUTDIR}/{sample}/postTrim_fastqc_R1_out'),
         # fastqcReport = ''
