@@ -6,7 +6,8 @@
 
 rule STARsolo_align:
     input:
-        FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_adapterTrim.fq.gz', #*Note*- change to "_R1_Final..." to include adapter hard trimming
+        FINAL_R1_FQ_HardTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
+        FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_adapterTrim.fq.gz',
         FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz',
         BB_WHITELIST = "{OUTDIR}/{sample}/bb/whitelist.txt",
         BB_1 = "{OUTDIR}/{sample}/bb/whitelist_1.txt",
@@ -45,10 +46,13 @@ rule STARsolo_align:
         soloCBmatchWLtype = CHEMISTRY_SHEET["STAR.soloCBmatchWLtype"][tmp_chemistry]
         soloAdapter = CHEMISTRY_SHEET["STAR.soloAdapter"][tmp_chemistry]
 
+        #param handling for different alignment strategies
         if tmp_chemistry == "seeker_v3.1_noTrimMatchLinker":
             whitelist = f"{input.BB_1} {input.BB_2}"
+            R1 = input.FINAL_R1_FQ
         else:
             whitelist = input.BB_WHITELIST
+            R1 = input.FINAL_R1_FQ_HardTrim
 
         shell(
             f"""
@@ -62,16 +66,11 @@ rule STARsolo_align:
             --readFilesCommand zcat \
             --genomeDir {STAR_REF} \
             --limitBAMsortRAM={params.MEMLIMIT} \
-            --readFilesIn {input.FINAL_R2_FQ} {input.FINAL_R1_FQ} \
+            --readFilesIn {input.FINAL_R2_FQ} {R1} \
             --clipAdapterType CellRanger4 \
             --outReadsUnmapped Fastx \
             --outFilterMultimapNmax 50 \
-            --outFilterMismatchNoverLmax 0.05 \
-            --outFilterMatchNmin 12 \
-            --outFilterScoreMinOverLread 0 \
-            --outFilterMatchNminOverLread 0 \
-            --soloType {soloType} \
-            {soloUMI} {soloCB} {soloAdapter} \
+            --soloType {soloType} {soloUMI} {soloCB} {soloAdapter} \
             --soloCBwhitelist {whitelist} \
             --soloCBmatchWLtype {soloCBmatchWLtype} \
             --soloCellFilter TopCells {nBB} \
@@ -82,6 +81,11 @@ rule STARsolo_align:
             --soloMultiMappers EM
             """
         )
+
+            # --outFilterMismatchNoverLmax 0.05 \
+            # --outFilterMatchNmin 12 \
+            # --outFilterScoreMinOverLread 0 \
+            # --outFilterMatchNminOverLread 0 \
         # --soloCellFilter CellRanger2.2 {nBB} 0.99 10 45000 90000 1 0.01 20000 0.01 10000 \
 
 # compress outputs from STAR (count matrices, cell barcodes, and gene lists)
