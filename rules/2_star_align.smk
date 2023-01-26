@@ -109,6 +109,21 @@ rule compress_STAR_outs:
     # conda:
     #     "STARsolo"
     run:
+        tmp_chemistry = CHEM_DICT[wildcards.sample]
+        if tmp_chemistry == "seeker_v3.1_noTrimMatchLinker":
+            shell(
+                f"""
+                zcat {params.VELDIR}/raw/barcodes.tsv| sed 's/_//' > {params.VELDIR}/raw/barcodes_noUnderscore.tsv
+                zcat {params.VELDIR}/filtered/barcodes.tsv| sed 's/_//' > {params.VELDIR}/filtered/barcodes_noUnderscore.tsv
+
+                zcat {params.GENEDIR}/raw/barcodes.tsv| sed 's/_//' > {params.GENEDIR}/raw/barcodes_noUnderscore.tsv
+                zcat {params.GENEDIR}/filtered/barcodes.tsv| sed 's/_//' > {params.GENEDIR}/filtered/barcodes_noUnderscore.tsv
+
+                zcat {params.GENEFULLDIR}/raw/barcodes.tsv| sed 's/_//' > {params.GENEFULLDIR}/raw/barcodes_noUnderscore.tsv
+                zcat {params.GENEFULLDIR}/filtered/barcodes.tsv| sed 's/_//' > {params.GENEFULLDIR}/filtered/barcodes_noUnderscore.tsv
+                """
+            )
+
         shell(
             f"""
             gzip -qf {params.VELDIR}/*/*.tsv {params.VELDIR}/*/*.mtx
