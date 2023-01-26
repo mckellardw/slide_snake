@@ -39,12 +39,13 @@ rule STARsolo_align:
         # BB_WHITELIST = f"{input.BB_1} {input.BB_2}"
         nBB = sum(1 for line in open(input.BB_WHITELIST)) # get number of bead barcodes for filtered count matrix, `--soloCellFilter`
 
-        #TODO: check for empty values
+        #TODO: add try catches
         soloType = CHEMISTRY_SHEET["STAR.soloType"][tmp_chemistry]
         soloUMI = CHEMISTRY_SHEET["STAR.soloUMI"][tmp_chemistry]
         soloCB = CHEMISTRY_SHEET["STAR.soloCB"][tmp_chemistry]
         soloCBmatchWLtype = CHEMISTRY_SHEET["STAR.soloCBmatchWLtype"][tmp_chemistry]
         soloAdapter = CHEMISTRY_SHEET["STAR.soloAdapter"][tmp_chemistry]
+        extraSTAR = CHEMISTRY_SHEET["STAR.extra"][tmp_chemistry]
 
         #param handling for different alignment strategies
         if tmp_chemistry == "seeker_v3.1_noTrimMatchLinker":
@@ -69,8 +70,8 @@ rule STARsolo_align:
             --readFilesIn {input.FINAL_R2_FQ} {R1} \
             --clipAdapterType CellRanger4 \
             --outReadsUnmapped Fastx \
-            --outFilterMultimapNmax 50 \
-            --soloType {soloType} {soloUMI} {soloCB} {soloAdapter} \
+            --outSAMunmapped Within KeepPairs \
+            --soloType {soloType} {soloUMI} {soloCB} {soloAdapter} {extraSTAR} \
             --soloCBwhitelist {whitelist} \
             --soloCBmatchWLtype {soloCBmatchWLtype} \
             --soloCellFilter TopCells {nBB} \
