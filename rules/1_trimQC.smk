@@ -59,6 +59,7 @@ rule cutadapt_R2:
         R1_SIZE = 50,
         MIN_R2_SIZE = 16,
         CUTADAPT_EXEC = CUTADAPT_EXEC,
+        # THREE_PRIME_R1_POLYA = "A"*100,
         THREE_PRIME_R2_POLYA = "A"*100,
         THREE_PRIME_R2_POLYG = "G"*100,
         THREE_PRIME_R2_POLYT = "T"*100,
@@ -94,6 +95,7 @@ rule cutadapt_R2:
             {input.TRIMMED_R1_FQ} {input.TRIMMED_R2_FQ} 1> {log.log}
             """
         )
+        # -a {params.THREE_PRIME_R1_POLYA} \
         # -A {params.THREE_PRIME_R2_POLYG}X \
 
 # R1 trimming to remove the linker sequence
