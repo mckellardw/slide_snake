@@ -10,11 +10,34 @@ Preprocessing, alignment, QC, and quantification workflow for SlideSeq data
 - `vsearch` [v2.17.0_linux_x86_64](https://github.com/torognes/vsearch)
 - `BLAST`
 
+
+## Trimming
+Five Prime adapter(s):
+- Reverse complement of the SlideSeq TSO to reduce strand invasion artifacts [**CCCATTCACTCTGCGTTGATACCAGCTT**]
+
+Three Prime adapter(s):
+- "A" homopolymers [**100-A**]
+- "G" homopolymers, important for Illumina 2-color sequencers [**100-G**]
+- "T" homopolymers [**100-T**]
+- Nextera adapter sequence [**CTGTCTCTTATA**]
+- Reverse complement of Nextera sequence [**TATAAGAGACAG**] 
+- SlideSeq template switch olgo (TSO) - remove any polyadenylated TSOs [**AAGCTGGTATCAACGCAGAGTGAATGGG**]
+- Illumina unversal sequence [**AGATCGGAAGAG**]
+
+
 ## Alignment:
 - After adapter trimming, reads are aligned with `STARsolo` and `kallisto`/`bustools` to generate count matrices
 - Outputs are in `{SAMPLE_ID}/STARsolo/Solo.out` & `{SAMPLE_ID}/kb/counts_unfiltered`
+- Different recipes are written out in `resources/chemistry_sheet.csv`, and must be specified for each sample within the sample sheet
 
-## Barcode handling:
+### Chemistry/recipe descriptions:
+- `seeker_v3.1` - Hard trim the adapter read positions in R1, and use the best barcode correction algorithms in STARsolo
+- `seeker_v3.1_noTrim` - No hard trimming, and use the base positions for barcode/UMI (*Note*, this recipe doesn't work well w/ Curio Seeker b/c of in/del issues w/ the barcode synthesis)
+- `seeker_v3.1_noTrimMatchLinker` - Match the adapter sequence on R1 (w/ 2 mismatches allowed) and infer barcodes/UMIs from that position (*Note* best performer w/ Curio data)
+- `seeker_v3.1_noTrim_total` - Same as `seeker_v3.1_noTrimMatchLinker`, but with additional STAR parameters for total RNAseq alignment (more multimappers, looser alignment)
+
+
+### Barcode handling:
 #### STAR
 - Removed the linker sequence in R1 so that the `1MM_multi` barcode correction in `STARsolo` can be used
 - Barcode & UMI paramters for [`STAR`](https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md):
