@@ -63,6 +63,7 @@ for i in range(0,SAMPLE_SHEET.shape[0]):
 rule all:
     input:
         # expand('{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/UniqueAndMultEM.h5ad', OUTDIR=config['OUTDIR'], sample=SAMPLES), 
+        # expand('{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/barcodes_noUnderscore.tsv.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), #Barcode lists w/ underscores removed
         expand('{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/matrix.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), #STAR count mats
         expand('{OUTDIR}/{sample}/kb/counts_unfiltered/output.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES), #kallisto count mats
         # expand('{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw_feature_bc_matrix_h5.h5', OUTDIR=config['OUTDIR'], sample=SAMPLES),
@@ -76,7 +77,6 @@ rule all:
         expand('{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES), #non-deduplicated .bam; used for saturation estimation
         expand('{OUTDIR}/{sample}/Unmapped_fastqc_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), #fastQC results for unmapped reads
         expand('{OUTDIR}/{sample}/Unmapped.out.mate2_blastResults.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES), # blastn results for unmapped R1 reads non-strand-split bigWigs (for
-
 # fastq preprocessing & QC
 include: "rules/1_mergefqs.smk"
 include: "rules/1_trimQC.smk"
