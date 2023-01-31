@@ -4,6 +4,7 @@
 # Make output directory, align fastqs, and generate raw/filtered feature/cell-barcode matrices
 #   Info for STARsolo command line paramaters: https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md
 
+#TODO: add multiple chemistry compatibility (iterate through the list of space-delimited chemistries listed in sample sheet)
 rule STARsolo_align:
     input:
         FINAL_R1_FQ_HardTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
@@ -48,7 +49,7 @@ rule STARsolo_align:
         extraSTAR = CHEMISTRY_SHEET["STAR.extra"][tmp_chemistry]
 
         #param handling for different alignment strategies
-        if tmp_chemistry == "seeker_v3.1_noTrimMatchLinker":
+        if tmp_chemistry in ["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
             whitelist = f"{input.BB_1} {input.BB_2}"
             R1 = input.FINAL_R1_FQ
         else:
@@ -110,17 +111,17 @@ rule compress_STAR_outs:
     #     "STARsolo"
     run:
         tmp_chemistry = CHEM_DICT[wildcards.sample]
-        if tmp_chemistry == "seeker_v3.1_noTrimMatchLinker":
+        if tmp_chemistry in ["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
             shell(
                 f"""
-                zcat {params.VELDIR}/raw/barcodes.tsv| sed 's/_//' > {params.VELDIR}/raw/barcodes_noUnderscore.tsv
-                zcat {params.VELDIR}/filtered/barcodes.tsv| sed 's/_//' > {params.VELDIR}/filtered/barcodes_noUnderscore.tsv
+                cat {params.VELDIR}/raw/barcodes.tsv | sed 's/_//' > {params.VELDIR}/raw/barcodes_noUnderscore.tsv
+                cat {params.VELDIR}/filtered/barcodes.tsv | sed 's/_//' > {params.VELDIR}/filtered/barcodes_noUnderscore.tsv
 
-                zcat {params.GENEDIR}/raw/barcodes.tsv| sed 's/_//' > {params.GENEDIR}/raw/barcodes_noUnderscore.tsv
-                zcat {params.GENEDIR}/filtered/barcodes.tsv| sed 's/_//' > {params.GENEDIR}/filtered/barcodes_noUnderscore.tsv
+                cat {params.GENEDIR}/raw/barcodes.tsv | sed 's/_//' > {params.GENEDIR}/raw/barcodes_noUnderscore.tsv
+                cat {params.GENEDIR}/filtered/barcodes.tsv | sed 's/_//' > {params.GENEDIR}/filtered/barcodes_noUnderscore.tsv
 
-                zcat {params.GENEFULLDIR}/raw/barcodes.tsv| sed 's/_//' > {params.GENEFULLDIR}/raw/barcodes_noUnderscore.tsv
-                zcat {params.GENEFULLDIR}/filtered/barcodes.tsv| sed 's/_//' > {params.GENEFULLDIR}/filtered/barcodes_noUnderscore.tsv
+                cat {params.GENEFULLDIR}/raw/barcodes.tsv | sed 's/_//' > {params.GENEFULLDIR}/raw/barcodes_noUnderscore.tsv
+                cat {params.GENEFULLDIR}/filtered/barcodes.tsv | sed 's/_//' > {params.GENEFULLDIR}/filtered/barcodes_noUnderscore.tsv
                 """
             )
 
