@@ -105,10 +105,7 @@ rule compress_STAR_outs:
         GENEDIR = directory("{OUTDIR}/{sample}/STARsolo/Solo.out/Gene"),
         GENEFULLDIR = directory("{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull")
     threads:
-        1
-        # config["CORES_LO"]
-    # conda:
-    #     "STARsolo"
+        config["CORES_LO"]
     run:
         tmp_chemistry = CHEM_DICT[wildcards.sample]
         if tmp_chemistry in ["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
@@ -127,9 +124,7 @@ rule compress_STAR_outs:
 
         shell(
             f"""
-            gzip -qf {params.VELDIR}/*/*.tsv {params.VELDIR}/*/*.mtx
-            gzip -qf {params.GENEDIR}/*/*.tsv {params.GENEDIR}/*/*.mtx
-            gzip -qf {params.GENEFULLDIR}/*/*.tsv {params.GENEFULLDIR}/*/*.mtx
+            pigz -p{threads} {params.VELDIR}/*/*.tsv {params.VELDIR}/*/*.mtx  {params.GENEDIR}/*/*.tsv {params.GENEDIR}/*/*.mtx {params.GENEFULLDIR}/*/*.tsv {params.GENEFULLDIR}/*/*.mtx
             """
         )
 

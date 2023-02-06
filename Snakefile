@@ -63,7 +63,7 @@ rule all:
         # expand('{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/UniqueAndMultEM.h5ad', OUTDIR=config['OUTDIR'], sample=SAMPLES), 
         # expand('{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/barcodes_noUnderscore.tsv.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), #Barcode lists w/ underscores removed
         expand('{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/matrix.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), #STAR count mats
-        expand('{OUTDIR}/{sample}/kb/counts_unfiltered/output.mtx', OUTDIR=config['OUTDIR'], sample=SAMPLES), #kallisto count mats
+        expand('{OUTDIR}/{sample}/kb/counts_unfiltered/output.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), #kallisto count mats
         expand('{OUTDIR}/{sample}/qualimap/qualimapReport.html', OUTDIR=config['OUTDIR'], sample=SAMPLES), # alignment QC qith qualimap | requires deduped input!
         # expand('{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES), # umi_tools deduplicated .bam
         # expand('{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES), # strand-split bigWigs

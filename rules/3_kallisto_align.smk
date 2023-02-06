@@ -4,7 +4,7 @@
 
 rule kallisto_align:
     input:
-        FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
+        FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_adapterTrim.fq.gz',
         FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz',
         BB = "{OUTDIR}/{sample}/bb/whitelist.txt"
     output:
@@ -23,7 +23,7 @@ rule kallisto_align:
         tmp_chemistry = CHEM_DICT[wildcards.sample]
         KB_IDX = IDX_DICT[wildcards.sample]
         BB_WHITELIST = f"{input.BB}"
-
+        
         KB_X = CHEMISTRY_SHEET["kb.x"][tmp_chemistry]
 
         shell(
@@ -70,3 +70,22 @@ rule bus2mat:
             {input.BUS}
             """
         )
+
+# gzip the count matrix, etc.
+rule compress_kb_outs:
+    input:
+        BCS = '{OUTDIR}/{sample}/kb/counts_unfiltered/output.barcodes.txt',
+        GENES = '{OUTDIR}/{sample}/kb/counts_unfiltered/output.genes.txt',
+        MAT = '{OUTDIR}/{sample}/kb/counts_unfiltered/output.mtx'
+    output:
+        BCS = '{OUTDIR}/{sample}/kb/counts_unfiltered/output.barcodes.txt.gz',
+        GENES = '{OUTDIR}/{sample}/kb/counts_unfiltered/output.genes.txt.gz',
+        MAT = '{OUTDIR}/{sample}/kb/counts_unfiltered/output.mtx.gz'
+    params:
+        MATDIR = directory('{OUTDIR}/{sample}/kb/counts_unfiltered')
+    threads:
+        config['CORES']        
+    shell:
+        """
+        pigz -p{threads} {input.BCS} {input.GENES} {input.MAT}
+        """
