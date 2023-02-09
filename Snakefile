@@ -43,6 +43,7 @@ QUALIMAP_EXEC = config["QUALIMAP_EXEC"]
 ########################################################################################################
 # Build dictionaries of chemistries & species to use for alignment
 CHEM_DICT = {} # Dictionary of chemistry recipe to use for each sample
+rRNA_DICT = {} # Dictionary of rRNA reference genomes to use
 REF_DICT = {} # Dictionary of reference genomes to use
 GTF_DICT = {} # Dictionary of gene annotations (.gtf format)
 IDX_DICT = {} # Dictionary of kallisto indices
@@ -51,6 +52,7 @@ BB_DICT = {} # Dictionary of bead barcode maps
 for i in range(0,SAMPLE_SHEET.shape[0]):
     tmp_sample = list(SAMPLE_SHEET["sampleID"])[i]
     CHEM_DICT[tmp_sample] = list(SAMPLE_SHEET["chemistry"])[i]
+    rRNA_DICT[tmp_sample] = list(SAMPLE_SHEET["STAR_rRNA_ref"])[i]
     REF_DICT[tmp_sample] = list(SAMPLE_SHEET["STAR_ref"])[i]
     GTF_DICT[tmp_sample] = list(SAMPLE_SHEET["genes_gtf"])[i]
     IDX_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_idx"])[i]
@@ -60,9 +62,9 @@ for i in range(0,SAMPLE_SHEET.shape[0]):
 ########################################################################################################
 rule all:
     input:
-        # expand('{OUTDIR}/{sample}/{REF}/Solo.out/Gene/raw/UniqueAndMultEM.h5ad', OUTDIR=config['OUTDIR'], sample=SAMPLES, REF=["STARsolo_rRNA", "STARsolo"]), 
-        # expand('{OUTDIR}/{sample}/{REF}/Solo.out/Gene/raw/barcodes_noUnderscore.tsv.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES, REF=["STARsolo_rRNA", "STARsolo"]), #Barcode lists w/ underscores removed
-        expand('{OUTDIR}/{sample}/{REF}/Solo.out/Gene/raw/matrix.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES, REF=["STARsolo_rRNA", "STARsolo"]), #STAR count mats
+        # expand('{OUTDIR}/{sample}/{REF}/Solo.out/GeneFull/raw/UniqueAndMultEM.h5ad', OUTDIR=config['OUTDIR'], sample=SAMPLES, REF=["STARsolo_rRNA", "STARsolo"]), 
+        # expand('{OUTDIR}/{sample}/{REF}/Solo.out/GeneFull/raw/barcodes_noUnderscore.tsv.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES, REF=["STARsolo_rRNA", "STARsolo"]), #Barcode lists w/ underscores removed
+        expand('{OUTDIR}/{sample}/{REF}/Solo.out/GeneFull/raw/matrix.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES, REF=["STARsolo_rRNA", "STARsolo"]), #STAR count mats
         expand('{OUTDIR}/{sample}/kb/counts_unfiltered/output.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), #kallisto count mats
         expand('{OUTDIR}/{sample}/qualimap/qualimapReport.html', OUTDIR=config['OUTDIR'], sample=SAMPLES), # alignment QC qith qualimap | requires deduped input!
         # expand('{OUTDIR}/{sample}/{REF}/Aligned.sortedByCoord.dedup.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES, REF=["STARsolo_rRNA", "STARsolo"]), # umi_tools deduplicated .bam
@@ -74,9 +76,9 @@ rule all:
         expand('{OUTDIR}/{sample}/Unmapped_fastqc_out', OUTDIR=config['OUTDIR'], sample=SAMPLES), #fastQC results for unmapped reads
         expand('{OUTDIR}/{sample}/Unmapped.out.mate2_blastResults.txt', OUTDIR=config['OUTDIR'], sample=SAMPLES), # blastn results for unmapped R1 reads non-strand-split bigWigs (for
 # fastq preprocessing & QC
-include: "rules/1_mergefqs.smk"
-include: "rules/1_trimQC.smk"
-include: "rules/1_split_bb.smk"
+include: "rules/1a_mergefqs.smk"
+include: "rules/1b_trimQC.smk"
+include: "rules/1c_split_bb.smk"
 
 # STAR alignment, QC, and post-processing
 include: "rules/2a_star_align_rRNA.smk"

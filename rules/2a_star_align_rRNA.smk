@@ -3,8 +3,12 @@
 
 rule STARsolo_align_rRNA:
     input:
-        FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
-        FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz'
+        R1_FQ_HardTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
+        R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
+        R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz',
+        BB_WHITELIST = "{OUTDIR}/{sample}/bb/whitelist.txt",
+        BB_1 = "{OUTDIR}/{sample}/bb/whitelist_1.txt",
+        BB_2 = "{OUTDIR}/{sample}/bb/whitelist_2.txt"
     output:
         SORTEDBAM = '{OUTDIR}/{sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam', #TODO: add temp()
         UNMAPPED1 = '{OUTDIR}/{sample}/STARsolo_rRNA/Unmapped.out.mate1',
@@ -19,15 +23,31 @@ rule STARsolo_align_rRNA:
     run: 
         tmp_chemistry = CHEM_DICT[wildcards.sample]
         STAR_REF = rRNA_DICT[wildcards.sample] # use rRNA ref
+        
+        nBB = sum(1 for line in open(input.BB_WHITELIST)) # get number of bead barcodes for filtered count matrix, `--soloCellFilter`
 
-        UMIlen = CHEMISTRY_SHEET["STAR.UMIlen"][tmp_chemistry]
-        SOLOtype = CHEMISTRY_SHEET["STAR.soloType"][tmp_chemistry]
-        CB_WHITELIST = CHEMISTRY_SHEET["whitelist"][tmp_chemistry]
-        # extraSTAR = CHEMISTRY_SHEET["STAR.extra"][tmp_chemistry]
+        #TODO: add try catches
+        soloType = CHEMISTRY_SHEET["STAR.soloType"][tmp_chemistry]
+        soloUMI = CHEMISTRY_SHEET["STAR.soloUMI"][tmp_chemistry]
+        soloCB = CHEMISTRY_SHEET["STAR.soloCB"][tmp_chemistry]
+        soloCBmatchWLtype = CHEMISTRY_SHEET["STAR.soloCBmatchWLtype"][tmp_chemistry]
+        soloAdapter = CHEMISTRY_SHEET["STAR.soloAdapter"][tmp_chemistry]
+        extraSTAR = CHEMISTRY_SHEET["STAR.extra"][tmp_chemistry]
+
+        #param handling for different alignment strategies
+        if "noTrim" in tmp_chemistry:
+            # ["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
+            whitelist = f"{input.BB_1} {input.BB_2}"
+            R1 = input.R1_FQ
+        else:
+            whitelist = input.BB_WHITELIST
+            R1 = input.R1_FQ_HardTrim
+
+        R2 = input.R2_FQ
 
         shell(
             f"""
-            mkdir -p {OUTDIR}/{wildcards.sample}
+            mkdir -p {OUTDIR}/{wildcards.sample}/STARsolo_rRNA
 
             {params.STAR_EXEC} \
             --runThreadN {threads} \
@@ -35,17 +55,19 @@ rule STARsolo_align_rRNA:
             --outSAMtype BAM SortedByCoordinate \
             --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
             --readFilesCommand zcat \
-            --soloUMIlen {UMIlen} \
             --genomeDir {STAR_REF} \
-            --genomeLoad LoadAndRemove \
             --limitBAMsortRAM={params.MEMLIMIT} \
-            --readFilesIn {input.FINAL_R2_FQ} {input.FINAL_R1_FQ} \
+            --readFilesIn {R2} {R1} \
             --clipAdapterType CellRanger4 \
             --outReadsUnmapped Fastx \
-            --soloType {SOLOtype} \
+            --outSAMunmapped Within KeepPairs \
+            --soloType {soloType} {soloUMI} {soloCB} {soloAdapter} {extraSTAR} \
+            --soloCBwhitelist {whitelist} \
+            --soloCBmatchWLtype {soloCBmatchWLtype} \
+            --soloCellFilter TopCells {nBB} \
+            --soloUMIfiltering MultiGeneUMI CR \
+            --soloUMIdedup 1MM_CR \
             --soloBarcodeReadLength 0 \
-            --soloCBwhitelist {CB_WHITELIST} \
-            --soloCellFilter EmptyDrops_CR \
             --soloFeatures GeneFull \
             --soloMultiMappers EM
             """

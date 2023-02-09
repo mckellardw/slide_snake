@@ -107,12 +107,13 @@ rule removeLinker_R1:
         FINAL_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz')
     params:
         script = "scripts/linkerRemove_R1.awk",
-        CB1end = 8,
+        CB1end = 8, #TODO- move to config!
         CB2start = 27,
         CB2end = 42
     threads:
         config['CORES']
     run:
+        # tmp_chemistry = CHEM_DICT[wildcards.sample]
         shell(
             f"""
             zcat {input.R1_FQ} | \

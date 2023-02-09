@@ -45,6 +45,8 @@ rule bus2mat:
         TRANSCRIPTS = '{OUTDIR}/{sample}/kb/transcripts.txt',
         ECMAP = '{OUTDIR}/{sample}/kb/matrix.ec'
     output:
+        BCS = '{OUTDIR}/{sample}/kb/counts_unfiltered/output.barcodes.txt',
+        GENES = '{OUTDIR}/{sample}/kb/counts_unfiltered/output.genes.txt',
         MAT = '{OUTDIR}/{sample}/kb/counts_unfiltered/output.mtx'
         # EC = '{OUTDIR}/{sample}/kb/counts_unfiltered/output.ec.txt'
     params:
