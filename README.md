@@ -67,7 +67,7 @@ Three Prime adapter(s):
 ## Output file tree:
 ```
 {SAMPLE_ID}/
-├── cutadapt.log
+├── log.cutadapt.json
 ├── kb
 │   ├── counts_unfiltered
 │   │   ├── output.barcodes.txt
@@ -81,12 +81,57 @@ Three Prime adapter(s):
 │   ├── output.sorted.bus
 │   ├── run_info.json
 │   └── transcripts.txt
+├── postTrim_fastqc_R1_out
+│   ├── {SAMPLE_ID}_R1_adapterTrim_fastqc.html
+│   └── {SAMPLE_ID}_R1_adapterTrim_fastqc.zip
 ├── postTrim_fastqc_R2_out
 │   ├── {SAMPLE_ID}_R2_final_fastqc.html
 │   └── {SAMPLE_ID}_R2_final_fastqc.zip
+├── preTrim_fastqc_R1_out
+│   ├── {SAMPLE_ID}_R1_fastqc.html
+│   └── {SAMPLE_ID}_R1_fastqc.zip
 ├── preTrim_fastqc_R2_out
 │   ├── {SAMPLE_ID}_R2_fastqc.html
 │   └── {SAMPLE_ID}_R2_fastqc.zip
+├── qualimap
+│   ├── css
+│   │   ├── agogo.css
+│   │   ├── ajax-loader.gif
+│   │   ├── basic.css
+│   │   ├── bgfooter.png
+│   │   ├── bgtop.png
+│   │   ├── comment-bright.png
+│   │   ├── comment-close.png
+│   │   ├── comment.png
+│   │   ├── doctools.js
+│   │   ├── down.png
+│   │   ├── down-pressed.png
+│   │   ├── file.png
+│   │   ├── jquery.js
+│   │   ├── minus.png
+│   │   ├── plus.png
+│   │   ├── pygments.css
+│   │   ├── qualimap_logo_small.png
+│   │   ├── report.css
+│   │   ├── searchtools.js
+│   │   ├── underscore.js
+│   │   ├── up.png
+│   │   ├── up-pressed.png
+│   │   └── websupport.js
+│   ├── images_qualimapReport
+│   │   ├── Coverage Profile Along Genes (High).png
+│   │   ├── Coverage Profile Along Genes (Low).png
+│   │   ├── Coverage Profile Along Genes (Total).png
+│   │   ├── Junction Analysis.png
+│   │   ├── Reads Genomic Origin.png
+│   │   └── Transcript coverage histogram.png
+│   ├── qualimapReport.html
+│   ├── raw_data_qualimapReport
+│   │   ├── coverage_profile_along_genes_(high).txt
+│   │   ├── coverage_profile_along_genes_(low).txt
+│   │   └── coverage_profile_along_genes_(total).txt
+│   └── rnaseq_qc_results.txt
+
 ├── STARsolo
 │   ├── Aligned.sortedByCoord.out.bam
 │   ├── Aligned.sortedByCoord.out.bam.bai
