@@ -7,8 +7,8 @@
 #TODO: add multiple chemistry compatibility (iterate through the list of space-delimited chemistries listed in sample sheet)
 rule STARsolo_align:
     input:
-        R1_FQ_HardTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
         R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_adapterTrim.fq.gz',
+        R1_FQ_HardTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
         R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz',
         FILTERED_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final_filtered.fq.gz',
         FILTERED_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final_filtered.fq.gz',
@@ -36,10 +36,8 @@ rule STARsolo_align:
     priority:
         42
     run:
-        # print(CHEM_DICT)
         tmp_chemistry = CHEM_DICT[wildcards.sample]
-        STAR_REF = REF_DICT[wildcards.sample]
-        # BB_WHITELIST = f"{input.BB_1} {input.BB_2}"
+        STAR_REF = REF_DICT[wildcards.sample] # Use rRNA reference
         nBB = sum(1 for line in open(input.BB_WHITELIST)) # get number of bead barcodes for filtered count matrix, `--soloCellFilter`
 
         #TODO: add try catches
@@ -59,12 +57,13 @@ rule STARsolo_align:
             whitelist = input.BB_WHITELIST
             R1 = input.R1_FQ_HardTrim
 
-
+        # Select R2 based on alignment recipe
         if "total" in tmp_chemistry:
             R2 = input.FILTERED_R2_FQ
         else:
             R2 = input.R2_FQ
 
+        # Run STARsolo
         shell(
             f"""
             mkdir -p {params.OUTDIR}/{wildcards.sample}/STARsolo
@@ -93,12 +92,6 @@ rule STARsolo_align:
             """
         )
 
-            # --outFilterMismatchNoverLmax 0.05 \
-            # --outFilterMatchNmin 12 \
-            # --outFilterScoreMinOverLread 0 \
-            # --outFilterMatchNminOverLread 0 \
-        # --soloCellFilter CellRanger2.2 {nBB} 0.99 10 45000 90000 1 0.01 20000 0.01 10000 \
-
 # compress outputs from STAR (count matrices, cell barcodes, and gene lists)
 rule compress_STAR_outs:
     input:
@@ -114,7 +107,7 @@ rule compress_STAR_outs:
         GENEDIR = directory("{OUTDIR}/{sample}/STARsolo/Solo.out/Gene"),
         GENEFULLDIR = directory("{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull")
     threads:
-        config["CORES_LO"]
+        config["CORES"]
     run:
         tmp_chemistry = CHEM_DICT[wildcards.sample]
         if tmp_chemistry in ["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
@@ -133,7 +126,7 @@ rule compress_STAR_outs:
 
         shell(
             f"""
-            pigz -p{threads} {params.VELDIR}/*/*.tsv {params.VELDIR}/*/*.mtx  {params.GENEDIR}/*/*.tsv {params.GENEDIR}/*/*.mtx {params.GENEFULLDIR}/*/*.tsv {params.GENEFULLDIR}/*/*.mtx
+            pigz -p{threads} {OUTDIR}/{wildcards.sample}/STARsolo/*/*/*/*.tsv {OUTDIR}/{wildcards.sample}/STARsolo/*/*/*/*.mtx
             """
         )
 

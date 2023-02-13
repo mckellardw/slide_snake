@@ -3,8 +3,8 @@
 
 rule STARsolo_align_rRNA:
     input:
+        R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_adapterTrim.fq.gz',
         R1_FQ_HardTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
-        R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
         R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz',
         BB_WHITELIST = "{OUTDIR}/{sample}/bb/whitelist.txt",
         BB_1 = "{OUTDIR}/{sample}/bb/whitelist_1.txt",
@@ -23,7 +23,6 @@ rule STARsolo_align_rRNA:
     run: 
         tmp_chemistry = CHEM_DICT[wildcards.sample]
         STAR_REF = rRNA_DICT[wildcards.sample] # use rRNA ref
-        
         nBB = sum(1 for line in open(input.BB_WHITELIST)) # get number of bead barcodes for filtered count matrix, `--soloCellFilter`
 
         #TODO: add try catches
