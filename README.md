@@ -1,6 +1,8 @@
 # `slide_snake`
-Preprocessing, alignment, QC, and quantification workflow for SlideSeq data
+Preprocessing, alignment, QC, and quantification workflow for SlideSeq data  
 **David W. McKellar**
+
+## **Contributions are welcome!**
 
 ## Dependencies:
 - `cutadapt` [v3.4](https://cutadapt.readthedocs.io/en/stable/)
