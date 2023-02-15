@@ -69,14 +69,14 @@ def trim_fq(fq_in, fq_out, gz):
         start = alignment[0].start
 
         # Acount for reads with deletions in `BB_1`
-        if start < 9:
+        if start < 9: # Deletion in BB_1
             offset = 9-start
             seq_out = "N"*offset + seq[start:9] + seq[alignment[0].end:50]
             qual_out = "!"*offset + qual[start:9] + qual[alignment[0].end:50]
 
             del_count += 1
         else:
-            if start > 9: 
+            if start > 9: # Insertion in BB_1
                 ins_count += 1
 
             ## Trim the first base in the read
@@ -87,7 +87,10 @@ def trim_fq(fq_in, fq_out, gz):
             seq_out = seq[0:9]+seq[alignment[0].end:50]
             qual_out = qual[0:9]+qual[alignment[0].end:50]
 
-        if len(seq_out) < 22: broken_count += 1
+        if len(seq_out) < 22: # Broken read; erase R1 and add `NNNNNNNNNN` with qval=0 (!!!!!!!!!!)         
+            seq_out = "N"*10 
+            qual_out = "!"*10
+            broken_count += 1
 
         # Write to new .fq.gz file
         out_handle.write(
@@ -101,7 +104,6 @@ def trim_fq(fq_in, fq_out, gz):
 if n_cores > 1:
     # Source: https://superfastpython.com/multiprocessing-pool-for-loop/
     import multiprocessing
-    # from joblib import Parallel, delayed
 
     # Split .fq file into {n_core} chunks
     os.system(
@@ -115,11 +117,9 @@ if n_cores > 1:
     tmp_fqs_out = [f"{tmp_dir}/stdin.part_{str(n).zfill(3)}_trimmed.fastq" for n in list(range(1,n_cores))]
 
     items = [(f"{tmp_dir}/stdin.part_{str(n).zfill(3)}.fastq", f"{tmp_dir}/stdin.part_{str(n).zfill(3)}_trimmed.fastq", False) for n in list(range(1,n_cores))]
-    print(items[1])
+    
     with multiprocessing.Pool(n_cores) as pool:
         multi_out = pool.starmap(trim_fq, items)
-    print("\n \n \n")
-    print(multi_out)
 
     read_count = 0
     ins_count = 0
@@ -134,25 +134,30 @@ if n_cores > 1:
     # Merge and compress chunked/trimmed fastqs
     os.system(
         f"""
-        cat {tmp_fqs_out} > {fq1_out.replace('.gz','')}
+        cat {" ".join(tmp_fqs_out)} > {fq1_out.replace('.gz','')}
         pigz -p{n_cores} {fq1_out.replace('.gz','')}
         """
     )
 
     # Remove tmp fastqs
-    for n in list(range(1,n_cores)):
-        if os.path.isfile(f"stdin.part_{str(n).zfill(3)}.fastq"):
-            os.remove()
-        if os.path.isfile(f"stdin.part_{str(n).zfill(3)}_trimmed.fastq"):
-            os.remove()
+    # for n in list(range(1,n_cores)):
+    #     if os.path.isfile(f"{tmp_dir}/stdin.part_{str(n).zfill(3)}.fastq"):
+    #         os.remove()
+    #     if os.path.isfile(f"{tmp_dir}/stdin.part_{str(n).zfill(3)}_trimmed.fastq"):
+    #         os.remove()
+    os.system(
+        f"""
+        rm {tmp_dir}/stdin.part_*.fastq {tmp_dir}/stdin.part_*_trimmed.fastq
+        """
+    )
 
     with open(log_out, "w") as text_file:
         text_file.write(
             f"""
-            Total read count:         {sum(read_count):,}
-            Insertion count in BB_1:  {sum(ins_count):,}
-            Deletion count in BB_2:   {sum(del_count):,}
-            Reads trimmed below 22bp: {sum(broken_count):,}
+            Total read count:         {read_count:,}
+            Insertion count in BB_1:  {ins_count:,}
+            Deletion count in BB_2:   {del_count:,}
+            Reads trimmed below 22bp: {broken_count:,}
             """
         )
 else:
