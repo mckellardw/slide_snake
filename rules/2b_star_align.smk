@@ -8,10 +8,11 @@
 rule STARsolo_align:
     input:
         R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_adapterTrim.fq.gz',
-        R1_FQ_HardTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
+        R1_FQ_HardTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_finalHardTrim.fq.gz',
+        R1_FQ_InternalTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_finalInternalTrim.fq.gz',
         R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz',
-        FILTERED_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final_filtered.fq.gz',
-        FILTERED_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final_filtered.fq.gz',
+        R1_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R1_final_filtered.fq.gz',
+        R2_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R2_final_filtered.fq.gz',
         BB_WHITELIST = "{OUTDIR}/{sample}/bb/whitelist.txt",
         BB_1 = "{OUTDIR}/{sample}/bb/whitelist_1.txt",
         BB_2 = "{OUTDIR}/{sample}/bb/whitelist_2.txt"
@@ -53,12 +54,17 @@ rule STARsolo_align:
             # ["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
             whitelist = f"{input.BB_1} {input.BB_2}"
             R1 = input.R1_FQ
+        elif "internalTrim" in tmp_chemistry:
+            # ["seeker_v3.1_internalTrim_total"]:
+            whitelist = input.BB_WHITELIST
+            R1 = input.R1_FQ_InternalTrim
         else:
             whitelist = input.BB_WHITELIST
             R1 = input.R1_FQ_HardTrim
 
         # Select R2 based on alignment recipe
         if "total" in tmp_chemistry:
+            R1 = input.FILTERED_R1_FQ
             R2 = input.FILTERED_R2_FQ
         else:
             R2 = input.R2_FQ

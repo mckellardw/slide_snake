@@ -98,13 +98,37 @@ rule cutadapt_R2:
         # -a {params.THREE_PRIME_R1_POLYA} \
         # -A {params.THREE_PRIME_R2_POLYG}X \
 
+
+# Internal adapter trimming on R1
+rule internal_adapter_trim_R1:
+    input:
+        MERGED_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_adapterTrim.fq.gz',
+        # MERGED_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2.fq.gz'
+    output:
+        FINAL_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_finalInternalTrim.fq.gz'),
+        # FINAL_R2_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz')
+    params:
+        TMPDIR = "{OUTDIR}/{sample}/tmp/seqtk",
+        INTERNAL_ADAPTER = "TCTTCAGCGTTCCCGAGA" # Curio adapter
+    threads:
+        config['CORES']        
+    log:
+        '{OUTDIR}/{sample}/internal_adapter_trim_R1.log'
+    run:
+        shell(
+            f"""
+            python scripts/internal_adapter_trim_R1.py {params.INTERNAL_ADAPTER} {log} {threads} {params.TMPDIR} {input.MERGED_R1_FQ} {output.FINAL_R1_FQ}
+            """
+        )
+
+
 # R1 trimming to remove the linker sequence
 ## Source: https://unix.stackexchange.com/questions/510164/remove-and-add-sequence-information-at-specific-position-in-a-file
 rule removeLinker_R1:
     input:
         R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_adapterTrim.fq.gz'
     output:
-        FINAL_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz')
+        FINAL_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_finalHardTrim.fq.gz')
     params:
         script = "scripts/linkerRemove_R1.awk",
         CB1end = 8, #TODO- move to config!
@@ -117,11 +141,12 @@ rule removeLinker_R1:
         shell(
             f"""
             zcat {input.R1_FQ} | \
-            awk -v s={params.CB1end} -v S={params.CB2start} -v E={params.CB2end} -f {params.script} > {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_final.fq
+            awk -v s={params.CB1end} -v S={params.CB2start} -v E={params.CB2end} -f {params.script} > {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_finalHardTrim.fq
 
-            pigz -p{threads} {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_final.fq
+            pigz -p{threads} {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_finalHardTrim.fq
             """
         )
+
 
 # fastqc on R1 after linker removal & R2 trimming/filtering
 rule postTrim_FastQC_R1:
