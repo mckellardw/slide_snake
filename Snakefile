@@ -67,7 +67,7 @@ rule all:
         expand('{OUTDIR}/{sample}/{REF}/Solo.out/GeneFull/raw/matrix.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES, REF=["STARsolo_rRNA", "STARsolo"]), #STAR count mats
         expand('{OUTDIR}/{sample}/kb/counts_unfiltered/output.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), #kallisto count mats
         expand('{OUTDIR}/{sample}/qualimap/qualimapReport.html', OUTDIR=config['OUTDIR'], sample=SAMPLES), # alignment QC qith qualimap | requires deduped input!
-        # expand('{OUTDIR}/{sample}/{REF}/Aligned.sortedByCoord.dedup.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES, REF=["STARsolo_rRNA", "STARsolo"]), # umi_tools deduplicated .bam
+        expand('{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES), #REF=["STARsolo_rRNA", "STARsolo"]), # umi_tools deduplicated .bam
         # expand('{OUTDIR}/{sample}/{REF}/Aligned.sortedByCoord.dedup.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES, REF=["STARsolo_rRNA", "STARsolo"]), # strand-split bigWigs
         # expand('{OUTDIR}/{sample}/{REF}/Aligned.sortedByCoord.dedup.out_merged.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES, REF=["STARsolo_rRNA", "STARsolo"]), #
         expand('{OUTDIR}/{sample}/preTrim_fastqc_{READ}_out', OUTDIR=config['OUTDIR'], sample=SAMPLES, READ=["R1","R2"]), # raw R2 fastQC results
