@@ -21,7 +21,7 @@ rule unmapped_fastqc:
         mv {input.UNMAPPED1} {input.UNMAPPED2}.fastq
         mv {input.UNMAPPED2} {input.UNMAPPED1}.fastq
 
-        pigz -p{threads} {input.UNMAPPED1}.fastq {input.UNMAPPED2}.fastq
+        pigz -p{threads} -f {input.UNMAPPED1}.fastq {input.UNMAPPED2}.fastq
 
         mkdir -p {output.FQC_DIR}
 

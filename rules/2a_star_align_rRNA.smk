@@ -129,7 +129,7 @@ rule rRNA_filtered_fastqc:
             mv {input.UNMAPPED1} {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R2_final_filtered.fq
             mv {input.UNMAPPED2} {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_final_filtered.fq
 
-            pigz -p{threads} {OUTDIR}/{wildcards.sample}/tmp/*.fq
+            pigz -p{threads} -f {OUTDIR}/{wildcards.sample}/tmp/*.fq
 
             mkdir -p {output.FQC_DIR}
 

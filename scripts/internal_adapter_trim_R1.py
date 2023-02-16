@@ -7,6 +7,9 @@
 #   bash:
 #       python scripts/internal_adapter_trim_R1.py TCTTCAGCGTTCCCGAGA /workdir/dwm269/totalRNA/STRS-HD/data/align_out_rRNA/SH4/internal_adapter_trim_R1.log 18 /workdir/dwm269/totalRNA/STRS-HD/data/align_out_rRNA/SH4/tmp/seqtk /workdir/dwm269/totalRNA/STRS-HD/data/align_out_rRNA/SH4/tmp/SH4_R1_adapterTrim.fq.gz /workdir/dwm269/totalRNA/STRS-HD/data/align_out_rRNA/SH4/tmp/SH4_R1_finalInternalTrim.fq.gz
 
+# R1 structure:
+#  [BB1- 8bp][Adapter Seq - 18bp][BB2|6bp][UMI-7bp][TTTTTTTTTTT]
+
 # imports
 import sys
 import os
@@ -48,22 +51,13 @@ def trim_fq(fq_in, fq_out, gz):
     for title, seq, qual in fq_iterator:
         read_count += 1
 
+        # Useful resource: https://www.bioinformaticscrashcourse.com/10.1_Alignment.html
         ## match score = 4, mismatch = -0.5
-        ## gap opening = -8, gap extension = -8
-        # alignment = pairwise2.align.localms(
-        #     seq, 
-        #     adapter_seq,
-        #     4, -0.5, -6, -6,
-        #     penalize_end_gaps =[True, True],
-        #     # score_only = True,
-        #     one_alignment_only=True
-        # )
-        
+        ## gap opening = -6, gap extension = -6
         alignment = pairwise2.align.localms(
             seq, 
             adapter_seq,
             4, -0.5, -6, -6,
-            # penalize_end_gaps =[True, True],
             # score_only = True,
             one_alignment_only=True
         )
@@ -89,8 +83,8 @@ def trim_fq(fq_in, fq_out, gz):
                 ins_count += 1
 
             ## Trim the first base in the read
-            # seq_out = seq[start-8:start]+seq[alignment[0].end:50]
-            # qual_out = qual[start-8:start]+qual[alignment[0].end:50]
+            # seq_out = seq[start-8:start]+seq[alignment[0].end:]
+            # qual_out = qual[start-8:start]+qual[alignment[0].end:]
 
             ## Trim the base closest to adapter
             seq_out = seq[0:8]+seq[alignment[0].end:]

@@ -137,37 +137,6 @@ rule compress_STAR_outs:
         )
 
 
-# filter the "raw" count matrix by the whitelist
-#TODO
-# rule STAR_mtx_whitelist_filter:
-#     input:
-#         # VELMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto/raw/spliced.mtx.gz",
-#         GENEMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/matrix.mtx.gz",
-#         GENEFULLMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw/matrix.mtx.gz"
-#     output:
-#         # VELMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto/raw_feature_bc_matrix_h5.h5",
-#         GENEMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw_feature_bc_matrix_h5.h5",
-#         GENEFULLMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw_feature_bc_matrix_h5.h5"
-#     params:
-#         # VELDIR = directory("{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto"),
-#         GENEDIR = directory("{OUTDIR}/{sample}/STARsolo/Solo.out/Gene"),
-#         GENEFULLDIR = directory("{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull")
-#     # conda:
-#     #     "STARsolo"
-#     threads:
-#         1
-#     run:
-        #"""mkdir {OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw_whitelist"""
-
-        #load raw matrix
-
-        #load whitelist
-
-        #filter matrix
-
-        # save mtx 
-
-
 #TODO add executable
 rule indexSortedBAM:
     input:
