@@ -50,33 +50,42 @@ def trim_fq(fq_in, fq_out, gz):
 
         ## match score = 4, mismatch = -0.5
         ## gap opening = -8, gap extension = -8
+        # alignment = pairwise2.align.localms(
+        #     seq, 
+        #     adapter_seq,
+        #     4, -0.5, -6, -6,
+        #     penalize_end_gaps =[True, True],
+        #     # score_only = True,
+        #     one_alignment_only=True
+        # )
+        
         alignment = pairwise2.align.localms(
             seq, 
             adapter_seq,
-            4, -0.5, -8, -8,
+            4, -0.5, -6, -6,
             # penalize_end_gaps =[True, True],
             # score_only = True,
             one_alignment_only=True
         )
 
         #For troubleshooting:
-        # if alignment[0].score > 55 and alignment[0].start > 9:
+        # if alignment[0].score < 60 and alignment[0].score > 55:# and alignment[0].start > 9:
         #     print(alignment[0])
         #     print(pairwise2.format_alignment(*alignment[0]))
-        #     print(seq[0:9]+seq[alignment[0].end:50])
+        #     print(seq[0:8]+seq[alignment[0].end:])
 
         # Trim seq and qual
         start = alignment[0].start
 
         # Acount for reads with deletions in `BB_1`
-        if start < 9: # Deletion in BB_1
-            offset = 9-start
-            seq_out = "N"*offset + seq[start:9] + seq[alignment[0].end:50]
-            qual_out = "!"*offset + qual[start:9] + qual[alignment[0].end:50]
+        if start < 8: # Deletion in BB_1
+            offset = 8-start
+            seq_out = "N"*offset + seq[start:8] + seq[alignment[0].end:]
+            qual_out = "!"*offset + qual[start:8] + qual[alignment[0].end:]
 
             del_count += 1
         else:
-            if start > 9: # Insertion in BB_1
+            if start > 8: # Insertion in BB_1
                 ins_count += 1
 
             ## Trim the first base in the read
@@ -84,10 +93,12 @@ def trim_fq(fq_in, fq_out, gz):
             # qual_out = qual[start-8:start]+qual[alignment[0].end:50]
 
             ## Trim the base closest to adapter
-            seq_out = seq[0:9]+seq[alignment[0].end:50]
-            qual_out = qual[0:9]+qual[alignment[0].end:50]
+            seq_out = seq[0:8]+seq[alignment[0].end:]
+            qual_out = qual[0:8]+qual[alignment[0].end:]
 
-        if len(seq_out) < 22: # Broken read; erase R1 and add `NNNNNNNNNN` with qval=0 (!!!!!!!!!!)         
+        # Broken read; erase R1 and add `NNNNNNNNNN` with qval=0 (!!!!!!!!!!)
+        # Alignment score cuttoff was determined by spot-checking ~100 bead barcodes, based on predicted adapter location
+        if len(seq_out) < 22 or alignment[0].score < 58: 
             seq_out = "N"*10 
             qual_out = "!"*10
             broken_count += 1
@@ -113,10 +124,10 @@ if n_cores > 1:
     )
 
     # Trim each chunked file, in parallel
-    # tmp_fqs_in = [f"stdin.part_00{n}.fastq" for n in list(range(1,n_cores))]
-    tmp_fqs_out = [f"{tmp_dir}/stdin.part_{str(n).zfill(3)}_trimmed.fastq" for n in list(range(1,n_cores))]
+    # tmp_fqs_in = [f"stdin.part_00{n}.fastq" for n in list(range(1,n_cores+1))]
+    tmp_fqs_out = [f"{tmp_dir}/stdin.part_{str(n).zfill(3)}_trimmed.fastq" for n in list(range(1,n_cores+1))]
 
-    items = [(f"{tmp_dir}/stdin.part_{str(n).zfill(3)}.fastq", f"{tmp_dir}/stdin.part_{str(n).zfill(3)}_trimmed.fastq", False) for n in list(range(1,n_cores))]
+    items = [(f"{tmp_dir}/stdin.part_{str(n).zfill(3)}.fastq", f"{tmp_dir}/stdin.part_{str(n).zfill(3)}_trimmed.fastq", False) for n in list(range(1,n_cores+1))]
     
     with multiprocessing.Pool(n_cores) as pool:
         multi_out = pool.starmap(trim_fq, items)
@@ -134,13 +145,13 @@ if n_cores > 1:
     # Merge and compress chunked/trimmed fastqs
     os.system(
         f"""
-        cat {" ".join(tmp_fqs_out)} > {fq1_out.replace('.gz','')}
+        cat {tmp_dir}/stdin.part_*_trimmed.fastq > {fq1_out.replace('.gz','')}
         pigz -p{n_cores} {fq1_out.replace('.gz','')}
         """
     )
 
     # Remove tmp fastqs
-    # for n in list(range(1,n_cores)):
+    # for n in list(range(1,n_cores+1)):
     #     if os.path.isfile(f"{tmp_dir}/stdin.part_{str(n).zfill(3)}.fastq"):
     #         os.remove()
     #     if os.path.isfile(f"{tmp_dir}/stdin.part_{str(n).zfill(3)}_trimmed.fastq"):
