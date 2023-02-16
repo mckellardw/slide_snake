@@ -3,11 +3,11 @@
 #TODO: split bam by strand and by chromosome, then dedup each chr!
 rule umitools_dedupBAM:
     input:
-        BB = "{OUTDIR}/{sample}/tmp/whitelist.txt",
-        SORTEDBAM = '{OUTDIR}/{sample}/Aligned.sortedByCoord.out.bam'
+        BB = "{OUTDIR}/{sample}/bb/whitelist.txt",
+        SORTEDBAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.out.bam'
     output:
-        DEDUPBAM = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.bam',
-        TMPBAM = temp('{OUTDIR}/{sample}/tmp.bam')
+        DEDUPBAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.bam',
+        TMPBAM = temp('{OUTDIR}/{sample}/tmp/tmp.bam')
     params:
         OUTPUT_PREFIX='{OUTDIR}/{sample}/umitools_dedup/{sample}',
         # TMPBAM = '{OUTDIR}/{sample}/tmp.bam'
