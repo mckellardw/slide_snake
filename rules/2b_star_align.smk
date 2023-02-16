@@ -64,8 +64,8 @@ rule STARsolo_align:
 
         # Select R2 based on alignment recipe
         if "total" in tmp_chemistry:
-            R1 = input.FILTERED_R1_FQ
-            R2 = input.FILTERED_R2_FQ
+            R1 = input.R1_FQ_FILTERED
+            R2 = input.R2_FQ_FILTERED
         else:
             R2 = input.R2_FQ
 
