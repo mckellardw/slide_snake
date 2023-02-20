@@ -55,9 +55,8 @@ rule umitools_dedupBAM:
             -S {output.DEDUPBAM}
             """
         )
-        # rm {params.TMPBAM}
-        # rm (params.TMPBAM).bai
 
+# Index the deduplicated .bam file
 rule umitools_indexDedupBAM:
     input:
         SORTEDBAM = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.bam'
