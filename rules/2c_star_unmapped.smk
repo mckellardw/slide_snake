@@ -53,10 +53,10 @@ rule blast_unmapped:
             echo "Number of unmapped reads: "
             grep -c ">" {params.TMP_FA}
 
-            vsearch --sortbysize {params.TMP_FA} --topn 1000 --output tmp.fa
+            vsearch --sortbysize {params.TMP_FA} --topn 1000 --output {OUTDIR}/{wildcards.sample}/top_1000.fa
 
             blastn -db {params.blastDB}/nt \
-            -query tmp.fa \
+            -query {OUTDIR}/{wildcards.sample}/top_1000.fa \
             -out {output.BLAST_R2} \
             -outfmt '6 qseqid sseqid stitle pident length mismatch gapopen qstart qend sstart send evalue bitscore' \
             -max_target_seqs 5 \
