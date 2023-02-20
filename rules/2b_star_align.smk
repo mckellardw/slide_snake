@@ -30,7 +30,7 @@ rule STARsolo_align:
         VELMAT = '{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto/raw/spliced.mtx'
     params:
         OUTDIR = config['OUTDIR'],
-        STAR_EXEC = config['STAR_EXEC'],
+        # STAR_EXEC = config['STAR_EXEC'],
         MEMLIMIT = config['MEMLIMIT']
     threads:
         config['CORES']
@@ -74,7 +74,7 @@ rule STARsolo_align:
             f"""
             mkdir -p {params.OUTDIR}/{wildcards.sample}/STARsolo
 
-            {params.STAR_EXEC} \
+            {STAR_EXEC} \
             --runThreadN {threads} \
             --outFileNamePrefix {params.OUTDIR}/{wildcards.sample}/STARsolo/ \
             --outSAMtype BAM SortedByCoordinate \
@@ -149,5 +149,5 @@ rule indexSortedBAM:
         "STARsolo"
     shell:
         """
-        samtools index -@ {threads} {input.SORTEDBAM}
+        {SAMTOOLS_EXEC} index -@ {threads} {input.SORTEDBAM}
         """

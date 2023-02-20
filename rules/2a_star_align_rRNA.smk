@@ -105,7 +105,7 @@ rule indexSortedBAM_rRNA:
     run:
         shell(
             f"""
-            samtools index -@ {threads} {input.SORTEDBAM}
+            {SAMTOOLS_EXEC} index -@ {threads} {input.SORTEDBAM}
             """
         )
 
