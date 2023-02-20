@@ -1,6 +1,8 @@
 # Remove reads that don't have a corrected spot/cell barcode with samtools, then remove duplicates w/ **umi-tools**
 ## High mem usage? Check here! https://umi-tools.readthedocs.io/en/latest/faq.html
 #TODO: split bam by strand and by chromosome, then dedup each chr!
+#TODO: add exec paths for samtools, bamtools
+#TODO: chr-split deduping
 rule umitools_dedupBAM:
     input:
         BB_WHITELIST = "{OUTDIR}/{sample}/bb/whitelist.txt",
@@ -29,30 +31,35 @@ rule umitools_dedupBAM:
         else:
             whitelist = input.BB_WHITELIST
 
+        # shell(
+        #     f"""
+        #     {SAMTOOLS_EXEC} view -1 -b \
+        #     -@ {threads} \
+        #     --tag-file CB:{whitelist} \
+        #     -F UB:Z:- \
+        #     {input.SORTEDBAM} \
+        #     > {output.TMPBAM}
+
+        #     {SAMTOOLS_EXEC} index \
+        #     -@ {threads} \
+        #     {output.TMPBAM}
+
+        #     {UMITOOLS_EXEC} dedup \
+        #     -I {output.TMPBAM} \
+        #     --extract-umi-method=tag \
+        #     --umi-tag=UB \
+        #     --cell-tag=CB \
+        #     --method=unique \
+        #     --per-cell \
+        #     --unmapped-reads=discard \
+        #     --output-stats={params.OUTPUT_PREFIX} \
+        #     --log {log} \
+        #     -S {output.DEDUPBAM}
+        #     """
+        # )
         shell(
             f"""
-            {SAMTOOLS_EXEC} view -1 -b \
-            -@ {threads} \
-            --tag-file CB:{whitelist} \
-            -F UB:Z:- \
-            {input.SORTEDBAM} \
-            > {output.TMPBAM}
-
-            {SAMTOOLS_EXEC} index \
-            -@ {threads} \
-            {output.TMPBAM}
-
-            {UMITOOLS_EXEC} dedup \
-            -I {output.TMPBAM} \
-            --extract-umi-method=tag \
-            --umi-tag=UB \
-            --cell-tag=CB \
-            --method=unique \
-            --per-cell \
-            --unmapped-reads=discard \
-            --output-stats={params.OUTPUT_PREFIX} \
-            --log {log} \
-            -S {output.DEDUPBAM}
+            bash scripts/chr_split_dedup.sh {input.SORTEDBAM} {whitelist} {threads} {output.DEDUPBAM} {OUTDIR}/{wildcards.sample}/tmp/dedup {log}
             """
         )
 
@@ -68,3 +75,16 @@ rule umitools_indexDedupBAM:
         """
         {SAMTOOLS_EXEC} index -@ {threads} {input.SORTEDBAM}
         """
+
+#TODO
+# rule strand_split_dedup_bam:
+#     input:
+#         SORTEDBAM = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.bam'
+#     output:
+#         BAI = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.bam.bai'
+#     threads:
+#         config['CORES']
+#     shell:
+#         """
+#         {SAMTOOLS_EXEC} index -@ {threads} {input.SORTEDBAM}
+#         """
