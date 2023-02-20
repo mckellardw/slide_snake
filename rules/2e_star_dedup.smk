@@ -20,13 +20,13 @@ rule umitools_dedupBAM:
         '{OUTDIR}/{sample}/umitools_dedup/dedup.log'
     shell:
         """
-        samtools view -1 -b \
+        {SAMTOOLS_EXEC} view -1 -b \
         -@ {threads} \
         --tag-file CB:{input.BB} \
         {input.SORTEDBAM} \
         > {output.TMPBAM}
 
-        samtools index \
+        {SAMTOOLS_EXEC} index \
         -@ {threads} \
         {output.TMPBAM}
 
@@ -56,5 +56,5 @@ rule umitools_indexDedupBAM:
         "STARsolo"
     shell:
         """
-        samtools index -@ {threads} {input.SORTEDBAM}
+        {SAMTOOLS_EXEC} index -@ {threads} {input.SORTEDBAM}
         """

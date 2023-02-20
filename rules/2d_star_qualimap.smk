@@ -15,14 +15,12 @@ rule qualimapQC:
         GENES_GTF = lambda wildcards: GTF_DICT[wildcards.sample]
     threads:
         1
-    conda:
-        "STARsolo"
     shell:
         """
         mkdir -p {output.qualimapDir}
         cd {output.qualimapDir}
 
-        qualimap rnaseq \
+        {QUALIMAP_EXEC} rnaseq \
         -bam {input.SORTEDBAM} \
         -gtf {params.GENES_GTF} \
         --sequencing-protocol strand-specific-forward \
