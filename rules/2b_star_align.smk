@@ -116,7 +116,8 @@ rule compress_STAR_outs:
         config["CORES"]
     run:
         tmp_chemistry = CHEM_DICT[wildcards.sample]
-        if tmp_chemistry in ["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
+        if "noTrim" in tmp_chemistry:
+        #["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
             shell(
                 f"""
                 cat {params.VELDIR}/raw/barcodes.tsv | sed 's/_//' > {params.VELDIR}/raw/barcodes_noUnderscore.tsv
