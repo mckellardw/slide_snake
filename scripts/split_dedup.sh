@@ -59,6 +59,7 @@ samtools view -1 -b \
 -F UB:Z:- \
 ${INBAM} \
 > ${TMPDIR}/filter.bam
+
 echo "Done." >> ${LOG}
 echo >> ${LOG}
 
