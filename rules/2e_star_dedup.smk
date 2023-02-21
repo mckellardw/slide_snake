@@ -59,7 +59,7 @@ rule umitools_dedupBAM:
         # )
         shell(
             f"""
-            bash scripts/chr_split_dedup.sh {input.SORTEDBAM} {whitelist} {threads} {output.DEDUPBAM} {OUTDIR}/{wildcards.sample}/tmp/dedup {log}
+            bash scripts/split_dedup.sh {input.SORTEDBAM} {whitelist} {threads} {output.DEDUPBAM} {OUTDIR}/{wildcards.sample}/tmp/dedup {log}
             """
         )
 
