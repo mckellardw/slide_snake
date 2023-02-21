@@ -88,6 +88,16 @@ rule compress_STAR_rRNA_outs:
     threads:
         config['CORES']        
     run:
+        tmp_chemistry = CHEM_DICT[wildcards.sample]
+        if "noTrim" in tmp_chemistry:
+        #["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
+            shell(
+                f"""
+                cat {params.GENEDIR}/raw/barcodes.tsv | sed 's/_//' > {params.GENEDIR}/raw/barcodes_noUnderscore.tsv
+                cat {params.GENEDIR}/filtered/barcodes.tsv | sed 's/_//' > {params.GENEDIR}/filtered/barcodes_noUnderscore.tsv
+                """
+            )
+
         shell(
             f"""
             pigz -p{threads} {params.GENEDIR}/*/*.tsv {params.GENEDIR}/*/*.mtx 
