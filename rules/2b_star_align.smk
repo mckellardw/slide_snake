@@ -7,9 +7,9 @@
 #TODO: add multiple chemistry compatibility (iterate through the list of space-delimited chemistries listed in sample sheet)
 rule STARsolo_align:
     input:
-        R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_adapterTrim.fq.gz',
-        R1_FQ_HardTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_finalHardTrim.fq.gz',
-        R1_FQ_InternalTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_finalInternalTrim.fq.gz',
+        R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
+        # R1_FQ_HardTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_HardTrim.fq.gz',
+        # R1_FQ_InternalTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_InternalTrim.fq.gz',
         R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz',
         R1_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R1_final_filtered.fq.gz',
         R2_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R2_final_filtered.fq.gz',
@@ -53,20 +53,21 @@ rule STARsolo_align:
         if "noTrim" in tmp_chemistry:
             # ["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
             whitelist = f"{input.BB_1} {input.BB_2}"
-            R1 = input.R1_FQ
+            # R1 = input.R1_FQ
         elif "internalTrim" in tmp_chemistry:
             # ["seeker_v3.1_internalTrim_total"]:
             whitelist = input.BB_WHITELIST
-            R1 = input.R1_FQ_InternalTrim
+            # R1 = input.R1_FQ_InternalTrim
         else:
             whitelist = input.BB_WHITELIST
-            R1 = input.R1_FQ_HardTrim
+            # R1 = input.R1_FQ_HardTrim
 
         # Select R2 based on alignment recipe
         if "total" in tmp_chemistry:
             R1 = input.R1_FQ_FILTERED
             R2 = input.R2_FQ_FILTERED
         else:
+            R1 = input.R1_FQ
             R2 = input.R2_FQ
 
         # Run STARsolo

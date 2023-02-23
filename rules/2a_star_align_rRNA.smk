@@ -3,9 +3,9 @@
 
 rule STARsolo_align_rRNA:
     input:
-        R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_adapterTrim.fq.gz',
-        R1_FQ_HardTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_finalHardTrim.fq.gz',
-        R1_FQ_InternalTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_finalInternalTrim.fq.gz',
+        R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
+        # R1_FQ_HardTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_HardTrim.fq.gz',
+        # R1_FQ_InternalTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_InternalTrim.fq.gz',
         R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz',
         BB_WHITELIST = "{OUTDIR}/{sample}/bb/whitelist.txt",
         BB_1 = "{OUTDIR}/{sample}/bb/whitelist_1.txt",
@@ -35,19 +35,19 @@ rule STARsolo_align_rRNA:
         extraSTAR = CHEMISTRY_SHEET["STAR.extra"][tmp_chemistry]
 
         #param handling for different alignment strategies
-        if "noTrim" in tmp_chemistry:
-            # ["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
-            whitelist = f"{input.BB_1} {input.BB_2}"
-            R1 = input.R1_FQ
-        elif "internalTrim" in tmp_chemistry:
-            # ["seeker_v3.1_internalTrim_total"]:
-            whitelist = input.BB_WHITELIST
-            R1 = input.R1_FQ_InternalTrim
-        else:
-            whitelist = input.BB_WHITELIST
-            R1 = input.R1_FQ_HardTrim
+        # if "noTrim" in tmp_chemistry:
+        #     # ["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
+        #     whitelist = f"{input.BB_1} {input.BB_2}"
+        #     R1 = input.R1_FQ
+        # elif "internalTrim" in tmp_chemistry:
+        #     # ["seeker_v3.1_internalTrim_total"]:
+        #     whitelist = input.BB_WHITELIST
+        #     R1 = input.R1_FQ_InternalTrim
+        # else:
+        #     whitelist = input.BB_WHITELIST
+        #     R1 = input.R1_FQ_HardTrim
 
-        R2 = input.R2_FQ
+        # R2 = input.R2_FQ
 
         shell(
             f"""
@@ -61,7 +61,7 @@ rule STARsolo_align_rRNA:
             --readFilesCommand zcat \
             --genomeDir {STAR_REF} \
             --limitBAMsortRAM={params.MEMLIMIT} \
-            --readFilesIn {R2} {R1} \
+            --readFilesIn {input.R2_FQ} {input.R1_FQ} \
             --clipAdapterType CellRanger4 \
             --outReadsUnmapped Fastx \
             --outSAMunmapped Within KeepPairs \
