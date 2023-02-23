@@ -21,20 +21,20 @@ LOG=$6
 mkdir -p ${TMPDIR}
 cd ${TMPDIR}
 
-echo "Log for chr_split_dedup:" > ${LOG}
-echo "Log info can be found in "${LOG}
+# echo "Log for chr_split_dedup:" > ${LOG}
+# echo "Log info can be found in "${LOG}
 
 PREFIX=`echo ${INBAM} | rev | cut -d / -f 1 | cut -d . -f 2- | rev`
 
-echo "Using "${PREFIX}" as file prefix..." >> ${LOG}
+# echo "Using "${PREFIX}" as file prefix..." >> ${LOG}
 
 # OUTBAM=${OUTDIR}/${PREFIX}_dedup.bam
 
-echo ".bam file location:    "${INBAM} >> ${LOG}
-echo "Max cores:             "${CORE} >> ${LOG}
-echo "Output location:       "${OUTBAM} >> ${LOG}
-echo >> ${LOG}
-echo >> ${LOG}
+# echo ".bam file location:    "${INBAM} >> ${LOG}
+# echo "Max cores:             "${CORE} >> ${LOG}
+# echo "Output location:       "${OUTBAM} >> ${LOG}
+# echo >> ${LOG}
+# echo >> ${LOG}
 
 # Check params...
 if [ ! -f ${INBAM} ]
@@ -50,48 +50,53 @@ then
 fi
 
 # Remove reads that don't have a barcode (CB)
-echo "Removing reads without 'CB' or 'UB' tags..." >> ${LOG}
-date >> ${LOG}
+# echo "Removing reads without 'CB' or 'UB' tags..." >> ${LOG}
+# date >> ${LOG}
 
-samtools view -1 -b \
+samtools view \
+-h \
 -@ ${CORE} \
 --tag-file CB:${BB} \
--F UB:Z:- \
 ${INBAM} \
+| grep -v "UB:Z:-" \
+| samtools view -bS \
 > ${TMPDIR}/filter.bam
 
-echo "Done." >> ${LOG}
-echo >> ${LOG}
+# echo "Done." >> ${LOG}
+# echo >> ${LOG}
 
 # split bam by chromosome/strand
-echo "Splitting by chromosome..." >> ${LOG}
-date >> ${LOG}
+# echo "Splitting by chromosome..." >> ${LOG}
+# date >> ${LOG}
 bamtools split \
 -in ${TMPDIR}/filter.bam \
 -reference
-echo "Done." >> ${LOG}
-echo >> ${LOG}
+# echo "Done." >> ${LOG}
+# echo >> ${LOG}
 
 BAMLIST=${TMPDIR}/BAMLIST.tmp
 ls *REF_*.bam > ${BAMLIST}
 
 # index split .bam's
-echo "Indexing split .bam files..." >> ${LOG}
-date >> ${LOG}
+# echo "Indexing split .bam files..." >> ${LOG}
+# date >> ${LOG}
 while read BAM; do
   samtools index \
   -@ ${CORE} \
   ${BAM}
 done < ${BAMLIST}
-echo "Done." >> ${LOG}
-echo >> ${LOG}
+# echo "Done." >> ${LOG}
+# echo >> ${LOG}
 
 # dedup resulting bams one-by-one
-echo "Deduplicating split .bam files..." >> ${LOG}
-date >> ${LOG}
+# echo "Deduplicating split .bam files..." >> ${LOG}
+# date >> ${LOG}
+
 #TODO: parallelize
+#TODO: add log and output-stats for each chromosome (need to chop up file names)
 while read BAM; do
   samtools index -@ ${CORE} ${BAM}
+
   umi_tools dedup \
   -I ${BAM} \
   --extract-umi-method=tag \
@@ -100,16 +105,16 @@ while read BAM; do
   --method=unique \
   --per-cell \
   --unmapped-reads=discard \
-  --log ${OUTDIR}/umitools.log \
   -S ${TMPDIR}/dedup_${BAM}
 done < ${BAMLIST}
+  # --log ${LOG} \
 # --output-stats={params.OUTPUT_PREFIX} \
-echo "Done." >> ${LOG}
-echo >> ${LOG}
+# echo "Done." >> ${LOG}
+# echo >> ${LOG}
 
 # merge, sort, and index dedup'ed .bams
-echo "Merging, sorting, and indexing deduplicated .bam files..." >> ${LOG}
-date >> ${LOG}
+echo "Merging, sorting, and indexing deduplicated .bam files..." 
+# date >> ${LOG}
 samtools merge \
 -f \
 -o ${TMPDIR}/dedup_merge.bam \
@@ -119,5 +124,5 @@ ${TMPDIR}/dedup_*REF_*.bam
 
 samtools sort ${TMPDIR}/dedup_merge.bam > ${OUTBAM}
 samtools index -@ ${CORE} ${OUTBAM} && rm -r ${TMPDIR}
-echo "Done." >> ${LOG}
-echo >> ${LOG}
+# echo "Done." >> ${LOG}
+# echo >> ${LOG}
