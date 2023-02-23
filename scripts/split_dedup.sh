@@ -26,15 +26,15 @@ cd ${TMPDIR}
 
 PREFIX=`echo ${INBAM} | rev | cut -d / -f 1 | cut -d . -f 2- | rev`
 
-# echo "Using "${PREFIX}" as file prefix..." >> ${LOG}
+# echo "Using "${PREFIX}" as file prefix..." 
 
 # OUTBAM=${OUTDIR}/${PREFIX}_dedup.bam
 
-# echo ".bam file location:    "${INBAM} >> ${LOG}
-# echo "Max cores:             "${CORE} >> ${LOG}
-# echo "Output location:       "${OUTBAM} >> ${LOG}
-# echo >> ${LOG}
-# echo >> ${LOG}
+echo ".bam file location:    "${INBAM} 
+echo "Max cores:             "${CORE} 
+echo "Output location:       "${OUTBAM} 
+echo 
+echo 
 
 # Check params...
 if [ ! -f ${INBAM} ]
@@ -50,8 +50,8 @@ then
 fi
 
 # Remove reads that don't have a barcode (CB)
-# echo "Removing reads without 'CB' or 'UB' tags..." >> ${LOG}
-# date >> ${LOG}
+echo "Removing reads without 'CB' or 'UB' tags..." 
+date 
 
 samtools view \
 -h \
@@ -62,35 +62,37 @@ ${INBAM} \
 | samtools view -bS \
 > ${TMPDIR}/filter.bam
 
-# echo "Done." >> ${LOG}
-# echo >> ${LOG}
+
+echo 
 
 # split bam by chromosome/strand
-# echo "Splitting by chromosome..." >> ${LOG}
-# date >> ${LOG}
+echo "Splitting by chromosome..." 
+date 
+
 bamtools split \
 -in ${TMPDIR}/filter.bam \
 -reference
-# echo "Done." >> ${LOG}
-# echo >> ${LOG}
+
+echo 
 
 BAMLIST=${TMPDIR}/BAMLIST.tmp
 ls *REF_*.bam > ${BAMLIST}
 
 # index split .bam's
-# echo "Indexing split .bam files..." >> ${LOG}
-# date >> ${LOG}
+echo "Indexing split .bam files..." 
+date 
+
 while read BAM; do
   samtools index \
   -@ ${CORE} \
   ${BAM}
 done < ${BAMLIST}
-# echo "Done." >> ${LOG}
-# echo >> ${LOG}
 
-# dedup resulting bams one-by-one
-# echo "Deduplicating split .bam files..." >> ${LOG}
-# date >> ${LOG}
+echo 
+
+# Dedup resulting bams one-by-one
+echo "Deduplicating split .bam files..." 
+date 
 
 #TODO: parallelize
 #TODO: add log and output-stats for each chromosome (need to chop up file names)
@@ -109,12 +111,13 @@ while read BAM; do
 done < ${BAMLIST}
   # --log ${LOG} \
 # --output-stats={params.OUTPUT_PREFIX} \
-# echo "Done." >> ${LOG}
-# echo >> ${LOG}
+
+echo 
 
 # merge, sort, and index dedup'ed .bams
 echo "Merging, sorting, and indexing deduplicated .bam files..." 
-# date >> ${LOG}
+date 
+
 samtools merge \
 -f \
 -o ${TMPDIR}/dedup_merge.bam \
@@ -124,5 +127,3 @@ ${TMPDIR}/dedup_*REF_*.bam
 
 samtools sort ${TMPDIR}/dedup_merge.bam > ${OUTBAM}
 samtools index -@ ${CORE} ${OUTBAM} && rm -r ${TMPDIR}
-# echo "Done." >> ${LOG}
-# echo >> ${LOG}

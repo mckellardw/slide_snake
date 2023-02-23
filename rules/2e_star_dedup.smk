@@ -10,16 +10,16 @@ rule umitools_dedupBAM:
         BB_2 = "{OUTDIR}/{sample}/bb/whitelist_2.txt",
         SORTEDBAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.out.bam'
     output:
-        DEDUPBAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.bam',
-        TMPBAM = temp('{OUTDIR}/{sample}/tmp/Aligned.sortedByCoord.CBfiltered.out.bam')
+        DEDUPBAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.bam'
+        # TMPBAM = temp('{OUTDIR}/{sample}/tmp/Aligned.sortedByCoord.CBfiltered.out.bam')
     params:
-        OUTPUT_PREFIX='{OUTDIR}/{sample}/umitools_dedup/{sample}',
+        # OUTPUT_PREFIX='{OUTDIR}/{sample}/umitools_dedup/{sample}'
         # TMPBAM = '{OUTDIR}/{sample}/tmp.bam'
     threads:
         config['CORES']
         #1
     log:
-        '{OUTDIR}/{sample}/umitools_dedup/dedup.log'
+        '{OUTDIR}/{sample}/dedup.log'
     run:
         tmp_chemistry = CHEM_DICT[wildcards.sample]
 
@@ -59,7 +59,7 @@ rule umitools_dedupBAM:
         # )
         shell(
             f"""
-            bash scripts/split_dedup.sh {input.SORTEDBAM} {whitelist} {threads} {output.DEDUPBAM} {OUTDIR}/{wildcards.sample}/tmp/dedup {log}
+            bash scripts/split_dedup.sh {input.SORTEDBAM} {whitelist} {threads} {output.DEDUPBAM} {OUTDIR}/{wildcards.sample}/tmp/dedup | tee {log}
             """
         )
 
