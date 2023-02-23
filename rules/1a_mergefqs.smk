@@ -13,11 +13,11 @@ rule merge_fastqs:
     #     "STARsolo"
     run:
         if len(params.R1_FQ.split(" "))==1 & len(params.R2_FQ.split(" "))==1: # shell for single fastq input
-            shell("cp {params.R1_FQ} {output.MERGED_R1_FQ}")
-            shell("cp {params.R2_FQ} {output.MERGED_R2_FQ}")
+            shell(f"cp {params.R1_FQ} {output.MERGED_R1_FQ}")
+            shell(f"cp {params.R2_FQ} {output.MERGED_R2_FQ}")
         else: # shell enablinging multi-fast input; concatenate inputs
             print("Concatenating",len(params.R1_FQ.split(" ")), ".fastq's for", wildcards.sample)
-            shell("mkdir -p {params.TMP_DIR}")
-            shell("zcat {params.R1_FQ} > {params.TMP_DIR}/{wildcards.sample}_R1.fq")
-            shell("zcat {params.R2_FQ} > {params.TMP_DIR}/{wildcards.sample}_R2.fq")
-            shell("pigz -p {threads} {params.TMP_DIR}/*.fq")
+            shell(f"mkdir -p {params.TMP_DIR}")
+            shell(f"zcat {params.R1_FQ} > {params.TMP_DIR}/{wildcards.sample}_R1.fq")
+            shell(f"zcat {params.R2_FQ} > {params.TMP_DIR}/{wildcards.sample}_R2.fq")
+            shell(f"pigz -p {threads} {params.TMP_DIR}/*.fq")
