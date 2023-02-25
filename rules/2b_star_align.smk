@@ -15,7 +15,8 @@ rule STARsolo_align:
         R2_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R2_final_filtered.fq.gz',
         BB_WHITELIST = "{OUTDIR}/{sample}/bb/whitelist.txt",
         BB_1 = "{OUTDIR}/{sample}/bb/whitelist_1.txt",
-        BB_2 = "{OUTDIR}/{sample}/bb/whitelist_2.txt"
+        BB_2 = "{OUTDIR}/{sample}/bb/whitelist_2.txt",
+        BB_ADAPTER = "{OUTDIR}/{sample}/bb/whitelist_adapter.txt"
     output:
         SORTEDBAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.out.bam', #TODO: add temp()
         UNMAPPED1 = '{OUTDIR}/{sample}/STARsolo/Unmapped.out.mate1',
@@ -58,6 +59,9 @@ rule STARsolo_align:
             # ["seeker_v3.1_internalTrim_total"]:
             whitelist = input.BB_WHITELIST
             # R1 = input.R1_FQ_InternalTrim
+        elif "adapterInsert" in tmp_chemistry
+            whitelist = input.BB_ADAPTER
+            # R1 = input.R1_FQ
         else:
             whitelist = input.BB_WHITELIST
             # R1 = input.R1_FQ_HardTrim

@@ -12,13 +12,13 @@
 # SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/slideseq_rnd1.csv
 # SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/SS_LKO_Rnd1.csv
 # SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/STRSHD_Rnd2.csv
-SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/SH_4_5.csv
+SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/SH_4.csv # _5
 # SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/SS_cohen_testes.csv
 # SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/ChickenSurgerySlideSeq.csv
 
 
 # STARsolo parameters
-CORES: 18 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
+CORES: 72 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
 MEMLIMIT: 500000000000 # limit in bytes
 
 ## Chemistry details (whitelists, barcode/UMI design, etc.)
@@ -34,7 +34,7 @@ CHEMISTRY_SHEET: resources/chemistry_sheet.csv
 # OUTDIR: /workdir/dwm269/spatial_lmna/data/align_out
 
 TMPDIR: /workdir/dwm269/totalRNA/STRS-HD/tmp
-OUTDIR: /workdir/dwm269/totalRNA/STRS-HD/data/align_out_rRNA
+OUTDIR: /workdir/dwm269/totalRNA/STRS-HD/data/align_out_rRNA2
 
 # TMPDIR: /workdir/dwm269/butcher_surgery/tmp
 # OUTDIR: /workdir/dwm269/butcher_surgery/data/align_out
@@ -49,7 +49,6 @@ STAR_EXEC: STAR # v2.7.10b /programs/STAR/STAR
 KALLISTO_EXEC: kallisto # v######
 BUST_EXEC: bustools # v######
 CUTADAPT_EXEC: cutadapt # v4.2
-# TRIMGALORE_EXEC: /home/dwm269/usr/bin/TrimGalore-0.6.6/trim_galore
 FASTQC_EXEC: fastqc # v######
 SAMTOOLS_EXEC: samtools
 UMITOOLS_EXEC: umi_tools
@@ -57,9 +56,13 @@ QUALIMAP_EXEC: qualimap
 BAM2SPLITBW: /home/dwm269/DWM_utils/seq_utils/bam2splitBigWig.sh #Custom function in DWM_utils that splits a bam file by strand and converts it into bigwig format
 FASTX_COLLAPSER: fastx_collapser
 BLASTDB: /shared_data/genome_db/BLAST_NCBI # path to where the nt BLAST database is stored
-# PICARD_EXEC: /home/dwm269/miniconda3/envs/STARsolo/share/picard-2.26.10-0/picard.jar
 
 ########################################################################################################
 # Resources - file paths
 ########################################################################################################
 FASTQC_ADAPTERS: resources/fastqc_adapters.txt #/home/dwm269/slide_snake/
+
+########################################################################################################
+# Library details
+########################################################################################################
+R1_INTERNAL_ADAPTER: "TCTTCAGCGTTCCCGAGA"

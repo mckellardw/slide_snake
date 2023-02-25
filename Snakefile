@@ -65,7 +65,7 @@ rule all:
         # expand('{OUTDIR}/{sample}/{REF}/Solo.out/GeneFull/raw/UniqueAndMultEM.h5ad', OUTDIR=config['OUTDIR'], sample=SAMPLES, REF=["STARsolo_rRNA", "STARsolo"]), 
         # expand('{OUTDIR}/{sample}/{REF}/Solo.out/GeneFull/raw/barcodes_noUnderscore.tsv.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES, REF=["STARsolo_rRNA", "STARsolo"]), #Barcode lists w/ underscores removed
         expand('{OUTDIR}/{sample}/{REF}/Solo.out/GeneFull/raw/matrix.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES, REF=["STARsolo_rRNA", "STARsolo"]), #STAR count mats
-        expand('{OUTDIR}/{sample}/kb/counts_unfiltered/output.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), #kallisto count mats
+        # expand('{OUTDIR}/{sample}/kb/counts_unfiltered/output.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), #kallisto count mats
         expand('{OUTDIR}/{sample}/qualimap/qualimapReport.html', OUTDIR=config['OUTDIR'], sample=SAMPLES), # alignment QC qith qualimap | requires deduped input!
         expand('{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES), #REF=["STARsolo_rRNA", "STARsolo"]), # umi_tools deduplicated .bam
         # expand('{OUTDIR}/{sample}/{REF}/Aligned.sortedByCoord.dedup.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES, REF=["STARsolo_rRNA", "STARsolo"]), # strand-split bigWigs
