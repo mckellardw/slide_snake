@@ -9,7 +9,8 @@ rule STARsolo_align_rRNA:
         R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz',
         BB_WHITELIST = "{OUTDIR}/{sample}/bb/whitelist.txt",
         BB_1 = "{OUTDIR}/{sample}/bb/whitelist_1.txt",
-        BB_2 = "{OUTDIR}/{sample}/bb/whitelist_2.txt"
+        BB_2 = "{OUTDIR}/{sample}/bb/whitelist_2.txt",
+        BB_ADAPTER = "{OUTDIR}/{sample}/bb/whitelist_adapter.txt"
     output:
         SORTEDBAM = '{OUTDIR}/{sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam', #TODO: add temp()
         UNMAPPED1 = '{OUTDIR}/{sample}/STARsolo_rRNA/Unmapped.out.mate1',
@@ -34,17 +35,18 @@ rule STARsolo_align_rRNA:
         soloAdapter = CHEMISTRY_SHEET["STAR.soloAdapter"][tmp_chemistry]
         extraSTAR = CHEMISTRY_SHEET["STAR.extra"][tmp_chemistry]
 
-        #param handling for different alignment strategies
-        # if "noTrim" in tmp_chemistry:
-        #     # ["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
-        #     whitelist = f"{input.BB_1} {input.BB_2}"
+        # Params for different barcode handling strategies
+        if "noTrim" in tmp_chemistry:
+            whitelist = f"{input.BB_1} {input.BB_2}"
         #     R1 = input.R1_FQ
-        # elif "internalTrim" in tmp_chemistry:
-        #     # ["seeker_v3.1_internalTrim_total"]:
-        #     whitelist = input.BB_WHITELIST
+        elif "internalTrim" in tmp_chemistry:
+            whitelist = input.BB_WHITELIST
         #     R1 = input.R1_FQ_InternalTrim
-        # else:
-        #     whitelist = input.BB_WHITELIST
+        elif "adapterInsert" in tmp_chemistry
+            whitelist = input.BB_ADAPTER
+        #     R1 = input.R1_FQ
+        else:
+            whitelist = input.BB_WHITELIST
         #     R1 = input.R1_FQ_HardTrim
 
         # R2 = input.R2_FQ
