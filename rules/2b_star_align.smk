@@ -59,7 +59,7 @@ rule STARsolo_align:
             # ["seeker_v3.1_internalTrim_total"]:
             whitelist = input.BB_WHITELIST
             # R1 = input.R1_FQ_InternalTrim
-        elif "adapterInsert" in tmp_chemistry
+        elif "adapterInsert" in tmp_chemistry:
             whitelist = input.BB_ADAPTER
             # R1 = input.R1_FQ
         else:
