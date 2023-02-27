@@ -80,8 +80,8 @@ rule removeLinker_R1:
     output:
         FINAL_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_HardTrim.fq.gz')
     params:
-        script = "scripts/linkerRemove_R1.awk",
-        CB1end = 8, #TODO- move to config!
+        script = "scripts/hardTrimFq.awk",
+        CB1end = 8, #TODO- move to config? or chemistry_sheet?
         CB2start = 27,
         CB2end = 42
     threads:

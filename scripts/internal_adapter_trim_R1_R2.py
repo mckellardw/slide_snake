@@ -5,7 +5,7 @@
 #       python scripts/internal_adapter_trim_R1.py {params.INTERNAL_ADAPTER} {log} {threads} {params.TMPDIR} {input.MERGED_R1_FQ} {output.FINAL_R1_FQ}
 #
 #   bash:
-#       python scripts/internal_adapter_trim_R1.py TCTTCAGCGTTCCCGAGA /workdir/dwm269/totalRNA/STRS-HD/data/align_out_rRNA/SH4/internal_adapter_trim_R1.log 18 /workdir/dwm269/totalRNA/STRS-HD/data/align_out_rRNA/SH4/tmp/seqtk /workdir/dwm269/totalRNA/STRS-HD/data/align_out_rRNA/SH4/tmp/SH4_R1_adapterTrim.fq.gz /workdir/dwm269/totalRNA/STRS-HD/data/align_out_rRNA/SH4/tmp/SH4_R1_finalInternalTrim.fq.gz
+#       python scripts/internal_adapter_trim_R1.py TCTTCAGCGTTCCCGAGA /workdir/dwm269/totalRNA/STRS-HD/data/align_out_rRNA/SH4/internal_adapter_trim_R1.log 18 /workdir/dwm269/totalRNA/STRS-HD/data/align_out_rRNA/SH4/tmp/seqkit /workdir/dwm269/totalRNA/STRS-HD/data/align_out_rRNA/SH4/tmp/SH4_R1_adapterTrim.fq.gz /workdir/dwm269/totalRNA/STRS-HD/data/align_out_rRNA/SH4/tmp/SH4_R1_finalInternalTrim.fq.gz
 
 # R1 structure:
 #  [BB1- 8bp][Adapter Seq - 18bp][BB2|6bp][UMI-7bp][TTTTTTTTTTT]
@@ -25,8 +25,8 @@ n_cores = int(sys.argv[3])
 tmp_dir = sys.argv[4] 
 fq1_in = sys.argv[5]
 fq1_out = sys.argv[6]
-# fq2_in = sys.argv[7]
-# fq2_out = sys.argv[8]
+fq2_in = sys.argv[7]
+fq2_out = sys.argv[8]
 
 #TODO: add in read filtering for both R1 and R2 for reads which have alignment[0].score < 50
 #TODO: fix indentation in log files
@@ -113,7 +113,7 @@ if n_cores > 1:
     # Split .fq file into {n_core} chunks
     os.system(
         f"""
-        zcat {fq1_in} | seqkit split2 -p {n_cores} -O {tmp_dir} --force
+        seqkit split2 -1 {fq1_in} -2 {fq2_in} -p {n_cores} -O {tmp_dir} --force 
         """
     )
 
@@ -159,10 +159,10 @@ if n_cores > 1:
     with open(log_out, "w") as text_file:
         text_file.write(
             f"""
-            Total read count:         {read_count:,}
-            Insertion count in BB_1:  {ins_count:,}
-            Deletion count in BB_2:   {del_count:,}
-            Reads trimmed below 22bp: {broken_count:,}
+Total read count:         {read_count:,}
+Insertion count in BB_1:  {ins_count:,}
+Deletion count in BB_2:   {del_count:,}
+Reads trimmed below 22bp: {broken_count:,}
             """
         )
 else:
@@ -180,10 +180,10 @@ else:
     with open(log_out, "w") as text_file:
         text_file.write(
             f"""
-            Total read count:         {read_count:,}
-            Insertion count in BB_1:  {ins_count:,}
-            Deletion count in BB_2:   {del_count:,}
-            Reads trimmed below 22bp: {broken_count:,}
+Total read count:         {read_count:,}
+Insertion count in BB_1:  {ins_count:,}
+Deletion count in BB_2:   {del_count:,}
+Reads trimmed below 22bp: {broken_count:,}
             """
         )
 

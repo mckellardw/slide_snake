@@ -42,7 +42,7 @@ rule STARsolo_align_rRNA:
         elif "internalTrim" in tmp_chemistry:
             whitelist = input.BB_WHITELIST
         #     R1 = input.R1_FQ_InternalTrim
-        elif "adapterInsert" in tmp_chemistry
+        elif "adapterInsert" in tmp_chemistry:
             whitelist = input.BB_ADAPTER
         #     R1 = input.R1_FQ
         else:
