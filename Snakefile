@@ -12,7 +12,7 @@ import scipy.sparse
 # Config file
 ########################################################################################################
 configfile:'config.yaml'
-CHEMISTRY_SHEET = pd.read_csv(config["CHEMISTRY_SHEET"], na_filter=False,index_col=0) #"resources/chemistry_sheet.csv"
+RECIPE_SHEET = pd.read_csv(config["RECIPE_SHEET"], na_filter=False,index_col=0) #"resources/recipe_sheet.csv"
 ########################################################################################################
 # Directories and locations
 ########################################################################################################
@@ -41,8 +41,8 @@ QUALIMAP_EXEC = config["QUALIMAP_EXEC"]
 ########################################################################################################
 # Pre-run setup
 ########################################################################################################
-# Build dictionaries of chemistries & species to use for alignment
-CHEM_DICT = {} # Dictionary of chemistry recipe to use for each sample
+# Build dictionaries of recipes & species to use for alignment
+RECIPE_DICT = {} # Dictionary of recipes to use for each sample
 rRNA_DICT = {} # Dictionary of rRNA reference genomes to use
 REF_DICT = {} # Dictionary of reference genomes to use
 GTF_DICT = {} # Dictionary of gene annotations (.gtf format)
@@ -51,7 +51,7 @@ T2G_DICT = {} # Dictionary of kallisto transcript-to-gene maps
 BB_DICT = {} # Dictionary of bead barcode maps
 for i in range(0,SAMPLE_SHEET.shape[0]):
     tmp_sample = list(SAMPLE_SHEET["sampleID"])[i]
-    CHEM_DICT[tmp_sample] = list(SAMPLE_SHEET["chemistry"])[i]
+    RECIPE_DICT[tmp_sample] = list(SAMPLE_SHEET["recipe"])[i] 
     rRNA_DICT[tmp_sample] = list(SAMPLE_SHEET["STAR_rRNA_ref"])[i]
     REF_DICT[tmp_sample] = list(SAMPLE_SHEET["STAR_ref"])[i]
     GTF_DICT[tmp_sample] = list(SAMPLE_SHEET["genes_gtf"])[i]

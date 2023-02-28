@@ -22,16 +22,18 @@ Three Prime adapter(s):
 - "T" homopolymers [**100-T**]
 - Nextera adapter sequence [**CTGTCTCTTATA**]
 - Reverse complement of Nextera sequence [**TATAAGAGACAG**] 
-- SlideSeq template switch olgo (TSO) - remove any polyadenylated TSOs [**AAGCTGGTATCAACGCAGAGTGAATGGG**]
+- Curio template switch olgo (TSO) - remove any polyadenylated TSOs [**AAGCTGGTATCAACGCAGAGTGAATGGG**]
+- Curio R1 internal adapter - shows up in R2, and used for R1 trimming [**TCTTCAGCGTTCCCGAGA**]
+- Reverse of Curio R1 adapter [**AGAGCCCTTGCGACTTCT**]
 - Illumina unversal sequence [**AGATCGGAAGAG**]
 
 
 ## Alignment:
 - After adapter trimming, reads are aligned with `STARsolo` and `kallisto`/`bustools` to generate count matrices
 - Outputs are in `{SAMPLE_ID}/STARsolo/Solo.out` & `{SAMPLE_ID}/kb/counts_unfiltered`
-- Different recipes are written out in `resources/chemistry_sheet.csv`, and must be specified for each sample within the sample sheet
+- Different recipes are written out in `resources/recipe_sheet.csv`, and must be specified for each sample within the sample sheet
 
-### Chemistry/recipe descriptions:
+### Recipe descriptions:
 - `seeker_v3.1` - Hard trim the adapter read positions in R1, and use the best barcode correction algorithms in STARsolo
 - `seeker_v3.1_noTrim` - No hard trimming, and use the base positions for barcode/UMI (*Note*, this recipe doesn't work well w/ Curio Seeker b/c of in/del issues w/ the barcode synthesis)
 - `seeker_v3.1_noTrimMatchLinker` - Match the adapter sequence on R1 (w/ 2 mismatches allowed) and infer barcodes/UMIs from that position (*Note* best performer w/ Curio data)
@@ -82,16 +84,16 @@ Three Prime adapter(s):
 │   ├── output.sorted.bus
 │   ├── run_info.json
 │   └── transcripts.txt
-├── postTrim_fastqc_R1_out
+├── postTrim_fastqc_R1
 │   ├── {SAMPLE_ID}_R1_adapterTrim_fastqc.html
 │   └── {SAMPLE_ID}_R1_adapterTrim_fastqc.zip
-├── postTrim_fastqc_R2_out
+├── postTrim_fastqc_R2
 │   ├── {SAMPLE_ID}_R2_final_fastqc.html
 │   └── {SAMPLE_ID}_R2_final_fastqc.zip
-├── preTrim_fastqc_R1_out
+├── preTrim_fastqc_R1
 │   ├── {SAMPLE_ID}_R1_fastqc.html
 │   └── {SAMPLE_ID}_R1_fastqc.zip
-├── preTrim_fastqc_R2_out
+├── preTrim_fastqc_R2
 │   ├── {SAMPLE_ID}_R2_fastqc.html
 │   └── {SAMPLE_ID}_R2_fastqc.zip
 ├── qualimap
@@ -189,7 +191,7 @@ Three Prime adapter(s):
 │   ├── whitelist_1.txt
 │   ├── whitelist_2.txt
 │   └── whitelist.txt
-├── Unmapped_fastqc_out
+├── Unmapped_fastqc
 │   ├── Unmapped.out.mate1_fastqc.html
 │   ├── Unmapped.out.mate1_fastqc.zip
 │   ├── Unmapped.out.mate2_fastqc.html

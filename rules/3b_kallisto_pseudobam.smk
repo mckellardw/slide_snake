@@ -1,4 +1,4 @@
-
+# TODO- update for different recipes
 rule kallisto_quant_bulk:
     input:
         FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final_trimmed.fq.gz',
@@ -16,9 +16,9 @@ rule kallisto_quant_bulk:
     threads:
         config['CORES']
     run:
-        tmp_chemistry = CHEM_DICT[wildcards.sample]
+        tmp_recipe = RECIPE_DICT[wildcards.sample]
         KB_IDX = IDX_DICT[wildcards.sample]
-        BB_WHITELIST = f"{input.BB}"
+        BB_WHITELIST = f"{input.BB}" 
 
         STAR_REF = REF_DICT[wildcards.sample] + "/chrNameLength.txt"
         GENES_GTF = GTF_DICT[wildcards.sample]

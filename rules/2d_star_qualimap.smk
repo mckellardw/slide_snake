@@ -3,11 +3,10 @@
 ## QC on STAR outputs
 #############################################
 
-## qualimap on aligned reads
-#TODO- switch to dedup'ed .bam, once I re-write umitools deduplication
+## qualimap on deduplicated/aligned reads
 rule qualimapQC:
     input:
-        SORTEDBAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.out.bam'
+        SORTEDBAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.bam'
     output:
         qualimapDir = directory('{OUTDIR}/{sample}/qualimap'),
         fastqcReport = '{OUTDIR}/{sample}/qualimap/qualimapReport.html'
@@ -15,18 +14,20 @@ rule qualimapQC:
         GENES_GTF = lambda wildcards: GTF_DICT[wildcards.sample]
     threads:
         1
-    shell:
-        """
-        mkdir -p {output.qualimapDir}
-        cd {output.qualimapDir}
+    run:
+        shell(
+            f"""
+            mkdir -p {output.qualimapDir}
+            cd {output.qualimapDir}
 
-        {QUALIMAP_EXEC} rnaseq \
-        -bam {input.SORTEDBAM} \
-        -gtf {params.GENES_GTF} \
-        --sequencing-protocol strand-specific-forward \
-        --sorted \
-        --java-mem-size=8G \
-        -outdir {output.qualimapDir} \
-        -outformat html
-        """
+            {QUALIMAP_EXEC} rnaseq \
+            -bam {input.SORTEDBAM} \
+            -gtf {params.GENES_GTF} \
+            --sequencing-protocol strand-specific-forward \
+            --sorted \
+            --java-mem-size=8G \
+            -outdir {output.qualimapDir} \
+            -outformat html
+            """ 
+        )
         # -nt {threads} \

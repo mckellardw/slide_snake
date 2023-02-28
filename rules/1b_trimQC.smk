@@ -81,13 +81,13 @@ rule preTrim_FastQC_R2:
 #         FINAL_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_HardTrim.fq.gz')
 #     params:
 #         script = "scripts/hardTrimFq.awk",
-#         CB1end = 8, #TODO- move to config? or chemistry_sheet?
+#         CB1end = 8, #TODO- move to config? or recipe_sheet?
 #         CB2start = 27,
 #         CB2end = 42
 #     threads:
 #         config['CORES']
 #     run:
-#         # tmp_chemistry = CHEM_DICT[wildcards.sample]
+#         # tmp_recipe = CHEM_DICT[wildcards.sample]
 #         shell(
 #             f"""
 #             zcat {input.R1_FQ} | \
@@ -105,7 +105,7 @@ rule R1_trimming:
         FINAL_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_Trimmed.fq.gz')
     params:
         script = "scripts/hardTrimFq.awk",
-        CB1end = 8, #TODO- move to config? or chemistry_sheet?
+        CB1end = 8, #TODO- move to config? or recipe_sheet?
         CB2start = 27,
         CB2end = 42,
         TMPDIR = "{OUTDIR}/{sample}/tmp/seqkit",
@@ -113,11 +113,11 @@ rule R1_trimming:
     threads:
         config['CORES']
     run:
-        tmp_chemistry = CHEM_DICT[wildcards.sample]
-        R1_LENGTH = CHEMISTRY_SHEET["R1.finalLength"][tmp_chemistry]
+        tmp_recipe = CHEM_DICT[wildcards.sample]
+        R1_LENGTH = RECIPE_SHEET["R1.finalLength"][tmp_recipe]
 
         #param handling for different alignment strategies
-        if "noTrim" in tmp_chemistry:
+        if "noTrim" in tmp_recipe:
             R1 = input.R1_FQ
             shell( # Rename R1_FQ if no trimming needed
                 f"""
@@ -125,7 +125,7 @@ rule R1_trimming:
                 echo "No trimming performed on {R1}..." {log}
                 """
             )
-        elif "internalTrim" in tmp_chemistry:
+        elif "internalTrim" in tmp_recipe:
             R1 = input.R1_FQ_InternalTrim
             shell( # Internal trimming to cut out the adapter sequence
                 f"""
@@ -182,13 +182,13 @@ rule cutadapt:
     log:
         log = '{OUTDIR}/{sample}/cutadapt.log'
     run:
-        tmp_chemistry = CHEM_DICT[wildcards.sample]
-        R1_LENGTH = CHEMISTRY_SHEET["R1.finalLength"][tmp_chemistry]
+        tmp_recipe = CHEM_DICT[wildcards.sample]
+        R1_LENGTH = RECIPE_SHEET["R1.finalLength"][tmp_recipe]
 
         #param handling for different alignment strategies
-        # if "noTrim" in tmp_chemistry:
+        # if "noTrim" in tmp_recipe:
         #     R1 = input.R1_FQ
-        # elif "internalTrim" in tmp_chemistry:
+        # elif "internalTrim" in tmp_recipe:
         #     R1 = input.R1_FQ_InternalTrim
         # else:
         #     R1 = input.R1_FQ_HardTrim

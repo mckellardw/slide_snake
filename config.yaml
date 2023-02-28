@@ -12,17 +12,17 @@
 # SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/slideseq_rnd1.csv
 # SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/SS_LKO_Rnd1.csv
 # SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/STRSHD_Rnd2.csv
-SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/SH_4.csv # _5
+SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/SH_4_5.csv # _5
 # SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/SS_cohen_testes.csv
 # SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/ChickenSurgerySlideSeq.csv
 
 
 # STARsolo parameters
-CORES: 72 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
+CORES: 24 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
 MEMLIMIT: 500000000000 # limit in bytes
 
-## Chemistry details (whitelists, barcode/UMI design, etc.)
-CHEMISTRY_SHEET: resources/chemistry_sheet.csv
+## Recipe details (whitelists, barcode/UMI design, etc.)
+RECIPE_SHEET: resources/recipe_sheet.csv
 
 ########################################################################################################
 # Important directory file paths
