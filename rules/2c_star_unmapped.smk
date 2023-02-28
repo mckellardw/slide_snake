@@ -12,12 +12,12 @@ rule unmapped_fastqc:
         UNMAPPED2_FQ = '{OUTDIR}/{sample}/STARsolo/Unmapped.out.mate2.fastq.gz',
         FQC_DIR = directory('{OUTDIR}/{sample}/Unmapped_fastqc_out')
     params:
-        FASTQC_EXEC = config['FASTQC_EXEC'],
         FASTQC_ADAPTERS = config['FASTQC_ADAPTERS']
     threads:
         config['CORES']
-    shell:
-        """
+    run:
+    shell(
+        f"""
         mv {input.UNMAPPED1} {input.UNMAPPED2}.fastq
         mv {input.UNMAPPED2} {input.UNMAPPED1}.fastq
 
@@ -25,12 +25,13 @@ rule unmapped_fastqc:
 
         mkdir -p {output.FQC_DIR}
 
-        {params.FASTQC_EXEC} \
+        {FASTQC_EXEC} \
         -o {output.FQC_DIR} \
         -t {threads} \
         -a {params.FASTQC_ADAPTERS} \
         {output.UNMAPPED1_FQ} {output.UNMAPPED2_FQ}
         """
+    )
 
 # Only BLAST R2, which contains the insert (converts .fq to .fa, then removes the .fa file)
 ## TODO: change demux step to fastx-collapser
@@ -43,7 +44,6 @@ rule blast_unmapped:
         config['CORES']
     params:
         blastDB = config['BLASTDB'],
-        FASTX_COLLAPSER = config['FASTX_COLLAPSER'],
         TMP_FA = '{OUTDIR}/{sample}/Unmapped.out.mate2.fa'
     run:
         shell(

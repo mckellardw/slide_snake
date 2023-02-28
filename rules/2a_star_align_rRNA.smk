@@ -4,8 +4,6 @@
 rule STARsolo_align_rRNA:
     input:
         R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
-        # R1_FQ_HardTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_HardTrim.fq.gz',
-        # R1_FQ_InternalTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_InternalTrim.fq.gz',
         R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz',
         BB_WHITELIST = "{OUTDIR}/{sample}/bb/whitelist.txt",
         BB_1 = "{OUTDIR}/{sample}/bb/whitelist_1.txt",
@@ -23,26 +21,26 @@ rule STARsolo_align_rRNA:
     threads:
         config['CORES']
     run: 
-        tmp_chemistry = CHEM_DICT[wildcards.sample]
+        tmp_recipe = RECIPE_DICT[wildcards.sample]
         STAR_REF = rRNA_DICT[wildcards.sample] # use rRNA ref
         nBB = sum(1 for line in open(input.BB_WHITELIST)) # get number of bead barcodes for filtered count matrix, `--soloCellFilter`
 
         #TODO: add try catches
-        soloType = CHEMISTRY_SHEET["STAR.soloType"][tmp_chemistry]
-        soloUMI = CHEMISTRY_SHEET["STAR.soloUMI"][tmp_chemistry]
-        soloCB = CHEMISTRY_SHEET["STAR.soloCB"][tmp_chemistry]
-        soloCBmatchWLtype = CHEMISTRY_SHEET["STAR.soloCBmatchWLtype"][tmp_chemistry]
-        soloAdapter = CHEMISTRY_SHEET["STAR.soloAdapter"][tmp_chemistry]
-        extraSTAR = CHEMISTRY_SHEET["STAR.extra"][tmp_chemistry]
+        soloType = RECIPE_SHEET["STAR.soloType"][tmp_recipe]
+        soloUMI = RECIPE_SHEET["STAR.soloUMI"][tmp_recipe]
+        soloCB = RECIPE_SHEET["STAR.soloCB"][tmp_recipe]
+        soloCBmatchWLtype = RECIPE_SHEET["STAR.soloCBmatchWLtype"][tmp_recipe]
+        soloAdapter = RECIPE_SHEET["STAR.soloAdapter"][tmp_recipe]
+        extraSTAR = RECIPE_SHEET["STAR.extra"][tmp_recipe]
 
         # Params for different barcode handling strategies
-        if "noTrim" in tmp_chemistry:
+        if "noTrim" in tmp_recipe:
             whitelist = f"{input.BB_1} {input.BB_2}"
         #     R1 = input.R1_FQ
-        elif "internalTrim" in tmp_chemistry:
+        elif "internalTrim" in tmp_recipe:
             whitelist = input.BB_WHITELIST
         #     R1 = input.R1_FQ_InternalTrim
-        elif "adapterInsert" in tmp_chemistry:
+        elif "adapterInsert" in tmp_recipe:
             whitelist = input.BB_ADAPTER
         #     R1 = input.R1_FQ
         else:
@@ -90,8 +88,8 @@ rule compress_STAR_rRNA_outs:
     threads:
         config['CORES']        
     run:
-        tmp_chemistry = CHEM_DICT[wildcards.sample]
-        if "noTrim" in tmp_chemistry:
+        tmp_recipe = RECIPE_DICT[wildcards.sample]
+        if "noTrim" in tmp_recipe:
         #["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
             shell(
                 f"""

@@ -20,11 +20,11 @@ rule kallisto_align:
     priority:
         42
     run:
-        tmp_chemistry = CHEM_DICT[wildcards.sample]
+        tmp_recipe = RECIPE_DICT[wildcards.sample]
         KB_IDX = IDX_DICT[wildcards.sample]
         BB_WHITELIST = f"{input.BB}"
         
-        KB_X = CHEMISTRY_SHEET["kb.x"][tmp_chemistry]
+        KB_X = RECIPE_SHEET["kb.x"][tmp_recipe]
 
         shell(
             f"""

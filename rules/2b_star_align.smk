@@ -4,7 +4,7 @@
 # Make output directory, align fastqs, and generate raw/filtered feature/cell-barcode matrices
 #   Info for STARsolo command line paramaters: https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md
 
-#TODO: add multiple chemistry compatibility (iterate through the list of space-delimited chemistries listed in sample sheet)
+#TODO: add multiple recipe compatibility (iterate through the list of space-delimited chemistries listed in sample sheet)
 rule STARsolo_align:
     input:
         R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
@@ -31,35 +31,34 @@ rule STARsolo_align:
         VELMAT = '{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto/raw/spliced.mtx'
     params:
         OUTDIR = config['OUTDIR'],
-        # STAR_EXEC = config['STAR_EXEC'],
         MEMLIMIT = config['MEMLIMIT']
     threads:
         config['CORES']
     priority:
         42
     run:
-        tmp_chemistry = CHEM_DICT[wildcards.sample]
+        tmp_recipe = RECIPE_DICT[wildcards.sample]
         STAR_REF = REF_DICT[wildcards.sample] # Use rRNA reference
         nBB = sum(1 for line in open(input.BB_WHITELIST)) # get number of bead barcodes for filtered count matrix, `--soloCellFilter`
 
         #TODO: add try catches
-        soloType = CHEMISTRY_SHEET["STAR.soloType"][tmp_chemistry]
-        soloUMI = CHEMISTRY_SHEET["STAR.soloUMI"][tmp_chemistry]
-        soloCB = CHEMISTRY_SHEET["STAR.soloCB"][tmp_chemistry]
-        soloCBmatchWLtype = CHEMISTRY_SHEET["STAR.soloCBmatchWLtype"][tmp_chemistry]
-        soloAdapter = CHEMISTRY_SHEET["STAR.soloAdapter"][tmp_chemistry]
-        extraSTAR = CHEMISTRY_SHEET["STAR.extra"][tmp_chemistry]
+        soloType = RECIPE_SHEET["STAR.soloType"][tmp_recipe]
+        soloUMI = RECIPE_SHEET["STAR.soloUMI"][tmp_recipe]
+        soloCB = RECIPE_SHEET["STAR.soloCB"][tmp_recipe]
+        soloCBmatchWLtype = RECIPE_SHEET["STAR.soloCBmatchWLtype"][tmp_recipe]
+        soloAdapter = RECIPE_SHEET["STAR.soloAdapter"][tmp_recipe]
+        extraSTAR = RECIPE_SHEET["STAR.extra"][tmp_recipe]
 
         #param handling for different alignment strategies
-        if "noTrim" in tmp_chemistry:
+        if "noTrim" in tmp_recipe:
             # ["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
             whitelist = f"{input.BB_1} {input.BB_2}"
             # R1 = input.R1_FQ
-        elif "internalTrim" in tmp_chemistry:
+        elif "internalTrim" in tmp_recipe:
             # ["seeker_v3.1_internalTrim_total"]:
             whitelist = input.BB_WHITELIST
             # R1 = input.R1_FQ_InternalTrim
-        elif "adapterInsert" in tmp_chemistry:
+        elif "adapterInsert" in tmp_recipe:
             whitelist = input.BB_ADAPTER
             # R1 = input.R1_FQ
         else:
@@ -67,10 +66,10 @@ rule STARsolo_align:
             # R1 = input.R1_FQ_HardTrim
 
         # Select R2 based on alignment recipe
-        if "total" in tmp_chemistry:
+        if "total" in tmp_recipe: # Use trimmed & rRNA-filtered .fq's
             R1 = input.R1_FQ_FILTERED
             R2 = input.R2_FQ_FILTERED
-        else:
+        else: # just trimmed .fq's
             R1 = input.R1_FQ
             R2 = input.R2_FQ
 
@@ -120,8 +119,8 @@ rule compress_STAR_outs:
     threads:
         config["CORES"]
     run:
-        tmp_chemistry = CHEM_DICT[wildcards.sample]
-        if "noTrim" in tmp_chemistry:
+        tmp_recipe = RECIPE_DICT[wildcards.sample]
+        if "noTrim" in tmp_recipe:
         #["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
             shell(
                 f"""
@@ -143,7 +142,7 @@ rule compress_STAR_outs:
         )
 
 
-#TODO add executable
+# Index .bam output by STAR
 rule indexSortedBAM:
     input:
         SORTEDBAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.out.bam'
@@ -151,8 +150,6 @@ rule indexSortedBAM:
         BAI = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.out.bam.bai'
     threads:
         config['CORES']
-    conda:
-        "STARsolo"
     shell:
         """
         {SAMTOOLS_EXEC} index -@ {threads} {input.SORTEDBAM}

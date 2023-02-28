@@ -1,8 +1,7 @@
 # Remove reads that don't have a corrected spot/cell barcode with samtools, then remove duplicates w/ **umi-tools**
 ## High mem usage? Check here! https://umi-tools.readthedocs.io/en/latest/faq.html
-#TODO: split bam by strand and by chromosome, then dedup each chr!
+#TODO: dedup after strand-splitting? 
 #TODO: add exec paths for samtools, bamtools
-#TODO: chr-split deduping
 rule umitools_dedupBAM:
     input:
         BB_WHITELIST = "{OUTDIR}/{sample}/bb/whitelist.txt",
@@ -16,12 +15,12 @@ rule umitools_dedupBAM:
     log:
         '{OUTDIR}/{sample}/dedup.log'
     run:
-        tmp_chemistry = CHEM_DICT[wildcards.sample]
+        tmp_recipe = RECIPE_DICT[wildcards.sample]
 
         #param handling for different alignment strategies
-        if "noTrim" in tmp_chemistry:
+        if "noTrim" in tmp_recipe:
             whitelist = f"{input.BB_1} {input.BB_2}" #TODO: pretty sure this won't work..
-        elif "internalTrim" in tmp_chemistry:
+        elif "internalTrim" in tmp_recipe:
             whitelist = input.BB_WHITELIST
         else:
             whitelist = input.BB_WHITELIST
@@ -72,8 +71,10 @@ rule indexSplitBAMs:
         REVBAI = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.rev.bam.bai'
     threads:
         config['CORES']
-    shell:
-        """
-        {SAMTOOLS_EXEC} index -@ {threads} {input.FWDBAM}
-        {SAMTOOLS_EXEC} index -@ {threads} {input.REVBAM}
-        """
+    run:
+        shell(
+            f"""
+            {SAMTOOLS_EXEC} index -@ {threads} {input.FWDBAM}
+            {SAMTOOLS_EXEC} index -@ {threads} {input.REVBAM}
+            """
+        )
