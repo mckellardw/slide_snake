@@ -6,7 +6,7 @@ rule preTrim_FastQC_R1:
     input:
         MERGED_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz'
     output:
-        fastqcDir = directory('{OUTDIR}/{sample}/preTrim_fastqc_R1_out')
+        fastqcDir = directory('{OUTDIR}/{sample}/preTrim_fastqc_R1')
     params:
         adapters = config['FASTQC_ADAPTERS']
     threads:
@@ -29,9 +29,9 @@ rule preTrim_FastQC_R2:
     input:
         MERGED_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2.fq.gz'
     output:
-        fastqcDir = directory('{OUTDIR}/{sample}/preTrim_fastqc_R2_out')
+        fastqcDir = directory('{OUTDIR}/{sample}/preTrim_fastqc_R2')
     params:
-        adapters = config['FASTQC_ADAPTERS']
+        ADAPTERS = config['FASTQC_ADAPTERS']
     threads:
         min([config['CORES'],8]) # 8 core max
     run:
@@ -42,7 +42,7 @@ rule preTrim_FastQC_R2:
             {FASTQC_EXEC} \
             --outdir {output.fastqcDir} \
             --threads {threads} \
-            -a {params.adapters} \
+            -a {params.ADAPTERS} \
             {input.MERGED_R2_FQ}
             """
         )
@@ -50,60 +50,111 @@ rule preTrim_FastQC_R2:
 
 #TODO merge trimming rules
 # Internal adapter trimming on R1
-rule internal_adapter_trim_R1:
-    input:
-        MERGED_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz',
-        # MERGED_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2.fq.gz'
-    output:
-        INTERNAL_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_InternalTrim.fq.gz'),
-        INTERNAL_TRIM_QC_LOG = '{OUTDIR}/{sample}/internal_trim_qc.txt'
-        # FINAL_R2_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz')
-    params:
-        TMPDIR = "{OUTDIR}/{sample}/tmp/seqkit",
-        INTERNAL_ADAPTER = config["R1_INTERNAL_ADAPTER"] # Curio R1 internal adapter
-    threads:
-        config['CORES']        
-    log:
-        '{OUTDIR}/{sample}/internal_adapter_trim_R1.log'
-    run:
-        shell(
-            f"""
-            python scripts/internal_adapter_trim_R1.py {params.INTERNAL_ADAPTER} {output.INTERNAL_TRIM_QC_LOG} {threads} {params.TMPDIR} {input.MERGED_R1_FQ} {output.INTERNAL_R1_FQ} | tee {log}
-            """
-        )
+# rule internal_adapter_trim_R1:
+#     input:
+#         MERGED_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz',
+#         # MERGED_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2.fq.gz'
+#     output:
+#         INTERNAL_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_InternalTrim.fq.gz'),
+#         INTERNAL_TRIM_QC_LOG = '{OUTDIR}/{sample}/internal_trim_qc.txt'
+#         # FINAL_R2_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz')
+#     params:
+#         TMPDIR = "{OUTDIR}/{sample}/tmp/seqkit",
+#         INTERNAL_ADAPTER = config["R1_INTERNAL_ADAPTER"] # Curio R1 internal adapter
+#     threads:
+#         config['CORES']        
+#     log:
+#         '{OUTDIR}/{sample}/internal_adapter_trim_R1.log'
+#     run:
+#         shell(
+#             f"""
+#             python scripts/internal_adapter_trim_R1.py {params.INTERNAL_ADAPTER} {output.INTERNAL_TRIM_QC_LOG} {threads} {params.TMPDIR} {input.MERGED_R1_FQ} {output.INTERNAL_R1_FQ} | tee {log}
+#             """
+#         )
 
 # R1 trimming to remove the linker sequence
 ## Source: https://unix.stackexchange.com/questions/510164/remove-and-add-sequence-information-at-specific-position-in-a-file
-rule removeLinker_R1:
+# rule removeLinker_R1:
+#     input:
+#         R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz'
+#     output:
+#         FINAL_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_HardTrim.fq.gz')
+#     params:
+#         script = "scripts/hardTrimFq.awk",
+#         CB1end = 8, #TODO- move to config? or chemistry_sheet?
+#         CB2start = 27,
+#         CB2end = 42
+#     threads:
+#         config['CORES']
+#     run:
+#         # tmp_chemistry = CHEM_DICT[wildcards.sample]
+#         shell(
+#             f"""
+#             zcat {input.R1_FQ} | \
+#             awk -v s={params.CB1end} -v S={params.CB2start} -v E={params.CB2end} -f {params.script} > {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_HardTrim.fq
+
+#             pigz -f -p{threads} {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_HardTrim.fq
+#             """
+#         )
+
+# Trimming for R1 to handle Curio adapter issues. See README for recipe details (#TODO)
+rule R1_trimming:
     input:
         R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz'
     output:
-        FINAL_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_HardTrim.fq.gz')
+        FINAL_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_Trimmed.fq.gz')
     params:
         script = "scripts/hardTrimFq.awk",
         CB1end = 8, #TODO- move to config? or chemistry_sheet?
         CB2start = 27,
-        CB2end = 42
+        CB2end = 42,
+        TMPDIR = "{OUTDIR}/{sample}/tmp/seqkit",
+        INTERNAL_ADAPTER = config["R1_INTERNAL_ADAPTER"] # Curio R1 internal adapter
     threads:
         config['CORES']
     run:
-        # tmp_chemistry = CHEM_DICT[wildcards.sample]
-        shell(
-            f"""
-            zcat {input.R1_FQ} | \
-            awk -v s={params.CB1end} -v S={params.CB2start} -v E={params.CB2end} -f {params.script} > {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_HardTrim.fq
+        tmp_chemistry = CHEM_DICT[wildcards.sample]
+        R1_LENGTH = CHEMISTRY_SHEET["R1.finalLength"][tmp_chemistry]
 
-            pigz -f -p{threads} {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_HardTrim.fq
-            """
-        )
+        #param handling for different alignment strategies
+        if "noTrim" in tmp_chemistry:
+            R1 = input.R1_FQ
+            shell( # Rename R1_FQ if no trimming needed
+                f"""
+                mv {R1} {output.R1_FQ} 
+                echo "No trimming performed on {R1}..." {log}
+                """
+            )
+        elif "internalTrim" in tmp_chemistry:
+            R1 = input.R1_FQ_InternalTrim
+            shell( # Internal trimming to cut out the adapter sequence
+                f"""
+                python scripts/internal_adapter_trim_R1.py {params.INTERNAL_ADAPTER} {output.INTERNAL_TRIM_QC_LOG} {threads} {params.TMPDIR} {R1} {output.R1_FQ} | tee {log}
+                """
+            )
+        else:
+            R1 = input.R1_FQ_HardTrim
+            shell( # "Hard" trimming, to remove the adapter based on hard-coded base positions
+                f"""
+                zcat {input.R1_FQ} | \
+                awk -v s={params.CB1end} -v S={params.CB2start} -v E={params.CB2end} -f {params.script} > {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_HardTrim.fq
+
+                pigz -f -p{threads} {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_HardTrim.fq 
+
+                echo "Hard trimming performed on {R1}" > {log}
+                """
+            )
+
+        
 
 # TSO & polyA trimming
 #TODO: add "{ADAPTER};noindels" to adapter sequence trimming? - *Note- do not do this for the BB_ADAPTER
-rule cutadapt_R2:
+rule cutadapt:
     input:
-        R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz',
-        R1_FQ_HardTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_HardTrim.fq.gz',
-        R1_FQ_InternalTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_InternalTrim.fq.gz',
+        # R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz',
+        # R1_FQ_HardTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_HardTrim.fq.gz',
+        # R1_FQ_InternalTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_InternalTrim.fq.gz',
+        R1_FQ_Trimmed = '{OUTDIR}/{sample}/tmp/{sample}_R1_Trimmed.fq.gz',
         R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2.fq.gz'
     output:
         FINAL_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz'),
@@ -135,13 +186,14 @@ rule cutadapt_R2:
         R1_LENGTH = CHEMISTRY_SHEET["R1.finalLength"][tmp_chemistry]
 
         #param handling for different alignment strategies
-        if "noTrim" in tmp_chemistry:
-            R1 = input.R1_FQ
-        elif "internalTrim" in tmp_chemistry:
-            R1 = input.R1_FQ_InternalTrim
-        else:
-            R1 = input.R1_FQ_HardTrim
+        # if "noTrim" in tmp_chemistry:
+        #     R1 = input.R1_FQ
+        # elif "internalTrim" in tmp_chemistry:
+        #     R1 = input.R1_FQ_InternalTrim
+        # else:
+        #     R1 = input.R1_FQ_HardTrim
 
+        R1 = input.R1_FQ_Trimmed
         R2 = input.R2_FQ
 
         shell(
@@ -175,7 +227,7 @@ rule postTrim_FastQC_R1:
     input:
         FINAL_R1_FQ =  '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz'
     output:
-        fastqcDir = directory('{OUTDIR}/{sample}/postTrim_fastqc_R1_out'),
+        fastqcDir = directory('{OUTDIR}/{sample}/postTrim_fastqc_R1'),
         # fastqcReport = ''
     threads:
         min([config['CORES'],8]) # 8 core max
@@ -199,7 +251,7 @@ rule postTrim_FastQC_R2:
     input:
         FINAL_R2_FQ =  '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz'
     output:
-        fastqcDir = directory('{OUTDIR}/{sample}/postTrim_fastqc_R2_out'),
+        fastqcDir = directory('{OUTDIR}/{sample}/postTrim_fastqc_R2'),
         # fastqcReport = ''
     threads:
         min([config['CORES'],8]) # 8 core max

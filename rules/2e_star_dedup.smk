@@ -11,13 +11,8 @@ rule umitools_dedupBAM:
         SORTEDBAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.out.bam'
     output:
         DEDUPBAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.bam'
-        # TMPBAM = temp('{OUTDIR}/{sample}/tmp/Aligned.sortedByCoord.CBfiltered.out.bam')
-    params:
-        # OUTPUT_PREFIX='{OUTDIR}/{sample}/umitools_dedup/{sample}'
-        # TMPBAM = '{OUTDIR}/{sample}/tmp.bam'
     threads:
         config['CORES']
-        #1
     log:
         '{OUTDIR}/{sample}/dedup.log'
     run:
@@ -31,32 +26,6 @@ rule umitools_dedupBAM:
         else:
             whitelist = input.BB_WHITELIST
 
-        # shell(
-        #     f"""
-        #     {SAMTOOLS_EXEC} view -1 -b \
-        #     -@ {threads} \
-        #     --tag-file CB:{whitelist} \
-        #     -F UB:Z:- \
-        #     {input.SORTEDBAM} \
-        #     > {output.TMPBAM}
-
-        #     {SAMTOOLS_EXEC} index \
-        #     -@ {threads} \
-        #     {output.TMPBAM}
-
-        #     {UMITOOLS_EXEC} dedup \
-        #     -I {output.TMPBAM} \
-        #     --extract-umi-method=tag \
-        #     --umi-tag=UB \
-        #     --cell-tag=CB \
-        #     --method=unique \
-        #     --per-cell \
-        #     --unmapped-reads=discard \
-        #     --output-stats={params.OUTPUT_PREFIX} \
-        #     --log {log} \
-        #     -S {output.DEDUPBAM}
-        #     """
-        # )
         shell(
             f"""
             bash scripts/split_dedup.sh {input.SORTEDBAM} {whitelist} {threads} {output.DEDUPBAM} {OUTDIR}/{wildcards.sample}/tmp/dedup | tee {log}
@@ -76,15 +45,35 @@ rule umitools_indexDedupBAM:
         {SAMTOOLS_EXEC} index -@ {threads} {input.SORTEDBAM}
         """
 
-#TODO
-# rule strand_split_dedup_bam:
-#     input:
-#         SORTEDBAM = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.bam'
-#     output:
-#         BAI = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.bam.bai'
-#     threads:
-#         config['CORES']
-#     shell:
-#         """
-#         {SAMTOOLS_EXEC} index -@ {threads} {input.SORTEDBAM}
-#         """
+# Split .bam file by strand for IGV browsing
+rule strand_split_dedup_bam:
+    input:
+        DEDUPBAM = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.bam'
+    output:
+        FWDBAM = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.fwd.bam',
+        REVBAM = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.rev.bam'
+    threads:
+        1
+    run:
+        shell(
+            f"""
+            {SAMTOOLS_EXEC} view -b -F 0x10 {input.DEDUPBAM} > {output.FWDBAM}
+            {SAMTOOLS_EXEC} view -b -f 0x10 {input.DEDUPBAM} > {output.REVBAM}
+            """
+        )
+
+# Index the split/deduped bam files
+rule indexSplitBAMs:
+    input:
+        FWDBAM = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.fwd.bam',
+        REVBAM = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.rev.bam'
+    output:
+        FWDBAI = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.fwd.bam.bai',
+        REVBAI = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.rev.bam.bai'
+    threads:
+        config['CORES']
+    shell:
+        """
+        {SAMTOOLS_EXEC} index -@ {threads} {input.FWDBAM}
+        {SAMTOOLS_EXEC} index -@ {threads} {input.REVBAM}
+        """
