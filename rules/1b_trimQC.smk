@@ -145,8 +145,6 @@ rule R1_trimming:
                 """
             )
 
-        
-
 # TSO & polyA trimming
 #TODO: add "{ADAPTER};noindels" to adapter sequence trimming? - *Note- do not do this for the BB_ADAPTER
 rule cutadapt:

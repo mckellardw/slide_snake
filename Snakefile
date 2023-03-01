@@ -70,7 +70,11 @@ rule all:
             sample=SAMPLES, 
             REF=["STARsolo_rRNA", "STARsolo"]
             ), 
-        # expand('{OUTDIR}/{sample}/kb/counts_unfiltered/output.mtx.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES), #kallisto count mats
+        # expand( # kallisto/bustools count mats
+        #     '{OUTDIR}/{sample}/kb/counts_unfiltered/output.mtx.gz', 
+        #     OUTDIR=config['OUTDIR'], 
+        #     sample=SAMPLES
+        # ), 
         expand(  # alignment QC qith qualimap | requires deduped input!
             '{OUTDIR}/{sample}/qualimap/qualimapReport.html', 
             OUTDIR=config['OUTDIR'], 
