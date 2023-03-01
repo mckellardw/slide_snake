@@ -16,22 +16,22 @@ rule unmapped_fastqc:
     threads:
         config['CORES']
     run:
-    shell(
-        f"""
-        mv {input.UNMAPPED1} {input.UNMAPPED2}.fastq
-        mv {input.UNMAPPED2} {input.UNMAPPED1}.fastq
+        shell(
+            f"""
+            mv {input.UNMAPPED1} {input.UNMAPPED2}.fastq
+            mv {input.UNMAPPED2} {input.UNMAPPED1}.fastq
 
-        pigz -p{threads} -f {input.UNMAPPED1}.fastq {input.UNMAPPED2}.fastq
+            pigz -p{threads} -f {input.UNMAPPED1}.fastq {input.UNMAPPED2}.fastq
 
-        mkdir -p {output.FQC_DIR}
+            mkdir -p {output.FQC_DIR}
 
-        {FASTQC_EXEC} \
-        -o {output.FQC_DIR} \
-        -t {threads} \
-        -a {params.FASTQC_ADAPTERS} \
-        {output.UNMAPPED1_FQ} {output.UNMAPPED2_FQ}
-        """
-    )
+            {FASTQC_EXEC} \
+            -o {output.FQC_DIR} \
+            -t {threads} \
+            -a {params.FASTQC_ADAPTERS} \
+            {output.UNMAPPED1_FQ} {output.UNMAPPED2_FQ}
+            """
+        )
 
 # Only BLAST R2, which contains the insert (converts .fq to .fa, then removes the .fa file)
 ## TODO: change demux step to fastx-collapser
