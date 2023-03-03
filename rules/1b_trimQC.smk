@@ -87,7 +87,7 @@ rule preTrim_FastQC_R2:
 #     threads:
 #         config['CORES']
 #     run:
-#         # tmp_recipe = CHEM_DICT[wildcards.sample]
+#         # tmp_recipe = RECIPE_DICT[wildcards.sample]
 #         shell(
 #             f"""
 #             zcat {input.R1_FQ} | \
@@ -102,23 +102,25 @@ rule R1_trimming:
     input:
         R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz'
     output:
-        FINAL_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_Trimmed.fq.gz')
+        R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_Trimmed.fq.gz')
     params:
         script = "scripts/hardTrimFq.awk",
         CB1end = 8, #TODO- move to config? or recipe_sheet?
         CB2start = 27,
         CB2end = 42,
+        INTERNAL_TRIM_QC_LOG = '{OUTDIR}/{sample}/internal_trim_qc.txt',
         TMPDIR = "{OUTDIR}/{sample}/tmp/seqkit",
         INTERNAL_ADAPTER = config["R1_INTERNAL_ADAPTER"] # Curio R1 internal adapter
     threads:
         config['CORES']
     run:
-        tmp_recipe = CHEM_DICT[wildcards.sample]
+        tmp_recipe = RECIPE_DICT[wildcards.sample]
         R1_LENGTH = RECIPE_SHEET["R1.finalLength"][tmp_recipe]
+        R1 = input.R1_FQ
 
         #param handling for different alignment strategies
         if "noTrim" in tmp_recipe:
-            R1 = input.R1_FQ
+            # R1 = input.R1_FQ
             shell( # Rename R1_FQ if no trimming needed
                 f"""
                 mv {R1} {output.R1_FQ} 
@@ -126,20 +128,20 @@ rule R1_trimming:
                 """
             )
         elif "internalTrim" in tmp_recipe:
-            R1 = input.R1_FQ_InternalTrim
+            # R1 = input.R1_FQ_InternalTrim
             shell( # Internal trimming to cut out the adapter sequence
                 f"""
-                python scripts/internal_adapter_trim_R1.py {params.INTERNAL_ADAPTER} {output.INTERNAL_TRIM_QC_LOG} {threads} {params.TMPDIR} {R1} {output.R1_FQ} | tee {log}
+                python scripts/internal_adapter_trim_R1.py {params.INTERNAL_ADAPTER} {params.INTERNAL_TRIM_QC_LOG} {threads} {params.TMPDIR} {R1} {output.R1_FQ} | tee {log}
                 """
             )
         else:
-            R1 = input.R1_FQ_HardTrim
+            # R1 = input.R1_FQ_HardTrim
             shell( # "Hard" trimming, to remove the adapter based on hard-coded base positions
                 f"""
                 zcat {input.R1_FQ} | \
-                awk -v s={params.CB1end} -v S={params.CB2start} -v E={params.CB2end} -f {params.script} > {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_HardTrim.fq
+                awk -v s={params.CB1end} -v S={params.CB2start} -v E={params.CB2end} -f {params.script} > {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_Trimmed.fq
 
-                pigz -f -p{threads} {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_HardTrim.fq 
+                pigz -f -p{threads} {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_Trimmed.fq 
 
                 echo "Hard trimming performed on {R1}" > {log}
                 """
@@ -180,7 +182,7 @@ rule cutadapt:
     log:
         log = '{OUTDIR}/{sample}/cutadapt.log'
     run:
-        tmp_recipe = CHEM_DICT[wildcards.sample]
+        tmp_recipe = RECIPE_DICT[wildcards.sample]
         R1_LENGTH = RECIPE_SHEET["R1.finalLength"][tmp_recipe]
 
         #param handling for different alignment strategies

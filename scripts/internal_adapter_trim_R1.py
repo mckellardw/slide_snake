@@ -33,6 +33,8 @@ fq1_out = sys.argv[6]
 #TODO: add in read filtering for both R1 and R2 for reads which have alignment[0].score < 50
 #TODO: fix indentation in log files
 
+#TODO: add fq1_in param check for fq vs fastq suffix; replace all '.fq. with `suffix`
+
 # Function to run internal trimming on a single .fq.gz file
 def trim_fq(fq_in, fq_out, gz):
     # fq_in, fq_out, gz = args
@@ -113,20 +115,24 @@ if n_cores > 1:
     import multiprocessing
 
     # Split .fq file into {n_core} chunks
-    #TODO- find lighter memory strategy for this
     os.system(
-        f"""
-        zcat {fq1_in} | seqkit split -p {n_cores} -O {tmp_dir} --force
-        """
-        # f""" #TODO- fix file name formatting below so that I can implement this...
-        # python scripts/splitNfqs.py {fq1_in} {n_cores} {n_cores} 
+        # Super high mem usage
+        # f""" 
+        # zcat {fq1_in} | seqkit split -p {n_cores} -O {tmp_dir} --force
         # """
+        
+        #TODO- fix file name formatting below so that I can implement this...
+        f""" 
+        python scripts/splitNfqs.py {fq1_in} {n_cores} {n_cores} 
+        """
     )
 
     # Trim each chunked file, in parallel
-    # tmp_fqs_in = [f"stdin.part_00{n}.fastq" for n in list(range(1,n_cores+1))]
-    tmp_fqs_out = [f"{tmp_dir}/stdin.part_{str(n).zfill(3)}_trimmed.fastq" for n in list(range(1,n_cores+1))]
-    items = [(f"{tmp_dir}/stdin.part_{str(n).zfill(3)}.fastq", f"{tmp_dir}/stdin.part_{str(n).zfill(3)}_trimmed.fastq", False) for n in list(range(1,n_cores+1))]
+    # tmp_fqs_in = [f"stdin.part_00{n}.fastq" for n in list(range(1,n_cores+1))] #seqkit split
+    # tmp_fqs_in = [f"{fq1_in.replace('fq.gz','')}_{str(n).zfill(3)}.fq" for n in range(1,n_chunks+1)] #splitNfqs
+
+    tmp_fqs_out = [f"{fq1_in.replace('.fq.gz','')}_{str(n).zfill(3)}_trimmed.fq" for n in list(range(1,n_cores+1))]
+    items = [(f"{fq1_in.replace('.fq.gz','')}_{str(n).zfill(3)}.fq", f"{fq1_in.replace('.fq.gz','')}_{str(n).zfill(3)}_trimmed.fq", False) for n in list(range(1,n_cores+1))]
     
     with multiprocessing.Pool(n_cores) as pool:
         multi_out = pool.starmap(trim_fq, items)
@@ -144,7 +150,7 @@ if n_cores > 1:
     # Merge and compress chunked/trimmed fastqs
     os.system(
         f"""
-        cat {tmp_dir}/stdin.part_*_trimmed.fastq > {fq1_out.replace('.gz','')}
+        cat {fq1_in.replace('.fq.gz','')}_*_trimmed.fastq > {fq1_out.replace('.gz','')}
         pigz -p{n_cores} {fq1_out.replace('.gz','')}
         """
     )
