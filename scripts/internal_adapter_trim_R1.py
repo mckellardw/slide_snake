@@ -155,7 +155,7 @@ if n_cores > 1:
     # Merge and compress chunked/trimmed fastqs
     os.system(
         f"""
-        cat {fq1_in.replace('.fq.gz','')}_*_trimmed.fastq > {fq1_out.replace('.gz','')}
+        cat {fq1_in.replace('.fq.gz','')}_*_trimmed.fq > {fq1_out.replace('.gz','')}
         pigz -p{n_cores} {fq1_out.replace('.gz','')}
         """
     )
