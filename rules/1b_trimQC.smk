@@ -113,6 +113,8 @@ rule R1_trimming:
         INTERNAL_ADAPTER = config["R1_INTERNAL_ADAPTER"] # Curio R1 internal adapter
     threads:
         config['CORES']
+    log:
+        '{OUTDIR}/{sample}/R1_trimming.log'
     run:
         tmp_recipe = RECIPE_DICT[wildcards.sample]
         R1_LENGTH = RECIPE_SHEET["R1.finalLength"][tmp_recipe]
