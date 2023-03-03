@@ -36,6 +36,11 @@ fq1_out = sys.argv[6]
 #TODO: add fq1_in param check for fq vs fastq suffix; replace all '.fq. with `suffix`
 
 # Function to run internal trimming on a single .fq.gz file
+#TODO- update to newer biopython functions...
+# warnings.warn(
+# /home/dwm269/miniconda3/envs/STARsolo/lib/python3.9/site-packages/Bio/pairwise2.py:278: BiopythonDeprecationWarning: Bio.pairwise2 
+# has been deprecated, and we intend to remove it in a future release of Biopython. As an alternative, please consider using 
+# Bio.Align.PairwiseAligner as a replacement, and contact the Biopython developers if you still need the Bio.pairwise2 module.
 def trim_fq(fq_in, fq_out, gz):
     # fq_in, fq_out, gz = args
 
@@ -121,9 +126,9 @@ if n_cores > 1:
         # zcat {fq1_in} | seqkit split -p {n_cores} -O {tmp_dir} --force
         # """
         
-        #TODO- fix file name formatting below so that I can implement this...
+        # Custom script to split .fq w/ sed
         f""" 
-        python scripts/splitNfqs.py {fq1_in} {n_cores} {n_cores} 
+        python scripts/splitNfqs.py {fq1_in} {n_cores} {n_cores} "False"
         """
     )
 
