@@ -10,7 +10,7 @@ rule unmapped_fastqc:
     output:
         UNMAPPED1_FQ = '{OUTDIR}/{sample}/STARsolo/Unmapped.out.mate1.fastq.gz',
         UNMAPPED2_FQ = '{OUTDIR}/{sample}/STARsolo/Unmapped.out.mate2.fastq.gz',
-        FQC_DIR = directory('{OUTDIR}/{sample}/Unmapped_fastqc_out')
+        FQC_DIR = directory('{OUTDIR}/{sample}/Unmapped_fastqc')
     params:
         FASTQC_ADAPTERS = config['FASTQC_ADAPTERS']
     threads:
