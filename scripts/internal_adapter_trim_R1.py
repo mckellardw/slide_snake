@@ -168,12 +168,12 @@ if n_cores > 1:
     #     if os.path.isfile(f"{tmp_dir}/stdin.part_{str(n).zfill(3)}_trimmed.fastq"):
     #         os.remove()
 
-    # if os.path.isfile(fq1_out):
-    #     os.system(
-    #         f"""
-    #         rm {tmp_dir}/stdin.part_*.fastq 
-    #         """
-    #     )
+    if os.path.isfile(fq1_out):
+        os.system(
+            f"""
+            rm {fq1_in.replace('.fq.gz','')}_[0-9][0-9][0-9].fq {fq1_in.replace('.fq.gz','')}_*_trimmed.fq
+            """
+        )
     # {tmp_dir}/stdin.part_*_trimmed.fastq ||:
 
     with open(log_out, "w") as text_file:

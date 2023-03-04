@@ -12,8 +12,8 @@
 # SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/slideseq_rnd1.csv
 # SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/SS_LKO_Rnd1.csv
 # SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/STRSHD_Rnd2.csv
-SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/SH_4_5.csv # _5
-# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/SS_cohen_testes.csv
+# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/SH_4_5.csv # _5
+SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/SS_cohen_testes.csv
 # SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/ChickenSurgerySlideSeq.csv
 
 
@@ -33,26 +33,28 @@ RECIPE_SHEET: resources/recipe_sheet.csv
 # TMPDIR: /workdir/dwm269/spatial_lmna/tmp
 # OUTDIR: /workdir/dwm269/spatial_lmna/data/align_out
 
-TMPDIR: /workdir/dwm269/totalRNA/STRS-HD/tmp
-OUTDIR: /workdir/dwm269/totalRNA/STRS-HD/data/align_out_rRNA2
+# TMPDIR: /workdir/dwm269/totalRNA/STRS-HD/tmp
+# OUTDIR: /workdir/dwm269/totalRNA/STRS-HD/data/align_out_rRNA2
 
 # TMPDIR: /workdir/dwm269/butcher_surgery/tmp
 # OUTDIR: /workdir/dwm269/butcher_surgery/data/align_out
 
-# TMPDIR: /workdir/dwm269/cohen_testes/tmp
-# OUTDIR: /workdir/dwm269/cohen_testes/data/align_out
+TMPDIR: /workdir/dwm269/cohen_testes/tmp
+OUTDIR: /workdir/dwm269/cohen_testes/data/align_out
 
 ########################################################################################################
 # Executables - file paths
 ########################################################################################################
 STAR_EXEC: STAR # v2.7.10b /programs/STAR/STAR
-KALLISTO_EXEC: kallisto # v######
+# KB_EXEC: kb
+KALLISTO_EXEC: kallisto
 BUST_EXEC: bustools # v######
 CUTADAPT_EXEC: cutadapt # v4.2
 FASTQC_EXEC: fastqc # v######
 SAMTOOLS_EXEC: samtools
 UMITOOLS_EXEC: umi_tools
 QUALIMAP_EXEC: qualimap
+MIRGE_EXEC: miRge3.0
 BAM2SPLITBW: /home/dwm269/DWM_utils/seq_utils/bam2splitBigWig.sh #Custom function in DWM_utils that splits a bam file by strand and converts it into bigwig format
 FASTX_COLLAPSER: fastx_collapser
 BLASTDB: /shared_data/genome_db/BLAST_NCBI # path to where the nt BLAST database is stored
@@ -61,6 +63,7 @@ BLASTDB: /shared_data/genome_db/BLAST_NCBI # path to where the nt BLAST database
 # Resources - file paths
 ########################################################################################################
 FASTQC_ADAPTERS: resources/fastqc_adapters.txt #/home/dwm269/slide_snake/
+MIRGE_LIB: /home/dwm269/usr/bin/miRge3_Lib
 
 ########################################################################################################
 # Library details

@@ -149,8 +149,11 @@ rule indexSortedBAM:
     output:
         BAI = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.out.bam.bai'
     threads:
-        config['CORES']
-    shell:
-        """
-        {SAMTOOLS_EXEC} index -@ {threads} {input.SORTEDBAM}
-        """
+        # config['CORES']
+        1
+    run:
+        shell(
+            f"""
+            {SAMTOOLS_EXEC} index -@ {threads} {input.SORTEDBAM}
+            """
+        )
