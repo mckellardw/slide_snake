@@ -31,12 +31,20 @@ R2_FQS = dict(zip(SAMPLES, list(SAMPLE_SHEET['fastq_R2'])))
 ########################################################################################################
 # Executables
 ########################################################################################################
-STAR_EXEC = config["STAR_EXEC"]
+STAR_EXEC = config['STAR_EXEC']
+# KB_EXEC = config['KB_EXEC']
+KALLISTO_EXEC = config['KALLISTO_EXEC']
+BUST_EXEC = config['BUST_EXEC']
 FASTQC_EXEC = config["FASTQC_EXEC"]
 CUTADAPT_EXEC = config["CUTADAPT_EXEC"]
 SAMTOOLS_EXEC = config["SAMTOOLS_EXEC"]
 UMITOOLS_EXEC = config["UMITOOLS_EXEC"]
 QUALIMAP_EXEC = config["QUALIMAP_EXEC"]
+# MULTIQC_EXEC = config["MULTIQC_EXEC"]
+MIRGE_EXEC = config['MIRGE_EXEC']
+BAM2SPLITBW = config["BAM2SPLITBW"]
+FASTX_COLLAPSER = config["FASTX_COLLAPSER"]
+BLASTDB = config["BLASTDB"]
 
 ########################################################################################################
 # Pre-run setup
@@ -49,6 +57,7 @@ GTF_DICT = {} # Dictionary of gene annotations (.gtf format)
 IDX_DICT = {} # Dictionary of kallisto indices
 T2G_DICT = {} # Dictionary of kallisto transcript-to-gene maps
 BB_DICT = {} # Dictionary of bead barcode maps
+SPECIES_DICT = {} # Species listed for mirge3 analysis
 for i in range(0,SAMPLE_SHEET.shape[0]):
     tmp_sample = list(SAMPLE_SHEET["sampleID"])[i]
     RECIPE_DICT[tmp_sample] = list(SAMPLE_SHEET["recipe"])[i] 
@@ -58,12 +67,18 @@ for i in range(0,SAMPLE_SHEET.shape[0]):
     IDX_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_idx"])[i]
     T2G_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_t2g"])[i]
     BB_DICT[tmp_sample] = list(SAMPLE_SHEET["BB_map"])[i]
+    SPECIES_DICT[tmp_sample] = list(SAMPLE_SHEET["species"])[i]
 
 ########################################################################################################
 rule all:
     input:
         # expand('{OUTDIR}/{sample}/{REF}/Solo.out/GeneFull/raw/UniqueAndMultEM.h5ad', OUTDIR=config['OUTDIR'], sample=SAMPLES, REF=["STARsolo_rRNA", "STARsolo"]), 
         # expand('{OUTDIR}/{sample}/{REF}/Solo.out/GeneFull/raw/barcodes_noUnderscore.tsv.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES, REF=["STARsolo_rRNA", "STARsolo"]), #Barcode lists w/ underscores removed
+        expand( # miRge3.0 pseudobulk analysis
+            '{OUTDIR}/{sample}/miRge_bulk/annotation.report.html', 
+            OUTDIR=config['OUTDIR'],
+            sample=SAMPLES
+        ),
         expand( #STAR count mats
             '{OUTDIR}/{sample}/{REF}/Solo.out/GeneFull/raw/matrix.mtx.gz', 
             OUTDIR=config['OUTDIR'], 
@@ -127,6 +142,9 @@ include: "rules/2e_star_dedup.smk"
 # kallisto/bustools alignment
 include: "rules/3a_kallisto_align.smk"
 include: "rules/3b_kallisto_pseudobam.smk"
+
+# small RNA stuff
+include: "rules/4_mirge.smk"
 
 # scanpy stuff
 include: "rules/4a_scanpy_init.smk"

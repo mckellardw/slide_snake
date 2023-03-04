@@ -9,6 +9,7 @@ See the companion workflow for 10x Genomics' chemistries [here](https://github.c
 - `cutadapt` [v3.4](https://cutadapt.readthedocs.io/en/stable/)
 - `fastqc` [v0.11.8](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
 - `STAR` [v2.7.10a](https://github.com/alexdobin/STAR)
+- `samtools`[v1.17](http://www.htslib.org/)
 - `qualimap` [v2.2.2a](http://qualimap.conesalab.org/)
 - `vsearch` [v2.17.0_linux_x86_64](https://github.com/torognes/vsearch)
 - `BLAST`
