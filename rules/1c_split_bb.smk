@@ -1,4 +1,4 @@
-# SPlit the bead barcodes and save whitelists
+# Split the bead barcodes and save whitelists
 rule splitBBList:
     input:
         BB_map = lambda wildcards: BB_DICT[wildcards.sample]
@@ -18,6 +18,7 @@ rule splitBBList:
         bb_df.to_csv(output.BB, sep="\t", header=False, index=False) # Full bead barcode
         bb_1.to_csv(output.BB_1, sep="\t", header=False, index=False) # Bead barcode #1
         bb_2.to_csv(output.BB_2, sep="\t", header=False, index=False) # Bead Barcode #2
+
 
 # Insert the adapter sequence into the bead barcodes for easier barcode matching/alignment with STARsolo
 rule insert_adapter_BB_list:

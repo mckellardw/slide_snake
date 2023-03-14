@@ -121,6 +121,7 @@ rule indexSortedBAM_rRNA:
 
 
 # Run fastqc on unmapped reads; switch names because of STAR weirdness
+##TODO: split fastqc into separate rule
 rule rRNA_filtered_fastqc:
     input:
         UNMAPPED1 = '{OUTDIR}/{sample}/STARsolo_rRNA/Unmapped.out.mate1',
@@ -128,7 +129,7 @@ rule rRNA_filtered_fastqc:
     output:
         FILTERED1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final_filtered.fq.gz',
         FILTERED2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final_filtered.fq.gz',
-        FQC_DIR = directory('{OUTDIR}/{sample}/rRNA_filtered_fastqc_out')
+        FQC_DIR = directory('{OUTDIR}/{sample}/rRNA_filtered_fastqc')
     params:
         FASTQC_EXEC = config['FASTQC_EXEC']
     threads:

@@ -95,6 +95,19 @@ echo "Deduplicating split .bam files..."
 date 
 
 #TODO: parallelize
+# cat ${BAMLIST} | parallel -j ${CORE} '
+#   samtools index -@ ${CORE} {}
+
+#   umi_tools dedup \
+#   -I {} \
+#   --extract-umi-method=tag \
+#   --umi-tag=UB \
+#   --cell-tag=CB \
+#   --method=unique \
+#   --per-cell \
+#   --unmapped-reads=discard \
+#   -S ${TMPDIR}/dedup_{}'
+
 #TODO: add log and output-stats for each chromosome (need to chop up file names)
 while read BAM; do
   samtools index -@ ${CORE} ${BAM}

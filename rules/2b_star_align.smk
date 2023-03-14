@@ -66,7 +66,7 @@ rule STARsolo_align:
             # R1 = input.R1_FQ_HardTrim
 
         # Select R2 based on alignment recipe
-        if "total" in tmp_recipe: # Use trimmed & rRNA-filtered .fq's
+        if "rRNA" in tmp_recipe: # Use trimmed & rRNA-filtered .fq's
             R1 = input.R1_FQ_FILTERED
             R2 = input.R2_FQ_FILTERED
         else: # just trimmed .fq's

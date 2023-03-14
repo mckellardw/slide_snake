@@ -36,6 +36,44 @@ Three Prime adapter(s):
 - Outputs are in `{SAMPLE_ID}/STARsolo/Solo.out` & `{SAMPLE_ID}/kb/counts_unfiltered`
 - Different recipes are written out in `resources/recipe_sheet.csv`, and must be specified for each sample within the sample sheet
 
+### Generating references:
+#### rRNA STAR reference for in silico rRNA depletion/quantification
+Ribosomal RNA (rRNA) molecules can make alignment/quantification very difficult because of the number of genomic copies of these genes. We added a first-pass-alignment just to rRNA sequences to enable stratified parameterization for these sequences, but maintain the ability to count and analyze them.  
+
+Check out `scripts/GRCm39_GENCODEM31_STAR_rRNA.sh` for an example script showing how to generate a rRNA-only STAR reference using GENCODE annotations.  
+
+Other option- download rRNA sequences from  with the following query:
+`(expert_db:"SILVA" AND TAXONOMY:"10090") AND entry_type:"Sequence"`
+
+#### Genomic STAR reference
+This is a typical STAR reference that you would use for any other alignment job. Here is an example code snippet:
+```
+FASTA_GENOME="/path/to/GENCODE_M31/GRCm39.genome.fa"
+GENES_DIR="/path/to//GENCODE_M31/gencode.vM31.annotation.gtf"
+
+OUTDIR="/workdir/dwm269/genomes/mm39_all/STAR_GRCm39_GENCODEM31"
+
+mkdir -p ${OUTDIR}
+cd ${OUTDIR}
+
+STAR \
+--runThreadN 16 \
+--runMode genomeGenerate \
+--genomeDir ${OUTDIR} \
+--genomeFastaFiles ${FASTA_DIR} \
+--sjdbGTFfile ${GENES_DIR} \
+--sjdbGTFfeatureExon exon
+```
+*You can find the reference files on [GENCODE's website](https://www.gencodegenes.org/mouse/)*
+
+## small/micro RNA analysis
+
+### miRge3.0
+- [Link to documentation](https://mirge3.readthedocs.io/en/latest/quick_start.html)
+- [Link to library download](https://sourceforge.net/projects/mirge3/files/miRge3_Lib/)
+
+
+
 ### Recipe descriptions:
 - `seeker_v3.1` - Hard trim the adapter read positions in R1, and use the best barcode correction algorithms in STARsolo
 - `seeker_v3.1_noTrim` - No hard trimming, and use the base positions for barcode/UMI (*Note*, this recipe doesn't work well w/ Curio Seeker b/c of in/del issues w/ the barcode synthesis)
