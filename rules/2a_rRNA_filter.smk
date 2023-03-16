@@ -13,7 +13,7 @@ rule STARsolo_align_rRNA:
         SORTEDBAM = '{OUTDIR}/{sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam', #TODO: add temp()
         UNMAPPED1 = '{OUTDIR}/{sample}/STARsolo_rRNA/Unmapped.out.mate1',
         UNMAPPED2 = '{OUTDIR}/{sample}/STARsolo_rRNA/Unmapped.out.mate2',
-        GENE = directory('{OUTDIR}/{sample}/STARsolo_rRNA/Solo.out/GeneFull'),
+        GENEDIRECTORY = directory('{OUTDIR}/{sample}/STARsolo_rRNA/Solo.out/GeneFull'),
         GENEMAT = '{OUTDIR}/{sample}/STARsolo_rRNA/Solo.out/GeneFull/raw/matrix.mtx'
     params:
         STAR_EXEC = config['STAR_EXEC'],
@@ -49,33 +49,56 @@ rule STARsolo_align_rRNA:
 
         # R2 = input.R2_FQ
 
-        shell(
-            f"""
-            mkdir -p {OUTDIR}/{wildcards.sample}/STARsolo_rRNA
+        if "bwa" in tmp_recipe:
+            # Align to rRNA ref w/ `bwa mem` for cleaner/faster rRNA filtering 
+            ## Flip read numbers to match STAR
+            ## Add empty count mat file for 
+            ##TODO: fix .fasta passing here (*.fa is dangerous...)
+            ##TODO: fix folder/file naming schema...
+            ##TODO: add log file
+            shell(
+                f"""
+                {BWA_EXEC} mem -t {threads} {STAR_REF}/*.fa {input.R1_FQ} {input.R2_FQ} \
+                > {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam
 
-            {params.STAR_EXEC} \
-            --runThreadN {threads} \
-            --outFileNamePrefix {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/ \
-            --outSAMtype BAM SortedByCoordinate \
-            --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
-            --readFilesCommand zcat \
-            --genomeDir {STAR_REF} \
-            --limitBAMsortRAM={params.MEMLIMIT} \
-            --readFilesIn {input.R2_FQ} {input.R1_FQ} \
-            --clipAdapterType CellRanger4 \
-            --outReadsUnmapped Fastx \
-            --outSAMunmapped Within KeepPairs \
-            --soloType {soloType} {soloUMI} {soloCB} {soloAdapter} {extraSTAR} \
-            --soloCBwhitelist {whitelist} \
-            --soloCBmatchWLtype {soloCBmatchWLtype} \
-            --soloCellFilter TopCells {nBB} \
-            --soloUMIfiltering MultiGeneUMI CR \
-            --soloUMIdedup 1MM_CR \
-            --soloBarcodeReadLength 0 \
-            --soloFeatures GeneFull \
-            --soloMultiMappers EM
-            """
-        )
+                {SAMTOOLS_EXEC} sort -@ {threads} {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam \
+                > {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam
+
+                {SAMTOOLS_EXEC} fastq -f 4 -1 {output.UNMAPPED2} -2 {output.UNMAPPED1} -0 /dev/null -
+
+                mkdir -p {output.GENEDIRECTORY}
+                echo "empty placeholder file..." > {output.GENEMAT} 
+                """
+            )
+                # | {SAMTOOLS_EXEC} view -f 4 -bh - \
+        else:
+            shell(
+                f"""
+                mkdir -p {OUTDIR}/{wildcards.sample}/STARsolo_rRNA
+
+                {params.STAR_EXEC} \
+                --runThreadN {threads} \
+                --outFileNamePrefix {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/ \
+                --outSAMtype BAM SortedByCoordinate \
+                --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
+                --readFilesCommand zcat \
+                --genomeDir {STAR_REF} \
+                --limitBAMsortRAM={params.MEMLIMIT} \
+                --readFilesIn {input.R2_FQ} {input.R1_FQ} \
+                --clipAdapterType CellRanger4 \
+                --outReadsUnmapped Fastx \
+                --outSAMunmapped Within KeepPairs \
+                --soloType {soloType} {soloUMI} {soloCB} {soloAdapter} {extraSTAR} \
+                --soloCBwhitelist {whitelist} \
+                --soloCBmatchWLtype {soloCBmatchWLtype} \
+                --soloCellFilter TopCells {nBB} \
+                --soloUMIfiltering MultiGeneUMI CR \
+                --soloUMIdedup 1MM_CR \
+                --soloBarcodeReadLength 0 \
+                --soloFeatures GeneFull \
+                --soloMultiMappers EM
+                """
+            )
 
 # compress outputs from STAR (count matrices, cell barcodes, and gene lists)
 rule compress_STAR_rRNA_outs:
