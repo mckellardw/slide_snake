@@ -56,6 +56,7 @@ date
 samtools view \
 -h \
 -@ ${CORE} \
+-q 1 \
 --tag-file CB:${BB} \
 ${INBAM} \
 | grep -v "UB:Z:-" \
