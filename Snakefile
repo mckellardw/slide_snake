@@ -31,6 +31,7 @@ R2_FQS = dict(zip(SAMPLES, list(SAMPLE_SHEET['fastq_R2'])))
 ########################################################################################################
 # Executables
 ########################################################################################################
+BWA_EXEC = config['BWA_EXEC']
 STAR_EXEC = config['STAR_EXEC']
 # KB_EXEC = config['KB_EXEC']
 KALLISTO_EXEC = config['KALLISTO_EXEC']
@@ -72,13 +73,11 @@ for i in range(0,SAMPLE_SHEET.shape[0]):
 ########################################################################################################
 rule all:
     input:
-        # expand('{OUTDIR}/{sample}/{REF}/Solo.out/GeneFull/raw/UniqueAndMultEM.h5ad', OUTDIR=config['OUTDIR'], sample=SAMPLES, REF=["STARsolo_rRNA", "STARsolo"]), 
-        # expand('{OUTDIR}/{sample}/{REF}/Solo.out/GeneFull/raw/barcodes_noUnderscore.tsv.gz', OUTDIR=config['OUTDIR'], sample=SAMPLES, REF=["STARsolo_rRNA", "STARsolo"]), #Barcode lists w/ underscores removed
-        expand( # miRge3.0 pseudobulk analysis
-            '{OUTDIR}/{sample}/miRge_bulk/annotation.report.html', 
-            OUTDIR=config['OUTDIR'],
-            sample=SAMPLES
-        ),
+        # expand( # miRge3.0 pseudobulk analysis
+        #     '{OUTDIR}/{sample}/miRge_bulk/annotation.report.html', 
+        #     OUTDIR=config['OUTDIR'],
+        #     sample=SAMPLES
+        # ),
         expand( #STAR count mats
             '{OUTDIR}/{sample}/{REF}/Solo.out/GeneFull/raw/matrix.mtx.gz', 
             OUTDIR=config['OUTDIR'], 
@@ -90,19 +89,19 @@ rule all:
         #     OUTDIR=config['OUTDIR'], 
         #     sample=SAMPLES
         # ), 
-        expand(  # alignment QC qith qualimap | requires deduped input!
-            '{OUTDIR}/{sample}/qualimap/qualimapReport.html', 
-            OUTDIR=config['OUTDIR'], 
-            sample=SAMPLES
-            ),
         expand( #TODO- REF=["STARsolo_rRNA", "STARsolo"]), # umi_tools deduplicated .bam
             '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.bam.bai', 
             OUTDIR=config['OUTDIR'], 
             sample=SAMPLES
         ), 
-        expand(
-            '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.{STRAND}.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES, STRAND=["fwd", "rev"]), # umi_tools deduplicated .bam
-        # expand('{OUTDIR}/{sample}/{REF}/Aligned.sortedByCoord.dedup.out_plus.bw', OUTDIR=config['OUTDIR'], sample=SAMPLES, REF=["STARsolo_rRNA", "STARsolo"]), # strand-split bigWigs
+        expand(  # alignment QC with qualimap | requires deduped input!
+            '{OUTDIR}/{sample}/qualimap/qualimapReport.html', 
+            OUTDIR=config['OUTDIR'], 
+            sample=SAMPLES
+        ),
+        expand( # strand-split, umi_tools deduplicated .bam
+            '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.{STRAND}.bam.bai', OUTDIR=config['OUTDIR'], sample=SAMPLES, STRAND=["fwd", "rev"]
+        ), 
         expand( # fastQC results
             '{OUTDIR}/{sample}/{TRIM}_fastqc_{READ}', 
             OUTDIR=config['OUTDIR'],
@@ -125,7 +124,7 @@ rule all:
             '{OUTDIR}/{sample}/Unmapped.out.mate2_blastResults.txt', 
             OUTDIR=config['OUTDIR'], 
             sample=SAMPLES
-        ), 
+        )
 
 # fastq preprocessing & QC
 include: "rules/1a_mergefqs.smk"
@@ -133,7 +132,7 @@ include: "rules/1b_trimQC.smk"
 include: "rules/1c_split_bb.smk"
 
 # STAR alignment, QC, and post-processing
-include: "rules/2a_star_align_rRNA.smk"
+include: "rules/2a_rRNA_filter.smk"
 include: "rules/2b_star_align.smk"
 include: "rules/2c_star_unmapped.smk"
 include: "rules/2d_star_qualimap.smk"
@@ -153,4 +152,5 @@ include: "rules/4a_scanpy_init.smk"
 #TODO:
 # - Initialize a .h5ad object for easy loading into python later
 #   - Add spatial location!
+# - Add proper saturation estimation (not just saturation based on reads aligning to known genes)
 
