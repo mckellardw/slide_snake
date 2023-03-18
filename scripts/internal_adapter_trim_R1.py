@@ -181,7 +181,7 @@ if n_cores > 1:
             f"""
 Total read count:         {read_count:,}
 Insertion count in BB_1:  {ins_count:,}
-Deletion count in BB_2:   {del_count:,}
+Deletion count in BB_1:   {del_count:,}
 Reads trimmed below 22bp: {broken_count:,}
             """
         )
