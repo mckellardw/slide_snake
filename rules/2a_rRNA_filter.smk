@@ -59,17 +59,19 @@ rule STARsolo_align_rRNA:
             shell(
                 f"""
                 {BWA_EXEC} mem -t {threads} {STAR_REF}/*.fa {input.R1_FQ} {input.R2_FQ} \
+                > {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.sam \
+                | tee {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/bwa.log
+
+                {SAMTOOLS_EXEC} sort -@ {threads} {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.sam \
                 > {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam
 
-                {SAMTOOLS_EXEC} sort -@ {threads} {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam \
-                > {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam
-
-                {SAMTOOLS_EXEC} fastq -f 4 -1 {output.UNMAPPED2} -2 {output.UNMAPPED1} -0 /dev/null -
+                {SAMTOOLS_EXEC} fastq -f 4 -1 {output.UNMAPPED2} -2 {output.UNMAPPED1} -0 /dev/null {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam
 
                 mkdir -p {output.GENEDIRECTORY}
                 echo "empty placeholder file..." > {output.GENEMAT} 
                 """
             )
+                # rm {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/STARsolo_rRNA/Aligned.sortedByCoord.out.sam
                 # | {SAMTOOLS_EXEC} view -f 4 -bh - \
         else:
             shell(
