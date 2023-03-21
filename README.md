@@ -1,9 +1,11 @@
 # `slide_snake`
 ![slide_snake](images/slide_snake_logo.png)  
-**Preprocessing, alignment, QC, and quantification workflow for SlideSeq data**  
+## **Flexible preprocessing, alignment, and quantification workflow for SlideSeq data**  
 
-The goal of this project is to build a workflow for assessing different alignment parameterizations, and digging into artifacts.  
-***Contributions are welcome!***  
+The goal of this project is to build a workflow for assessing different preprocessing & alignment configurations, and digging into artifacts.  
+
+***Contributions are welcome!***   
+
 See the companion workflow for 10x Genomics' chemistries [here](https://github.com/mckellardw/txg_snake).  
 
 ## Dependencies:
