@@ -1,5 +1,6 @@
 # `slide_snake`
-Preprocessing, alignment, QC, and quantification workflow for SlideSeq data  
+![slide_snake](images/slide_snake_logo.png)  
+**Preprocessing, alignment, QC, and quantification workflow for SlideSeq data**  
 
 The goal of this project is to build a workflow for assessing different alignment parameterizations, and digging into artifacts.  
 ***Contributions are welcome!***  
