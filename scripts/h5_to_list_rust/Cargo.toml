@@ -1,0 +1,8 @@
+[package]
+name = "h5_to_list"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+hdf5 = "0.7"
+itertools = "0.10"
