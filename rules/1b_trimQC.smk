@@ -10,7 +10,8 @@ rule preTrim_FastQC_R1:
     params:
         adapters = config['FASTQC_ADAPTERS']
     threads:
-        min([config['CORES'],8]) # 8 core max
+        config['CORES']
+        # min([config['CORES'],8]) # 8 core max
     run:
         shell(
             f"""
@@ -33,7 +34,8 @@ rule preTrim_FastQC_R2:
     params:
         ADAPTERS = config['FASTQC_ADAPTERS']
     threads:
-        min([config['CORES'],8]) # 8 core max
+        config['CORES']
+        # min([config['CORES'],8]) # 8 core max
     run:
         shell(
             f"""
@@ -232,7 +234,8 @@ rule postTrim_FastQC_R1:
         fastqcDir = directory('{OUTDIR}/{sample}/postTrim_fastqc_R1'),
         # fastqcReport = ''
     threads:
-        min([config['CORES'],8]) # 8 core max
+        config['CORES']
+        # min([config['CORES'],8]) # 8 core max
     params:
         adapters = config['FASTQC_ADAPTERS']
     run:
@@ -256,7 +259,8 @@ rule postTrim_FastQC_R2:
         fastqcDir = directory('{OUTDIR}/{sample}/postTrim_fastqc_R2'),
         # fastqcReport = ''
     threads:
-        min([config['CORES'],8]) # 8 core max
+        config['CORES']
+        # min([config['CORES'],8]) # 8 core max
     params:
         adapters = config['FASTQC_ADAPTERS']
     run:
@@ -264,7 +268,7 @@ rule postTrim_FastQC_R2:
         f"""
             mkdir -p {output.fastqcDir}
 
-            fastqc \
+            {FASTQC_EXEC} \
             --outdir {output.fastqcDir} \
             --threads {threads} \
             -a {params.adapters} \

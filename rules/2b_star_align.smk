@@ -50,7 +50,9 @@ rule STARsolo_align:
         extraSTAR = RECIPE_SHEET["STAR.extra"][tmp_recipe]
 
         #param handling for different alignment strategies
-        if "noTrim" in tmp_recipe:
+        if "stomics" in tmp_recipe:
+            whitelist = input.BB_WHITELIST
+        elif "noTrim" in tmp_recipe:
             # ["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
             whitelist = f"{input.BB_1} {input.BB_2}"
             # R1 = input.R1_FQ
@@ -149,8 +151,8 @@ rule indexSortedBAM:
     output:
         BAI = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.out.bam.bai'
     threads:
-        # config['CORES']
-        1
+        config['CORES']
+        # 1
     run:
         shell(
             f"""

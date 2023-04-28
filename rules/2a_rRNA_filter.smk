@@ -1,6 +1,6 @@
 # Make output directory, align fastqs, and generate raw/filtered feature/cell-barcode matrices
 #   Info for STARsolo command line paramaters: https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md
-
+#TODO- dedup rRNA .bam files
 rule STARsolo_align_rRNA:
     input:
         R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
@@ -34,7 +34,9 @@ rule STARsolo_align_rRNA:
         extraSTAR = RECIPE_SHEET["STAR.extra"][tmp_recipe]
 
         # Params for different barcode handling strategies
-        if "noTrim" in tmp_recipe:
+        if "stomics" in tmp_recipe:
+            whitelist = input.BB_WHITELIST
+        elif "noTrim" in tmp_recipe:
             whitelist = f"{input.BB_1} {input.BB_2}"
         #     R1 = input.R1_FQ
         elif "internalTrim" in tmp_recipe:
