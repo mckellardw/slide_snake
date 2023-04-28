@@ -24,12 +24,12 @@ touch ${LOG}
 
 # Add params to log file
 echo "~~ Parameters ~~~" >> ${LOG}
-echo "Output directory: " ${OUTDIR}  >> ${LOG}
-echo "Index used: " ${KB_IDX} >> ${LOG}
-echo "Whitelist used: " ${WHITELIST} >> ${LOG}
-echo "Chemistry: " ${CHEMISTRY} >> ${LOG}
-echo "Barcode/UMI read file: " ${R1FQ} >> ${LOG}
-echo "RNA read file:" ${R2FQ} >> ${LOG}
+echo "Output directory:       " ${OUTDIR}  >> ${LOG}
+echo "Index used:             " ${KB_IDX} >> ${LOG}
+echo "Whitelist used:         " ${WHITELIST} >> ${LOG}
+echo "Chemistry:              " ${CHEMISTRY} >> ${LOG}
+echo "Barcode/UMI read file:  " ${R1FQ} >> ${LOG}
+echo "RNA read file:          " ${R2FQ} >> ${LOG}
 echo " " >> ${LOG}
 
 # Pseudoalign and generate .bus file
@@ -54,9 +54,10 @@ echo " " >> ${LOG}
 
 # Sort .bus file
 echo "~~~Sorting output bus... " >> ${LOG}
+# ${MEMLIMIT}
 bustools sort \
 -t ${THREADS} \
--m ${MEMLIMIT} \
+-m 300G \
 -o output.corrected.bus \
 output.sorted.bus 2>> ${LOG}
 echo " " >> ${LOG}
