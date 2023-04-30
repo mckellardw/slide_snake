@@ -4,15 +4,17 @@
 
 rule kallisto_align:
     input:
-        FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
-        FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz',
+        R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
+        R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz',
+        R1_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R1_final_filtered.fq.gz',
+        R2_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R2_final_filtered.fq.gz',
         BB = "{OUTDIR}/{sample}/bb/whitelist.txt"
     output:
         BUSTEXT = temp('{OUTDIR}/{sample}/kb/output.corrected.bus'),
         TRANSCRIPTS = '{OUTDIR}/{sample}/kb/transcripts.txt',
         ECMAP = temp('{OUTDIR}/{sample}/kb/matrix.ec')
     params:
-        MEMLIMIT = config['MEMLIMIT']
+        MEMLIMIT = config['MEMLIMIT_GB']
     log:
         '{OUTDIR}/{sample}/kb/kallisto_align.log'
     threads:
@@ -26,6 +28,14 @@ rule kallisto_align:
         
         KB_X = RECIPE_SHEET["kb.x"][tmp_recipe]
 
+        # Select R2 based on alignment recipe
+        if "rRNA" in tmp_recipe: # Use trimmed & rRNA-filtered .fq's
+            R1 = input.R1_FQ_FILTERED
+            R2 = input.R2_FQ_FILTERED
+        else: # just trimmed .fq's
+            R1 = input.R1_FQ
+            R2 = input.R2_FQ
+
         shell(
             f"""
             bash scripts/kb.sh {OUTDIR}/{wildcards.sample}/kb \
@@ -35,7 +45,7 @@ rule kallisto_align:
             {log} \
             {threads} \
             {params.MEMLIMIT} \
-            {input.FINAL_R1_FQ} {input.FINAL_R2_FQ}
+            {R1} {R2}
             """
         )
 

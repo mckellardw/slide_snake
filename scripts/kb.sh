@@ -54,10 +54,9 @@ echo " " >> ${LOG}
 
 # Sort .bus file
 echo "~~~Sorting output bus... " >> ${LOG}
-# ${MEMLIMIT}
 bustools sort \
 -t ${THREADS} \
--m 300G \
+-m ${MEMLIMIT} \
 -o output.corrected.bus \
 output.sorted.bus 2>> ${LOG}
 echo " " >> ${LOG}
