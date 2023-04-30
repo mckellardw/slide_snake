@@ -54,8 +54,8 @@ if not all(adata.obs_names.isin(spatial_data.index)):
     print("Warning: Not all barcodes in the AnnData object match the ones in the spatial data.")
 
 # Add the spatial coordinates to the AnnData object
-adata.obsm['spatial'] = spatial_data.loc[adata.obs_names, ['x', 'y']]
-
+spatial_coord = spatial_data.loc[adata.obs_names, ['x', 'y']]
+adata.obsm['spatial'] = spatial_coord.to_numpy()
 
 # Write output
 adata.write(ad_out)
