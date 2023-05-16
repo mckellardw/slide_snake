@@ -18,16 +18,25 @@ rule umitools_dedupBAM:
         tmp_recipe = RECIPE_DICT[wildcards.sample]
 
         #param handling for different alignment strategies
-        if "noTrim" in tmp_recipe:
-            whitelist = f"{input.BB_1} {input.BB_2}" #TODO: pretty sure this won't work..
-        elif "internalTrim" in tmp_recipe:
-            whitelist = input.BB_WHITELIST
-        else:
-            whitelist = input.BB_WHITELIST
+        # if "noTrim" in tmp_recipe:
+        #     whitelist = f"{input.BB_1} {input.BB_2}" #TODO: pretty sure this won't work..
+        # elif "internalTrim" in tmp_recipe:
+        #     whitelist = input.BB_WHITELIST
+        # elif "stomics" in tmp_recipe:
+        #     whitelist = input.BB_WHITELIST
+        # else:
+        #     whitelist = input.BB_WHITELIST
+        whitelist = input.BB_WHITELIST
 
         shell(
             f"""
-            bash scripts/split_dedup.sh {input.SORTEDBAM} {whitelist} {threads} {output.DEDUPBAM} {OUTDIR}/{wildcards.sample}/tmp/dedup | tee {log}
+            bash scripts/split_dedup.sh \
+            {input.SORTEDBAM} \
+            {whitelist} \
+            {threads} \
+            {output.DEDUPBAM} \
+            {OUTDIR}/{wildcards.sample}/tmp/dedup \
+            | tee {log}
             """
         )
 

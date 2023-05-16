@@ -21,14 +21,16 @@ rule STARsolo_align:
         SORTEDBAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.out.bam', #TODO: add temp()
         UNMAPPED1 = '{OUTDIR}/{sample}/STARsolo/Unmapped.out.mate1',
         UNMAPPED2 = '{OUTDIR}/{sample}/STARsolo/Unmapped.out.mate2',
-        GENE = directory('{OUTDIR}/{sample}/STARsolo/Solo.out/Gene'),
-        GENEFULL = directory('{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull'),
-        # SJ = directory('{OUTDIR}/{sample}/STARsolo/Solo.out/SJ'),
-        VEL = directory('{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto'),
-        GENEMAT = '{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/matrix.mtx',
-        GENEFULLMAT = '{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw/matrix.mtx',
-        # SJMAT = '{OUTDIR}/{sample}/STARsolo/Solo.out/SJ/raw/matrix.mtx',
-        VELMAT = '{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto/raw/spliced.mtx'
+        VEL_MAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto/raw/spliced.mtx",
+        VEL_BC = "{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto/raw/barcodes.tsv",
+        VEL_FEAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto/raw/features.tsv", 
+        GENE_MAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/matrix.mtx", 
+        GENE_BC = "{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/barcodes.tsv", 
+        GENE_FEAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/features.tsv",
+        GENEFULL_MAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw/matrix.mtx",
+        GENEFULL_MAT_EM = "{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx",
+        GENEFULL_BC = "{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw/barcodes.tsv",
+        GENEFULL_FEAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw/features.tsv"
     params:
         OUTDIR = config['OUTDIR'],
         MEMLIMIT = config['MEMLIMIT']
@@ -107,13 +109,27 @@ rule STARsolo_align:
 # compress outputs from STAR (count matrices, cell barcodes, and gene lists)
 rule compress_STAR_outs:
     input:
-        VELMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto/raw/spliced.mtx",
-        GENEMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/matrix.mtx",
-        GENEFULLMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw/matrix.mtx"
+        VEL_MAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto/raw/spliced.mtx",
+        VEL_BC = "{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto/raw/barcodes.tsv",
+        VEL_FEAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto/raw/features.tsv", 
+        GENE_MAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/matrix.mtx", 
+        GENE_BC = "{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/barcodes.tsv", 
+        GENE_FEAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/features.tsv",
+        GENEFULL_MAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw/matrix.mtx",
+        GENEFULL_MAT_EM = "{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx",
+        GENEFULL_BC = "{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw/barcodes.tsv",
+        GENEFULL_FEAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw/features.tsv"
     output:
-        VELMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto/raw/spliced.mtx.gz",
-        GENEMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/matrix.mtx.gz",
-        GENEFULLMAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw/matrix.mtx.gz"
+        VEL_MAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto/raw/spliced.mtx.gz",
+        VEL_BC = "{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto/raw/barcodes.tsv.gz",
+        VEL_FEAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto/raw/features.tsv.gz", 
+        GENE_MAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/matrix.mtx.gz", 
+        GENE_BC = "{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/barcodes.tsv.gz", 
+        GENE_FEAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/Gene/raw/features.tsv.gz",
+        GENEFULL_MAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw/matrix.mtx.gz",
+        GENEFULL_MAT_EM = "{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx.gz",
+        GENEFULL_BC = "{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw/barcodes.tsv.gz",
+        GENEFULL_FEAT = "{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw/features.tsv.gz"
     params:
         VELDIR = directory("{OUTDIR}/{sample}/STARsolo/Solo.out/Velocyto"),
         GENEDIR = directory("{OUTDIR}/{sample}/STARsolo/Solo.out/Gene"),
@@ -122,7 +138,7 @@ rule compress_STAR_outs:
         config["CORES"]
     run:
         tmp_recipe = RECIPE_DICT[wildcards.sample]
-        if "noTrim" in tmp_recipe:
+        if "noTrim" in tmp_recipe and "seeker" in tmp_recipe:
         #["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
             shell(
                 f"""
