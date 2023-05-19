@@ -12,8 +12,11 @@ See the companion workflow for 10x Genomics' chemistries [here](https://github.c
 - `cutadapt` [v3.4](https://cutadapt.readthedocs.io/en/stable/)
 - `fastqc` [v0.11.8](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
 - `STAR` [v2.7.10a](https://github.com/alexdobin/STAR)
+- `kallisto` [v](https://pachterlab.github.io/kallisto/)
 - `samtools`[v1.17](http://www.htslib.org/)
 - `qualimap` [v2.2.2a](http://qualimap.conesalab.org/)
+- `AnnData` [v0.9.1](https://anndata.readthedocs.io/en/latest/)
+- `scanpy` [v1.7.2](https://scanpy.readthedocs.io/en/stable/)
 - `vsearch` [v2.17.0_linux_x86_64](https://github.com/torognes/vsearch)
 - `BLAST`
 
@@ -70,22 +73,22 @@ STAR \
 *You can find the reference files on [GENCODE's website](https://www.gencodegenes.org/mouse/)*
 
 ## small/micro RNA analysis
-
 ### miRge3.0
 - [Link to documentation](https://mirge3.readthedocs.io/en/latest/quick_start.html)
 - [Link to library download](https://sourceforge.net/projects/mirge3/files/miRge3_Lib/)
 
 
-
-### Recipe descriptions:
+## Recipe descriptions:
 - `seeker_v3.1` - Hard trim the adapter read positions in R1, and use the best barcode correction algorithms in STARsolo
 - `seeker_v3.1_noTrim` - No hard trimming, and use the base positions for barcode/UMI (*Note*, this recipe doesn't work well w/ Curio Seeker b/c of in/del issues w/ the barcode synthesis)
 - `seeker_v3.1_noTrimMatchLinker` - Match the adapter sequence on R1 (w/ 2 mismatches allowed) and infer barcodes/UMIs from that position (*Note* best performer w/ Curio data)
 - `seeker_v3.1_noTrim_total` - Same as `seeker_v3.1_noTrimMatchLinker`, but with additional STAR parameters for total RNAseq alignment (more multimappers, looser alignment)
+- `stomics_noTrim` - Standard alignment for StereoSeq/STOmics (BGI) data
+- `stomics_noTrim_total` - Total RNA alignment for StereoSeq/STOmics (BGI) data
 
 
-### Barcode handling:
-#### STAR
+## Barcode handling:
+### STAR
 - Removed the linker sequence in R1 so that the `1MM_multi` barcode correction in `STARsolo` can be used
 - Barcode & UMI paramters for [`STAR`](https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md):
 ```
@@ -96,7 +99,7 @@ STAR \
 --soloCBlen 14
 ```
 
-#### kallisto/bustools
+### kallisto/bustools
 - Barcode & UMI paramters for `kallisto bus`
 ```
 -x 0,0,14:0,14,21:1,0,0
@@ -178,7 +181,6 @@ STAR \
 │   │   ├── coverage_profile_along_genes_(low).txt
 │   │   └── coverage_profile_along_genes_(total).txt
 │   └── rnaseq_qc_results.txt
-
 ├── STARsolo
 │   ├── Aligned.sortedByCoord.out.bam
 │   ├── Aligned.sortedByCoord.out.bam.bai
@@ -244,4 +246,4 @@ STAR \
 ```
 
 ## Helpful links
-- [Barcode download from Curio](http://3.222.73.200/)
+- [Barcode download from Curio](http://3.222.73.200/) (**no longer seems to be active?**)
