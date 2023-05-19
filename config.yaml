@@ -9,17 +9,12 @@
 #       --readFilesIn Read2_Lane1.fastq.gz,Read2_Lane2.fastq.gz,Read2_Lane3.fastq.gz  Read1_Lane1.fastq.gz,Read1_Lane2.fastq.gz,Read1_Lane3.fastq.gz
 
 ## ~~~~~ sample sheets ~~~~~
-# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/slideseq_rnd1.csv
-# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/SS_LKO_Rnd1.csv
-# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/STRSHD_Rnd2.csv
-# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/SH_4_5.csv # _5
-SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/SS_cohen_testes.csv
-# SAMPLE_SHEET_PATH: /home/dwm269/private_utils/sample_sheets/seeker/ChickenSurgerySlideSeq.csv
-
+SAMPLE_SHEET_PATH: /path/to/sample_sheet.csv
 
 # STARsolo parameters
-CORES: 24 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
-MEMLIMIT: 500000000000 # limit in bytes
+CORES: 12 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
+MEMLIMIT: 200000000000  # limit in bytes
+MEMLIMIT_GB: 300G       # mem limit for kallisto
 
 ## Recipe details (whitelists, barcode/UMI design, etc.)
 RECIPE_SHEET: resources/recipe_sheet.csv
@@ -27,30 +22,20 @@ RECIPE_SHEET: resources/recipe_sheet.csv
 ########################################################################################################
 # Important directory file paths
 ########################################################################################################
+# **Change these paths for where you want temporary (TMPDIR) and output (OUTDIR) files
 #TODO: add OUTDIR to sample sheet
-# TMPDIR: /workdir/dwm269/totalRNA/tmp # directory for temporary files
-
-# TMPDIR: /workdir/dwm269/spatial_lmna/tmp
-# OUTDIR: /workdir/dwm269/spatial_lmna/data/align_out
-
-# TMPDIR: /workdir/dwm269/totalRNA/STRS-HD/tmp
-# OUTDIR: /workdir/dwm269/totalRNA/STRS-HD/data/align_out_rRNA2
-
-# TMPDIR: /workdir/dwm269/butcher_surgery/tmp
-# OUTDIR: /workdir/dwm269/butcher_surgery/data/align_out
-
-TMPDIR: /workdir/dwm269/cohen_testes/tmp
-OUTDIR: /workdir/dwm269/cohen_testes/data/align_out
+TMPDIR: ./tmp
+OUTDIR: ./data/align_out
 
 ########################################################################################################
 # Executables - file paths
 ########################################################################################################
-STAR_EXEC: STAR # v2.7.10b /programs/STAR/STAR
-# KB_EXEC: kb
+BWA_EXEC: bwa
+STAR_EXEC: STAR 
 KALLISTO_EXEC: kallisto
-BUST_EXEC: bustools # v######
-CUTADAPT_EXEC: cutadapt # v4.2
-FASTQC_EXEC: fastqc # v######
+BUST_EXEC: bustools 
+CUTADAPT_EXEC: cutadapt 
+FASTQC_EXEC: fastqc 
 SAMTOOLS_EXEC: samtools
 UMITOOLS_EXEC: umi_tools
 QUALIMAP_EXEC: qualimap
@@ -62,7 +47,7 @@ BLASTDB: /shared_data/genome_db/BLAST_NCBI # path to where the nt BLAST database
 ########################################################################################################
 # Resources - file paths
 ########################################################################################################
-FASTQC_ADAPTERS: resources/fastqc_adapters.txt #/home/dwm269/slide_snake/
+FASTQC_ADAPTERS: resources/fastqc_adapters.txt 
 MIRGE_LIB: /home/dwm269/usr/bin/miRge3_Lib
 
 ########################################################################################################
