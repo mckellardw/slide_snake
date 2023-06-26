@@ -86,13 +86,24 @@ TODO
 
 
 ## **Recipe descriptions**:
+<details close>
+<summary> SlideSeq/Seeker (Curio) </summary>
 - `seeker_v3.1` - Hard trim the adapter read positions in R1, and use the best barcode correction algorithms in STARsolo
 - `seeker_v3.1_noTrim` - No hard trimming, and use the base positions for barcode/UMI (*Note*, this recipe doesn't work well w/ Curio Seeker b/c of in/del issues w/ the barcode synthesis)
 - `seeker_v3.1_noTrimMatchLinker` - Match the adapter sequence on R1 (w/ 2 mismatches allowed) and infer barcodes/UMIs from that position (*Note* best performer w/ Curio data)
 - `seeker_v3.1_noTrim_total` - Same as `seeker_v3.1_noTrimMatchLinker`, but with additional STAR parameters for total RNAseq alignment (more multimappers, looser alignment)
+</details>
+
+<details close>
+<summary> StereoSeq/STOmics (BGI) </summary>
 - `stomics_noTrim` - Standard alignment for StereoSeq/STOmics (BGI) data
 - `stomics_noTrim_total` - Total RNA alignment for StereoSeq/STOmics (BGI) data
+</details>
 
+<details close>
+<summary> Add new recipe: </summary>
+Just add  a new line in `resources/recipe_sheet.csv`, and reference it based on the name you use in the leftmost column!
+</details>
 
 ## **Barcode handling:**
 <details close>
