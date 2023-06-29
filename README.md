@@ -1,12 +1,11 @@
 # `slide_snake`
 ![slide_snake](images/slide_snake_logo.png)  
-## **Flexible preprocessing, alignment, and quantification workflow for SlideSeq data**  
+## **Flexible alignment workflow for spatial transcriptomics data**  
 
-The goal of this project is to build a workflow for assessing different preprocessing & alignment configurations, and digging into artifacts.  
+The goal of this project is to build a workflow for assessing different preprocessing, alignment, and quantification configurations, and digging into artifacts.  
 
 ***Contributions are welcome!***   
 
-See the companion workflow for 10x Genomics' chemistries [here](https://github.com/mckellardw/txg_snake).  
 
 ## **Dependencies**:
 - `cutadapt` [v3.4](https://cutadapt.readthedocs.io/en/stable/)
