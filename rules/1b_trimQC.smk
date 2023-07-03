@@ -176,8 +176,10 @@ rule cutadapt:
         THREE_PRIME_R2_NEXTERA = "CTGTCTCTTATA", # Nextera sequence
         THREE_PRIME_R2_rcNEXTERA = "TATAAGAGACAG", # Rev Comp of Nextera sequence
         THREE_PRIME_R2_TSO = "AAGCTGGTATCAACGCAGAGTGAATGGG", # SlideSeq TSO - remove any polyadenylated TSOs
+        THREE_PRIME_R2_TXG_TSO = "AAGCAGTGGTATCAACGCAGAGTACATGGG", # 10x TSO - remove any polyadenylated TSOs
         THREE_PRIME_R2_ILLUMINA_UNI = "AGATCGGAAGAG", # Illumina Universal
         FIVE_PRIME_R2_TSO = "CCCATTCACTCTGCGTTGATACCAGCTT", # rev comp of SlideSeq TSO
+        FIVE_PRIME_R2_TXG_TSO = "CCCATGTACTCTGCGTTGATACCACTGCTT", # rev-comp of 10x TSO sequence
         THREE_PRIME_R2_SEEKER_BB_ADAPTER = "TCTTCAGCGTTCCCGAGA", # Adapter between BB1 & BB2 in R1 
         FIVE_PRIME_R2_SEEKER_BB_ADAPTER = "AGAGCCCTTGCGACTTCT" # Reverse of the adapter between BB1 & BB2 in R1 
     threads:
@@ -211,11 +213,13 @@ rule cutadapt:
             -A "{params.THREE_PRIME_R2_POLYA};max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
             -A "{params.THREE_PRIME_R2_POLYT};max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
             -A {params.THREE_PRIME_R2_TSO} \
+            -A {params.THREE_PRIME_R2_TXG_TSO} \
             -A {params.THREE_PRIME_R2_SEEKER_BB_ADAPTER} \
             -A {params.THREE_PRIME_R2_NEXTERA} \
             -A {params.THREE_PRIME_R2_rcNEXTERA} \
             -A {params.THREE_PRIME_R2_ILLUMINA_UNI} \
             -G {params.FIVE_PRIME_R2_TSO} \
+            -G {params.FIVE_PRIME_R2_TXG_TSO} \
             -G {params.FIVE_PRIME_R2_SEEKER_BB_ADAPTER} \
             --pair-filter=any \
      		-o {output.FINAL_R1_FQ} \
