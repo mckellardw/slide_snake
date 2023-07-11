@@ -155,7 +155,7 @@ rule compress_STAR_outs:
 
         shell(
             f"""
-            pigz -p{threads} {OUTDIR}/{wildcards.sample}/STARsolo/*/*/*/*.tsv {OUTDIR}/{wildcards.sample}/STARsolo/*/*/*/*.mtx
+            pigz -p{threads} -f {OUTDIR}/{wildcards.sample}/STARsolo/*/*/*/*.tsv {OUTDIR}/{wildcards.sample}/STARsolo/*/*/*/*.mtx
             """
         )
 

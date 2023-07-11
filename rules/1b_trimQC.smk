@@ -6,7 +6,7 @@ rule preTrim_FastQC_R1:
     input:
         MERGED_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz'
     output:
-        fastqcDir = directory('{OUTDIR}/{sample}/preTrim_fastqc_R1')
+        fastqcDir = directory('{OUTDIR}/{sample}/fastqc_preTrim_R1')
     params:
         adapters = config['FASTQC_ADAPTERS']
     threads:
@@ -30,7 +30,7 @@ rule preTrim_FastQC_R2:
     input:
         MERGED_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2.fq.gz'
     output:
-        fastqcDir = directory('{OUTDIR}/{sample}/preTrim_fastqc_R2')
+        fastqcDir = directory('{OUTDIR}/{sample}/fastqc_preTrim_R2')
     params:
         ADAPTERS = config['FASTQC_ADAPTERS']
     threads:
@@ -123,22 +123,7 @@ rule R1_trimming:
         R1 = input.R1_FQ
 
         #param handling for different alignment strategies
-        if "noTrim" in tmp_recipe:
-            # R1 = input.R1_FQ
-            shell( # Rename R1_FQ if no trimming needed
-                f"""
-                mv {R1} {output.R1_FQ} 
-                echo "No trimming performed on {R1}..." {log}
-                """
-            )
-        elif "internalTrim" in tmp_recipe:
-            # R1 = input.R1_FQ_InternalTrim
-            shell( # Internal trimming to cut out the adapter sequence
-                f"""
-                python scripts/internal_adapter_trim_R1.py {params.INTERNAL_ADAPTER} {params.INTERNAL_TRIM_QC_LOG} {threads} {params.TMPDIR} {R1} {output.R1_FQ} | tee {log}
-                """
-            )
-        else:
+        if "hardTrim" in tmp_recipe:
             # R1 = input.R1_FQ_HardTrim
             shell( # "Hard" trimming, to remove the adapter based on hard-coded base positions
                 f"""
@@ -148,6 +133,22 @@ rule R1_trimming:
                 pigz -f -p{threads} {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_Trimmed.fq 
 
                 echo "Hard trimming performed on {R1}" > {log}
+                """
+            )
+        elif "internalTrim" in tmp_recipe:
+            #TODO- rewrite/speed up internal trimming!
+            # R1 = input.R1_FQ_InternalTrim
+            shell( # Internal trimming to cut out the adapter sequence
+                f"""
+                python scripts/internal_adapter_trim_R1.py {params.INTERNAL_ADAPTER} {params.INTERNAL_TRIM_QC_LOG} {threads} {params.TMPDIR} {R1} {output.R1_FQ} | tee {log}
+                """
+            )
+        else:
+            # R1 = input.R1_FQ
+            shell( # Rename R1_FQ if no trimming needed
+                f"""
+                mv {R1} {output.R1_FQ} 
+                echo "No trimming performed on {R1}..." {log}
                 """
             )
 
@@ -235,7 +236,7 @@ rule postTrim_FastQC_R1:
     input:
         FINAL_R1_FQ =  '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz'
     output:
-        fastqcDir = directory('{OUTDIR}/{sample}/postTrim_fastqc_R1'),
+        fastqcDir = directory('{OUTDIR}/{sample}/fastqc_postTrim_R1'),
         # fastqcReport = ''
     threads:
         config['CORES']
@@ -260,7 +261,7 @@ rule postTrim_FastQC_R2:
     input:
         FINAL_R2_FQ =  '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz'
     output:
-        fastqcDir = directory('{OUTDIR}/{sample}/postTrim_fastqc_R2'),
+        fastqcDir = directory('{OUTDIR}/{sample}/fastqc_postTrim_R2'),
         # fastqcReport = ''
     threads:
         config['CORES']
