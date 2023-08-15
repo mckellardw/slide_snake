@@ -43,6 +43,7 @@ UMITOOLS_EXEC = config["UMITOOLS_EXEC"]
 QUALIMAP_EXEC = config["QUALIMAP_EXEC"]
 # MULTIQC_EXEC = config["MULTIQC_EXEC"]
 MIRGE_EXEC = config['MIRGE_EXEC']
+BOWTIE2_EXEC = config['BOWTIE2_EXEC']
 BAM2SPLITBW = config["BAM2SPLITBW"]
 FASTX_COLLAPSER = config["FASTX_COLLAPSER"]
 BLASTDB = config["BLASTDB"]
@@ -51,14 +52,14 @@ BLASTDB = config["BLASTDB"]
 # Pre-run setup
 ########################################################################################################
 # Build dictionaries of recipes & species to use for alignment
-RECIPE_DICT = {} # Dictionary of recipes to use for each sample
-rRNA_DICT = {} # Dictionary of rRNA reference genomes to use
-REF_DICT = {} # Dictionary of reference genomes to use
-GTF_DICT = {} # Dictionary of gene annotations (.gtf format)
-IDX_DICT = {} # Dictionary of kallisto indices
-T2G_DICT = {} # Dictionary of kallisto transcript-to-gene maps
-BB_DICT = {} # Dictionary of bead barcode maps
-SPECIES_DICT = {} # Species listed for mirge3 analysis
+RECIPE_DICT = {}    # Dictionary of recipes to use for each sample
+rRNA_DICT = {}      # Dictionary of rRNA reference genomes to use
+REF_DICT = {}       # Dictionary of reference genomes to use
+GTF_DICT = {}       # Dictionary of gene annotations (.gtf format)
+IDX_DICT = {}       # Dictionary of kallisto indices
+T2G_DICT = {}       # Dictionary of kallisto transcript-to-gene maps
+BB_DICT = {}        # Dictionary of bead barcode maps
+SPECIES_DICT = {}   # Dictionary of species listed for mirge3 analysis
 for i in range(0,SAMPLE_SHEET.shape[0]):
     tmp_sample = list(SAMPLE_SHEET["sampleID"])[i]
     RECIPE_DICT[tmp_sample] = list(SAMPLE_SHEET["recipe"])[i]
@@ -105,12 +106,12 @@ rule all:
             OUTDIR=config['OUTDIR'],
             sample=SAMPLES
         ),
-        # expand( # strand-split, umi_tools deduplicated .bam
-        #     '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.{STRAND}.bam.bai',
-        #     OUTDIR=config['OUTDIR'],
-        #     sample=SAMPLES,
-        #     STRAND=["fwd", "rev"]
-        # ),
+        expand( # strand-split, umi_tools deduplicated .bam
+            '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.{STRAND}.bam.bai',
+            OUTDIR=config['OUTDIR'],
+            sample=SAMPLES,
+            STRAND=["fwd", "rev"]
+        ),
         # expand( #non-deduplicated .bam
         #     '{OUTDIR}/{sample}/{REF}/Aligned.sortedByCoord.out.bam.bai',
         #     OUTDIR=config['OUTDIR'],
@@ -153,9 +154,10 @@ include: "rules/3b_kallisto_pseudobam.smk"
 
 # small RNA stuff
 include: "rules/4_mirge.smk"
+# include: "rules/4_bowtie2_piRNA.smk"
 
 # scanpy stuff
-include: "rules/4a_scanpy_init.smk"
+include: "rules/5a_scanpy_init.smk"
 
 # Post-processing, prep for downstream analyses
 #TODO:
