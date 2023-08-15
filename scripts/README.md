@@ -6,3 +6,4 @@
 - `kb.sh` - run kallisto/bustools
 - `split_dedup.sh` - parallelized umi_tools deduplication (split reads across chromosomes, then dedup!). Also filters the .bam file based on mapq scores
 - `splitNfqs.py` - split a fastq file into N chunks (parallelized, uses an easy `sed` command)
+- `bam_chr2tag.awk` - awk script which adds the chromosome as a tag (hardcoded as `BT` for "bowtie2"), which can later be used to generate count matrices. Used for small RNA alignments w/ bowtie2
