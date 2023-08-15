@@ -54,4 +54,5 @@ MIRGE_LIB: /home/dwm269/usr/bin/miRge3_Lib
 # Library details
 ########################################################################################################
 R1_INTERNAL_ADAPTER: "TCTTCAGCGTTCCCGAGA"
+piRNA_INDEX: '/workdir/dwm269/genomes/pirbase/mmu/gold/bowtie2/index' # bowtie2 index of piRNAs; just mouse implemented now...
 MAX_SHORT_READ_LENGTH: 34
