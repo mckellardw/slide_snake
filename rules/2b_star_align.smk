@@ -39,30 +39,30 @@ rule STARsolo_align:
     priority:
         42
     run:
-        tmp_recipe = RECIPE_DICT[wildcards.sample]
+        recipe = RECIPE_DICT[wildcards.sample]
         STAR_REF = REF_DICT[wildcards.sample] # Use rRNA reference
         nBB = sum(1 for line in open(input.BB_WHITELIST)) # get number of bead barcodes for filtered count matrix, `--soloCellFilter`
 
         #TODO: add try catches
-        soloType = RECIPE_SHEET["STAR.soloType"][tmp_recipe]
-        soloUMI = RECIPE_SHEET["STAR.soloUMI"][tmp_recipe]
-        soloCB = RECIPE_SHEET["STAR.soloCB"][tmp_recipe]
-        soloCBmatchWLtype = RECIPE_SHEET["STAR.soloCBmatchWLtype"][tmp_recipe]
-        soloAdapter = RECIPE_SHEET["STAR.soloAdapter"][tmp_recipe]
-        extraSTAR = RECIPE_SHEET["STAR.extra"][tmp_recipe]
+        soloType = RECIPE_SHEET["STAR.soloType"][recipe]
+        soloUMI = RECIPE_SHEET["STAR.soloUMI"][recipe]
+        soloCB = RECIPE_SHEET["STAR.soloCB"][recipe]
+        soloCBmatchWLtype = RECIPE_SHEET["STAR.soloCBmatchWLtype"][recipe]
+        soloAdapter = RECIPE_SHEET["STAR.soloAdapter"][recipe]
+        extraSTAR = RECIPE_SHEET["STAR.extra"][recipe]
 
         #param handling for different alignment strategies
-        if "stomics" in tmp_recipe:
+        if "stomics" in recipe:
             whitelist = input.BB_WHITELIST
-        elif "noTrim" in tmp_recipe:
+        elif "noTrim" in recipe:
             # ["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
             whitelist = f"{input.BB_1} {input.BB_2}"
             # R1 = input.R1_FQ
-        elif "internalTrim" in tmp_recipe:
+        elif "internalTrim" in recipe:
             # ["seeker_v3.1_internalTrim_total"]:
             whitelist = input.BB_WHITELIST
             # R1 = input.R1_FQ_InternalTrim
-        elif "adapterInsert" in tmp_recipe:
+        elif "adapterInsert" in recipe:
             whitelist = input.BB_ADAPTER
             # R1 = input.R1_FQ
         else:
@@ -70,7 +70,7 @@ rule STARsolo_align:
             # R1 = input.R1_FQ_HardTrim
 
         # Select R2 based on alignment recipe
-        if "rRNA" in tmp_recipe: # Use trimmed & rRNA-filtered .fq's
+        if "rRNA" in recipe: # Use trimmed & rRNA-filtered .fq's
             R1 = input.R1_FQ_FILTERED
             R2 = input.R2_FQ_FILTERED
         else: # just trimmed .fq's
@@ -78,6 +78,7 @@ rule STARsolo_align:
             R2 = input.R2_FQ
 
         # Run STARsolo
+        #TODO: --twopassMode
         shell(
             f"""
             mkdir -p {params.OUTDIR}/{wildcards.sample}/STARsolo
@@ -137,8 +138,8 @@ rule compress_STAR_outs:
     threads:
         config["CORES"]
     run:
-        tmp_recipe = RECIPE_DICT[wildcards.sample]
-        if "noTrim" in tmp_recipe and "seeker" in tmp_recipe:
+        recipe = RECIPE_DICT[wildcards.sample]
+        if "noTrim" in recipe and "seeker" in recipe:
         #["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
             shell(
                 f"""
