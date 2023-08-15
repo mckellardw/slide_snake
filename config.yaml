@@ -12,7 +12,7 @@
 SAMPLE_SHEET_PATH: /path/to/sample_sheet.csv
 
 # STARsolo parameters
-CORES: 12 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
+CORES: 24 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
 MEMLIMIT: 200000000000  # limit in bytes
 MEMLIMIT_GB: 300G       # mem limit for kallisto
 
@@ -54,3 +54,4 @@ MIRGE_LIB: /home/dwm269/usr/bin/miRge3_Lib
 # Library details
 ########################################################################################################
 R1_INTERNAL_ADAPTER: "TCTTCAGCGTTCCCGAGA"
+MAX_SHORT_READ_LENGTH: 34

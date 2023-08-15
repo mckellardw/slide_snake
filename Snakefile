@@ -79,6 +79,11 @@ rule all:
         #     OUTDIR=config['OUTDIR'],
         #     sample=SAMPLES
         # ),
+        expand( # bowtie2 alignment to piRNA reference (pirbase)
+            '{OUTDIR}/{sample}/pirna/counts.tsv.gz',
+            OUTDIR=config['OUTDIR'],
+            sample=SAMPLES
+        ),
         expand( # anndata files (with spatial info)
             '{OUTDIR}/{sample}/{ALIGN_OUT}',
             OUTDIR=config['OUTDIR'],
@@ -135,6 +140,7 @@ rule all:
             READ=["R1","R2"],
             TRIM = ["preTrim","postTrim"]
         )
+        
 
 # fastq preprocessing & QC
 include: "rules/1a_mergefqs.smk"
@@ -154,7 +160,7 @@ include: "rules/3b_kallisto_pseudobam.smk"
 
 # small RNA stuff
 include: "rules/4_mirge.smk"
-# include: "rules/4_bowtie2_piRNA.smk"
+include: "rules/4_bowtie2_piRNA.smk"
 
 # scanpy stuff
 include: "rules/5a_scanpy_init.smk"

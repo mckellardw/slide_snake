@@ -62,13 +62,30 @@ rule bowtie2_piRNA:
             """
         )
 
-# Dedup the bam
-rule umitools_dedupBAM_piRNA:
+
+# Index the deduplicated .bam file
+rule umitools_sortDedupBAM_piRNA:
     input:
-        BB_WHITELIST = "{OUTDIR}/{sample}/bb/whitelist.txt",
         BAM = '{OUTDIR}/{sample}/pirna/aligned.bam'
     output:
-        BAM = '{OUTDIR}/{sample}/pirna/aligned.dedup.bam'
+        BAM = '{OUTDIR}/{sample}/pirna/aligned.sorted.bam'
+    threads:
+        config['CORES']
+    run:
+        shell(
+            f"""
+            {SAMTOOLS_EXEC} sort -@ {threads} {input.BAM} > {output.BAM}
+            """
+        )
+
+
+# Dedup the bam
+rule umitools_dedupSortedBAM_piRNA:
+    input:
+        BB_WHITELIST = "{OUTDIR}/{sample}/bb/whitelist.txt",
+        BAM = '{OUTDIR}/{sample}/pirna/aligned.sorted.bam'
+    output:
+        BAM = '{OUTDIR}/{sample}/pirna/aligned.sorted.dedup.bam'
     threads:
         config['CORES']
     log:
@@ -90,25 +107,29 @@ rule umitools_dedupBAM_piRNA:
             """
         )
 
-# Index the deduplicated .bam file
-rule umitools_indexDedupBAM_piRNA:
+
+# Index the sorted & deduplicated .bam file
+rule umitools_indexSortedDedupBAM_piRNA:
     input:
-        SORTEDBAM = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.bam'
+        BAM = '{OUTDIR}/{sample}/pirna/aligned.sorted.dedup.bam'
     output:
-        BAI = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.bam.bai'
+        BAI = '{OUTDIR}/{sample}/pirna/aligned.sorted.dedup.bam.bai'
     threads:
         config['CORES']
-    shell:
-        """
-        {SAMTOOLS_EXEC} index -@ {threads} {input.SORTEDBAM}
-        """
+    run:
+        shell(
+            f"""
+            {SAMTOOLS_EXEC} index -@ {threads} {input.BAM}
+            """
+        )
 
-# Generate count matrix w/ umi-tools for piRNAs
+# Tag bam w/ chromosome/piRNA it aligned to, 
+#   then generate count matrix w/ umi-tools for piRNAs
 rule bowtie2_piRNA_counts:
     input:
-        BAM = '{OUTDIR}/{sample}/pirna/dedup.aligned.bam'
+        BAM = '{OUTDIR}/{sample}/pirna/aligned.sorted.dedup.bam'
     output:
-        H5 = '{OUTDIR}/{sample}/pirna/counts.h5'
+        COUNTS = '{OUTDIR}/{sample}/pirna/counts.tsv.gz'
     params:
         OUTDIR = config['OUTDIR']
     log:
@@ -118,17 +139,14 @@ rule bowtie2_piRNA_counts:
             f"""
             {SAMTOOLS_EXEC} view {input.BAM} \
             | awk -f scripts/add_bt_tag.awk \
-            | {SAMTOOLS_EXEC} view -b - \
-            > {output.BAM}
-
-
-            {UMITOOLS_EXEC} count \
-            --paired \
+            | {SAMTOOLS_EXEC} view -b \
+            | {UMITOOLS_EXEC} count \
+            --per-gene \
+            --per-cell \
             --cell-barcode-tag=CB \
-            --gene-tag=XT \
-            --output={output.H5} \
-            {input.BAM} | tee {log}
+            --gene-tag=BT \
+            --log={log} \
+            -I {input.BAM} \
+            -S {output.COUNTS}
             """
         )
-            # --log={log} \
-# umi_tools count --per-gene --gene-tag=XT --assigned-status-tag=XS --per-cell -I assigned_sorted.bam -S counts.tsv.gz
