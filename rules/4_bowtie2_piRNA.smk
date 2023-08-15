@@ -3,7 +3,9 @@
 # pirbase download link - http://bigdata.ibp.ac.cn/piRBase/download.php
 # *Note* - using gold standard piRNA refs ()
 
-# Use STAR-barcoded .bam file & filter to remove reads longer than any piRNAs (##bp)
+# Use STAR-barcoded .bam file & filter:
+#   - Remove reads longer than any piRNAs (34bp)
+#   - Remove all aligment info, but keep tags
 rule bowtie2_prep_bam:
     input:
         BAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.out.bam'
@@ -20,10 +22,10 @@ rule bowtie2_prep_bam:
             f"""
             mkdir -p {OUTDIR}/{wildcards.sample}/pirna
 
-            {SAMTOOLS_EXEC} view {input.bam} \
-            | awk 'length($10) > {params.MAX_SHORT_READ_LENGTH} || $1 ~ /^@/' \
-            | awk 'BEGIN {{FS=OFS=\"\\t\"}} !/^@/ {{${3}=\"*\"; ${4}=\"0\"; ${5}=\"0\";t \$6=\"*\"; ${7}=\"*\"; ${8}=\"0\"; ${9}=\"0\"}} {{print}}' \
-            | {SAMTOOLS_EXEC} view -bS {output.BAM}
+            {SAMTOOLS_EXEC} view {input.BAM} \
+            | awk -f scripts/bam_shortPassReadFilter.awk -v max_length={params.MAX_SHORT_READ_LENGTH} \
+            | awk -f scripts/bam_clearAlignment.awk \
+            | {SAMTOOLS_EXEC} view -bS > {output.BAM}
             """
         )
 # samtools view -h input.bam | awk 'length(\$10) > 30 || \$1 ~ /^@/' | samtools view -bS - > output.bam
@@ -42,7 +44,7 @@ rule bowtie2_piRNA:
     params:
         OUTDIR = config['OUTDIR'],
         MEMLIMIT = config['MEMLIMIT'],
-        REF = '/workdir/dwm269/genomes/pirbase/mmu/gold/bowtie2' # just mouse implemented now...
+        REF = config['piRNA_INDEX']
     log:
         '{OUTDIR}/{sample}/pirna/bowtie2.log'    
     threads:
@@ -52,13 +54,13 @@ rule bowtie2_piRNA:
             f"""
             {BOWTIE2_EXEC} \
             -x {params.REF} \
-            -b {input.bam_file} \
+            -b {input.BAM} \
             -p {threads} \
             --sensitive-local \
             --preserve-tags \
             --no-unal \
-            --met-file {log} \
-            | {SAMTOOLS_EXEC} view -bS - > {output}
+            2> {log} \
+            | {SAMTOOLS_EXEC} view -bS > {output.BAM}
             """
         )
 
