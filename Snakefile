@@ -161,6 +161,4 @@ include: "rules/5a_scanpy_init.smk"
 
 # Post-processing, prep for downstream analyses
 #TODO:
-# - Initialize a .h5ad object for easy loading into python later
-#   - Add spatial location!
 # - Add proper saturation estimation (not just saturation based on reads aligning to known genes)
