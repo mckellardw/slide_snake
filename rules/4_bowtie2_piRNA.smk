@@ -55,7 +55,7 @@ rule bowtie2_prep_bam:
 
 # Run bowtie2 on piRNA reference from pirbase
 # To generate: `bowtie2-build mmu.gold.fa.gz ./index > build.log`
-rule bowtie2_piRNA:
+rule bowtie2_align_piRNA:
     input:
         BAM = '{OUTDIR}/{sample}/pirna/tmp.bam'
         # R1_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R1_final_filtered_short.fq.gz',
@@ -69,7 +69,8 @@ rule bowtie2_piRNA:
     log:
         '{OUTDIR}/{sample}/pirna/bowtie2.log'    
     threads:
-        config['CORES']
+        1
+        # config['CORES']
     run:
         shell(
             f"""
@@ -102,21 +103,6 @@ rule umitools_sortAlignedBAM_piRNA:
         )
 
 
-# Index the sorted & deduplicated .bam file
-rule umitools_indexSortedBAM_piRNA:
-    input:
-        BAM = '{OUTDIR}/{sample}/pirna/aligned.sorted.bam'
-    output:
-        BAI = temp('{OUTDIR}/{sample}/pirna/aligned.sorted.bam.bai')
-    threads:
-        config['CORES']
-    run:
-        shell(
-            f"""
-            {SAMTOOLS_EXEC} index -@ {threads} {input.BAM}
-            """
-        )
-
 # Tag bam w/ chromosome/piRNA it aligned to
 rule bowtie2_tagBam_piRNA:
     input:
@@ -136,10 +122,26 @@ rule bowtie2_tagBam_piRNA:
         )
 
 
+# Index the sorted & deduplicated .bam file
+rule umitools_indexSortedTaggedBAM_piRNA:
+    input:
+        BAM = '{OUTDIR}/{sample}/pirna/aligned.sorted.tagged.bam'
+    output:
+        BAI = temp('{OUTDIR}/{sample}/pirna/aligned.sorted.tagged.bam.bai')
+    threads:
+        config['CORES']
+    run:
+        shell(
+            f"""
+            {SAMTOOLS_EXEC} index -@ {threads} {input.BAM}
+            """
+        )
+
 # Generate count matrix w/ umi-tools for piRNAs
 rule bowtie2_piRNA_counts:
     input:
-        BAM = '{OUTDIR}/{sample}/pirna/aligned.sorted.tagged.bam'
+        BAM = '{OUTDIR}/{sample}/pirna/aligned.sorted.tagged.bam',
+        BAI = '{OUTDIR}/{sample}/pirna/aligned.sorted.tagged.bam.bai'
     output:        
         COUNTS = '{OUTDIR}/{sample}/pirna/counts.tsv.gz'
     params:
@@ -157,26 +159,9 @@ rule bowtie2_piRNA_counts:
             --cell-tag=CB \
             --gene-tag=BT \
             --umi-tag=UB \
-            --assigned-status-tag=XS \
             --log={log} \
             -I {input.BAM} \
             -S {output.COUNTS}
-            """
-        )
-
-
-# Index the sorted & deduplicated .bam file
-rule umitools_indexSortedTaggedBAM_piRNA:
-    input:
-        BAM = '{OUTDIR}/{sample}/pirna/aligned.sorted.tagged.bam'
-    output:
-        BAI = '{OUTDIR}/{sample}/pirna/aligned.sorted.tagged.bam.bai'
-    threads:
-        config['CORES']
-    run:
-        shell(
-            f"""
-            {SAMTOOLS_EXEC} index -@ {threads} {input.BAM}
             """
         )
 
@@ -211,11 +196,11 @@ rule umitools_dedupSortedBAM_piRNA:
 
 
 # Index the sorted & deduplicated .bam file
-rule umitools_indexSortedDedupBAM_piRNA:
+rule umitools_indexSortedTaggedDedupBAM_piRNA:
     input:
-        BAM = '{OUTDIR}/{sample}/pirna/aligned.sorted.dedup.bam'
+        BAM = '{OUTDIR}/{sample}/pirna/aligned.sorted.tagged.dedup.bam'
     output:
-        BAI = '{OUTDIR}/{sample}/pirna/aligned.sorted.dedup.bam.bai'
+        BAI = '{OUTDIR}/{sample}/pirna/aligned.sorted.tagged.dedup.bam.bai'
     threads:
         config['CORES']
     run:
