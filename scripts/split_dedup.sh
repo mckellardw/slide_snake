@@ -21,7 +21,6 @@ LOG=$6
 mkdir -p ${TMPDIR}
 cd ${TMPDIR}
 
-# echo "Log for chr_split_dedup:" > ${LOG}
 # echo "Log info can be found in "${LOG}
 
 PREFIX=`echo ${INBAM} | rev | cut -d / -f 1 | cut -d . -f 2- | rev`
