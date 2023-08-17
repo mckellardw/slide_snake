@@ -53,7 +53,9 @@ rule bowtie2_prep_bam:
 # samtools view -h input.bam | awk 'length(\$10) > 30 || \$1 ~ /^@/' | samtools view -bS - > output.bam
 # samtools view -h aligned.bam | awk 'BEGIN {FS=OFS="\t"} !/^@/ {\$3="*"; \$4="0"; \$5="0"; \$6="*"; \$7="*"; \$8="0"; \$9="0"} {print}' | samtools view -b -o unaligned.bam -
 
-# Run bowtie2 on piRNA reference from pirbase
+# Run bowtie2 on piRNA reference from pirbase in end-to-end/sensitive mode 
+#   https://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#end-to-end-alignment-versus-local-alignment
+#   change to `--sensitive-local` for other applications
 # To generate: `bowtie2-build mmu.gold.fa.gz ./index > build.log`
 rule bowtie2_align_piRNA:
     input:
@@ -78,7 +80,7 @@ rule bowtie2_align_piRNA:
             -x {params.REF} \
             -b {input.BAM} \
             -p {threads} \
-            --sensitive-local \
+            --sensitive \
             --preserve-tags \
             --no-unal \
             2> {log} \
