@@ -90,7 +90,7 @@ rule bowtie2_align_piRNA:
 
 
 # Index the deduplicated .bam file
-rule umitools_sortAlignedBAM_piRNA:
+rule sortAlignedBAM_piRNA:
     input:
         BAM = '{OUTDIR}/{sample}/pirna/aligned.bam'
     output:
@@ -106,7 +106,7 @@ rule umitools_sortAlignedBAM_piRNA:
 
 
 # Tag bam w/ chromosome/piRNA it aligned to
-rule bowtie2_tagBam_piRNA:
+rule tagSortedBam_piRNA:
     input:
         BAM = '{OUTDIR}/{sample}/pirna/aligned.sorted.bam'
     output:
@@ -125,7 +125,7 @@ rule bowtie2_tagBam_piRNA:
 
 
 # Index the sorted & deduplicated .bam file
-rule umitools_indexSortedTaggedBAM_piRNA:
+rule indexSortedTaggedBAM_piRNA:
     input:
         BAM = '{OUTDIR}/{sample}/pirna/aligned.sorted.tagged.bam'
     output:
@@ -140,7 +140,7 @@ rule umitools_indexSortedTaggedBAM_piRNA:
         )
 
 # Generate count matrix w/ umi-tools for piRNAs
-rule bowtie2_piRNA_counts:
+rule umitools_count_piRNA:
     input:
         BAM = '{OUTDIR}/{sample}/pirna/aligned.sorted.tagged.bam',
         BAI = '{OUTDIR}/{sample}/pirna/aligned.sorted.tagged.bam.bai'
@@ -198,7 +198,7 @@ rule umitools_dedupSortedBAM_piRNA:
 
 
 # Index the sorted & deduplicated .bam file
-rule umitools_indexSortedTaggedDedupBAM_piRNA:
+rule indexSortedTaggedDedupBAM_piRNA:
     input:
         BAM = '{OUTDIR}/{sample}/pirna/aligned.sorted.tagged.dedup.bam'
     output:
