@@ -107,16 +107,17 @@ rule all:
         #     sample=SAMPLES
         # ),
         expand(  # alignment QC with qualimap | requires deduped input!
-            '{OUTDIR}/{sample}/qualimap/qualimapReport.html',
-            OUTDIR=config['OUTDIR'],
-            sample=SAMPLES
-        ),
-        expand( # strand-split, umi_tools deduplicated .bam
-            '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.{STRAND}.bam.bai',
+            '{OUTDIR}/{sample}/qualimap/{FILE}',
             OUTDIR=config['OUTDIR'],
             sample=SAMPLES,
-            STRAND=["fwd", "rev"]
+            FILE=["qualimapReport.html","rnaseq_qc_result.csv"]
         ),
+        # expand( # strand-split, umi_tools deduplicated .bam
+        #     '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.{STRAND}.bam.bai',
+        #     OUTDIR=config['OUTDIR'],
+        #     sample=SAMPLES,
+        #     STRAND=["fwd", "rev"]
+        # ),
         # expand( #non-deduplicated .bam
         #     '{OUTDIR}/{sample}/{REF}/Aligned.sortedByCoord.out.bam.bai',
         #     OUTDIR=config['OUTDIR'],
