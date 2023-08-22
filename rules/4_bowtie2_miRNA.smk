@@ -1,36 +1,38 @@
 ####################################################
+# Quantification of (mature) miRNAs
+
 # Summary of Workflow:
 
 # 1) bowtie2_prep_bam: Filter and preprocess the STAR-aligned BAM file to remove 
-#       reads longer than piRNAs, and clear alignment information while keeping tags.
+#       reads longer than miRNAs, and clear alignment information while keeping tags.
 
-# 2) bowtie2_piRNA: Align the preprocessed BAM file to the piRNA reference using 
+# 2) bowtie2_miRNA: Align the preprocessed BAM file to the miRNA reference using 
 #       bowtie2, and save the aligned BAM file.
 
-# 3) umitools_sortAlignedBAM_piRNA: Sort the aligned BAM file using samtools.
+# 3) umitools_sortAlignedBAM_miRNA: Sort the aligned BAM file using samtools.
 
-# 4) umitools_dedupSortedBAM_piRNA: Deduplicate the sorted BAM file using umi-tools.
+# 4) umitools_dedupSortedBAM_miRNA: Deduplicate the sorted BAM file using umi-tools.
 
-# 5) umitools_indexSortedDedupBAM_piRNA: Index the deduplicated BAM file using samtools.
+# 5) umitools_indexSortedDedupBAM_miRNA: Index the deduplicated BAM file using samtools.
 
-# 6) bowtie2_piRNA_counts: Tag the deduplicated BAM file with chromosome/piRNA information 
+# 6) bowtie2_miRNA_counts: Tag the deduplicated BAM file with chromosome/miRNA information 
 #       and generate a count matrix using umi-tools.
 
 
 # bowtie2 documentation: https://bowtie-bio.sourceforge.net/bowtie2/manual.shtml
 # pirbase download link - http://bigdata.ibp.ac.cn/piRBase/download.php
-#       *Note* - using gold standard piRNA refs ()
+#       *Note* - using gold standard miRNA refs ()
 ####################################################
 
 # Use STAR-barcoded .bam file & filter:
-#   - Remove reads longer than any piRNAs (34bp)
+#   - Remove reads longer than any miRNAs (34bp)
 #   - Remove reads missing a cell barcode ("CB" tag) or UMI ("UB" tag)
 #   - Remove all aligment info, but keep tags
-rule bowtie2_prep_bam_piRNA:
+rule bowtie2_prep_bam_miRNA:
     input:
         BAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.out.bam'
     output:
-        BAM = temp('{OUTDIR}/{sample}/piRNA/tmp.bam')
+        BAM = temp('{OUTDIR}/{sample}/miRNA/tmp.bam')
     params:
         OUTDIR = config['OUTDIR'],
         MEMLIMIT = config['MEMLIMIT'],
@@ -40,7 +42,7 @@ rule bowtie2_prep_bam_piRNA:
     run:
         shell(
             f"""
-            mkdir -p {OUTDIR}/{wildcards.sample}/piRNA
+            mkdir -p {OUTDIR}/{wildcards.sample}/miRNA
 
             {SAMTOOLS_EXEC} view {input.BAM} \
             | awk -f scripts/bam_shortPassReadFilter.awk -v max_length={params.MAX_SHORT_READ_LENGTH} \
@@ -53,23 +55,23 @@ rule bowtie2_prep_bam_piRNA:
 # samtools view -h input.bam | awk 'length(\$10) > 30 || \$1 ~ /^@/' | samtools view -bS - > output.bam
 # samtools view -h aligned.bam | awk 'BEGIN {FS=OFS="\t"} !/^@/ {\$3="*"; \$4="0"; \$5="0"; \$6="*"; \$7="*"; \$8="0"; \$9="0"} {print}' | samtools view -b -o unaligned.bam -
 
-# Run bowtie2 on piRNA reference from pirbase in end-to-end/sensitive mode 
+# Run bowtie2 on miRNA reference from pirbase in end-to-end/sensitive mode 
 #   https://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#end-to-end-alignment-versus-local-alignment
 #   change to `--sensitive-local` for other applications
 # To generate: `bowtie2-build mmu.gold.fa.gz ./index > build.log`
-rule bowtie2_align_piRNA:
+rule bowtie2_align_miRNA:
     input:
-        BAM = '{OUTDIR}/{sample}/piRNA/tmp.bam'
+        BAM = '{OUTDIR}/{sample}/miRNA/tmp.bam'
         # R1_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R1_final_filtered_short.fq.gz',
         # R2_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R2_final_filtered_short.fq.gz'        
     output:
-        BAM = '{OUTDIR}/{sample}/piRNA/aligned.bam'
+        BAM = '{OUTDIR}/{sample}/miRNA/aligned.bam'
     params:
         OUTDIR = config['OUTDIR'],
         MEMLIMIT = config['MEMLIMIT'],
-        REF = config['piRNA_INDEX']
+        REF = config['miRNA_INDEX']
     log:
-        '{OUTDIR}/{sample}/piRNA/bowtie2.log'    
+        '{OUTDIR}/{sample}/miRNA/bowtie2.log'    
     threads:
         1
         # config['CORES']
@@ -90,11 +92,11 @@ rule bowtie2_align_piRNA:
 
 
 # Index the deduplicated .bam file
-rule sortAlignedBAM_piRNA:
+rule sortAlignedBAM_miRNA:
     input:
-        BAM = '{OUTDIR}/{sample}/piRNA/aligned.bam'
+        BAM = '{OUTDIR}/{sample}/miRNA/aligned.bam'
     output:
-        BAM = temp('{OUTDIR}/{sample}/piRNA/aligned.sorted.bam')
+        BAM = temp('{OUTDIR}/{sample}/miRNA/aligned.sorted.bam')
     threads:
         config['CORES']
     run:
@@ -105,12 +107,12 @@ rule sortAlignedBAM_piRNA:
         )
 
 
-# Tag bam w/ chromosome/piRNA it aligned to
-rule tagSortedBam_piRNA:
+# Tag bam w/ chromosome/miRNA it aligned to
+rule tagSortedBam_miRNA:
     input:
-        BAM = '{OUTDIR}/{sample}/piRNA/aligned.sorted.bam'
+        BAM = '{OUTDIR}/{sample}/miRNA/aligned.sorted.bam'
     output:
-        BAM = '{OUTDIR}/{sample}/piRNA/aligned.sorted.tagged.bam' #TODO: add temp() in favor of just keeping the deduped bam?
+        BAM = '{OUTDIR}/{sample}/miRNA/aligned.sorted.tagged.bam' #TODO: add temp() in favor of just keeping the deduped bam?
     params:
         OUTDIR = config['OUTDIR']
     run:
@@ -125,11 +127,11 @@ rule tagSortedBam_piRNA:
 
 
 # Index the sorted & deduplicated .bam file
-rule indexSortedTaggedBAM_piRNA:
+rule indexSortedTaggedBAM_miRNA:
     input:
-        BAM = '{OUTDIR}/{sample}/piRNA/aligned.sorted.tagged.bam'
+        BAM = '{OUTDIR}/{sample}/miRNA/aligned.sorted.tagged.bam'
     output:
-        BAI = temp('{OUTDIR}/{sample}/piRNA/aligned.sorted.tagged.bam.bai')
+        BAI = temp('{OUTDIR}/{sample}/miRNA/aligned.sorted.tagged.bam.bai')
     threads:
         config['CORES']
     run:
@@ -139,17 +141,17 @@ rule indexSortedTaggedBAM_piRNA:
             """
         )
 
-# Generate count matrix w/ umi-tools for piRNAs
-rule umitools_count_piRNA:
+# Generate count matrix w/ umi-tools for miRNAs
+rule umitools_count_miRNA:
     input:
-        BAM = '{OUTDIR}/{sample}/piRNA/aligned.sorted.tagged.bam',
-        BAI = '{OUTDIR}/{sample}/piRNA/aligned.sorted.tagged.bam.bai'
+        BAM = '{OUTDIR}/{sample}/miRNA/aligned.sorted.tagged.bam',
+        BAI = '{OUTDIR}/{sample}/miRNA/aligned.sorted.tagged.bam.bai'
     output:        
-        COUNTS = '{OUTDIR}/{sample}/piRNA/counts.tsv.gz'
+        COUNTS = '{OUTDIR}/{sample}/miRNA/counts.tsv.gz'
     params:
         OUTDIR = config['OUTDIR']
     log:
-        '{OUTDIR}/{sample}/piRNA/count.log'
+        '{OUTDIR}/{sample}/miRNA/count.log'
     run:
         shell(
             f"""
@@ -169,16 +171,16 @@ rule umitools_count_piRNA:
 
 
 # Dedup the .bam (do NOT split across chromosomes, b/c of custom reference)
-rule umitools_dedupSortedBAM_piRNA:
+rule umitools_dedupSortedBAM_miRNA:
     input:
         BB_WHITELIST = "{OUTDIR}/{sample}/bb/whitelist.txt",
-        BAM = '{OUTDIR}/{sample}/piRNA/aligned.sorted.tagged.bam'
+        BAM = '{OUTDIR}/{sample}/miRNA/aligned.sorted.tagged.bam'
     output:
-        BAM = '{OUTDIR}/{sample}/piRNA/aligned.sorted.tagged.dedup.bam'
+        BAM = '{OUTDIR}/{sample}/miRNA/aligned.sorted.tagged.dedup.bam'
     threads:
         config['CORES']
     log:
-        '{OUTDIR}/{sample}/piRNA/dedup.log'
+        '{OUTDIR}/{sample}/miRNA/dedup.log'
     run:
         tmp_recipe = RECIPE_DICT[wildcards.sample]
 
@@ -198,11 +200,11 @@ rule umitools_dedupSortedBAM_piRNA:
 
 
 # Index the sorted & deduplicated .bam file
-rule indexSortedTaggedDedupBAM_piRNA:
+rule indexSortedTaggedDedupBAM_miRNA:
     input:
-        BAM = '{OUTDIR}/{sample}/piRNA/aligned.sorted.tagged.dedup.bam'
+        BAM = '{OUTDIR}/{sample}/miRNA/aligned.sorted.tagged.dedup.bam'
     output:
-        BAI = '{OUTDIR}/{sample}/piRNA/aligned.sorted.tagged.dedup.bam.bai'
+        BAI = '{OUTDIR}/{sample}/miRNA/aligned.sorted.tagged.dedup.bam.bai'
     threads:
         config['CORES']
     run:
