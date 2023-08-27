@@ -38,7 +38,7 @@ rule bowtie2_prep_bam_miRNA:
         MEMLIMIT = config['MEMLIMIT'],
         MAX_SHORT_READ_LENGTH = config['MAX_SHORT_READ_LENGTH']
     threads:
-        config['CORES']
+        1
     run:
         shell(
             f"""
@@ -59,19 +59,69 @@ rule bowtie2_prep_bam_miRNA:
 #   https://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#end-to-end-alignment-versus-local-alignment
 #   change to `--sensitive-local` for other applications
 # To generate: `bowtie2-build mmu.gold.fa.gz ./index > build.log`
-rule bowtie2_align_miRNA:
+rule bowtie2_align_mature_miRNA:
     input:
         BAM = '{OUTDIR}/{sample}/miRNA/tmp.bam'
         # R1_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R1_final_filtered_short.fq.gz',
         # R2_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R2_final_filtered_short.fq.gz'        
     output:
-        BAM = '{OUTDIR}/{sample}/miRNA/aligned.bam'
+        TMP_ALIGNED_BAM = temp('{OUTDIR}/{sample}/miRNA/tmp.aligned.bam'),
+        MATURE_BAM = '{OUTDIR}/{sample}/miRNA/mature.aligned.bam',
+        UNALIGNED_BAM = temp('{OUTDIR}/{sample}/miRNA/unaligned.bam')
     params:
         OUTDIR = config['OUTDIR'],
         MEMLIMIT = config['MEMLIMIT'],
-        REF = config['miRNA_INDEX']
+        REF = config['miRNA_MATURE_INDEX']
     log:
-        '{OUTDIR}/{sample}/miRNA/bowtie2.log'    
+        '{OUTDIR}/{sample}/miRNA/bowtie2_mature.log'    
+    threads:
+        1
+        # config['CORES']
+    run:
+        # Align to mature miR reference
+        shell(
+            f"""
+            {BOWTIE2_EXEC} \
+            -x {params.REF} \
+            -b {input.BAM} \
+            -p {threads} \
+            --very-sensitive-local \
+            --preserve-tags \
+            2> {log} \
+            | {SAMTOOLS_EXEC} view -bS \
+            > {output.TMP_ALIGNED_BAM}
+            """
+        )
+
+        # Filter to save aligned reads (mature miRs)
+        shell(
+            f"""
+            {SAMTOOLS_EXEC} view -b -F 4 {output.TMP_ALIGNED_BAM} > {output.MATURE_BAM}
+            """
+        )
+
+        # Get unaligned reads for hairpin alignment
+        shell(
+            f"""
+            {SAMTOOLS_EXEC} view -f 4 {output.TMP_ALIGNED_BAM} \
+            | awk -f scripts/bam_clearAlignment.awk - \
+            | {SAMTOOLS_EXEC} view -bS \
+            > {output.UNALIGNED_BAM}
+            """
+        )
+
+# Align to hairpin miR reference, toss unaligned
+rule bowtie2_align_hairpin_miRNA:
+    input:
+        BAM = '{OUTDIR}/{sample}/miRNA/unaligned.bam'      
+    output:
+        BAM = '{OUTDIR}/{sample}/miRNA/hairpin.aligned.bam'
+    params:
+        OUTDIR = config['OUTDIR'],
+        MEMLIMIT = config['MEMLIMIT'],
+        REF = config['miRNA_HAIRPIN_INDEX']
+    log:
+        '{OUTDIR}/{sample}/miRNA/bowtie2_hairpin.log'    
     threads:
         1
         # config['CORES']
@@ -82,11 +132,34 @@ rule bowtie2_align_miRNA:
             -x {params.REF} \
             -b {input.BAM} \
             -p {threads} \
-            --sensitive \
-            --preserve-tags \
+            --very-sensitive-local \
             --no-unal \
+            --preserve-tags \
             2> {log} \
             | {SAMTOOLS_EXEC} view -bS > {output.BAM}
+            """
+        )
+
+# Merge hairpin & mature alignment records
+rule merge_aligned_bams_miRNA:
+    input:
+        MATURE_BAM = '{OUTDIR}/{sample}/miRNA/mature.aligned.bam',
+        HAIRPIN_BAM = '{OUTDIR}/{sample}/miRNA/hairpin.aligned.bam'
+    output:
+        BAM = '{OUTDIR}/{sample}/miRNA/aligned.bam'
+    params:
+        OUTDIR = config['OUTDIR'],
+        MEMLIMIT = config['MEMLIMIT'],
+        REF = config['miRNA_HAIRPIN_INDEX']
+    log:
+        '{OUTDIR}/{sample}/miRNA/bowtie2_hairpin.log'    
+    threads:
+        1
+        # config['CORES']
+    run:
+        shell(
+            f"""
+            {SAMTOOLS_EXEC} merge {output.BAM} {input.HAIRPIN_BAM} {input.MATURE_BAM}
             """
         )
 
@@ -115,6 +188,8 @@ rule tagSortedBam_miRNA:
         BAM = '{OUTDIR}/{sample}/miRNA/aligned.sorted.tagged.bam' #TODO: add temp() in favor of just keeping the deduped bam?
     params:
         OUTDIR = config['OUTDIR']
+    threads:
+        1
     run:
         shell(
             f"""

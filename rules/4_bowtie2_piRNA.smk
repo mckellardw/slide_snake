@@ -36,7 +36,7 @@ rule bowtie2_prep_bam_piRNA:
         MEMLIMIT = config['MEMLIMIT'],
         MAX_SHORT_READ_LENGTH = config['MAX_SHORT_READ_LENGTH']
     threads:
-        config['CORES']
+        1
     run:
         shell(
             f"""
@@ -71,8 +71,8 @@ rule bowtie2_align_piRNA:
     log:
         '{OUTDIR}/{sample}/piRNA/bowtie2.log'    
     threads:
-        1
-        # config['CORES']
+        # 1
+        config['CORES']
     run:
         shell(
             f"""
@@ -80,7 +80,7 @@ rule bowtie2_align_piRNA:
             -x {params.REF} \
             -b {input.BAM} \
             -p {threads} \
-            --sensitive \
+            --very-sensitive-local \
             --preserve-tags \
             --no-unal \
             2> {log} \
@@ -113,6 +113,8 @@ rule tagSortedBam_piRNA:
         BAM = '{OUTDIR}/{sample}/piRNA/aligned.sorted.tagged.bam' #TODO: add temp() in favor of just keeping the deduped bam?
     params:
         OUTDIR = config['OUTDIR']
+    threads:
+        1
     run:
         shell(
             f"""
