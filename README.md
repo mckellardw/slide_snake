@@ -279,3 +279,8 @@ Work-in-progress...****
 - [Link to documentation](https://mirge3.readthedocs.io/en/latest/quick_start.html)
 - [Link to library download](https://sourceforge.net/projects/mirge3/files/miRge3_Lib/)
 
+### small RNA reference data bases:
+- **piRNAs** - [pirbase](http://bigdata.ibp.ac.cn/piRBase/), v3.0
+  - *Note* - use "gold standard" piRs b/c there are wayyyyy too many predicted sequences...
+- **miRNAs** - [mirbase](https://mirbase.org/), v22
+  - #TODO - Use both hairpin & mature sequences, in that order 
