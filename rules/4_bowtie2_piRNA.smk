@@ -28,7 +28,7 @@
 #   - Remove all aligment info, but keep tags
 rule bowtie2_prep_bam_piRNA:
     input:
-        BAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.out.bam'
+        BAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.bam'
     output:
         BAM = temp('{OUTDIR}/{sample}/piRNA/tmp.bam')
     params:
