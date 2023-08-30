@@ -20,11 +20,8 @@ cat $FASTA_FILE \
 | awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' \
 | grep -A 1 "$SPECIES" \
 | sed '/^[^>]/s/U/T/g' \
-| awk '/^>/{sub(/.*/, ">"$NF)}1' \
+| awk '/^>/{sub(/.*/, ">"$5)}1' \
 > $OUTDIR/${SPECIES_NO_SPACES}_${PREFIX}_DNA.fa
-
-
-# | awk '{if(NR%2==0) gsub("U","T"); print}' \
 
 # Generate bowtie2 index
 bowtie2-build $OUTDIR/${SPECIES_NO_SPACES}_${PREFIX}_DNA.fa $OUTDIR/$PREFIX
