@@ -1,65 +1,4 @@
-####################################################
-# Quantification of (mature) miRNAs
-
-# Summary of Workflow:
-
-# 1) bowtie2_prep_bam: Filter and preprocess the STAR-aligned BAM file to remove 
-#       reads longer than miRNAs, and clear alignment information while keeping tags.
-
-# 2) bowtie2_miRNA: Align the preprocessed BAM file to the miRNA reference using 
-#       bowtie2, and save the aligned BAM file.
-
-# 3) umitools_sortAlignedBAM_miRNA: Sort the aligned BAM file using samtools.
-
-# 4) umitools_dedupSortedBAM_miRNA: Deduplicate the sorted BAM file using umi-tools.
-
-# 5) umitools_indexSortedDedupBAM_miRNA: Index the deduplicated BAM file using samtools.
-
-# 6) bowtie2_miRNA_counts: Tag the deduplicated BAM file with chromosome/miRNA information 
-#       and generate a count matrix using umi-tools.
-
-
-# bowtie2 documentation: https://bowtie-bio.sourceforge.net/bowtie2/manual.shtml
-# pirbase download link - http://bigdata.ibp.ac.cn/piRBase/download.php
-#       *Note* - using gold standard miRNA refs ()
-####################################################
-
-# Use STAR-barcoded .bam file & filter:
-#   - Remove reads longer than any miRNAs (34bp)
-#   - Remove reads missing a cell barcode ("CB" tag) or UMI ("UB" tag)
-#   - Remove all aligment info, but keep tags
-rule bowtie2_prep_bam_miRNA:
-    input:
-        BAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.out.bam'
-    output:
-        BAM = temp('{OUTDIR}/{sample}/miRNA/tmp.bam')
-    params:
-        OUTDIR = config['OUTDIR'],
-        MEMLIMIT = config['MEMLIMIT'],
-        MAX_SHORT_READ_LENGTH = config['MAX_SHORT_READ_LENGTH']
-    threads:
-        1
-    run:
-        shell(
-            f"""
-            mkdir -p {OUTDIR}/{wildcards.sample}/miRNA
-
-            {SAMTOOLS_EXEC} view {input.BAM} \
-            | awk -f scripts/bam_shortPassReadFilter.awk -v max_length={params.MAX_SHORT_READ_LENGTH} \
-            | awk -v tag=CB -f scripts/bam_filterEmptyTag.awk - \
-            | awk -v tag=UB -f scripts/bam_filterEmptyTag.awk - \
-            | awk -f scripts/bam_clearAlignment.awk - \
-            | {SAMTOOLS_EXEC} view -bS > {output.BAM}
-            """
-        )
-# samtools view -h input.bam | awk 'length(\$10) > 30 || \$1 ~ /^@/' | samtools view -bS - > output.bam
-# samtools view -h aligned.bam | awk 'BEGIN {FS=OFS="\t"} !/^@/ {\$3="*"; \$4="0"; \$5="0"; \$6="*"; \$7="*"; \$8="0"; \$9="0"} {print}' | samtools view -b -o unaligned.bam -
-
-# Run bowtie2 on miRNA reference from pirbase in end-to-end/sensitive mode 
-#   https://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#end-to-end-alignment-versus-local-alignment
-#   change to `--sensitive-local` for other applications
-# To generate: `bowtie2-build mmu.gold.fa.gz ./index > build.log`
-rule bowtie2_align_mature_miRNA:
+rule BLAST_align_mature_miRNA:
     input:
         BAM = '{OUTDIR}/{sample}/miRNA/tmp.bam'
         # R1_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R1_final_filtered_short.fq.gz',
@@ -73,23 +12,40 @@ rule bowtie2_align_mature_miRNA:
         MEMLIMIT = config['MEMLIMIT'],
         REF = config['miRNA_MATURE_INDEX']
     log:
-        '{OUTDIR}/{sample}/miRNA/bowtie2_mature.log'    
+        '{OUTDIR}/{sample}/miRNA/BLAST_mature.log'    
     threads:
         1
         # config['CORES']
     run:
-        # Align to mature miR reference
+
+        # Convert BAM to FASTA
         shell(
             f"""
-            {BOWTIE2_EXEC} \
-            -x {params.REF} \
-            -b {input.BAM} \
-            -p {threads} \
-            --very-sensitive-local \
-            --preserve-tags \
-            2> {log} \
-            | {SAMTOOLS_EXEC} view -bS \
-            > {output.TMP_ALIGNED_BAM}
+            samtools fasta input.bam > input.fasta
+            """
+        )
+
+        # Run BLAST
+        shell(
+            f"""
+            blastn -query input.fasta -db your_db -outfmt 6 -out blast_results.txt
+            """
+        )
+
+
+        # Parse BLAST results and add to BAM file
+        shell(
+            f"""
+            awk 'BEGIN {OFS="\t"} {print $1, "BL:Z:" $2}' blast_results.txt > blast_tags.txt
+            """
+        )
+
+        # Add tags to BAM file
+        shell(
+            f"""
+            samtools view -h input.bam | \
+            awk -v tags_file="blast_tags.txt" 'BEGIN {while ((getline < tags_file) > 0) tags[$1]=$2} {if ($1 in tags) print $0 "\t" tags[$1]; else print $0}' | \
+            samtools view -b > output.bam
             """
         )
 
@@ -111,7 +67,7 @@ rule bowtie2_align_mature_miRNA:
         )
 
 # Align to hairpin miR reference, toss unaligned
-rule bowtie2_align_hairpin_miRNA:
+rule BLAST_align_hairpin_miRNA:
     input:
         BAM = '{OUTDIR}/{sample}/miRNA/unaligned.bam'      
     output:
@@ -121,7 +77,7 @@ rule bowtie2_align_hairpin_miRNA:
         MEMLIMIT = config['MEMLIMIT'],
         REF = config['miRNA_HAIRPIN_INDEX']
     log:
-        '{OUTDIR}/{sample}/miRNA/bowtie2_hairpin.log'    
+        '{OUTDIR}/{sample}/miRNA/BLAST_hairpin.log'    
     threads:
         1
         # config['CORES']
@@ -152,7 +108,7 @@ rule merge_aligned_bams_miRNA:
         MEMLIMIT = config['MEMLIMIT'],
         REF = config['miRNA_HAIRPIN_INDEX']
     log:
-        '{OUTDIR}/{sample}/miRNA/bowtie2_hairpin.log'    
+        '{OUTDIR}/{sample}/miRNA/BLAST_hairpin.log'    
     threads:
         1
         # config['CORES']
