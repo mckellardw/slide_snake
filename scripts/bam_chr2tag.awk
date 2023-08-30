@@ -2,12 +2,11 @@
 ## Add the chromosome to a tag (deafult: "GN)
 
 # Usage:
-## samtools view -h input.bam | awk -v tag=AS -f bam_removeTags.awk > output.sam
+## samtools view -h input.bam | awk -v tag=GN -f bam_removeTags.awk > output.sam
 
 
 BEGIN {
     OFS = "\t"
-    tag = "GN"
 }
 
 # Keep header

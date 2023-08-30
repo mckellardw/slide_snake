@@ -12,7 +12,9 @@
 #     ARGV[1] = ARGV[2] = ""
 # }
 
-BEGIN { FS = OFS = "\t" }
+BEGIN { 
+    FS = OFS = "\t" 
+}
 
 {
     if ($0 !~ /^@/) {
