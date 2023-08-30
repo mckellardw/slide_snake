@@ -13,6 +13,7 @@ import scipy.sparse
 ########################################################################################################
 configfile:'config.yaml'
 RECIPE_SHEET = pd.read_csv(config["RECIPE_SHEET"], na_filter=False,index_col=0) #"resources/recipe_sheet.csv"
+
 ########################################################################################################
 # Directories and locations
 ########################################################################################################
@@ -23,6 +24,11 @@ OUTDIR = config['OUTDIR']
 # Variables and references
 ########################################################################################################
 SAMPLE_SHEET = pd.read_csv(config["SAMPLE_SHEET_PATH"], na_filter=False)
+
+# SAMPLE_SHEET = SAMPLE_SHEET[~SAMPLE_SHEET['sampleID'].str.contains("STO")]
+# SAMPLE_SHEET = SAMPLE_SHEET[SAMPLE_SHEET['sampleID'].str.contains("Vis_yPAP_3D")]
+
+
 SAMPLES = list(SAMPLE_SHEET['sampleID'])
 
 R1_FQS = dict(zip(SAMPLES, list(SAMPLE_SHEET['fastq_R1'])))
@@ -83,7 +89,7 @@ rule all:
             '{OUTDIR}/{sample}/{SMALL_RNA}/counts.tsv.gz',
             OUTDIR=config['OUTDIR'],
             sample=SAMPLES,
-            SMALL_RNA=['piRNA','miRNA']
+            SMALL_RNA=['piRNA','miRNA'] 
         ),
         expand( # anndata files (with spatial info)
             '{OUTDIR}/{sample}/{ALIGN_OUT}',
@@ -163,7 +169,7 @@ include: "rules/3b_kallisto_pseudobam.smk"
 # small RNA stuff
 include: "rules/4_mirge.smk"
 include: "rules/4_bowtie2_piRNA.smk"
-include: "rules/4_bowtie2_miRNA.smk"
+include: "rules/4_miRNA_bowtie2.smk"
 
 # scanpy stuff
 include: "rules/5a_scanpy_init.smk"
