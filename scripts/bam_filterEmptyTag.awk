@@ -1,7 +1,8 @@
 # bam_filterEmptyTag.awk
 ##  Remove reads/entries which are missing a tag (useful for reads which don't have cell barcodes or UIs associated)
 
-# filter_tag.awk
+# Usage:
+## samtools view -h input.bam | awk -v tag=CB -f bam_filterEmptyTag.awk > output.sam
 
 BEGIN {
     OFS = "\t"
