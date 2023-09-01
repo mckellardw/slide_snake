@@ -95,7 +95,12 @@ rule all:
         expand( # anndata files (with spatial info)
             '{OUTDIR}/{sample}/{ALIGN_OUT}',
             OUTDIR=config['OUTDIR'],
-            ALIGN_OUT=['kb/counts_unfiltered/output.h5ad','STARsolo/Solo.out/GeneFull/raw/UniqueAndMultEM.h5ad'],
+            ALIGN_OUT=[
+                'kb/counts_unfiltered/output.h5ad',
+                'STARsolo/Solo.out/GeneFull/raw/UniqueAndMultEM.h5ad',
+                'miRNA/raw/output.h5ad',
+                'piRNA/raw/output.h5ad'
+            ],
             sample=SAMPLES
         ),
         expand( #STAR count mats

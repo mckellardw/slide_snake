@@ -53,3 +53,58 @@ rule cache_preQC_h5ad_kb_raw:
             --remove_zero_features
             """
         )
+
+
+# initialize & cache the **raw** counts as an anndata file for easier loading later
+## Removes barcodes for which there are no molecules detected [`--remove_zero_features`]
+rule cache_preQC_h5ad_miRNA_raw:
+    input:
+        BCS = '{OUTDIR}/{sample}/miRNA/raw/barcodes.tsv.gz',
+        GENES = '{OUTDIR}/{sample}/miRNA/raw/features.tsv.gz',
+        MAT = '{OUTDIR}/{sample}/miRNA/raw/matrix.mtx.gz',
+        BB_map = lambda wildcards: BB_DICT[wildcards.sample]
+    output:
+        H5AD = "{OUTDIR}/{sample}/miRNA/raw/output.h5ad"
+    threads:
+        1
+    run:
+        shell(
+            f"""
+            python scripts/cache_mtx_to_h5ad.py \
+            --mat_in {input.MAT} \
+            --feat_in {input.GENES} \
+            --bc_in {input.BCS} \
+            --bb_map {input.BB_map}\
+            --ad_out {output.H5AD}\
+            --feat_col 0 \
+            --remove_zero_features
+            """
+        )
+
+
+
+# initialize & cache the **raw** counts as an anndata file for easier loading later
+## Removes barcodes for which there are no molecules detected [`--remove_zero_features`]
+rule cache_preQC_h5ad_miRNA_raw:
+    input:
+        BCS = '{OUTDIR}/{sample}/piRNA/raw/barcodes.tsv.gz',
+        GENES = '{OUTDIR}/{sample}/piRNA/raw/features.tsv.gz',
+        MAT = '{OUTDIR}/{sample}/piRNA/raw/matrix.mtx.gz',
+        BB_map = lambda wildcards: BB_DICT[wildcards.sample]
+    output:
+        H5AD = "{OUTDIR}/{sample}/piRNA/raw/output.h5ad"
+    threads:
+        1
+    run:
+        shell(
+            f"""
+            python scripts/cache_mtx_to_h5ad.py \
+            --mat_in {input.MAT} \
+            --feat_in {input.GENES} \
+            --bc_in {input.BCS} \
+            --bb_map {input.BB_map}\
+            --ad_out {output.H5AD}\
+            --feat_col 0 \
+            --remove_zero_features
+            """
+        )
