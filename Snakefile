@@ -26,7 +26,7 @@ OUTDIR = config['OUTDIR']
 SAMPLE_SHEET = pd.read_csv(config["SAMPLE_SHEET_PATH"], na_filter=False)
 
 # SAMPLE_SHEET = SAMPLE_SHEET[~SAMPLE_SHEET['sampleID'].str.contains("STO")]
-# SAMPLE_SHEET = SAMPLE_SHEET[SAMPLE_SHEET['sampleID'].str.contains("Vis_yPAP_3D")]
+# SAMPLE_SHEET = SAMPLE_SHEET[SAMPLE_SHEET['sampleID'].str.contains("Vis_yPAP_3C")]
 
 
 SAMPLES = list(SAMPLE_SHEET['sampleID'])
@@ -86,10 +86,11 @@ rule all:
         #     sample=SAMPLES
         # ),
         expand( # bowtie2 alignment to small RNA reference(s)
-            '{OUTDIR}/{sample}/{SMALL_RNA}/counts.tsv.gz',
+            '{OUTDIR}/{sample}/{SMALL_RNA}/counts.{TYPE}',
             OUTDIR=config['OUTDIR'],
             sample=SAMPLES,
-            SMALL_RNA=['piRNA','miRNA'] 
+            SMALL_RNA=['piRNA','miRNA'],
+            TYPE=["tsv.gz","npz"]
         ),
         expand( # anndata files (with spatial info)
             '{OUTDIR}/{sample}/{ALIGN_OUT}',
@@ -168,7 +169,7 @@ include: "rules/3b_kallisto_pseudobam.smk"
 
 # small RNA stuff
 include: "rules/4_mirge.smk"
-include: "rules/4_bowtie2_piRNA.smk"
+include: "rules/4_piRNA_bowtie2.smk"
 include: "rules/4_miRNA_bowtie2.smk"
 
 # scanpy stuff

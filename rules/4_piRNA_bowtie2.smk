@@ -47,6 +47,9 @@ rule bowtie2_prep_bam_piRNA:
             | awk -v tag=CB -f scripts/bam_filterEmptyTag.awk - \
             | awk -v tag=UB -f scripts/bam_filterEmptyTag.awk - \
             | awk -f scripts/bam_clearAlignment.awk - \
+            | awk -v tag=AS -f scripts/bam_clearTag.awk - \
+            | awk -v tag=GN -f scripts/bam_clearTag.awk - \
+            | awk -v tag=GX -f scripts/bam_clearTag.awk - \
             | {SAMTOOLS_EXEC} view -bS > {output.BAM}
             """
         )
@@ -119,7 +122,7 @@ rule tagSortedBam_piRNA:
         shell(
             f"""
             {SAMTOOLS_EXEC} view -h {input.BAM} \
-            | awk -f scripts/bam_chr2tag.awk - \
+            | awk -f scripts/bam_chr2tag.awk -v tag=GN - \
             | {SAMTOOLS_EXEC} view -bS - \
             > {output.BAM}
             """
@@ -159,14 +162,30 @@ rule umitools_count_piRNA:
             --extract-umi-method=tag \
             --per-gene \
             --per-cell \
-            --wide-format-cell-counts \
             --cell-tag=CB \
-            --gene-tag=BT \
+            --gene-tag=GN \
             --umi-tag=UB \
             --log={log} \
             -I {input.BAM} \
             -S {output.COUNTS}
             """
+        )
+
+# Convert the long-format counts into a format that people can actually use
+rule counts_to_sparse_piRNA:
+    input:
+        COUNTS = '{OUTDIR}/{sample}/piRNA/counts.tsv.gz'
+    output:
+        COUNTS = '{OUTDIR}/{sample}/piRNA/counts.npz'
+    params:
+        OUTDIR = config['OUTDIR']
+    threads:
+        1
+    run:
+        shell(
+            f"""
+            python scripts/py/long2npz.py {input.COUNTS} {output.COUNTS}
+            """   
         )
 
 

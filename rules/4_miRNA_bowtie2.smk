@@ -28,6 +28,8 @@
 #   - Don't filter by length, as the longest hairpin miRNA (in mouse) is 147nt
 #   - Remove reads missing a cell barcode ("CB" tag) or UMI ("UB" tag)
 #   - Remove all aligment info, but keep tags
+#   - Remove STAR alignment score ("AS" tag)
+#   - Clip the 3' end of the read, to remove non-templated additions
 rule bowtie2_prep_bam_miRNA:
     input:
         BAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.bam'
@@ -40,7 +42,7 @@ rule bowtie2_prep_bam_miRNA:
         TRIM_N = 4,
         TRIM_OPTION = "end" # option: start, end, both
     threads:
-        1
+        9
     run:
         shell(
             f"""
@@ -50,12 +52,16 @@ rule bowtie2_prep_bam_miRNA:
             | awk -v tag=CB -f scripts/bam_filterEmptyTag.awk - \
             | awk -v tag=UB -f scripts/bam_filterEmptyTag.awk - \
             | awk -f scripts/bam_clearAlignment.awk - \
+            | awk -v tag=AS -f scripts/bam_clearTag.awk - \
+            | awk -v tag=GN -f scripts/bam_clearTag.awk - \
+            | awk -v tag=GX -f scripts/bam_clearTag.awk - \
             | awk -v N={params.TRIM_N} -v option={params.TRIM_OPTION} -f scripts/bam_trimNBases.awk - \
             | {SAMTOOLS_EXEC} view -bS > {output.BAM}
             """
         )
+        
         # -s 0.04
-            # | awk -f scripts/bam_shortPassReadFilter.awk -v max_length={params.MAX_SHORT_READ_LENGTH} \
+        # | awk -f scripts/bam_shortPassReadFilter.awk -v max_length={params.MAX_SHORT_READ_LENGTH} \
 
 # samtools view -h input.bam | awk 'length(\$10) > 30 || \$1 ~ /^@/' | samtools view -bS - > output.bam
 # samtools view -h aligned.bam | awk 'BEGIN {FS=OFS="\t"} !/^@/ {\$3="*"; \$4="0"; \$5="0"; \$6="*"; \$7="*"; \$8="0"; \$9="0"} {print}' | samtools view -b -o unaligned.bam -
@@ -80,8 +86,8 @@ rule bowtie2_align_mature_miRNA:
     log:
         '{OUTDIR}/{sample}/miRNA/bowtie2_mature.log'    
     threads:
-        1
-        # config['CORES']
+        # 1
+        config['CORES']
     run:
         # Align to mature miR reference
         shell(
@@ -110,6 +116,8 @@ rule bowtie2_align_mature_miRNA:
             f"""
             {SAMTOOLS_EXEC} view -f 4 {output.TMP_ALIGNED_BAM} \
             | awk -f scripts/bam_clearAlignment.awk - \
+            | awk -v tag=AS -f scripts/bam_clearTag.awk - \
+            | awk -v tag=XS -f scripts/bam_clearTag.awk - \
             | {SAMTOOLS_EXEC} view -bS \
             > {output.UNALIGNED_BAM}
             """
@@ -128,8 +136,8 @@ rule bowtie2_align_hairpin_miRNA:
     log:
         '{OUTDIR}/{sample}/miRNA/bowtie2_hairpin.log'    
     threads:
-        1
-        # config['CORES']
+        # 1
+        config['CORES']
     run:
         shell(
             f"""
@@ -184,7 +192,7 @@ rule sortAlignedBAM_miRNA:
         )
 
 
-# Tag bam w/ chromosome/miRNA it aligned to
+# Tag bam w/ chromosome/miRNA it aligned to (saved in "GN" tag, like STARsolo)
 rule tagSortedBam_miRNA:
     input:
         BAM = '{OUTDIR}/{sample}/miRNA/aligned.sorted.bam'
@@ -193,12 +201,12 @@ rule tagSortedBam_miRNA:
     params:
         OUTDIR = config['OUTDIR']
     threads:
-        1
+        2
     run:
         shell(
             f"""
             {SAMTOOLS_EXEC} view -h {input.BAM} \
-            | awk -f scripts/bam_chr2tag.awk - \
+            | awk -f scripts/bam_chr2tag.awk -v tag=GN - \
             | {SAMTOOLS_EXEC} view -bS - \
             > {output.BAM}
             """
@@ -231,6 +239,8 @@ rule umitools_count_miRNA:
         OUTDIR = config['OUTDIR']
     log:
         '{OUTDIR}/{sample}/miRNA/count.log'
+    threads:
+        1
     run:
         shell(
             f"""
@@ -238,16 +248,32 @@ rule umitools_count_miRNA:
             --extract-umi-method=tag \
             --per-gene \
             --per-cell \
-            --wide-format-cell-counts \
             --cell-tag=CB \
-            --gene-tag=BT \
+            --gene-tag=GN \
             --umi-tag=UB \
             --log={log} \
             -I {input.BAM} \
             -S {output.COUNTS}
             """
         )
+            # --wide-format-cell-counts \
 
+# Convert the long-format counts into a format that people can actually use
+rule counts_to_sparse_miRNA:
+    input:
+        COUNTS = '{OUTDIR}/{sample}/miRNA/counts.tsv.gz'
+    output:
+        COUNTS = '{OUTDIR}/{sample}/miRNA/counts.npz'
+    params:
+        OUTDIR = config['OUTDIR']
+    threads:
+        1
+    run:
+        shell(
+            f"""
+            python scripts/py/long2npz.py {input.COUNTS} {output.COUNTS}
+            """   
+        )
 
 # Dedup the .bam (do NOT split across chromosomes, b/c of custom reference)
 rule umitools_dedupSortedBAM_miRNA:
