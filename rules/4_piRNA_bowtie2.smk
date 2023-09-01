@@ -176,15 +176,17 @@ rule counts_to_sparse_piRNA:
     input:
         COUNTS = '{OUTDIR}/{sample}/piRNA/counts.tsv.gz'
     output:
-        COUNTS = '{OUTDIR}/{sample}/piRNA/counts.npz'
+        COUNTS = '{OUTDIR}/{sample}/piRNA/raw/matrix.mtx.gz'
     params:
         OUTDIR = config['OUTDIR']
     threads:
         1
     run:
+        output_dir = output.COUNTS.replace('/matrix.mtx.gz','')
         shell(
             f"""
-            python scripts/py/long2npz.py {input.COUNTS} {output.COUNTS}
+            mkdir -p {output_dir}
+            python scripts/py/long2mtx.py {input.COUNTS} {output_dir}
             """   
         )
 
