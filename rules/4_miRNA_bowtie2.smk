@@ -263,15 +263,17 @@ rule counts_to_sparse_miRNA:
     input:
         COUNTS = '{OUTDIR}/{sample}/miRNA/counts.tsv.gz'
     output:
-        COUNTS = '{OUTDIR}/{sample}/miRNA/counts.npz'
+        COUNTS = '{OUTDIR}/{sample}/miRNA/raw/matrix.mtx.gz'
     params:
         OUTDIR = config['OUTDIR']
     threads:
         1
     run:
+        output_dir = output.COUNTS.replace('/matrix.mtx.gz','')
         shell(
             f"""
-            python scripts/py/long2npz.py {input.COUNTS} {output.COUNTS}
+            mkdir -p {output_dir}
+            python scripts/py/long2mtx.py {input.COUNTS} {output_dir}
             """   
         )
 

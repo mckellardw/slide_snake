@@ -85,12 +85,12 @@ rule all:
         #     OUTDIR=config['OUTDIR'],
         #     sample=SAMPLES
         # ),
-        expand( # bowtie2 alignment to small RNA reference(s)
-            '{OUTDIR}/{sample}/{SMALL_RNA}/counts.{TYPE}',
+        expand( # count matrices for bowtie2 alignment to small RNA reference(s)
+            '{OUTDIR}/{sample}/{SMALL_RNA}/{TYPE}',
             OUTDIR=config['OUTDIR'],
             sample=SAMPLES,
             SMALL_RNA=['piRNA','miRNA'],
-            TYPE=["tsv.gz","npz"]
+            TYPE=["counts.tsv.gz","raw/matrix.mtx.gz"]
         ),
         expand( # anndata files (with spatial info)
             '{OUTDIR}/{sample}/{ALIGN_OUT}',
