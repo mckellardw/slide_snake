@@ -85,7 +85,7 @@ rule cache_preQC_h5ad_miRNA_raw:
 
 # initialize & cache the **raw** counts as an anndata file for easier loading later
 ## Removes barcodes for which there are no molecules detected [`--remove_zero_features`]
-rule cache_preQC_h5ad_miRNA_raw:
+rule cache_preQC_h5ad_piRNA_raw:
     input:
         BCS = '{OUTDIR}/{sample}/piRNA/raw/barcodes.tsv.gz',
         GENES = '{OUTDIR}/{sample}/piRNA/raw/features.tsv.gz',
