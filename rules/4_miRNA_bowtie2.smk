@@ -263,6 +263,8 @@ rule counts_to_sparse_miRNA:
     input:
         COUNTS = '{OUTDIR}/{sample}/miRNA/counts.tsv.gz'
     output:
+        BCS = '{OUTDIR}/{sample}/miRNA/raw/barcodes.tsv.gz',
+        FEATS = '{OUTDIR}/{sample}/miRNA/raw/features.tsv.gz',
         COUNTS = '{OUTDIR}/{sample}/miRNA/raw/matrix.mtx.gz'
     params:
         OUTDIR = config['OUTDIR']
@@ -276,6 +278,7 @@ rule counts_to_sparse_miRNA:
             python scripts/py/long2mtx.py {input.COUNTS} {output_dir}
             """   
         )
+
 
 # Dedup the .bam (do NOT split across chromosomes, b/c of custom reference)
 rule umitools_dedupSortedBAM_miRNA:

@@ -30,12 +30,12 @@ rule cache_preQC_h5ad_STAR_raw:
 ## Removes barcodes for which there are no molecules detected [`--remove_zero_features`]
 rule cache_preQC_h5ad_kb_raw:
     input:
-        BCS = '{OUTDIR}/{sample}/kb/counts_unfiltered/output.barcodes.txt.gz',
-        GENES = '{OUTDIR}/{sample}/kb/counts_unfiltered/output.genes.txt.gz',
-        MAT = '{OUTDIR}/{sample}/kb/counts_unfiltered/output.mtx.gz',
+        BCS = '{OUTDIR}/{sample}/kb/raw/output.barcodes.txt.gz',
+        GENES = '{OUTDIR}/{sample}/kb/raw/output.genes.txt.gz',
+        MAT = '{OUTDIR}/{sample}/kb/raw/output.mtx.gz',
         BB_map = lambda wildcards: BB_DICT[wildcards.sample]
     output:
-        H5AD = "{OUTDIR}/{sample}/kb/counts_unfiltered/output.h5ad"
+        H5AD = "{OUTDIR}/{sample}/kb/raw/output.h5ad"
     # params:
     #     var_names = "gene_symbols" # scanpy.read_10x_mtx()
     threads:

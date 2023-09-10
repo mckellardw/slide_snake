@@ -176,6 +176,8 @@ rule counts_to_sparse_piRNA:
     input:
         COUNTS = '{OUTDIR}/{sample}/piRNA/counts.tsv.gz'
     output:
+        BCS = '{OUTDIR}/{sample}/piRNA/raw/barcodes.tsv.gz',
+        FEATS = '{OUTDIR}/{sample}/piRNA/raw/features.tsv.gz',
         COUNTS = '{OUTDIR}/{sample}/piRNA/raw/matrix.mtx.gz'
     params:
         OUTDIR = config['OUTDIR']
