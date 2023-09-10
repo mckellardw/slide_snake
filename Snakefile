@@ -64,8 +64,11 @@ REF_DICT = {}       # Dictionary of reference genomes to use
 GTF_DICT = {}       # Dictionary of gene annotations (.gtf format)
 IDX_DICT = {}       # Dictionary of kallisto indices
 T2G_DICT = {}       # Dictionary of kallisto transcript-to-gene maps
+# IDX_VELO_DICT = {}  # Dictionary of kallisto indices for RNA velocity
+# T2G_VELO_DICT = {}  # Dictionary of kallisto transcript-to-gene maps for RNA velocity
 BB_DICT = {}        # Dictionary of bead barcode maps
 SPECIES_DICT = {}   # Dictionary of species listed for mirge3 analysis
+
 for i in range(0,SAMPLE_SHEET.shape[0]):
     tmp_sample = list(SAMPLE_SHEET["sampleID"])[i]
     RECIPE_DICT[tmp_sample] = list(SAMPLE_SHEET["recipe"])[i]
@@ -74,17 +77,14 @@ for i in range(0,SAMPLE_SHEET.shape[0]):
     GTF_DICT[tmp_sample] = list(SAMPLE_SHEET["genes_gtf"])[i]
     IDX_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_idx"])[i]
     T2G_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_t2g"])[i]
+    # IDX_VELO_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_velo_idx"])[i]
+    # T2G_VELO_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_velo_t2g"])[i]
     BB_DICT[tmp_sample] = list(SAMPLE_SHEET["BB_map"])[i]
     SPECIES_DICT[tmp_sample] = list(SAMPLE_SHEET["species"])[i]
 
 ########################################################################################################
 rule all:
     input:
-        # expand( # miRge3.0 pseudobulk analysis
-        #     '{OUTDIR}/{sample}/miRge_bulk/annotation.report.html',
-        #     OUTDIR=config['OUTDIR'],
-        #     sample=SAMPLES
-        # ),
         expand( # count matrices for bowtie2 alignment to small RNA reference(s)
             '{OUTDIR}/{sample}/{SMALL_RNA}/{TYPE}',
             OUTDIR=config['OUTDIR'],
@@ -92,11 +92,16 @@ rule all:
             SMALL_RNA=['piRNA','miRNA'],
             TYPE=["counts.tsv.gz","raw/matrix.mtx.gz"]
         ),
+        # expand( # miRge3.0 pseudobulk analysis
+        #     '{OUTDIR}/{sample}/miRge_bulk/annotation.report.html',
+        #     OUTDIR=config['OUTDIR'],
+        #     sample=SAMPLES
+        # ),
         expand( # anndata files (with spatial info)
             '{OUTDIR}/{sample}/{ALIGN_OUT}',
             OUTDIR=config['OUTDIR'],
             ALIGN_OUT=[
-                'kb/counts_unfiltered/output.h5ad',
+                'kb/raw/output.h5ad',
                 'STARsolo/Solo.out/GeneFull/raw/UniqueAndMultEM.h5ad',
                 'miRNA/raw/output.h5ad',
                 'piRNA/raw/output.h5ad'
@@ -110,10 +115,16 @@ rule all:
             REF=["STARsolo_rRNA", "STARsolo"]
         ),
         expand( # kallisto/bustools count mats
-            '{OUTDIR}/{sample}/kb/counts_unfiltered/output.mtx.gz',
+            '{OUTDIR}/{sample}/kb/raw/output.mtx.gz',
             OUTDIR=config['OUTDIR'],
             sample=SAMPLES
         ),
+        # expand( # kallisto/bustools count mats
+        #     '{OUTDIR}/{sample}/kb_velo/raw/{MATRIX}.mtx.gz',
+        #     OUTDIR=config['OUTDIR'],
+        #     MATRIX=['spliced','unspliced'],
+        #     sample=SAMPLES
+        # ),
         # expand( #TODO- REF=["STARsolo_rRNA", "STARsolo"]), # umi_tools deduplicated .bam
         #     '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.bam.bai',
         #     OUTDIR=config['OUTDIR'],
@@ -169,8 +180,9 @@ include: "rules/2d_star_qualimap.smk"
 include: "rules/2e_star_dedup.smk"
 
 # kallisto/bustools alignment
-include: "rules/3a_kallisto_align.smk"
+include: "rules/3a_kallisto.smk"
 include: "rules/3b_kallisto_pseudobam.smk"
+include: "rules/3c_kallisto_velo.smk"
 
 # small RNA stuff
 include: "rules/4_mirge.smk"

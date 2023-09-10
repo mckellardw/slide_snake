@@ -55,13 +55,12 @@ rule bus2mat:
         TRANSCRIPTS = '{OUTDIR}/{sample}/kb/transcripts.txt',
         ECMAP = '{OUTDIR}/{sample}/kb/matrix.ec'
     output:
-        BCS = '{OUTDIR}/{sample}/kb/counts_unfiltered/output.barcodes.txt',
-        GENES = '{OUTDIR}/{sample}/kb/counts_unfiltered/output.genes.txt',
-        MAT = '{OUTDIR}/{sample}/kb/counts_unfiltered/output.mtx'
-        # EC = '{OUTDIR}/{sample}/kb/counts_unfiltered/output.ec.txt'
+        BCS = '{OUTDIR}/{sample}/kb/raw/output.barcodes.txt',
+        GENES = '{OUTDIR}/{sample}/kb/raw/output.genes.txt',
+        MAT = '{OUTDIR}/{sample}/kb/raw/output.mtx'
+        # EC = '{OUTDIR}/{sample}/kb/raw/output.ec.txt'
     params:
-        MATDIR = directory('{OUTDIR}/{sample}/kb/counts_unfiltered'),
-        BUST_EXEC = config['BUST_EXEC']
+        MATDIR = directory('{OUTDIR}/{sample}/kb/raw')
     threads:
         1
     run:
@@ -71,7 +70,7 @@ rule bus2mat:
             f"""
             mkdir -p {params.MATDIR}
 
-            {params.BUST_EXEC} count \
+            {BUST_EXEC} count \
             --output {params.MATDIR}/ \
             --genemap {KB_T2G} \
             --ecmap {input.ECMAP} \
@@ -86,15 +85,15 @@ rule bus2mat:
 # gzip the count matrix, etc.
 rule compress_kb_outs:
     input:
-        BCS = '{OUTDIR}/{sample}/kb/counts_unfiltered/output.barcodes.txt',
-        GENES = '{OUTDIR}/{sample}/kb/counts_unfiltered/output.genes.txt',
-        MAT = '{OUTDIR}/{sample}/kb/counts_unfiltered/output.mtx'
+        BCS = '{OUTDIR}/{sample}/kb/raw/output.barcodes.txt',
+        GENES = '{OUTDIR}/{sample}/kb/raw/output.genes.txt',
+        MAT = '{OUTDIR}/{sample}/kb/raw/output.mtx'
     output:
-        BCS = '{OUTDIR}/{sample}/kb/counts_unfiltered/output.barcodes.txt.gz',
-        GENES = '{OUTDIR}/{sample}/kb/counts_unfiltered/output.genes.txt.gz',
-        MAT = '{OUTDIR}/{sample}/kb/counts_unfiltered/output.mtx.gz'
+        BCS = '{OUTDIR}/{sample}/kb/raw/output.barcodes.txt.gz',
+        GENES = '{OUTDIR}/{sample}/kb/raw/output.genes.txt.gz',
+        MAT = '{OUTDIR}/{sample}/kb/raw/output.mtx.gz'
     params:
-        MATDIR = directory('{OUTDIR}/{sample}/kb/counts_unfiltered')
+        MATDIR = directory('{OUTDIR}/{sample}/kb/raw')
     threads:
         config['CORES']        
     shell:
