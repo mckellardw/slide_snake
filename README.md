@@ -2,7 +2,7 @@
 ![slide_snake](images/slide_snake_logo.png)  
 ## **Flexible alignment workflow for spatial transcriptomics data**  
 
-The goal of this project is to build a workflow for assessing different preprocessing, alignment, and quantification configurations, and digging into artifacts.  
+The goal of this project is to build a snakemake workflow for assessing different preprocessing, alignment, and quantification configurations, and digging into artifacts.  
 
 ***Contributions are welcome!***   
 
@@ -23,28 +23,30 @@ The goal of this project is to build a workflow for assessing different preproce
 ## **Trimming:**
 <details close>
 <summary> Five Prime adapter(s): </summary>
-- Reverse complement of the SlideSeq TSO to reduce strand invasion artifacts [**CCCATTCACTCTGCGTTGATACCAGCTT**]
+- Reverse complement of the SlideSeq TSO to reduce strand invasion artifacts [**CCCATTCACTCTGCGTTGATACCAGCTT**]  
 </details>
 
 <details close>
 <summary> Three Prime adapter(s): </summary>
-- "A" homopolymers [**100-A**]
-- "G" homopolymers, important for Illumina 2-color sequencers [**100-G**]
-- "T" homopolymers [**100-T**]
-- Nextera adapter sequence [**CTGTCTCTTATA**]
-- Reverse complement of Nextera sequence [**TATAAGAGACAG**] 
-- Curio template switch olgo (TSO) - remove any polyadenylated TSOs [**AAGCTGGTATCAACGCAGAGTGAATGGG**]
-- Curio R1 internal adapter - shows up in R2, and used for R1 trimming [**TCTTCAGCGTTCCCGAGA**]
-- Reverse of Curio R1 adapter [**AGAGCCCTTGCGACTTCT**]
-- Illumina unversal sequence [**AGATCGGAAGAG**]
+
+- "A" homopolymers [**100-A**]  
+- "G" homopolymers, important for Illumina 2-color sequencers [**100-G**]  
+- "T" homopolymers [**100-T**]  
+- Nextera adapter sequence [**CTGTCTCTTATA**]  
+- Reverse complement of Nextera sequence [**TATAAGAGACAG**]  
+- Curio template switch olgo (TSO) - remove any polyadenylated TSOs [**AAGCTGGTATCAACGCAGAGTGAATGGG**]  
+- Curio R1 internal adapter - shows up in R2, and used for R1 trimming [**TCTTCAGCGTTCCCGAGA**]  
+- Reverse of Curio R1 adapter [**AGAGCCCTTGCGACTTCT**]  
+- Illumina unversal sequence [**AGATCGGAAGAG**]  
 </details>
 
 ## **Alignment:**
 <details close>
 <summary> STAR </summary>
-- After adapter trimming, reads are aligned with `STARsolo` and `kallisto`/`bustools` to generate count matrices
-- Outputs are in `{SAMPLE_ID}/STARsolo/Solo.out` & `{SAMPLE_ID}/kb/counts_unfiltered`
-- Different recipes are written out in `resources/recipe_sheet.csv`, and must be specified for each sample within the sample sheet
+  
+- After adapter trimming, reads are aligned with `STARsolo` and `kallisto`/`bustools` to generate count matrices  
+- Outputs are in `{SAMPLE_ID}/STARsolo/Solo.out` & `{SAMPLE_ID}/kb/counts_unfiltered`  
+- Different recipes are written out in `resources/recipe_sheet.csv`, and must be specified for each sample within the sample sheet  
 
 ### Generating references:
 #### rRNA STAR reference for in silico rRNA depletion/quantification
@@ -80,6 +82,7 @@ STAR \
 
 <details close>
 <summary> kallisto/BUStools </summary>
+  
 TODO
 </details>  
 
@@ -87,6 +90,7 @@ TODO
 ## **Recipe descriptions**:
 <details close>
 <summary> SlideSeq/Seeker (Curio) </summary>
+  
 - `seeker_v3.1` - Hard trim the adapter read positions in R1, and use the best barcode correction algorithms in STARsolo
 - `seeker_v3.1_noTrim` - No hard trimming, and use the base positions for barcode/UMI (*Note*, this recipe doesn't work well w/ Curio Seeker b/c of in/del issues w/ the barcode synthesis)
 - `seeker_v3.1_noTrimMatchLinker` - Match the adapter sequence on R1 (w/ 2 mismatches allowed) and infer barcodes/UMIs from that position (*Note* best performer w/ Curio data)
@@ -95,6 +99,7 @@ TODO
 
 <details close>
 <summary> StereoSeq/STOmics (BGI) </summary>
+  
 - `stomics_noTrim` - Standard alignment for StereoSeq/STOmics (BGI) data
 - `stomics_noTrim_total` - Total RNA alignment for StereoSeq/STOmics (BGI) data
 </details>
@@ -107,6 +112,7 @@ Just add  a new line in `resources/recipe_sheet.csv`, and reference it based on 
 ## **Barcode handling:**
 <details close>
 <summary> STAR </summary>
+  
 - Removed the linker sequence in R1 so that the `1MM_multi` barcode correction in `STARsolo` can be used
 - Barcode & UMI paramters for [`STAR`](https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md):
 ```
@@ -120,6 +126,7 @@ Just add  a new line in `resources/recipe_sheet.csv`, and reference it based on 
 
 <details close>
 <summary> kallisto/bustools </summary>
+  
 - Barcode & UMI paramters for `kallisto bus`
 ```
 -x 0,0,14:0,14,21:1,0,0
