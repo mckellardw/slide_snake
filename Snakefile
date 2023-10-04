@@ -25,11 +25,6 @@ OUTDIR = config['OUTDIR']
 ########################################################################################################
 SAMPLE_SHEET = pd.read_csv(config["SAMPLE_SHEET_PATH"], na_filter=False)
 
-# SAMPLE_SHEET = SAMPLE_SHEET[~SAMPLE_SHEET['sampleID'].str.contains("STO")]
-# SAMPLE_SHEET = SAMPLE_SHEET[SAMPLE_SHEET['sampleID'].str.contains("Vis_yPAP_3C")]
-SAMPLE_SHEET = SAMPLE_SHEET[SAMPLE_SHEET['sampleID'].str.contains("SHVN")]
-
-
 SAMPLES = list(SAMPLE_SHEET['sampleID'])
 
 R1_FQS = dict(zip(SAMPLES, list(SAMPLE_SHEET['fastq_R1'])))
