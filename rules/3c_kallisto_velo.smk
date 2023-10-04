@@ -25,8 +25,8 @@ rule kallisto_align_velocity:
         42
     run:
         recipe = RECIPE_DICT[wildcards.sample]
-        # KB_IDX = IDX_VELO_DICT[wildcards.sample]
-        KB_IDX ="/workdir/dwm269/genomes/mm39_all/kallisto_lamanno_GRCm39_GENCODEM32_REOT1L-as/mixed.idx" #temp hardcoded
+        KB_IDX = IDX_VELO_DICT[wildcards.sample]
+        # KB_IDX ="/workdir/dwm269/genomes/mm39_all/kallisto_velo_GRCm39_GENCODEM32_REOT1L-as/mixed.idx" #temp hardcoded
         BB_WHITELIST = f"{input.BB}"
         
         KB_X = RECIPE_SHEET["kb.x"][recipe]
@@ -54,6 +54,7 @@ rule kallisto_align_velocity:
 
 # Split the .bus file for spliced/unspliced outputs
 #TODO- split this into two rules for better parallelization in runs
+#TODO - fix hardcoded bits...
 rule split_bus_velocity:
     input:
         BUS = '{OUTDIR}/{sample}/kb_velo/output.corrected.bus',
@@ -67,6 +68,7 @@ rule split_bus_velocity:
     threads:
         1
     run:
+        # KB_IDX = IDX_VELO_DICT[wildcards.sample]
         shell(
             f"""
             mkdir -p {params.MATDIR}
