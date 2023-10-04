@@ -27,6 +27,7 @@ SAMPLE_SHEET = pd.read_csv(config["SAMPLE_SHEET_PATH"], na_filter=False)
 
 # SAMPLE_SHEET = SAMPLE_SHEET[~SAMPLE_SHEET['sampleID'].str.contains("STO")]
 # SAMPLE_SHEET = SAMPLE_SHEET[SAMPLE_SHEET['sampleID'].str.contains("Vis_yPAP_3C")]
+SAMPLE_SHEET = SAMPLE_SHEET[SAMPLE_SHEET['sampleID'].str.contains("SHVN")]
 
 
 SAMPLES = list(SAMPLE_SHEET['sampleID'])
@@ -64,8 +65,8 @@ REF_DICT = {}       # Dictionary of reference genomes to use
 GTF_DICT = {}       # Dictionary of gene annotations (.gtf format)
 IDX_DICT = {}       # Dictionary of kallisto indices
 T2G_DICT = {}       # Dictionary of kallisto transcript-to-gene maps
-# IDX_VELO_DICT = {}  # Dictionary of kallisto indices for RNA velocity
-# T2G_VELO_DICT = {}  # Dictionary of kallisto transcript-to-gene maps for RNA velocity
+IDX_VELO_DICT = {}  # Dictionary of kallisto indices for RNA velocity
+T2G_VELO_DICT = {}  # Dictionary of kallisto transcript-to-gene maps for RNA velocity
 BB_DICT = {}        # Dictionary of bead barcode maps
 SPECIES_DICT = {}   # Dictionary of species listed for mirge3 analysis
 
@@ -77,8 +78,8 @@ for i in range(0,SAMPLE_SHEET.shape[0]):
     GTF_DICT[tmp_sample] = list(SAMPLE_SHEET["genes_gtf"])[i]
     IDX_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_idx"])[i]
     T2G_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_t2g"])[i]
-    # IDX_VELO_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_velo_idx"])[i]
-    # T2G_VELO_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_velo_t2g"])[i]
+    IDX_VELO_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_idx_velo"])[i]
+    T2G_VELO_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_t2g_velo"])[i]
     BB_DICT[tmp_sample] = list(SAMPLE_SHEET["BB_map"])[i]
     SPECIES_DICT[tmp_sample] = list(SAMPLE_SHEET["species"])[i]
 
@@ -119,12 +120,12 @@ rule all:
             OUTDIR=config['OUTDIR'],
             sample=SAMPLES
         ),
-        # expand( # kallisto/bustools count mats
-        #     '{OUTDIR}/{sample}/kb_velo/raw/{MATRIX}.mtx.gz',
-        #     OUTDIR=config['OUTDIR'],
-        #     MATRIX=['spliced','unspliced'],
-        #     sample=SAMPLES
-        # ),
+        expand( # kallisto/bustools count mats
+            '{OUTDIR}/{sample}/kb_velo/raw/{MATRIX}.mtx.gz',
+            OUTDIR=config['OUTDIR'],
+            MATRIX=['spliced','unspliced'],
+            sample=SAMPLES
+        ),
         # expand( #TODO- REF=["STARsolo_rRNA", "STARsolo"]), # umi_tools deduplicated .bam
         #     '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.bam.bai',
         #     OUTDIR=config['OUTDIR'],
@@ -136,12 +137,12 @@ rule all:
             sample=SAMPLES,
             FILE=["qualimapReport.html","rnaseq_qc_result.csv"]
         ),
-        # expand( # strand-split, umi_tools deduplicated .bam
-        #     '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.{STRAND}.bam.bai',
-        #     OUTDIR=config['OUTDIR'],
-        #     sample=SAMPLES,
-        #     STRAND=["fwd", "rev"]
-        # ),
+        expand( # strand-split, umi_tools deduplicated .bam
+            '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.{STRAND}.bam.bai',
+            OUTDIR=config['OUTDIR'],
+            sample=SAMPLES,
+            STRAND=["fwd", "rev"]
+        ),
         # expand( #non-deduplicated .bam
         #     '{OUTDIR}/{sample}/{REF}/Aligned.sortedByCoord.out.bam.bai',
         #     OUTDIR=config['OUTDIR'],

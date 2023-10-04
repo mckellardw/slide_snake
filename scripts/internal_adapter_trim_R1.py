@@ -61,12 +61,13 @@ def trim_fq(fq_in, fq_out, gz):
         read_count += 1
 
         # Useful resource: https://www.bioinformaticscrashcourse.com/10.1_Alignment.html
+        # Curio data alignment parameters:
         ## match score = 4, mismatch = -0.5
         ## gap opening = -6, gap extension = -6
         alignment = pairwise2.align.localms(
             seq, 
             adapter_seq,
-            4, -0.5, -6, -6,
+            4, -0.5, -6, -6, # Manually set these for Curio data
             # score_only = True,
             one_alignment_only=True
         )
@@ -126,7 +127,7 @@ if n_cores > 1:
         # zcat {fq1_in} | seqkit split -p {n_cores} -O {tmp_dir} --force
         # """
         
-        # Custom script to split .fq w/ sed
+        # Custom script to split .fq w/ sed in parallel
         f""" 
         python scripts/splitNfqs.py {fq1_in} {n_cores} {n_cores} "False"
         """
