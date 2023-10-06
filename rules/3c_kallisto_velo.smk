@@ -103,10 +103,12 @@ rule bus2mat_velocity:
         TRANSCRIPTS = '{OUTDIR}/{sample}/kb_velo/transcripts.txt',
         ECMAP = '{OUTDIR}/{sample}/kb_velo/matrix.ec'
     output:
-        BCS = '{OUTDIR}/{sample}/kb_velo/raw/output.barcodes.txt',
-        GENES = '{OUTDIR}/{sample}/kb_velo/raw/output.genes.txt',
-        SPLICED = '{OUTDIR}/{sample}/kb_velo/raw/spliced.mtx',
-        UNSPLICED = '{OUTDIR}/{sample}/kb_velo/raw/unspliced.mtx'
+        BCS_SPLICED = '{OUTDIR}/{sample}/kb_velo/raw/spliced.barcodes.txt',
+        GENES_SPLICED = '{OUTDIR}/{sample}/kb_velo/raw/spliced.genes.txt',
+        MAT_SPLICED = '{OUTDIR}/{sample}/kb_velo/raw/spliced.mtx',
+        BCS_UNSPLICED = '{OUTDIR}/{sample}/kb_velo/raw/unspliced.barcodes.txt',
+        GENES_UNSPLICED = '{OUTDIR}/{sample}/kb_velo/raw/unspliced.genes.txt',
+        MAT_UNSPLICED = '{OUTDIR}/{sample}/kb_velo/raw/unspliced.mtx'
     params:
         MATDIR = directory('{OUTDIR}/{sample}/kb_velo/raw')
     threads:
@@ -126,7 +128,9 @@ rule bus2mat_velocity:
             --em \
             {input.SPLICED}
 
-            mv {output.SPLICED.replace("spliced","output")} {output.SPLICED}
+            mv {output.BCS_SPLICED.replace("spliced","output")} {output.BCS_SPLICED}
+            mv {output.GENES_SPLICED.replace("spliced","output")} {output.GENES_SPLICED}
+            mv {output.MAT_SPLICED.replace("spliced","output")} {output.MAT_SPLICED}
             """
         )
 
@@ -142,29 +146,35 @@ rule bus2mat_velocity:
             --em \
             {input.UNSPLICED}
 
-            mv {output.UNSPLICED.replace("unspliced","output")} {output.UNSPLICED}
+            mv {output.BCS_UNSPLICED.replace("unspliced","output")} {output.BCS_UNSPLICED}
+            mv {output.GENES_UNSPLICED.replace("unspliced","output")} {output.GENES_UNSPLICED}
+            mv {output.MAT_UNSPLICED.replace("unspliced","output")} {output.MAT_UNSPLICED}
             """
         )
 
 # gzip the count matrix, etc.
 rule compress_kb_outs_velocity:
     input:
-        BCS = '{OUTDIR}/{sample}/kb_velo/raw/output.barcodes.txt',
-        GENES = '{OUTDIR}/{sample}/kb_velo/raw/output.genes.txt',
-        SPLICED = '{OUTDIR}/{sample}/kb_velo/raw/spliced.mtx',
-        UNSPLICED = '{OUTDIR}/{sample}/kb_velo/raw/unspliced.mtx'
+        BCS_SPLICED = '{OUTDIR}/{sample}/kb_velo/raw/spliced.barcodes.txt',
+        GENES_SPLICED = '{OUTDIR}/{sample}/kb_velo/raw/spliced.genes.txt',
+        MAT_SPLICED = '{OUTDIR}/{sample}/kb_velo/raw/spliced.mtx',
+        BCS_UNSPLICED = '{OUTDIR}/{sample}/kb_velo/raw/unspliced.barcodes.txt',
+        GENES_UNSPLICED = '{OUTDIR}/{sample}/kb_velo/raw/unspliced.genes.txt',
+        MAT_UNSPLICED = '{OUTDIR}/{sample}/kb_velo/raw/unspliced.mtx'
     output:
-        BCS = '{OUTDIR}/{sample}/kb_velo/raw/output.barcodes.txt.gz',
-        GENES = '{OUTDIR}/{sample}/kb_velo/raw/output.genes.txt.gz',
-        SPLICED = '{OUTDIR}/{sample}/kb_velo/raw/spliced.mtx.gz',
-        UNSPLICED = '{OUTDIR}/{sample}/kb_velo/raw/unspliced.mtx.gz'
-    params:
-        MATDIR = directory('{OUTDIR}/{sample}/kb_velo/raw')
+        BCS_SPLICED = '{OUTDIR}/{sample}/kb_velo/raw/spliced.barcodes.txt.gz',
+        GENES_SPLICED = '{OUTDIR}/{sample}/kb_velo/raw/spliced.genes.txt.gz',
+        MAT_SPLICED = '{OUTDIR}/{sample}/kb_velo/raw/spliced.mtx.gz',
+        BCS_UNSPLICED = '{OUTDIR}/{sample}/kb_velo/raw/unspliced.barcodes.txt.gz',
+        GENES_UNSPLICED = '{OUTDIR}/{sample}/kb_velo/raw/unspliced.genes.txt.gz',
+        MAT_UNSPLICED = '{OUTDIR}/{sample}/kb_velo/raw/unspliced.mtx.gz'
     threads:
         config['CORES']        
     run:
         shell(
             f"""
-            pigz -p{threads} {input.BCS} {input.GENES} {input.SPLICED} {input.UNSPLICED}
+            pigz -p{threads} \
+            {input.BCS_SPLICED} {input.GENES_SPLICED} {input.MAT_SPLICED} \
+            {input.BCS_UNSPLICED} {input.GENES_UNSPLICED} {input.MAT_UNSPLICED}
             """
         )
