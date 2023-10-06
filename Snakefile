@@ -121,22 +121,17 @@ rule all:
             MATRIX=['spliced','unspliced'],
             sample=SAMPLES
         ),
-        # expand( #TODO- REF=["STARsolo_rRNA", "STARsolo"]), # umi_tools deduplicated .bam
-        #     '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.bam.bai',
-        #     OUTDIR=config['OUTDIR'],
-        #     sample=SAMPLES
-        # ),
         expand(  # alignment QC with qualimap | requires deduped input!
             '{OUTDIR}/{sample}/qualimap/{FILE}',
             OUTDIR=config['OUTDIR'],
             sample=SAMPLES,
             FILE=["qualimapReport.html","rnaseq_qc_result.csv"]
         ),
-        expand( # strand-split, umi_tools deduplicated .bam
-            '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.{STRAND}.bam.bai',
+        expand( # deduped and/or strand-split, umi_tools deduplicated .bam #TODO- REF=["STARsolo_rRNA", "STARsolo"])
+            '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out{STRAND}.bam.bai',
             OUTDIR=config['OUTDIR'],
             sample=SAMPLES,
-            STRAND=["fwd", "rev"]
+            STRAND=["", ".fwd", ".rev"]
         ),
         # expand( #non-deduplicated .bam
         #     '{OUTDIR}/{sample}/{REF}/Aligned.sortedByCoord.out.bam.bai',
