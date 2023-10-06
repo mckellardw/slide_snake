@@ -116,9 +116,9 @@ rule all:
             sample=SAMPLES
         ),
         expand( # kallisto/bustools count mats
-            '{OUTDIR}/{sample}/kb_velo/raw/{MATRIX}.mtx.gz',
+            '{OUTDIR}/{sample}/kb_velo/{LAYER}/output.mtx.gz',
             OUTDIR=config['OUTDIR'],
-            MATRIX=['spliced','unspliced'],
+            LAYER=['spliced','unspliced'],
             sample=SAMPLES
         ),
         expand(  # alignment QC with qualimap | requires deduped input!
