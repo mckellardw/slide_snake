@@ -12,7 +12,8 @@ rule kallisto_align_velocity:
         R2_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R2_final_filtered.fq.gz',
         BB = "{OUTDIR}/{sample}/bb/whitelist.txt"
     output:
-        BUS = temp('{OUTDIR}/{sample}/kb_velo/output.corrected.bus'),
+        BUS = temp('{OUTDIR}/{sample}/kb_velo/output.bus'),
+        BUS_CORRECTED = temp('{OUTDIR}/{sample}/kb_velo/output.corrected.bus'),
         TRANSCRIPTS = '{OUTDIR}/{sample}/kb_velo/transcripts.txt',
         ECMAP = temp('{OUTDIR}/{sample}/kb_velo/matrix.ec')
     params:
