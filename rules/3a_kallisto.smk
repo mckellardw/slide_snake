@@ -10,7 +10,8 @@ rule kallisto_align:
         R2_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R2_final_filtered.fq.gz',
         BB = "{OUTDIR}/{sample}/bb/whitelist.txt"
     output:
-        BUSTEXT = temp('{OUTDIR}/{sample}/kb/output.corrected.bus'),
+        BUS = temp('{OUTDIR}/{sample}/kb/output.bus'),
+        BUS_CORRECTED = temp('{OUTDIR}/{sample}/kb/output.corrected.bus'),
         TRANSCRIPTS = '{OUTDIR}/{sample}/kb/transcripts.txt',
         ECMAP = temp('{OUTDIR}/{sample}/kb/matrix.ec')
     params:
