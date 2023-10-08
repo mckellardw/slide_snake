@@ -73,7 +73,7 @@ rule split_bus_velocity_spliced:
             mkdir -p {params.MATDIR}
 
             {BUST_EXEC} capture \
-            -s -x \
+            -s \
             -o {output.SPLICED} \
             -c /workdir/dwm269/genomes/mm39_all/kallisto_velo_GRCm39_GENCODEM32_REOT1L-as/cDNA.t2c \
             --ecmap {input.ECMAP} \
@@ -101,7 +101,7 @@ rule split_bus_velocity_unspliced:
             mkdir -p {params.MATDIR}
 
             {BUST_EXEC} capture \
-            -s -x \
+            -s \
             -o {output.UNSPLICED} \
             -c /workdir/dwm269/genomes/mm39_all/kallisto_velo_GRCm39_GENCODEM32_REOT1L-as/introns.t2c \
             --ecmap {input.ECMAP} \
