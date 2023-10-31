@@ -1,6 +1,9 @@
 # Snakemake garbage
 .snakemake/*
 
+# Slurm garbage
+slurm*.out
+
 # VScode garbage
 .vscode/*
 

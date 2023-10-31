@@ -1,0 +1,14 @@
+# slurm_config.yml - cluster configuration
+__default__:
+    job-name: slide_snake
+    mail-type: END,FAIL
+    mail-user: user@institute.org
+    partition: partition_name
+    time: 2:00:00 # time limit for each job
+    nodes: 1
+    ntasks-per-node: 16 #Request n cores be allocated per node.
+    mem: 220G
+    output: .snakemake/slurm/%j.log
+    chdir: /path/to/slide_snake
+
+

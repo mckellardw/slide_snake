@@ -4,8 +4,6 @@
 
 The goal of this project is to build a snakemake workflow for assessing different preprocessing, alignment, and quantification configurations, and digging into artifacts.  
 
-***Contributions are welcome!***   
-
 
 ## **Dependencies**:
 - `cutadapt` [v3.4](https://cutadapt.readthedocs.io/en/stable/)
@@ -19,6 +17,28 @@ The goal of this project is to build a snakemake workflow for assessing differen
 - `vsearch` [v2.17.0_linux_x86_64](https://github.com/torognes/vsearch)
 - `BLAST`  
 *Note-* these are the versions I used, not necessarily the only versions which will work
+
+### Install w/ `mamba`/`conda`:
+```
+mamba create --name slide_snake -c bioconda cutadapt fastqc star kallisto samtools qualimap anndata scanpy vsearch blast
+
+mamba activate slide_snake
+```
+
+I had solve issues putting snakemake into the same conda environment- if you don't have snakemake installed locally, I would recommend making a second environment which just has snakemake in it, then loading that environment before `slide_snake`. Example (assuming you already built the above `slide_snake` env):
+```
+mamba create --name snakemake_only -c bioconda snakemake
+mamba activate snakemake_only
+mamba activate slide_snake
+```
+
+### Example run w/ `slurm`:
+```
+snakemake --cluster-config slurm_config.yml \
+--cluster "sbatch --mail-type {cluster.mail-type} --mail-user {cluster.mail-user} -p {cluster.partition} -t {cluster.time} -N {cluster.nodes} --mem {cluster.mem} -D {cluster.chdir} -o {cluster.output}" \
+-j 32 -k -p --nt
+```
+
 
 ## **Trimming:**
 <details close>
