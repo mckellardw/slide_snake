@@ -78,7 +78,7 @@ rule STARsolo_align:
             R2 = input.R2_FQ
 
         # Run STARsolo
-        #TODO: --twopassMode
+        #TODO?: --twopassMode
         shell(
             f"""
             mkdir -p {params.OUTDIR}/{wildcards.sample}/STARsolo

@@ -9,13 +9,11 @@ rule merge_fastqs:
         R2_FQ = lambda wildcards: R2_FQS[wildcards.sample]
     threads:
         config['CORES']
-    # conda:
-    #     "STARsolo"
     run:
         if len(params.R1_FQ.split(" "))==1 & len(params.R2_FQ.split(" "))==1: # shell for single fastq input
             shell(f"cp {params.R1_FQ} {output.MERGED_R1_FQ}")
             shell(f"cp {params.R2_FQ} {output.MERGED_R2_FQ}")
-        else: # shell enablinging multi-fast input; concatenate inputs
+        else: # multi-fastq input; concatenate inputs
             print("Concatenating",len(params.R1_FQ.split(" ")), ".fastq's for", wildcards.sample)
             shell(f"mkdir -p {params.TMP_DIR}")
             shell(f"zcat {params.R1_FQ} > {params.TMP_DIR}/{wildcards.sample}_R1.fq")

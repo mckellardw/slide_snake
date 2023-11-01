@@ -2,7 +2,7 @@
 ## Read trimming & QC rules
 #############################################
 # fastqc on R2 before trimming
-rule preTrim_FastQC_R1:
+rule fastQC_preTrim_R1:
     input:
         MERGED_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz'
     output:
@@ -26,7 +26,7 @@ rule preTrim_FastQC_R1:
         )
 
 # fastqc on R2 before trimming
-rule preTrim_FastQC_R2:
+rule fastQC_preTrim_R2:
     input:
         MERGED_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2.fq.gz'
     output:
@@ -232,7 +232,7 @@ rule cutadapt:
 
 
 # fastqc on R1 after linker removal & R2 trimming/filtering
-rule postTrim_FastQC_R1:
+rule fastQC_postTrim_R1:
     input:
         FINAL_R1_FQ =  '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz'
     output:
