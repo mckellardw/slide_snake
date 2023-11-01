@@ -11,4 +11,17 @@ __default__:
     output: .snakemake/slurm/%j.log
     chdir: /path/to/slide_snake
 
+STARsolo_align_rRNA:
+    partition: high_mem_partition
+    time: 2:00:00
+    mem: 128G
 
+STARsolo_align:
+    partition: high_mem_partition
+    time: 2:00:00
+    mem: 128G
+
+kallisto_align:
+    partition: high_mem_partition
+    time: 2:00:00
+    mem: 128G
