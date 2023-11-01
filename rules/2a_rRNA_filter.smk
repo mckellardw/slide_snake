@@ -16,7 +16,6 @@ rule STARsolo_align_rRNA:
         GENEDIRECTORY = directory('{OUTDIR}/{sample}/STARsolo_rRNA/Solo.out/GeneFull'),
         GENEMAT = '{OUTDIR}/{sample}/STARsolo_rRNA/Solo.out/GeneFull/raw/matrix.mtx'
     params:
-        STAR_EXEC = config['STAR_EXEC'],
         MEMLIMIT = config['MEMLIMIT']
     threads:
         config['CORES']
@@ -80,7 +79,7 @@ rule STARsolo_align_rRNA:
                 f"""
                 mkdir -p {OUTDIR}/{wildcards.sample}/STARsolo_rRNA
 
-                {params.STAR_EXEC} \
+                {STAR_EXEC} \
                 --runThreadN {threads} \
                 --outFileNamePrefix {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/ \
                 --outSAMtype BAM SortedByCoordinate \
