@@ -23,16 +23,18 @@ def main(mat_in, feat_in, bc_in, bb_map, ad_out, feat_col=1, remove_zero_feature
     else:
         adata = read_mtx(gzip.open(mat_in, "rt"))
 
-    # Transpose 
+    # Transpose for STAR inputs...
     if 'Solo.out' in mat_in:
         print('transposing count matrix...')
         adata = adata.transpose()
 
     # Features
-    adata.var_names = pd.read_csv(feat_in, sep="\t", header=None, usecols=[feat_col], squeeze=True).values
+    # adata.var_names = pd.read_csv(feat_in, sep="\t", header=None, usecols=[feat_col], squeeze=True).values    # pandas v1.#.#
+    adata.var_names = pd.read_csv(feat_in, sep="\t", header=None, usecols=[feat_col]).squeeze().values          # pandas v2.#.#
 
     # Barcodes
-    adata.obs_names = pd.read_csv(bc_in, sep="\t", header=None, squeeze=True).values
+    # adata.obs_names = pd.read_csv(bc_in, sep="\t", header=None, squeeze=True).values    # pandas v1.#.#
+    adata.obs_names = pd.read_csv(bc_in, sep="\t", header=None)[0].tolist()               # pandas v2.#.#
 
     # Add spatial location
     spatial_data = pd.read_csv(bb_map, sep="\t", header=None, names=["barcode", "x", "y"])
