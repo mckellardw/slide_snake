@@ -20,6 +20,8 @@ rule kallisto_align:
         '{OUTDIR}/{sample}/kb/kallisto_align.log'
     threads:
         config['CORES']
+    resources:
+        mem_mb = config['MEMLIMIT_MB']
     priority:
         42
     run:
