@@ -36,6 +36,8 @@ rule STARsolo_align:
         MEMLIMIT = config['MEMLIMIT']
     threads:
         config['CORES']
+    resources:
+        mem_mb = config['MEMLIMIT_MB']
     priority:
         42
     run:

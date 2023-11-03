@@ -167,7 +167,6 @@ rule cutadapt:
     params:
         # R1_LENGTH = 50,
         MIN_R2_LENGTH = 12,
-        CUTADAPT_EXEC = CUTADAPT_EXEC,
         OVERLAP = 5,
         HOMOPOLYMER_ERROR_RATE = 0.2, # default error rate is 0.1
         # THREE_PRIME_R1_POLYA = "A"*100,
@@ -205,7 +204,7 @@ rule cutadapt:
 
         shell(
             f"""
-            {params.CUTADAPT_EXEC} \
+            {CUTADAPT_EXEC} \
             --minimum-length {R1_LENGTH}:{params.MIN_R2_LENGTH} \
             --quality-cutoff 20 \
             --overlap {params.OVERLAP} \
@@ -257,7 +256,7 @@ rule fastQC_postTrim_R1:
         )
 
 # fastqc after trimming on R2
-rule postTrim_FastQC_R2:
+rule fastQC_postTrim_R2:
     input:
         FINAL_R2_FQ =  '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz'
     output:
