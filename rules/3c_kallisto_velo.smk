@@ -27,7 +27,6 @@ rule kallisto_align_velocity:
     run:
         recipe = RECIPE_DICT[wildcards.sample]
         KB_IDX = IDX_VELO_DICT[wildcards.sample]
-        # KB_IDX ="/workdir/dwm269/genomes/mm39_all/kallisto_velo_GRCm39_GENCODEM32_REOT1L-as/mixed.idx" #temp hardcoded
         BB_WHITELIST = f"{input.BB}"
         
         KB_X = RECIPE_SHEET["kb.x"][recipe]
@@ -43,13 +42,13 @@ rule kallisto_align_velocity:
         shell(
             f"""
             bash scripts/kb.sh {OUTDIR}/{wildcards.sample}/kb_velo \
-            {KB_IDX} \
-            {BB_WHITELIST} \
-            {KB_X} \
-            {log} \
-            {threads} \
-            {params.MEMLIMIT} \
-            {R1} {R2}
+                {KB_IDX} \
+                {BB_WHITELIST} \
+                {KB_X} \
+                {log} \
+                {threads} \
+                {params.MEMLIMIT} \
+                {R1} {R2}
             """
         )
 
@@ -64,18 +63,20 @@ rule split_bus_velocity_spliced:
         SPLICED = '{OUTDIR}/{sample}/kb_velo/spliced.bus'
     params:
         MATDIR = directory('{OUTDIR}/{sample}/kb_velo/raw')
+    log:
+        '{OUTDIR}/{sample}/kb_velo/split_bus_velocity_spliced.log'
     threads:
         1
     run:
-        # KB_IDX = IDX_VELO_DICT[wildcards.sample]
+        KB_IDX = IDX_VELO_DICT[wildcards.sample]
         shell(
             f"""
             mkdir -p {params.MATDIR}
 
             {BUST_EXEC} capture \
-            -s \
-            -o {output.SPLICED} \
-            -c /workdir/dwm269/genomes/mm39_all/kallisto_velo_GRCm39_GENCODEM32_REOT1L-as/cDNA.t2c \
+            --transcripts \
+            --output {output.SPLICED} \
+            --capture {KB_IDX}/cDNA.t2c \
             --ecmap {input.ECMAP} \
             --txnames {input.TRANSCRIPTS} \
             {input.BUS}
@@ -96,14 +97,15 @@ rule split_bus_velocity_unspliced:
     threads:
         1
     run:
+        KB_IDX = IDX_VELO_DICT[wildcards.sample]
         shell(
             f"""
             mkdir -p {params.MATDIR}
 
             {BUST_EXEC} capture \
-            -s \
-            -o {output.UNSPLICED} \
-            -c /workdir/dwm269/genomes/mm39_all/kallisto_velo_GRCm39_GENCODEM32_REOT1L-as/introns.t2c \
+            --transcripts \
+            --output {output.UNSPLICED} \
+            --capture {KB_IDX}/introns.t2c \
             --ecmap {input.ECMAP} \
             --txnames {input.TRANSCRIPTS} \
             {input.BUS}

@@ -38,6 +38,10 @@ snakemake --cluster-config slurm_config.yml \
 --cluster "sbatch --mail-type {cluster.mail-type} --mail-user {cluster.mail-user} -p {cluster.partition} -t {cluster.time} -N {cluster.nodes} --mem {cluster.mem} -D {cluster.chdir} -o {cluster.output}" \
 -j 32 -k -p --nt
 ```
+### Example run w/out `slurm`:
+```
+snakemake -k -p --nt -j 32 
+```
 
 
 ## **Trimming:**

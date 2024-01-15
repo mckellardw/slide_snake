@@ -53,8 +53,7 @@ rule bowtie2_prep_bam_piRNA:
             | {SAMTOOLS_EXEC} view -bS > {output.BAM}
             """
         )
-# samtools view -h input.bam | awk 'length(\$10) > 30 || \$1 ~ /^@/' | samtools view -bS - > output.bam
-# samtools view -h aligned.bam | awk 'BEGIN {FS=OFS="\t"} !/^@/ {\$3="*"; \$4="0"; \$5="0"; \$6="*"; \$7="*"; \$8="0"; \$9="0"} {print}' | samtools view -b -o unaligned.bam -
+
 
 # Run bowtie2 on piRNA reference from pirbase in end-to-end/sensitive mode 
 #   https://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#end-to-end-alignment-versus-local-alignment
@@ -62,9 +61,7 @@ rule bowtie2_prep_bam_piRNA:
 # To generate: `bowtie2-build mmu.gold.fa.gz ./index > build.log`
 rule bowtie2_align_piRNA:
     input:
-        BAM = '{OUTDIR}/{sample}/piRNA/tmp.bam'
-        # R1_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R1_final_filtered_short.fq.gz',
-        # R2_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R2_final_filtered_short.fq.gz'        
+        BAM = '{OUTDIR}/{sample}/piRNA/tmp.bam'       
     output:
         BAM = '{OUTDIR}/{sample}/piRNA/aligned.bam'
     params:
@@ -196,7 +193,7 @@ rule counts_to_sparse_piRNA:
 # Dedup the .bam (do NOT split across chromosomes, b/c of custom reference)
 rule umitools_dedupSortedBAM_piRNA:
     input:
-        BB_WHITELIST = "{OUTDIR}/{sample}/bb/whitelist.txt",
+        BB_WHITELIST = '{OUTDIR}/{sample}/bb/whitelist.txt',
         BAM = '{OUTDIR}/{sample}/piRNA/aligned.sorted.tagged.bam'
     output:
         BAM = '{OUTDIR}/{sample}/piRNA/aligned.sorted.tagged.dedup.bam'
@@ -207,13 +204,11 @@ rule umitools_dedupSortedBAM_piRNA:
     run:
         tmp_recipe = RECIPE_DICT[wildcards.sample]
 
-        whitelist = input.BB_WHITELIST
-
         shell(
             f"""
             bash scripts/dedup.sh \
             {input.BAM} \
-            {whitelist} \
+            {input.BB_WHITELIST} \
             {threads} \
             {output.BAM} \
             {OUTDIR}/{wildcards.sample}/tmp/dedup \

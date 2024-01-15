@@ -42,7 +42,8 @@ rule bowtie2_prep_bam_miRNA:
         TRIM_N = 4,
         TRIM_OPTION = "end" # option: start, end, both
     threads:
-        9
+        config['CORES']
+        # 1
     run:
         shell(
             f"""
@@ -60,12 +61,7 @@ rule bowtie2_prep_bam_miRNA:
             """
         )
         
-        # -s 0.04
-        # | awk -f scripts/bam_shortPassReadFilter.awk -v max_length={params.MAX_SHORT_READ_LENGTH} \
-
-# samtools view -h input.bam | awk 'length(\$10) > 30 || \$1 ~ /^@/' | samtools view -bS - > output.bam
-# samtools view -h aligned.bam | awk 'BEGIN {FS=OFS="\t"} !/^@/ {\$3="*"; \$4="0"; \$5="0"; \$6="*"; \$7="*"; \$8="0"; \$9="0"} {print}' | samtools view -b -o unaligned.bam -
-
+        
 # Run bowtie2 on miRNA reference from pirbase in end-to-end/sensitive mode 
 #   https://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#end-to-end-alignment-versus-local-alignment
 #   change to `--sensitive-local` for other applications
