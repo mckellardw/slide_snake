@@ -1,8 +1,8 @@
 # TODO- update for different recipes
 rule kallisto_quant_bulk:
     input:
-        FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final_trimmed.fq.gz',
-        FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final_trimmed.fq.gz'
+        R1_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/final_filtered_R1.fq.gz',
+        R2_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/final_filtered_R2.fq.gz',
     output:
         GENOMEBAM = '{OUTDIR}/{sample}/kb/quant/pseudoalignments.bam'
     params:
@@ -22,7 +22,7 @@ rule kallisto_quant_bulk:
             f"""
             mkdir -p {OUTDIR}/{wildcards.sample}/kb/quant
 
-            {KALLISTO_EXEC} quant \
+            {EXEC['KALLISTO']} quant \
             --index {KB_IDX} \
             --output-dir {OUTDIR}/{wildcards.sample}/kb/quant/ \
             --threads {threads} \

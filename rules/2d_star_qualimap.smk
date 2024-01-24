@@ -21,7 +21,7 @@ rule qualimapQC:
             mkdir -p {output.qualimapDir}
             cd {output.qualimapDir}
 
-            {QUALIMAP_EXEC} rnaseq \
+            {EXEC['QUALIMAP']} rnaseq \
             -bam {input.SORTEDBAM} \
             -gtf {params.GENES_GTF} \
             --sequencing-protocol strand-specific-forward \
@@ -63,5 +63,11 @@ rule qualimap_summary2csv:
 
         # df = pd.json_normalize(sections)
         # print(out_dict)
-        out_df = pd.DataFrame.from_dict(out_dict, orient='index') 
-        out_df.T.to_csv(output.qualimapReport_csv, index=False)
+        out_df = pd.DataFrame.from_dict(
+            out_dict, 
+            orient='index'
+        ) 
+        out_df.T.to_csv(
+            output.qualimapReport_csv, 
+            index=False
+        )

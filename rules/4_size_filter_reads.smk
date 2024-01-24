@@ -1,13 +1,13 @@
 # Filter .fastqs to only keep short reads (for small RNA stuff)
 rule shortPass_filter_fromfastq:
     input:
-        R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
-        R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz',
-        R1_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R1_final_filtered.fq.gz',
-        R2_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R2_final_filtered.fq.gz'
+        R1_FQ = '{OUTDIR}/{sample}/tmp/final_R1.fq.gz',
+        R2_FQ = '{OUTDIR}/{sample}/tmp/final_R2.fq.gz',
+        R1_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/final_filtered_R1.fq.gz',
+        R2_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/final_filtered_R2.fq.gz',
     output:        
-        R1_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R1_final_filtered_short.fq.gz',
-        R2_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R2_final_filtered_short.fq.gz'
+        R1_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/final_filtered_short_R1.fq.gz',
+        R2_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/final_filtered_short_R2.fq.gz',
     params:
         OUTDIR = config['OUTDIR'],
         MEMLIMIT = config['MEMLIMIT'],

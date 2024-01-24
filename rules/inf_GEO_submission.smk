@@ -24,7 +24,7 @@ rule prep_GEO_counts:
         MAT = '{OUTDIR}/{sample}/miRNA/raw/matrix.mtx.gz',
         BB_map = lambda wildcards: BB_DICT[wildcards.sample]
     output:
-        H5AD = "{OUTDIR}/{sample}/miRNA/raw/output.h5ad"
+        H5AD = "{OUTDIR}/{sample}/"
     threads:
         1
     run:

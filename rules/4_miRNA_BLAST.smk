@@ -21,14 +21,14 @@ rule BLAST_align_mature_miRNA:
         # Convert BAM to FASTA
         shell(
             f"""
-            samtools fasta input.bam > input.fasta
+            {EXEC['SAMTOOLS']} fasta input.bam > input.fasta
             """
         )
 
         # Run BLAST
         shell(
             f"""
-            blastn -query input.fasta -db your_db -outfmt 6 -out blast_results.txt
+            {EXEC['BLASTN']} -query input.fasta -db your_db -outfmt 6 -out blast_results.txt
             """
         )
 
@@ -43,25 +43,25 @@ rule BLAST_align_mature_miRNA:
         # Add tags to BAM file
         shell(
             f"""
-            samtools view -h input.bam | \
+            {EXEC['SAMTOOLS']} view -h input.bam | \
             awk -v tags_file="blast_tags.txt" 'BEGIN {while ((getline < tags_file) > 0) tags[$1]=$2} {if ($1 in tags) print $0 "\t" tags[$1]; else print $0}' | \
-            samtools view -b > output.bam
+            {EXEC['SAMTOOLS']} view -b > output.bam
             """
         )
 
         # Filter to save aligned reads (mature miRs)
         shell(
             f"""
-            {SAMTOOLS_EXEC} view -b -F 4 {output.TMP_ALIGNED_BAM} > {output.MATURE_BAM}
+            {EXEC['SAMTOOLS']} view -b -F 4 {output.TMP_ALIGNED_BAM} > {output.MATURE_BAM}
             """
         )
 
         # Get unaligned reads for hairpin alignment
         shell(
             f"""
-            {SAMTOOLS_EXEC} view -f 4 {output.TMP_ALIGNED_BAM} \
-            | awk -f scripts/bam_clearAlignment.awk - \
-            | {SAMTOOLS_EXEC} view -bS \
+            {EXEC['SAMTOOLS']} view -f 4 {output.TMP_ALIGNED_BAM} \
+            | awk -f scripts/awk/bam_clearAlignment.awk - \
+            | {EXEC['SAMTOOLS']} view -bS \
             > {output.UNALIGNED_BAM}
             """
         )
@@ -85,14 +85,14 @@ rule BLAST_align_hairpin_miRNA:
         shell(
             f"""
             {BOWTIE2_EXEC} \
-            -x {params.REF} \
-            -b {input.BAM} \
-            -p {threads} \
-            --very-sensitive-local \
-            --no-unal \
-            --preserve-tags \
-            2> {log} \
-            | {SAMTOOLS_EXEC} view -bS > {output.BAM}
+                -x {params.REF} \
+                -b {input.BAM} \
+                -p {threads} \
+                --very-sensitive-local \
+                --no-unal \
+                --preserve-tags \
+                2> {log} \
+                | {EXEC['SAMTOOLS']} view -bS > {output.BAM}
             """
         )
 
@@ -115,7 +115,7 @@ rule merge_aligned_bams_miRNA:
     run:
         shell(
             f"""
-            {SAMTOOLS_EXEC} merge {output.BAM} {input.HAIRPIN_BAM} {input.MATURE_BAM}
+            {EXEC['SAMTOOLS']} merge {output.BAM} {input.HAIRPIN_BAM} {input.MATURE_BAM}
             """
         )
 
@@ -131,7 +131,7 @@ rule sortAlignedBAM_miRNA:
     run:
         shell(
             f"""
-            {SAMTOOLS_EXEC} sort -@ {threads} {input.BAM} > {output.BAM}
+            {EXEC['SAMTOOLS']} sort -@ {threads} {input.BAM} > {output.BAM}
             """
         )
 
@@ -149,9 +149,9 @@ rule tagSortedBam_miRNA:
     run:
         shell(
             f"""
-            {SAMTOOLS_EXEC} view -h {input.BAM} \
-            | awk -f scripts/bam_chr2tag.awk - \
-            | {SAMTOOLS_EXEC} view -bS - \
+            {EXEC['SAMTOOLS']} view -h {input.BAM} \
+            | awk -f scripts/awk/bam_chr2tag.awk - \
+            | {EXEC['SAMTOOLS']} view -bS - \
             > {output.BAM}
             """
         )
@@ -168,7 +168,7 @@ rule indexSortedTaggedBAM_miRNA:
     run:
         shell(
             f"""
-            {SAMTOOLS_EXEC} index -@ {threads} {input.BAM}
+            {EXEC['SAMTOOLS']} index -@ {threads} {input.BAM}
             """
         )
 
@@ -186,17 +186,17 @@ rule umitools_count_miRNA:
     run:
         shell(
             f"""
-            {UMITOOLS_EXEC} count \
-            --extract-umi-method=tag \
-            --per-gene \
-            --per-cell \
-            --wide-format-cell-counts \
-            --cell-tag=CB \
-            --gene-tag=BT \
-            --umi-tag=UB \
-            --log={log} \
-            -I {input.BAM} \
-            -S {output.COUNTS}
+            {EXEC['UMITOOLS']} count \
+                --extract-umi-method=tag \
+                --per-gene \
+                --per-cell \
+                --wide-format-cell-counts \
+                --cell-tag=CB \
+                --gene-tag=BT \
+                --umi-tag=UB \
+                --log={log} \
+                -I {input.BAM} \
+                -S {output.COUNTS}
             """
         )
 
@@ -219,13 +219,13 @@ rule umitools_dedupSortedBAM_miRNA:
 
         shell(
             f"""
-            bash scripts/dedup.sh \
-            {input.BAM} \
-            {whitelist} \
-            {threads} \
-            {output.BAM} \
-            {OUTDIR}/{wildcards.sample}/tmp/dedup \
-            {log}
+            bash scripts/bash/dedup.sh \
+                {input.BAM} \
+                {whitelist} \
+                {threads} \
+                {output.BAM} \
+                {OUTDIR}/{wildcards.sample}/tmp/dedup \
+                {log}
             """
         )
 
@@ -241,6 +241,6 @@ rule indexSortedTaggedDedupBAM_miRNA:
     run:
         shell(
             f"""
-            {SAMTOOLS_EXEC} index -@ {threads} {input.BAM}
+            {EXEC['SAMTOOLS']} index -@ {threads} {input.BAM}
             """
         )

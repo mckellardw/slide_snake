@@ -9,10 +9,11 @@ rule splitBBList:
     run:
         tmp_recipe = RECIPE_DICT[wildcards.sample]
 
-        shell(f"cut -f1 {input.BB_map} > {output.BB}")
+        shell(
+            f"cut -f1 {input.BB_map} > {output.BB}"
+        )
 
         if "adapterInsert" in tmp_recipe:
-            #TODO - change this to one-liner
             #load bb
             bb_df = pd.read_csv(input.BB_map, sep="\t", header=None).iloc[:,0]
 

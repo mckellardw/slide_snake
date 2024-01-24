@@ -11,7 +11,7 @@ rule fq2bam:
     run:
         shell(
             f"""
-            {SAMTOOLS_EXEC} import -i \
+            {EXEC['SAMTOOLS']} import -i \
                 -1 {input.FINAL_R1_FQ} \
                 -2 {input.FINAL_R2_FQ} \
                 -o {output.uBAM}

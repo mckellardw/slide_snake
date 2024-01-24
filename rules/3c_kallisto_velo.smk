@@ -6,10 +6,10 @@
 
 rule kallisto_align_velocity:
     input:
-        R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
-        R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz',
-        R1_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R1_final_filtered.fq.gz',
-        R2_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R2_final_filtered.fq.gz',
+        R1_FQ = '{OUTDIR}/{sample}/tmp/final_R1.fq.gz',
+        R2_FQ = '{OUTDIR}/{sample}/tmp/final_R2.fq.gz',
+        R1_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/final_filtered_R1.fq.gz',
+        R2_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/final_filtered_R2.fq.gz',
         BB = "{OUTDIR}/{sample}/bb/whitelist.txt"
     output:
         BUS = temp('{OUTDIR}/{sample}/kb_velo/output.bus'),
@@ -73,13 +73,13 @@ rule split_bus_velocity_spliced:
             f"""
             mkdir -p {params.MATDIR}
 
-            {BUST_EXEC} capture \
-            --transcripts \
-            --output {output.SPLICED} \
-            --capture {KB_IDX}/cDNA.t2c \
-            --ecmap {input.ECMAP} \
-            --txnames {input.TRANSCRIPTS} \
-            {input.BUS}
+            {EXEC['BUSTOOLS']} capture \
+                --transcripts \
+                --output {output.SPLICED} \
+                --capture {KB_IDX}/cDNA.t2c \
+                --ecmap {input.ECMAP} \
+                --txnames {input.TRANSCRIPTS} \
+                {input.BUS}
             """
         )
 
@@ -102,13 +102,13 @@ rule split_bus_velocity_unspliced:
             f"""
             mkdir -p {params.MATDIR}
 
-            {BUST_EXEC} capture \
-            --transcripts \
-            --output {output.UNSPLICED} \
-            --capture {KB_IDX}/introns.t2c \
-            --ecmap {input.ECMAP} \
-            --txnames {input.TRANSCRIPTS} \
-            {input.BUS}
+            {EXEC['BUSTOOLS']} capture \
+                --transcripts \
+                --output {output.UNSPLICED} \
+                --capture {KB_IDX}/introns.t2c \
+                --ecmap {input.ECMAP} \
+                --txnames {input.TRANSCRIPTS} \
+                {input.BUS}
             """
         )
 
@@ -131,15 +131,15 @@ rule bus2mat_velocity_spliced:
             f"""
             mkdir -p {params.MATDIR}
 
-            {BUST_EXEC} count \
-            --output {params.MATDIR}/ \
-            --genemap {T2G_VELO_DICT[wildcards.sample]} \
-            --ecmap {input.ECMAP} \
-            --txnames {input.TRANSCRIPTS} \
-            --genecounts \
-            --umi-gene \
-            --em \
-            {input.SPLICED}
+            {EXEC['BUSTOOLS']} count \
+                --output {params.MATDIR}/ \
+                --genemap {T2G_VELO_DICT[wildcards.sample]} \
+                --ecmap {input.ECMAP} \
+                --txnames {input.TRANSCRIPTS} \
+                --genecounts \
+                --umi-gene \
+                --em \
+                {input.SPLICED}
             """
         )
 
@@ -162,15 +162,15 @@ rule bus2mat_velocity_unspliced:
             f"""
             mkdir -p {params.MATDIR}
 
-            {BUST_EXEC} count \
-            --output {params.MATDIR}/ \
-            --genemap {T2G_VELO_DICT[wildcards.sample]} \
-            --ecmap {input.ECMAP} \
-            --txnames {input.TRANSCRIPTS} \
-            --genecounts \
-            --umi-gene \
-            --em \
-            {input.UNSPLICED}
+            {EXEC['BUSTOOLS']} count \
+                --output {params.MATDIR}/ \
+                --genemap {T2G_VELO_DICT[wildcards.sample]} \
+                --ecmap {input.ECMAP} \
+                --txnames {input.TRANSCRIPTS} \
+                --genecounts \
+                --umi-gene \
+                --em \
+                {input.UNSPLICED}
             """
         )
 
@@ -196,7 +196,7 @@ rule compress_kb_outs_velocity:
         shell(
             f"""
             pigz -p{threads} \
-            {input.BCS_SPLICED} {input.GENES_SPLICED} {input.MAT_SPLICED} \
-            {input.BCS_UNSPLICED} {input.GENES_UNSPLICED} {input.MAT_UNSPLICED}
+                {input.BCS_SPLICED} {input.GENES_SPLICED} {input.MAT_SPLICED} \
+                {input.BCS_UNSPLICED} {input.GENES_UNSPLICED} {input.MAT_UNSPLICED}
             """
         )

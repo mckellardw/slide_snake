@@ -9,7 +9,7 @@
 ## Note- `--outDirNam` is a hidden argument for miRge3 that allows direct naming of the output directory
 rule miRge3_pseudobulk:
     input:
-        FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz'
+        FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/final_R2.fq.gz'
     output:
         MIRGE_DIR = directory('{OUTDIR}/{sample}/miRge_bulk'),
         MIRGE_HTML = '{OUTDIR}/{sample}/miRge_bulk/annotation.report.html'
@@ -28,26 +28,20 @@ rule miRge3_pseudobulk:
             f"""
             zcat {input.FINAL_R2_FQ} > {OUTDIR}/{wildcards.sample}/tmp/tmp_R2.fastq
 
-            {MIRGE_EXEC} \
-            -s {OUTDIR}/{wildcards.sample}/tmp/tmp_R2.fastq \
-            -lib {params.MIRGE_LIB} \
-            -on {SPECIES} \
-            -db mirbase \
-            --nextseq-trim 1 \
-            --minimum-length 12 \
-            --outDirName {output.MIRGE_DIR} \
-            --threads {threads} \
-            -gff -nmir -ai             
+            {EXEC['MIRGE']} \
+                -s {OUTDIR}/{wildcards.sample}/tmp/tmp_R2.fastq \
+                -lib {params.MIRGE_LIB} \
+                -on {SPECIES} \
+                -db mirbase \
+                --nextseq-trim 1 \
+                --minimum-length 12 \
+                --outDirName {output.MIRGE_DIR} \
+                --threads {threads} \
+                -gff -nmir -ai             
 
             rm {OUTDIR}/{wildcards.sample}/tmp/tmp_R2.fastq
-            """
-            # mkdir -p {output.MIRGE_DIR}
-            # mv --backup=numbered {OUTDIR}/{wildcards.sample}/miRge.*/* {output.MIRGE_DIR}
-            # rmdir {OUTDIR}/{wildcards.sample}/miRge.*
-            
+            """            
         )
-        # && touch {output.MIRGE_CHECK}
-# 
 # -a illumina \
 # -trf
 

@@ -10,7 +10,7 @@ rule fastqc_unmapped:
     output:
         UNMAPPED1_FQ = '{OUTDIR}/{sample}/STARsolo/Unmapped.out.mate1.fastq.gz',
         UNMAPPED2_FQ = '{OUTDIR}/{sample}/STARsolo/Unmapped.out.mate2.fastq.gz',
-        FQC_DIR = directory('{OUTDIR}/{sample}/fastqc_unmapped')
+        FQC_DIR = directory('{OUTDIR}/{sample}/fastqc/unmapped')
     params:
         FASTQC_ADAPTERS = config['FASTQC_ADAPTERS']
     threads:
@@ -25,11 +25,11 @@ rule fastqc_unmapped:
 
             mkdir -p {output.FQC_DIR}
 
-            {FASTQC_EXEC} \
-            -o {output.FQC_DIR} \
-            -t {threads} \
-            -a {params.FASTQC_ADAPTERS} \
-            {output.UNMAPPED1_FQ} {output.UNMAPPED2_FQ}
+            {EXEC['FASTQC']} \
+                -o {output.FQC_DIR} \
+                -t {threads} \
+                -a {params.FASTQC_ADAPTERS} \
+                {output.UNMAPPED1_FQ} {output.UNMAPPED2_FQ}
             """
         )
 
@@ -43,7 +43,7 @@ rule blast_unmapped:
     threads:
         config['CORES']
     params:
-        blastDB = config['BLASTDB'],
+        BLASTDB = config['BLASTDB'],
         TMP_FA = '{OUTDIR}/{sample}/Unmapped.out.mate2.fa'
     run:
         shell(
@@ -55,12 +55,12 @@ rule blast_unmapped:
 
             vsearch --sortbysize {params.TMP_FA} --topn 1000 --output {OUTDIR}/{wildcards.sample}/top_1000.fa
 
-            blastn -db {params.blastDB}/nt \
-            -query {OUTDIR}/{wildcards.sample}/top_1000.fa \
-            -out {output.BLAST_R2} \
-            -outfmt '6 qseqid sseqid stitle pident length mismatch gapopen qstart qend sstart send evalue bitscore' \
-            -max_target_seqs 5 \
-            -num_threads {threads}
+            {EXEC['BLASTN']} -db {params.BLASTDB}/nt \
+                -query {OUTDIR}/{wildcards.sample}/top_1000.fa \
+                -out {output.BLAST_R2} \
+                -outfmt '6 qseqid sseqid stitle pident length mismatch gapopen qstart qend sstart send evalue bitscore' \
+                -max_target_seqs 5 \
+                -num_threads {threads}
 
             rm {params.TMP_FA}
     		"""

@@ -129,7 +129,7 @@ if n_cores > 1:
         
         # Custom script to split .fq w/ sed in parallel
         f""" 
-        python scripts/splitNfqs.py {fq1_in} {n_cores} {n_cores} "False"
+        python scripts/py/splitNfqs.py {fq1_in} {n_cores} {n_cores} "False"
         """
     )
 
