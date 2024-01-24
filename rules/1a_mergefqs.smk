@@ -1,8 +1,8 @@
 # Merge .fastq files (in case more than one sesquencing run was performed)
 rule merge_fastqs:
     output:
-        MERGED_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz'),
-        MERGED_R2_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R2.fq.gz')
+        MERGED_R1_FQ = temp('{OUTDIR}/{sample}/tmp/merged_R1.fq.gz'),
+        MERGED_R2_FQ = temp('{OUTDIR}/{sample}/tmp/merged_R2.fq.gz')
     params:
         TMP_DIR = '{OUTDIR}/{sample}/tmp',
         R1_FQ = lambda wildcards: R1_FQS[wildcards.sample],

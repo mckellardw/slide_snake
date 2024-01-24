@@ -4,10 +4,10 @@
 
 rule kallisto_align:
     input:
-        R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
-        R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz',
-        R1_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R1_final_filtered.fq.gz',
-        R2_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R2_final_filtered.fq.gz',
+        R1_FQ = '{OUTDIR}/{sample}/tmp/final_R1.fq.gz',
+        R2_FQ = '{OUTDIR}/{sample}/tmp/final_R2.fq.gz',
+        R1_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/final_filtered_R1.fq.gz',
+        R2_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/final_filtered_R2.fq.gz',
         BB = "{OUTDIR}/{sample}/bb/whitelist.txt"
     output:
         BUS = temp('{OUTDIR}/{sample}/kb/output.bus'),
@@ -27,7 +27,6 @@ rule kallisto_align:
     run:
         tmp_recipe = RECIPE_DICT[wildcards.sample]
         KB_IDX = IDX_DICT[wildcards.sample]
-        BB_WHITELIST = f"{input.BB}"
         
         KB_X = RECIPE_SHEET["kb.x"][tmp_recipe]
 
@@ -41,14 +40,15 @@ rule kallisto_align:
 
         shell(
             f"""
-            bash scripts/kb.sh {OUTDIR}/{wildcards.sample}/kb \
-            {KB_IDX} \
-            {BB_WHITELIST} \
-            {KB_X} \
-            {log} \
-            {threads} \
-            {params.MEMLIMIT} \
-            {R1} {R2}
+            bash scripts/bash/kb.sh 
+                {OUTDIR}/{wildcards.sample}/kb \
+                {KB_IDX} \
+                {input.BB} \
+                {KB_X} \
+                {log} \
+                {threads} \
+                {params.MEMLIMIT} \
+                {R1} {R2}
             """
         )
 
@@ -73,15 +73,15 @@ rule bus2mat:
             f"""
             mkdir -p {params.MATDIR}
 
-            {BUST_EXEC} count \
-            --output {params.MATDIR}/ \
-            --genemap {KB_T2G} \
-            --ecmap {input.ECMAP} \
-            --txnames {input.TRANSCRIPTS} \
-            --genecounts \
-            --umi-gene \
-            --em \
-            {input.BUS}
+            {EXEC['BUSTOOLS']} count \
+                --output {params.MATDIR}/ \
+                --genemap {KB_T2G} \
+                --ecmap {input.ECMAP} \
+                --txnames {input.TRANSCRIPTS} \
+                --genecounts \
+                --umi-gene \
+                --em \
+                {input.BUS}
             """
         )
 
@@ -99,7 +99,9 @@ rule compress_kb_outs:
         MATDIR = directory('{OUTDIR}/{sample}/kb/raw')
     threads:
         config['CORES']        
-    shell:
-        """
-        pigz -p{threads} {input.BCS} {input.GENES} {input.MAT}
-        """
+    run:
+        shell(
+            f"""
+            {EXEC['PIGZ']} -p{threads} {input.BCS} {input.GENES} {input.MAT}
+            """
+        )

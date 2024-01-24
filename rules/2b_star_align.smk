@@ -9,10 +9,10 @@ rule STARsolo_align:
     input:
         # R1_FQ_HardTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_HardTrim.fq.gz',
         # R1_FQ_InternalTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_InternalTrim.fq.gz',
-        R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
-        R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz',
-        R1_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R1_final_filtered.fq.gz',
-        R2_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R2_final_filtered.fq.gz',
+        R1_FQ = '{OUTDIR}/{sample}/tmp/final_R1.fq.gz',
+        R2_FQ = '{OUTDIR}/{sample}/tmp/final_R2.fq.gz',
+        R1_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/final_filtered_R1.fq.gz',
+        R2_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/final_filtered_R2.fq.gz',
         BB_WHITELIST = "{OUTDIR}/{sample}/bb/whitelist.txt",
         BB_1 = "{OUTDIR}/{sample}/bb/whitelist_1.txt",
         BB_2 = "{OUTDIR}/{sample}/bb/whitelist_2.txt",
@@ -81,31 +81,32 @@ rule STARsolo_align:
 
         # Run STARsolo
         #TODO?: --twopassMode
+        #WASP?
         shell(
             f"""
             mkdir -p {params.OUTDIR}/{wildcards.sample}/STARsolo
 
-            {STAR_EXEC} \
-            --runThreadN {threads} \
-            --outFileNamePrefix {params.OUTDIR}/{wildcards.sample}/STARsolo/ \
-            --outSAMtype BAM SortedByCoordinate \
-            --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
-            --readFilesCommand zcat \
-            --genomeDir {STAR_REF} \
-            --limitBAMsortRAM={params.MEMLIMIT} \
-            --readFilesIn {R2} {R1} \
-            --clipAdapterType CellRanger4 \
-            --outReadsUnmapped Fastx \
-            --outSAMunmapped Within KeepPairs \
-            --soloType {soloType} {soloUMI} {soloCB} {soloAdapter} {extraSTAR} \
-            --soloCBwhitelist {whitelist} \
-            --soloCBmatchWLtype {soloCBmatchWLtype} \
-            --soloCellFilter TopCells {nBB} \
-            --soloUMIfiltering MultiGeneUMI CR \
-            --soloUMIdedup 1MM_CR \
-            --soloBarcodeReadLength 0 \
-            --soloFeatures Gene GeneFull Velocyto \
-            --soloMultiMappers EM
+            {EXEC['STAR']} \
+                --runThreadN {threads} \
+                --outFileNamePrefix {params.OUTDIR}/{wildcards.sample}/STARsolo/ \
+                --outSAMtype BAM SortedByCoordinate \
+                --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
+                --readFilesCommand zcat \
+                --genomeDir {STAR_REF} \
+                --limitBAMsortRAM={params.MEMLIMIT} \
+                --readFilesIn {R2} {R1} \
+                --clipAdapterType CellRanger4 \
+                --outReadsUnmapped Fastx \
+                --outSAMunmapped Within KeepPairs \
+                --soloType {soloType} {soloUMI} {soloCB} {soloAdapter} {extraSTAR} \
+                --soloCBwhitelist {whitelist} \
+                --soloCBmatchWLtype {soloCBmatchWLtype} \
+                --soloCellFilter TopCells {nBB} \
+                --soloUMIfiltering MultiGeneUMI CR \
+                --soloUMIdedup 1MM_CR \
+                --soloBarcodeReadLength 0 \
+                --soloFeatures Gene GeneFull Velocyto \
+                --soloMultiMappers EM
             """
         )
 
@@ -175,6 +176,6 @@ rule indexSortedBAM:
     run:
         shell(
             f"""
-            {SAMTOOLS_EXEC} index -@ {threads} {input.SORTEDBAM}
+            {EXEC['SAMTOOLS']} index -@ {threads} {input.SORTEDBAM}
             """
         )

@@ -3,8 +3,8 @@
 #TODO- dedup rRNA .bam files
 rule STARsolo_align_rRNA:
     input:
-        R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
-        R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz',
+        R1_FQ = '{OUTDIR}/{sample}/tmp/final_R1.fq.gz',
+        R2_FQ = '{OUTDIR}/{sample}/tmp/final_R2.fq.gz',
         BB_WHITELIST = "{OUTDIR}/{sample}/bb/whitelist.txt",
         BB_1 = "{OUTDIR}/{sample}/bb/whitelist_1.txt",
         BB_2 = "{OUTDIR}/{sample}/bb/whitelist_2.txt",
@@ -59,47 +59,47 @@ rule STARsolo_align_rRNA:
             ##TODO: add log file
             shell(
                 f"""
-                {BWA_EXEC} mem -t {threads} {STAR_REF}/*.fa {input.R1_FQ} {input.R2_FQ} \
+                {EXEC['BWA']} mem -t {threads} {STAR_REF}/*.fa {input.R1_FQ} {input.R2_FQ} \
                 > {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.sam \
                 | tee {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/bwa.log
 
-                {SAMTOOLS_EXEC} sort -@ {threads} {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.sam \
+                {EXEC['SAMTOOLS']} sort -@ {threads} {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.sam \
                 > {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam
 
-                {SAMTOOLS_EXEC} fastq -f 4 -1 {output.UNMAPPED2} -2 {output.UNMAPPED1} -0 /dev/null {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam
+                {EXEC['SAMTOOLS']} fastq -f 4 -1 {output.UNMAPPED2} -2 {output.UNMAPPED1} -0 /dev/null {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam
 
                 mkdir -p {output.GENEDIRECTORY}
                 echo "empty placeholder file..." > {output.GENEMAT} 
                 """
             )
                 # rm {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/STARsolo_rRNA/Aligned.sortedByCoord.out.sam
-                # | {SAMTOOLS_EXEC} view -f 4 -bh - \
+                # | {EXEC['SAMTOOLS']} view -f 4 -bh - \
         else:
             shell(
                 f"""
                 mkdir -p {OUTDIR}/{wildcards.sample}/STARsolo_rRNA
 
-                {STAR_EXEC} \
-                --runThreadN {threads} \
-                --outFileNamePrefix {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/ \
-                --outSAMtype BAM SortedByCoordinate \
-                --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
-                --readFilesCommand zcat \
-                --genomeDir {STAR_REF} \
-                --limitBAMsortRAM={params.MEMLIMIT} \
-                --readFilesIn {input.R2_FQ} {input.R1_FQ} \
-                --clipAdapterType CellRanger4 \
-                --outReadsUnmapped Fastx \
-                --outSAMunmapped Within KeepPairs \
-                --soloType {soloType} {soloUMI} {soloCB} {soloAdapter} {extraSTAR} \
-                --soloCBwhitelist {whitelist} \
-                --soloCBmatchWLtype {soloCBmatchWLtype} \
-                --soloCellFilter TopCells {nBB} \
-                --soloUMIfiltering MultiGeneUMI CR \
-                --soloUMIdedup 1MM_CR \
-                --soloBarcodeReadLength 0 \
-                --soloFeatures GeneFull \
-                --soloMultiMappers EM
+                {EXEC['STAR']} \
+                    --runThreadN {threads} \
+                    --outFileNamePrefix {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/ \
+                    --outSAMtype BAM SortedByCoordinate \
+                    --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
+                    --readFilesCommand zcat \
+                    --genomeDir {STAR_REF} \
+                    --limitBAMsortRAM={params.MEMLIMIT} \
+                    --readFilesIn {input.R2_FQ} {input.R1_FQ} \
+                    --clipAdapterType CellRanger4 \
+                    --outReadsUnmapped Fastx \
+                    --outSAMunmapped Within KeepPairs \
+                    --soloType {soloType} {soloUMI} {soloCB} {soloAdapter} {extraSTAR} \
+                    --soloCBwhitelist {whitelist} \
+                    --soloCBmatchWLtype {soloCBmatchWLtype} \
+                    --soloCellFilter TopCells {nBB} \
+                    --soloUMIfiltering MultiGeneUMI CR \
+                    --soloUMIdedup 1MM_CR \
+                    --soloBarcodeReadLength 0 \
+                    --soloFeatures GeneFull \
+                    --soloMultiMappers EM
                 """
             )
 
@@ -124,6 +124,7 @@ rule compress_STAR_rRNA_outs:
                 """
             )
 
+        # compress
         shell(
             f"""
             pigz -p{threads} {params.GENEDIR}/*/*.tsv {params.GENEDIR}/*/*.mtx 
@@ -141,7 +142,7 @@ rule indexSortedBAM_rRNA:
     run:
         shell(
             f"""
-            {SAMTOOLS_EXEC} index -@ {threads} {input.SORTEDBAM}
+            {EXEC['SAMTOOLS']} index -@ {threads} {input.SORTEDBAM}
             """
         )
 
@@ -153,11 +154,10 @@ rule rRNA_filtered_fastqc:
         UNMAPPED1 = '{OUTDIR}/{sample}/STARsolo_rRNA/Unmapped.out.mate1',
         UNMAPPED2 = '{OUTDIR}/{sample}/STARsolo_rRNA/Unmapped.out.mate2'
     output:
-        FILTERED1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final_filtered.fq.gz',
-        FILTERED2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final_filtered.fq.gz',
-        FQC_DIR = directory('{OUTDIR}/{sample}/rRNA_filtered_fastqc')
+        FILTERED1_FQ = '{OUTDIR}/{sample}/tmp/final_filtered_R1.fq.gz',
+        FILTERED2_FQ = '{OUTDIR}/{sample}/tmp/final_filtered_R2.fq.gz',
+        FQC_DIR = directory('{OUTDIR}/{sample}/fastqc/rRNA_filtered')
     params:
-        FASTQC_EXEC = config['FASTQC_EXEC']
     threads:
         config['CORES']
     run:
@@ -170,7 +170,7 @@ rule rRNA_filtered_fastqc:
 
             mkdir -p {output.FQC_DIR}
 
-            {params.FASTQC_EXEC} \
+            {EXEC['FASTQC']} \
              -o {output.FQC_DIR} \
              -t {threads} \
              {output.FILTERED1_FQ} {output.FILTERED2_FQ}

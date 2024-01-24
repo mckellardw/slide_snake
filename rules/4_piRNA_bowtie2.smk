@@ -42,15 +42,15 @@ rule bowtie2_prep_bam_piRNA:
             f"""
             mkdir -p {OUTDIR}/{wildcards.sample}/piRNA
 
-            {SAMTOOLS_EXEC} view {input.BAM} \
-            | awk -f scripts/bam_shortPassReadFilter.awk -v max_length={params.MAX_SHORT_READ_LENGTH} \
-            | awk -v tag=CB -f scripts/bam_filterEmptyTag.awk - \
-            | awk -v tag=UB -f scripts/bam_filterEmptyTag.awk - \
-            | awk -f scripts/bam_clearAlignment.awk - \
-            | awk -v tag=AS -f scripts/bam_clearTag.awk - \
-            | awk -v tag=GN -f scripts/bam_clearTag.awk - \
-            | awk -v tag=GX -f scripts/bam_clearTag.awk - \
-            | {SAMTOOLS_EXEC} view -bS > {output.BAM}
+            {EXEC['SAMTOOLS']} view {input.BAM} \
+            | awk -f scripts/awk/bam_shortPassReadFilter.awk -v max_length={params.MAX_SHORT_READ_LENGTH} \
+            | awk -v tag=CB -f scripts/awk/bam_filterEmptyTag.awk - \
+            | awk -v tag=UB -f scripts/awk/bam_filterEmptyTag.awk - \
+            | awk -f scripts/awk/bam_clearAlignment.awk - \
+            | awk -v tag=AS -f scripts/awk/bam_clearTag.awk - \
+            | awk -v tag=GN -f scripts/awk/bam_clearTag.awk - \
+            | awk -v tag=GX -f scripts/awk/bam_clearTag.awk - \
+            | {EXEC['SAMTOOLS']} view -bS > {output.BAM}
             """
         )
 
@@ -76,15 +76,15 @@ rule bowtie2_align_piRNA:
     run:
         shell(
             f"""
-            {BOWTIE2_EXEC} \
-            -x {params.REF} \
-            -b {input.BAM} \
-            -p {threads} \
-            --very-sensitive-local \
-            --preserve-tags \
-            --no-unal \
+            {EXEC['BOWTIE2']} \
+                -x {params.REF} \
+                -b {input.BAM} \
+                -p {threads} \
+                --very-sensitive-local \
+                --preserve-tags \
+                --no-unal \
             2> {log} \
-            | {SAMTOOLS_EXEC} view -bS > {output.BAM}
+            | {EXEC['SAMTOOLS']} view -bS > {output.BAM}
             """
         )
 
@@ -100,7 +100,7 @@ rule sortAlignedBAM_piRNA:
     run:
         shell(
             f"""
-            {SAMTOOLS_EXEC} sort -@ {threads} {input.BAM} > {output.BAM}
+            {EXEC['SAMTOOLS']} sort -@ {threads} {input.BAM} > {output.BAM}
             """
         )
 
@@ -118,9 +118,9 @@ rule tagSortedBam_piRNA:
     run:
         shell(
             f"""
-            {SAMTOOLS_EXEC} view -h {input.BAM} \
-            | awk -f scripts/bam_chr2tag.awk -v tag=GN - \
-            | {SAMTOOLS_EXEC} view -bS - \
+            {EXEC['SAMTOOLS']} view -h {input.BAM} \
+            | awk -f scripts/awk/bam_chr2tag.awk -v tag=GN - \
+            | {EXEC['SAMTOOLS']} view -bS - \
             > {output.BAM}
             """
         )
@@ -137,7 +137,7 @@ rule indexSortedTaggedBAM_piRNA:
     run:
         shell(
             f"""
-            {SAMTOOLS_EXEC} index -@ {threads} {input.BAM}
+            {EXEC['SAMTOOLS']} index -@ {threads} {input.BAM}
             """
         )
 
@@ -155,16 +155,16 @@ rule umitools_count_piRNA:
     run:
         shell(
             f"""
-            {UMITOOLS_EXEC} count \
-            --extract-umi-method=tag \
-            --per-gene \
-            --per-cell \
-            --cell-tag=CB \
-            --gene-tag=GN \
-            --umi-tag=UB \
-            --log={log} \
-            -I {input.BAM} \
-            -S {output.COUNTS}
+            {EXEC['UMITOOLS']} count \
+                --extract-umi-method=tag \
+                --per-gene \
+                --per-cell \
+                --cell-tag=CB \
+                --gene-tag=GN \
+                --umi-tag=UB \
+                --log={log} \
+                -I {input.BAM} \
+                -S {output.COUNTS}
             """
         )
 
@@ -206,13 +206,13 @@ rule umitools_dedupSortedBAM_piRNA:
 
         shell(
             f"""
-            bash scripts/dedup.sh \
-            {input.BAM} \
-            {input.BB_WHITELIST} \
-            {threads} \
-            {output.BAM} \
-            {OUTDIR}/{wildcards.sample}/tmp/dedup \
-            {log}
+            bash scripts/bash/dedup.sh \
+                {input.BAM} \
+                {input.BB_WHITELIST} \
+                {threads} \
+                {output.BAM} \
+                {OUTDIR}/{wildcards.sample}/tmp/dedup \
+                {log}
             """
         )
 
@@ -228,6 +228,6 @@ rule indexSortedTaggedDedupBAM_piRNA:
     run:
         shell(
             f"""
-            {SAMTOOLS_EXEC} index -@ {threads} {input.BAM}
+            {EXEC['SAMTOOLS']} index -@ {threads} {input.BAM}
             """
         )

@@ -17,17 +17,15 @@ rule umitools_dedupBAM:
     run:
         tmp_recipe = RECIPE_DICT[wildcards.sample]
 
-        whitelist = input.BB_WHITELIST
-
         shell(
             f"""
             bash scripts/split_dedup.sh \
-            {input.SORTEDBAM} \
-            {whitelist} \
-            {threads} \
-            {output.DEDUPBAM} \
-            {OUTDIR}/{wildcards.sample}/tmp/dedup \
-            | tee {log}
+                {input.SORTEDBAM} \
+                {input.BB_WHITELIST} \
+                {threads} \
+                {output.DEDUPBAM} \
+                {OUTDIR}/{wildcards.sample}/tmp/dedup \
+                | tee {log}
             """
         )
 
@@ -42,7 +40,7 @@ rule umitools_indexDedupBAM:
     run:
         shell(
             f"""
-            {SAMTOOLS_EXEC} index -@ {threads} {input.SORTEDBAM}
+            {EXEC['SAMTOOLS']} index -@ {threads} {input.SORTEDBAM}
             """
         )
 
@@ -58,8 +56,8 @@ rule strand_split_dedup_bam:
     run:
         shell(
             f"""
-            {SAMTOOLS_EXEC} view -b -F 0x10 {input.DEDUPBAM} > {output.FWDBAM}
-            {SAMTOOLS_EXEC} view -b -f 0x10 {input.DEDUPBAM} > {output.REVBAM}
+            {EXEC['SAMTOOLS']} view -b -F 0x10 {input.DEDUPBAM} > {output.FWDBAM}
+            {EXEC['SAMTOOLS']} view -b -f 0x10 {input.DEDUPBAM} > {output.REVBAM}
             """
         )
 
@@ -76,7 +74,7 @@ rule indexSplitBAMs:
     run:
         shell(
             f"""
-            {SAMTOOLS_EXEC} index -@ {threads} {input.FWDBAM}
-            {SAMTOOLS_EXEC} index -@ {threads} {input.REVBAM}
+            {EXEC['SAMTOOLS']} index -@ {threads} {input.FWDBAM}
+            {EXEC['SAMTOOLS']} index -@ {threads} {input.REVBAM}
             """
         )

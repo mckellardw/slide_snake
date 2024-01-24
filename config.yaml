@@ -9,12 +9,13 @@
 #       --readFilesIn Read2_Lane1.fastq.gz,Read2_Lane2.fastq.gz,Read2_Lane3.fastq.gz  Read1_Lane1.fastq.gz,Read1_Lane2.fastq.gz,Read1_Lane3.fastq.gz
 
 ## ~~~~~ sample sheets ~~~~~
-SAMPLE_SHEET_PATH: /path/to/sample_sheet.csv
+SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/visium/CS001-5.csv
 
 # STARsolo parameters
-CORES: 24 # how many cores to give for each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
-MEMLIMIT: 200000000000  # limit in bytes
-MEMLIMIT_GB: 300G       # mem limit for kallisto
+CORES: 8 # how many cores to give each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
+MEMLIMIT: 127000000000  # limit in bytes
+MEMLIMIT_MB: 127000     # limit in megabytes
+MEMLIMIT_GB: 127G       # mem limit for kallisto
 
 ## Recipe details (whitelists, barcode/UMI design, etc.)
 RECIPE_SHEET: resources/recipe_sheet.csv
@@ -25,34 +26,51 @@ RECIPE_SHEET: resources/recipe_sheet.csv
 # **Change these paths for where you want temporary (TMPDIR) and output (OUTDIR) files
 #TODO: add OUTDIR to sample sheet
 TMPDIR: ./tmp
-OUTDIR: ./data/align_out
+OUTDIR: /gpfs/commons/groups/innovation/dwm/ontxg/data/slide_out
 
 ########################################################################################################
 # Executables - file paths
 ########################################################################################################
-BWA_EXEC: bwa
-STAR_EXEC: STAR 
-KALLISTO_EXEC: kallisto
-BUST_EXEC: bustools 
-CUTADAPT_EXEC: cutadapt 
-FASTQC_EXEC: fastqc 
-SAMTOOLS_EXEC: samtools
-UMITOOLS_EXEC: umi_tools
-QUALIMAP_EXEC: qualimap
-MIRGE_EXEC: miRge3.0
-BAM2SPLITBW: /home/dwm269/DWM_utils/seq_utils/bam2splitBigWig.sh #Custom function in DWM_utils that splits a bam file by strand and converts it into bigwig format
-FASTX_COLLAPSER: fastx_collapser
-BLASTDB: /shared_data/genome_db/BLAST_NCBI # path to where the nt BLAST database is stored
+# BWA_EXEC: bwa
+# BOWTIE2_EXEC: bowtie2
+# STAR_EXEC: /nfs/home/dmckellar/mambaforge/envs/slide_snake/bin/STAR 
+# KALLISTO_EXEC: kallisto
+# BUST_EXEC: bustools 
+# CUTADAPT_EXEC: cutadapt 
+# FASTQC_EXEC: fastqc 
+# SAMTOOLS_EXEC: samtools
+# UMITOOLS_EXEC: umi_tools
+# QUALIMAP_EXEC: qualimap
+# MIRGE_EXEC: miRge3.0
+# BAM2SPLITBW: /home/dwm269/DWM_utils/seq_utils/bam2splitBigWig.sh #Custom function in DWM_utils that splits a bam file by strand and converts it into bigwig format
+# FASTX_COLLAPSER: fastx_collapser
+
+EXEC:
+  BLASTN: blastn
+  BWA: bwa
+  BOWTIE2: bowtie2
+  BUSTOOLS: bustools 
+  CUTADAPT: cutadapt 
+  FASTQC: fastqc 
+  KALLISTO: kallisto
+  MIRGE: miRge3.0
+  QUALIMAP: qualimap
+  SAMTOOLS: samtools
+  STAR: STAR 
+  UMITOOLS: umi_tools
+  FASTX_COLLAPSER: fastx_collapser
+
 
 ########################################################################################################
 # Resources - file paths
 ########################################################################################################
 FASTQC_ADAPTERS: resources/fastqc_adapters.txt 
+BLASTDB: /shared_data/genome_db/BLAST_NCBI # path to where the nt BLAST database is stored
 MIRGE_LIB: /home/dwm269/usr/bin/miRge3_Lib
 
 ########################################################################################################
 # Library details
 ########################################################################################################
-R1_INTERNAL_ADAPTER: "TCTTCAGCGTTCCCGAGA"
+R1_INTERNAL_ADAPTER: "TCTTCAGCGTTCCCGAGA" # internal R1 adapter between slideseq barcodes
 piRNA_INDEX: '/workdir/dwm269/genomes/pirbase/mmu/gold/bowtie2/index' # bowtie2 index of piRNAs; just mouse implemented now...
-MAX_SHORT_READ_LENGTH: 34
+MAX_SHORT_READ_LENGTH: 34 # max read length for reads to be aligned to short RNA references

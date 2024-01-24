@@ -1,6 +1,6 @@
 ########################################################################################################
 # slide_snake
-#   Snakemake workflow to align and quantify Seeker/SlideSeq datasets
+#   Snakemake workflow to align and quantify spatial transriptomics datasets
 #   Written by David McKellar
 ########################################################################################################
 
@@ -33,22 +33,22 @@ R2_FQS = dict(zip(SAMPLES, list(SAMPLE_SHEET['fastq_R2'])))
 ########################################################################################################
 # Executables
 ########################################################################################################
-BWA_EXEC = config['BWA_EXEC']
-STAR_EXEC = config['STAR_EXEC']
-# KB_EXEC = config['KB_EXEC']
-KALLISTO_EXEC = config['KALLISTO_EXEC']
-BUST_EXEC = config['BUST_EXEC']
-FASTQC_EXEC = config["FASTQC_EXEC"]
-CUTADAPT_EXEC = config["CUTADAPT_EXEC"]
-SAMTOOLS_EXEC = config["SAMTOOLS_EXEC"]
-UMITOOLS_EXEC = config["UMITOOLS_EXEC"]
-QUALIMAP_EXEC = config["QUALIMAP_EXEC"]
-# MULTIQC_EXEC = config["MULTIQC_EXEC"]
-MIRGE_EXEC = config['MIRGE_EXEC']
-BOWTIE2_EXEC = config['BOWTIE2_EXEC']
-BAM2SPLITBW = config["BAM2SPLITBW"]
-FASTX_COLLAPSER = config["FASTX_COLLAPSER"]
-BLASTDB = config["BLASTDB"]
+EXEC = config['EXEC']
+# BWA_EXEC = config['BWA_EXEC']
+# STAR_EXEC = config['STAR_EXEC']
+# # KB_EXEC = config['KB_EXEC']
+# KALLISTO_EXEC = config['KALLISTO_EXEC']
+# BUST_EXEC = config['BUST_EXEC']
+# FASTQC_EXEC = config["FASTQC_EXEC"]
+# CUTADAPT_EXEC = config["CUTADAPT_EXEC"]
+# SAMTOOLS_EXEC = config["SAMTOOLS_EXEC"]
+# UMITOOLS_EXEC = config["UMITOOLS_EXEC"]
+# QUALIMAP_EXEC = config["QUALIMAP_EXEC"]
+# # MULTIQC_EXEC = config["MULTIQC_EXEC"]
+# MIRGE_EXEC = config['MIRGE_EXEC']
+# BOWTIE2_EXEC = config['BOWTIE2_EXEC']
+# BAM2SPLITBW = config["BAM2SPLITBW"]
+# FASTX_COLLAPSER = config["FASTX_COLLAPSER"]
 
 ########################################################################################################
 # Pre-run setup
@@ -73,21 +73,21 @@ for i in range(0,SAMPLE_SHEET.shape[0]):
     GTF_DICT[tmp_sample] = list(SAMPLE_SHEET["genes_gtf"])[i]
     IDX_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_idx"])[i]
     T2G_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_t2g"])[i]
-    IDX_VELO_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_idx_velo"])[i]
-    T2G_VELO_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_t2g_velo"])[i]
+    # IDX_VELO_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_idx_velo"])[i]
+    # T2G_VELO_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_t2g_velo"])[i]
     BB_DICT[tmp_sample] = list(SAMPLE_SHEET["BB_map"])[i]
     SPECIES_DICT[tmp_sample] = list(SAMPLE_SHEET["species"])[i]
 
 ########################################################################################################
 rule all:
     input:
-        expand( # count matrices for bowtie2 alignment to small RNA reference(s)
-            '{OUTDIR}/{sample}/{SMALL_RNA}/{TYPE}',
-            OUTDIR=config['OUTDIR'],
-            sample=SAMPLES,
-            SMALL_RNA=['piRNA','miRNA'],
-            TYPE=["counts.tsv.gz","raw/matrix.mtx.gz"]
-        ),
+        # expand( # count matrices for bowtie2 alignment to small RNA reference(s)
+        #     '{OUTDIR}/{sample}/{SMALL_RNA}/{TYPE}',
+        #     OUTDIR=config['OUTDIR'],
+        #     sample=SAMPLES,
+        #     SMALL_RNA=['piRNA','miRNA'],
+        #     TYPE=["counts.tsv.gz","raw/matrix.mtx.gz"]
+        # ),
         # expand( # miRge3.0 pseudobulk analysis
         #     '{OUTDIR}/{sample}/miRge_bulk/annotation.report.html',
         #     OUTDIR=config['OUTDIR'],
@@ -98,9 +98,9 @@ rule all:
             OUTDIR=config['OUTDIR'],
             ALIGN_OUT=[
                 'kb/raw/output.h5ad',
-                'STARsolo/Solo.out/GeneFull/raw/UniqueAndMultEM.h5ad',
-                'miRNA/raw/output.h5ad',
-                'piRNA/raw/output.h5ad'
+                'STARsolo/Solo.out/GeneFull/raw/UniqueAndMultEM.h5ad'
+                # 'miRNA/raw/output.h5ad',
+                # 'piRNA/raw/output.h5ad'
             ],
             sample=SAMPLES
         ),
@@ -108,19 +108,28 @@ rule all:
             '{OUTDIR}/{sample}/{REF}/Solo.out/GeneFull/raw/matrix.mtx.gz',
             OUTDIR=config['OUTDIR'],
             sample=SAMPLES,
-            REF=["STARsolo_rRNA", "STARsolo"]
+            REF=[
+                #"STARsolo_rRNA", 
+                "STARsolo"
+                ]
         ),
+        # expand( #non-deduplicated .bam
+        #     '{OUTDIR}/{sample}/{REF}/Aligned.sortedByCoord.out.bam.bai',
+        #     OUTDIR=config['OUTDIR'],
+        #     sample=SAMPLES,
+        #     REF=["STARsolo_rRNA", "STARsolo"]
+        # ),
         expand( # kallisto/bustools count mats
             '{OUTDIR}/{sample}/kb/raw/output.mtx.gz',
             OUTDIR=config['OUTDIR'],
             sample=SAMPLES
         ),
-        expand( # kallisto/bustools count mats
-            '{OUTDIR}/{sample}/kb_velo/{LAYER}/output.mtx.gz',
-            OUTDIR=config['OUTDIR'],
-            LAYER=['spliced','unspliced'],
-            sample=SAMPLES
-        ),
+        # expand( # kallisto/bustools count mats
+        #     '{OUTDIR}/{sample}/kb_velo/{LAYER}/output.mtx.gz',
+        #     OUTDIR=config['OUTDIR'],
+        #     LAYER=['spliced','unspliced'],
+        #     sample=SAMPLES
+        # ),
         expand(  # alignment QC with qualimap | requires deduped input!
             '{OUTDIR}/{sample}/qualimap/{FILE}',
             OUTDIR=config['OUTDIR'],
@@ -133,14 +142,8 @@ rule all:
             sample=SAMPLES,
             STRAND=["", ".fwd", ".rev"]
         ),
-        # expand( #non-deduplicated .bam
-        #     '{OUTDIR}/{sample}/{REF}/Aligned.sortedByCoord.out.bam.bai',
-        #     OUTDIR=config['OUTDIR'],
-        #     sample=SAMPLES,
-        #     REF=["STARsolo_rRNA", "STARsolo"]
-        # ),
         expand( #fastQC results for unmapped reads
-            '{OUTDIR}/{sample}/fastqc_unmapped',
+            '{OUTDIR}/{sample}/fastqc/unmapped',
             OUTDIR=config['OUTDIR'],
             sample=SAMPLES
         ),
@@ -150,7 +153,7 @@ rule all:
         #     sample=SAMPLES
         # ),
         expand( # fastQC results
-            '{OUTDIR}/{sample}/fastqc_{TRIM}_{READ}',
+            '{OUTDIR}/{sample}/fastqc/{TRIM}_{READ}',
             OUTDIR=config['OUTDIR'],
             sample=SAMPLES,
             READ=["R1","R2"],
@@ -176,9 +179,9 @@ include: "rules/3b_kallisto_pseudobam.smk"
 include: "rules/3c_kallisto_velo.smk"
 
 # small RNA stuff
-include: "rules/4_mirge.smk"
-include: "rules/4_piRNA_bowtie2.smk"
-include: "rules/4_miRNA_bowtie2.smk"
+# include: "rules/4_mirge.smk"
+# include: "rules/4_piRNA_bowtie2.smk"
+# include: "rules/4_miRNA_bowtie2.smk"
 
 # scanpy stuff
 include: "rules/5a_scanpy_init.smk"
