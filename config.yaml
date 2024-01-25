@@ -4,11 +4,8 @@
 # Run settings
 ########################################################################################################
 
-# Sample sheet requires a sampleID, and locations of fastqs for R1 and R2
-#     For multi-lane inputs, use the following format (from STARsolo github page):
-#       --readFilesIn Read2_Lane1.fastq.gz,Read2_Lane2.fastq.gz,Read2_Lane3.fastq.gz  Read1_Lane1.fastq.gz,Read1_Lane2.fastq.gz,Read1_Lane3.fastq.gz
-
-## ~~~~~ sample sheets ~~~~~
+## ~~~~~ sample sheet ~~~~~
+### See `example_sample_sheet.csv` for details
 SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/visium/CS001-5.csv
 
 # STARsolo parameters
@@ -31,20 +28,6 @@ OUTDIR: /gpfs/commons/groups/innovation/dwm/ontxg/data/slide_out
 ########################################################################################################
 # Executables - file paths
 ########################################################################################################
-# BWA_EXEC: bwa
-# BOWTIE2_EXEC: bowtie2
-# STAR_EXEC: /nfs/home/dmckellar/mambaforge/envs/slide_snake/bin/STAR 
-# KALLISTO_EXEC: kallisto
-# BUST_EXEC: bustools 
-# CUTADAPT_EXEC: cutadapt 
-# FASTQC_EXEC: fastqc 
-# SAMTOOLS_EXEC: samtools
-# UMITOOLS_EXEC: umi_tools
-# QUALIMAP_EXEC: qualimap
-# MIRGE_EXEC: miRge3.0
-# BAM2SPLITBW: /home/dwm269/DWM_utils/seq_utils/bam2splitBigWig.sh #Custom function in DWM_utils that splits a bam file by strand and converts it into bigwig format
-# FASTX_COLLAPSER: fastx_collapser
-
 EXEC:
   BLASTN: blastn
   BWA: bwa
@@ -59,7 +42,6 @@ EXEC:
   STAR: STAR 
   UMITOOLS: umi_tools
   FASTX_COLLAPSER: fastx_collapser
-
 
 ########################################################################################################
 # Resources - file paths
