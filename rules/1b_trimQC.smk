@@ -106,7 +106,6 @@ rule R1_trimming:
     output:
         R1_FQ = temp('{OUTDIR}/{sample}/tmp/merged_trimmed_R1.fq.gz')
     params:
-        script = "scripts/hardTrimFq.awk",
         CB1end = 8, #TODO- move to config? or recipe_sheet?
         CB2start = 27,
         CB2end = 42,
@@ -125,19 +124,28 @@ rule R1_trimming:
         if "hardTrim" in recipe:
             shell( # "Hard" trimming, to remove the adapter based on hard-coded base positions
                 f"""
-                zcat {input.R1_FQ} | \
-                awk -v s={params.CB1end} -v S={params.CB2start} -v E={params.CB2end} -f {params.script} > {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_Trimmed.fq
+                zcat {input.R1_FQ} \
+                | awk -v s={params.CB1end} \
+                    -v S={params.CB2start} \
+                    -v E={params.CB2end} \
+                    -f scripts/awk/hardTrimFq.awk \
+                > {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_Trimmed.fq
 
-                pigz -f -p{threads} {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_Trimmed.fq 
+                {EXEC['PIGZ']} -f -p{threads} {output.R1_FQ.removesuffix('.gz')}
 
                 echo "Hard trimming performed on {input.R1_FQ}" > {log}
                 """
             )
         elif "internalTrim" in recipe:
             #TODO- rewrite/speed up internal trimming!
-            shell( # Internal trimming to cut out the adapter sequence
+            shell( # Internal trimming to cut out the SlideSeq adapter sequence
                 f"""
-                python scripts/py/internal_adapter_trim_R1.py {params.INTERNAL_ADAPTER} {params.INTERNAL_TRIM_QC_LOG} {threads} {params.TMPDIR} {R1} {output.R1_FQ} | tee {log}
+                python scripts/py/internal_adapter_trim_R1.py \
+                    {params.INTERNAL_ADAPTER} \
+                    {params.INTERNAL_TRIM_QC_LOG} \
+                    {threads} {params.TMPDIR} \
+                    {R1} {output.R1_FQ} \
+                    | tee {log}
                 """
             )
         else:
@@ -201,27 +209,27 @@ rule cutadapt:
         shell(
             f"""
             {EXEC['CUTADAPT']} \
-            --minimum-length {R1_LENGTH}:{params.MIN_R2_LENGTH} \
-            --quality-cutoff 20 \
-            --overlap {params.OVERLAP} \
-            --match-read-wildcards \
-            --nextseq-trim=20 \
-            -A "{params.THREE_PRIME_R2_POLYA};max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
-            -A "{params.THREE_PRIME_R2_POLYT};max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
-            -A {params.THREE_PRIME_R2_TSO} \
-            -A {params.THREE_PRIME_R2_TXG_TSO} \
-            -A {params.THREE_PRIME_R2_SEEKER_BB_ADAPTER} \
-            -A {params.THREE_PRIME_R2_NEXTERA} \
-            -A {params.THREE_PRIME_R2_rcNEXTERA} \
-            -A {params.THREE_PRIME_R2_ILLUMINA_UNI} \
-            -G {params.FIVE_PRIME_R2_TSO} \
-            -G {params.FIVE_PRIME_R2_TXG_TSO} \
-            -G {params.FIVE_PRIME_R2_SEEKER_BB_ADAPTER} \
-            --pair-filter=any \
-     		-o {output.FINAL_R1_FQ} \
-            -p {output.FINAL_R2_FQ} \
-            --cores {threads} \
-            {R1} {R2} 1> {log.log}
+                --minimum-length {R1_LENGTH}:{params.MIN_R2_LENGTH} \
+                --quality-cutoff 20 \
+                --overlap {params.OVERLAP} \
+                --match-read-wildcards \
+                --nextseq-trim=20 \
+                -A "{params.THREE_PRIME_R2_POLYA};max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
+                -A "{params.THREE_PRIME_R2_POLYT};max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
+                -A {params.THREE_PRIME_R2_TSO} \
+                -A {params.THREE_PRIME_R2_TXG_TSO} \
+                -A {params.THREE_PRIME_R2_SEEKER_BB_ADAPTER} \
+                -A {params.THREE_PRIME_R2_NEXTERA} \
+                -A {params.THREE_PRIME_R2_rcNEXTERA} \
+                -A {params.THREE_PRIME_R2_ILLUMINA_UNI} \
+                -G {params.FIVE_PRIME_R2_TSO} \
+                -G {params.FIVE_PRIME_R2_TXG_TSO} \
+                -G {params.FIVE_PRIME_R2_SEEKER_BB_ADAPTER} \
+                --pair-filter=any \
+                -o {output.FINAL_R1_FQ} \
+                -p {output.FINAL_R2_FQ} \
+                --cores {threads} \
+                {R1} {R2} 1> {log.log}
             """
         )
 
@@ -269,9 +277,9 @@ rule fastQC_postTrim_R2:
             mkdir -p {output.fastqcDir}
 
             {EXEC['FASTQC']} \
-            --outdir {output.fastqcDir} \
-            --threads {threads} \
-            -a {params.adapters} \
-            {input.FINAL_R2_FQ}
+                --outdir {output.fastqcDir} \
+                --threads {threads} \
+                -a {params.adapters} \
+                {input.FINAL_R2_FQ}
             """
         )

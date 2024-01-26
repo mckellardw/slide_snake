@@ -116,7 +116,7 @@ rule compress_STAR_rRNA_outs:
     run:
         tmp_recipe = RECIPE_DICT[wildcards.sample]
         if "noTrim" in tmp_recipe:
-        #["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
+            #["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
             shell(
                 f"""
                 cat {params.GENEDIR}/raw/barcodes.tsv | sed 's/_//' > {params.GENEDIR}/raw/barcodes_noUnderscore.tsv
@@ -147,32 +147,47 @@ rule indexSortedBAM_rRNA:
         )
 
 
-# Run fastqc on unmapped reads; switch names because of STAR weirdness
-##TODO: split fastqc into separate rule
-rule rRNA_filtered_fastqc:
+# Switch names because of STAR weirdness
+rule rename_compress_unmapped:
     input:
         UNMAPPED1 = '{OUTDIR}/{sample}/STARsolo_rRNA/Unmapped.out.mate1',
         UNMAPPED2 = '{OUTDIR}/{sample}/STARsolo_rRNA/Unmapped.out.mate2'
     output:
         FILTERED1_FQ = '{OUTDIR}/{sample}/tmp/final_filtered_R1.fq.gz',
-        FILTERED2_FQ = '{OUTDIR}/{sample}/tmp/final_filtered_R2.fq.gz',
-        FQC_DIR = directory('{OUTDIR}/{sample}/fastqc/rRNA_filtered')
+        FILTERED2_FQ = '{OUTDIR}/{sample}/tmp/final_filtered_R2.fq.gz'
     params:
     threads:
         config['CORES']
     run:
         shell(
             f"""
-            mv {input.UNMAPPED1} {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R2_final_filtered.fq
-            mv {input.UNMAPPED2} {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_final_filtered.fq
+            mv {input.UNMAPPED1} {output.FILTERED2_FQ.replace('.gz','')}
+            mv {input.UNMAPPED2} {output.FILTERED1_FQ.replace('.gz','')}
 
-            pigz -p{threads} -f {OUTDIR}/{wildcards.sample}/tmp/*.fq
+            {EXEC['PIGZ']} -p{threads} -f {OUTDIR}/{wildcards.sample}/tmp/*.fq
+            """
+        )
 
+#  Run fastqc on unmapped reads;
+rule rRNA_filtered_fastqc:
+    input:
+        FILTERED1_FQ = '{OUTDIR}/{sample}/tmp/final_filtered_R1.fq.gz',
+        FILTERED2_FQ = '{OUTDIR}/{sample}/tmp/final_filtered_R2.fq.gz',
+    output:
+        FQC_DIR = directory('{OUTDIR}/{sample}/fastqc/rRNA_filtered')
+    params:
+        adapters = config['FASTQC_ADAPTERS']
+    threads:
+        config['CORES']
+    run:
+        shell(
+            f"""
             mkdir -p {output.FQC_DIR}
 
             {EXEC['FASTQC']} \
-             -o {output.FQC_DIR} \
-             -t {threads} \
-             {output.FILTERED1_FQ} {output.FILTERED2_FQ}
+                -o {output.FQC_DIR} \
+                -t {threads} \
+                -a {params.adapters} \
+                {input.FILTERED1_FQ} {input.FILTERED2_FQ}
             """
         )
