@@ -18,10 +18,10 @@ rule fastQC_preTrim_R1:
             mkdir -p {output.fastqcDir}
 
             {EXEC['FASTQC']} \
-            --outdir {output.fastqcDir} \
-            --threads {threads} \
-            -a {params.adapters} \
-            {input.MERGED_R1_FQ}
+                --outdir {output.fastqcDir} \
+                --threads {threads} \
+                -a {params.adapters} \
+                {input.MERGED_R1_FQ}
             """
         )
 
@@ -42,10 +42,10 @@ rule fastQC_preTrim_R2:
             mkdir -p {output.fastqcDir}
 
             {EXEC['FASTQC']} \
-            --outdir {output.fastqcDir} \
-            --threads {threads} \
-            -a {params.ADAPTERS} \
-            {input.MERGED_R2_FQ}
+                --outdir {output.fastqcDir} \
+                --threads {threads} \
+                -a {params.ADAPTERS} \
+                {input.MERGED_R2_FQ}
             """
         )
 
@@ -145,7 +145,7 @@ rule R1_trimming:
                     {params.INTERNAL_TRIM_QC_LOG} \
                     {threads} {params.TMPDIR} \
                     {R1} {output.R1_FQ} \
-                    | tee {log}
+                | tee {log}
                 """
             )
         else:
@@ -252,10 +252,10 @@ rule fastQC_postTrim_R1:
             mkdir -p {output.fastqcDir}
 
             {EXEC['FASTQC']} \
-            --outdir {output.fastqcDir} \
-            --threads {threads} \
-            -a {params.adapters} \
-            {input.FINAL_R1_FQ}
+                --outdir {output.fastqcDir} \
+                --threads {threads} \
+                -a {params.adapters} \
+                {input.FINAL_R1_FQ}
             """
         )
 

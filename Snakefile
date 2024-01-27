@@ -1,7 +1,6 @@
 ########################################################################################################
 # slide_snake
 #   Snakemake workflow to align and quantify spatial transriptomics datasets
-#   Written by David McKellar
 ########################################################################################################
 
 import pandas as pd
@@ -12,7 +11,11 @@ import scipy.sparse
 # Config file
 ########################################################################################################
 configfile:'config.yaml'
-RECIPE_SHEET = pd.read_csv(config["RECIPE_SHEET"], na_filter=False,index_col=0) #"resources/recipe_sheet.csv"
+RECIPE_SHEET = pd.read_csv(
+    config["RECIPE_SHEET"], 
+    na_filter=False,
+    index_col=0
+) #"resources/recipe_sheet.csv"
 
 ########################################################################################################
 # Directories and locations
@@ -34,21 +37,6 @@ R2_FQS = dict(zip(SAMPLES, list(SAMPLE_SHEET['fastq_R2'])))
 # Executables
 ########################################################################################################
 EXEC = config['EXEC']
-# BWA_EXEC = config['BWA_EXEC']
-# STAR_EXEC = config['STAR_EXEC']
-# # KB_EXEC = config['KB_EXEC']
-# KALLISTO_EXEC = config['KALLISTO_EXEC']
-# BUST_EXEC = config['BUST_EXEC']
-# FASTQC_EXEC = config["FASTQC_EXEC"]
-# CUTADAPT_EXEC = config["CUTADAPT_EXEC"]
-# SAMTOOLS_EXEC = config["SAMTOOLS_EXEC"]
-# UMITOOLS_EXEC = config["UMITOOLS_EXEC"]
-# QUALIMAP_EXEC = config["QUALIMAP_EXEC"]
-# # MULTIQC_EXEC = config["MULTIQC_EXEC"]
-# MIRGE_EXEC = config['MIRGE_EXEC']
-# BOWTIE2_EXEC = config['BOWTIE2_EXEC']
-# BAM2SPLITBW = config["BAM2SPLITBW"]
-# FASTX_COLLAPSER = config["FASTX_COLLAPSER"]
 
 ########################################################################################################
 # Pre-run setup
@@ -97,7 +85,7 @@ rule all:
             '{OUTDIR}/{sample}/{ALIGN_OUT}',
             OUTDIR=config['OUTDIR'],
             ALIGN_OUT=[
-                'kb/raw/output.h5ad',
+                # 'kb/raw/output.h5ad',
                 'STARsolo/Solo.out/GeneFull/raw/UniqueAndMultEM.h5ad'
                 # 'miRNA/raw/output.h5ad',
                 # 'piRNA/raw/output.h5ad'
@@ -109,9 +97,9 @@ rule all:
             OUTDIR=config['OUTDIR'],
             sample=SAMPLES,
             REF=[
-                #"STARsolo_rRNA", 
+                "STARsolo_rRNA", 
                 "STARsolo"
-                ]
+            ]
         ),
         # expand( #non-deduplicated .bam
         #     '{OUTDIR}/{sample}/{REF}/Aligned.sortedByCoord.out.bam.bai',
@@ -119,46 +107,46 @@ rule all:
         #     sample=SAMPLES,
         #     REF=["STARsolo_rRNA", "STARsolo"]
         # ),
-        expand( # kallisto/bustools count mats
-            '{OUTDIR}/{sample}/kb/raw/output.mtx.gz',
-            OUTDIR=config['OUTDIR'],
-            sample=SAMPLES
-        ),
+        # expand( # kallisto/bustools count mats
+        #     '{OUTDIR}/{sample}/kb/raw/output.mtx.gz',
+        #     OUTDIR=config['OUTDIR'],
+        #     sample=SAMPLES
+        # ),
         # expand( # kallisto/bustools count mats
         #     '{OUTDIR}/{sample}/kb_velo/{LAYER}/output.mtx.gz',
         #     OUTDIR=config['OUTDIR'],
         #     LAYER=['spliced','unspliced'],
         #     sample=SAMPLES
         # ),
-        expand(  # alignment QC with qualimap | requires deduped input!
-            '{OUTDIR}/{sample}/qualimap/{FILE}',
-            OUTDIR=config['OUTDIR'],
-            sample=SAMPLES,
-            FILE=["qualimapReport.html","rnaseq_qc_result.csv"]
-        ),
-        expand( # deduped and/or strand-split, umi_tools deduplicated .bam #TODO- REF=["STARsolo_rRNA", "STARsolo"])
-            '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out{STRAND}.bam.bai',
-            OUTDIR=config['OUTDIR'],
-            sample=SAMPLES,
-            STRAND=["", ".fwd", ".rev"]
-        ),
-        expand( #fastQC results for unmapped reads
-            '{OUTDIR}/{sample}/fastqc/unmapped',
-            OUTDIR=config['OUTDIR'],
-            sample=SAMPLES
-        ),
+        # expand(  # alignment QC with qualimap | requires deduped input!
+        #     '{OUTDIR}/{sample}/qualimap/{FILE}',
+        #     OUTDIR=config['OUTDIR'],
+        #     sample=SAMPLES,
+        #     FILE=["qualimapReport.html","rnaseq_qc_result.csv"]
+        # ),
+        # expand( # deduped and/or strand-split, umi_tools deduplicated .bam #TODO- REF=["STARsolo_rRNA", "STARsolo"])
+        #     '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out{STRAND}.bam.bai',
+        #     OUTDIR=config['OUTDIR'],
+        #     sample=SAMPLES,
+        #     STRAND=["", ".fwd", ".rev"]
+        # ),
+        # expand( #fastQC results for unmapped reads
+        #     '{OUTDIR}/{sample}/fastqc/unmapped',
+        #     OUTDIR=config['OUTDIR'],
+        #     sample=SAMPLES
+        # ),
         # expand( # blastn results for unmapped R2 reads
         #     '{OUTDIR}/{sample}/Unmapped.out.mate2_blastResults.txt',
         #     OUTDIR=config['OUTDIR'],
         #     sample=SAMPLES
         # ),
-        expand( # fastQC results
-            '{OUTDIR}/{sample}/fastqc/{TRIM}_{READ}',
-            OUTDIR=config['OUTDIR'],
-            sample=SAMPLES,
-            READ=["R1","R2"],
-            TRIM = ["preTrim","postTrim"]
-        )
+        # expand( # fastQC results
+        #     '{OUTDIR}/{sample}/fastqc/{TRIM}_{READ}',
+        #     OUTDIR=config['OUTDIR'],
+        #     sample=SAMPLES,
+        #     READ=["R1","R2"],
+        #     TRIM = ["preTrim","postTrim"]
+        # )
         
 
 # fastq preprocessing & QC
