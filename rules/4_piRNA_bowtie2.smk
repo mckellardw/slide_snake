@@ -30,7 +30,7 @@ rule bowtie2_prep_bam_piRNA:
     input:
         BAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.bam'
     output:
-        BAM = temp('{OUTDIR}/{sample}/piRNA/tmp.bam')
+        BAM = temp('{OUTDIR}/{sample}/piRNA/{RECIPE}/tmp.bam')
     params:
         OUTDIR = config['OUTDIR'],
         MEMLIMIT = config['MEMLIMIT'],
@@ -61,15 +61,15 @@ rule bowtie2_prep_bam_piRNA:
 # To generate: `bowtie2-build mmu.gold.fa.gz ./index > build.log`
 rule bowtie2_align_piRNA:
     input:
-        BAM = '{OUTDIR}/{sample}/piRNA/tmp.bam'       
+        BAM = '{OUTDIR}/{sample}/piRNA/{RECIPE}/tmp.bam'       
     output:
-        BAM = '{OUTDIR}/{sample}/piRNA/aligned.bam'
+        BAM = '{OUTDIR}/{sample}/piRNA/{RECIPE}/aligned.bam'
     params:
         OUTDIR = config['OUTDIR'],
         MEMLIMIT = config['MEMLIMIT'],
         REF = config['piRNA_INDEX']
     log:
-        '{OUTDIR}/{sample}/piRNA/bowtie2.log'    
+        '{OUTDIR}/{sample}/piRNA/{RECIPE}/bowtie2.log'    
     threads:
         # 1
         config['CORES']
@@ -92,9 +92,9 @@ rule bowtie2_align_piRNA:
 # Index the deduplicated .bam file
 rule sortAlignedBAM_piRNA:
     input:
-        BAM = '{OUTDIR}/{sample}/piRNA/aligned.bam'
+        BAM = '{OUTDIR}/{sample}/piRNA/{RECIPE}/aligned.bam'
     output:
-        BAM = temp('{OUTDIR}/{sample}/piRNA/aligned.sorted.bam')
+        BAM = temp('{OUTDIR}/{sample}/piRNA/{RECIPE}/aligned.sorted.bam')
     threads:
         config['CORES']
     run:
@@ -108,9 +108,9 @@ rule sortAlignedBAM_piRNA:
 # Tag bam w/ chromosome/piRNA it aligned to
 rule tagSortedBam_piRNA:
     input:
-        BAM = '{OUTDIR}/{sample}/piRNA/aligned.sorted.bam'
+        BAM = '{OUTDIR}/{sample}/piRNA/{RECIPE}/aligned.sorted.bam'
     output:
-        BAM = '{OUTDIR}/{sample}/piRNA/aligned.sorted.tagged.bam' #TODO: add temp() in favor of just keeping the deduped bam?
+        BAM = '{OUTDIR}/{sample}/piRNA/{RECIPE}/aligned.sorted.tagged.bam' #TODO: add temp() in favor of just keeping the deduped bam?
     params:
         OUTDIR = config['OUTDIR']
     threads:
@@ -129,9 +129,9 @@ rule tagSortedBam_piRNA:
 # Index the sorted & deduplicated .bam file
 rule indexSortedTaggedBAM_piRNA:
     input:
-        BAM = '{OUTDIR}/{sample}/piRNA/aligned.sorted.tagged.bam'
+        BAM = '{OUTDIR}/{sample}/piRNA/{RECIPE}/aligned.sorted.tagged.bam'
     output:
-        BAI = temp('{OUTDIR}/{sample}/piRNA/aligned.sorted.tagged.bam.bai')
+        BAI = temp('{OUTDIR}/{sample}/piRNA/{RECIPE}/aligned.sorted.tagged.bam.bai')
     threads:
         config['CORES']
     run:
@@ -144,14 +144,14 @@ rule indexSortedTaggedBAM_piRNA:
 # Generate count matrix w/ umi-tools for piRNAs
 rule umitools_count_piRNA:
     input:
-        BAM = '{OUTDIR}/{sample}/piRNA/aligned.sorted.tagged.bam',
-        BAI = '{OUTDIR}/{sample}/piRNA/aligned.sorted.tagged.bam.bai'
+        BAM = '{OUTDIR}/{sample}/piRNA/{RECIPE}/aligned.sorted.tagged.bam',
+        BAI = '{OUTDIR}/{sample}/piRNA/{RECIPE}/aligned.sorted.tagged.bam.bai'
     output:        
-        COUNTS = '{OUTDIR}/{sample}/piRNA/counts.tsv.gz'
+        COUNTS = '{OUTDIR}/{sample}/piRNA/{RECIPE}/counts.tsv.gz'
     params:
         OUTDIR = config['OUTDIR']
     log:
-        '{OUTDIR}/{sample}/piRNA/count.log'
+        '{OUTDIR}/{sample}/piRNA/{RECIPE}/count.log'
     run:
         shell(
             f"""
@@ -171,11 +171,11 @@ rule umitools_count_piRNA:
 # Convert the long-format counts into a format that people can actually use
 rule counts_to_sparse_piRNA:
     input:
-        COUNTS = '{OUTDIR}/{sample}/piRNA/counts.tsv.gz'
+        COUNTS = '{OUTDIR}/{sample}/piRNA/{RECIPE}/counts.tsv.gz'
     output:
-        BCS = '{OUTDIR}/{sample}/piRNA/raw/barcodes.tsv.gz',
-        FEATS = '{OUTDIR}/{sample}/piRNA/raw/features.tsv.gz',
-        COUNTS = '{OUTDIR}/{sample}/piRNA/raw/matrix.mtx.gz'
+        BCS = '{OUTDIR}/{sample}/piRNA/{RECIPE}/raw/barcodes.tsv.gz',
+        FEATS = '{OUTDIR}/{sample}/piRNA/{RECIPE}/raw/features.tsv.gz',
+        COUNTS = '{OUTDIR}/{sample}/piRNA/{RECIPE}/raw/matrix.mtx.gz'
     params:
         OUTDIR = config['OUTDIR']
     threads:
@@ -194,13 +194,13 @@ rule counts_to_sparse_piRNA:
 rule umitools_dedupSortedBAM_piRNA:
     input:
         BB_WHITELIST = '{OUTDIR}/{sample}/bb/whitelist.txt',
-        BAM = '{OUTDIR}/{sample}/piRNA/aligned.sorted.tagged.bam'
+        BAM = '{OUTDIR}/{sample}/piRNA/{RECIPE}/aligned.sorted.tagged.bam'
     output:
-        BAM = '{OUTDIR}/{sample}/piRNA/aligned.sorted.tagged.dedup.bam'
+        BAM = '{OUTDIR}/{sample}/piRNA/{RECIPE}/aligned.sorted.tagged.dedup.bam'
     threads:
         config['CORES']
     log:
-        '{OUTDIR}/{sample}/piRNA/dedup.log'
+        '{OUTDIR}/{sample}/piRNA/{RECIPE}/dedup.log'
     run:
         tmp_recipe = RECIPE_DICT[wildcards.sample]
 
@@ -220,9 +220,9 @@ rule umitools_dedupSortedBAM_piRNA:
 # Index the sorted & deduplicated .bam file
 rule indexSortedTaggedDedupBAM_piRNA:
     input:
-        BAM = '{OUTDIR}/{sample}/piRNA/aligned.sorted.tagged.dedup.bam'
+        BAM = '{OUTDIR}/{sample}/piRNA/{RECIPE}/aligned.sorted.tagged.dedup.bam'
     output:
-        BAI = '{OUTDIR}/{sample}/piRNA/aligned.sorted.tagged.dedup.bam.bai'
+        BAI = '{OUTDIR}/{sample}/piRNA/{RECIPE}/aligned.sorted.tagged.dedup.bam.bai'
     threads:
         config['CORES']
     run:

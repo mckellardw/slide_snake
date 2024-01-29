@@ -96,7 +96,7 @@ rule STARsolo_align:
 
             {EXEC['STAR']} \
                 --runThreadN {threads} \
-                --outFileNamePrefix {OUTDIR}/{wildcards.SAMPLE}/STARsolo/{recipe} \
+                --outFileNamePrefix {OUTDIR}/{wildcards.SAMPLE}/STARsolo/{recipe}/ \
                 --outSAMtype BAM SortedByCoordinate \
                 --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
                 --readFilesCommand zcat \

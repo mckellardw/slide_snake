@@ -2,12 +2,12 @@
 ## Removes barcodes for which there are no molecules detected [`--remove_zero_features`]
 rule cache_preQC_h5ad_STAR_raw:
     input:
-        BCS = '{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw/barcodes.tsv.gz',
-        GENES = '{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw/features.tsv.gz',
-        MAT = '{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx.gz',
-        BB_map = lambda wildcards: BB_DICT[wildcards.sample]
+        BCS = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv.gz',
+        GENES = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/features.tsv.gz',
+        MAT = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx.gz',
+        BB_map = lambda wildcards: BB_DICT[wildcards.SAMPLE]
     output:
-        H5AD = '{OUTDIR}/{sample}/STARsolo/Solo.out/GeneFull/raw/UniqueAndMultEM.h5ad'
+        H5AD = '{OUTDIR}/{SAMPLE}/STARsolo/Solo.out/GeneFull/raw/UniqueAndMultEM.h5ad'
     params:
         var_names = "gene_symbols" # scanpy.read_10x_mtx()
     threads:
@@ -30,12 +30,12 @@ rule cache_preQC_h5ad_STAR_raw:
 ## Removes barcodes for which there are no molecules detected [`--remove_zero_features`]
 rule cache_preQC_h5ad_kb_raw:
     input:
-        BCS = '{OUTDIR}/{sample}/kb/raw/output.barcodes.txt.gz',
-        GENES = '{OUTDIR}/{sample}/kb/raw/output.genes.txt.gz',
-        MAT = '{OUTDIR}/{sample}/kb/raw/output.mtx.gz',
-        BB_map = lambda wildcards: BB_DICT[wildcards.sample]
+        BCS = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.barcodes.txt.gz',
+        GENES = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.genes.txt.gz',
+        MAT = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.mtx.gz',
+        BB_map = lambda wildcards: BB_DICT[wildcards.SAMPLE]
     output:
-        H5AD = "{OUTDIR}/{sample}/kb/raw/output.h5ad"
+        H5AD = "{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.h5ad"
     # params:
     #     var_names = "gene_symbols" # scanpy.read_10x_mtx()
     threads:
@@ -59,12 +59,12 @@ rule cache_preQC_h5ad_kb_raw:
 ## Removes barcodes for which there are no molecules detected [`--remove_zero_features`]
 rule cache_preQC_h5ad_miRNA_raw:
     input:
-        BCS = '{OUTDIR}/{sample}/miRNA/raw/barcodes.tsv.gz',
-        GENES = '{OUTDIR}/{sample}/miRNA/raw/features.tsv.gz',
-        MAT = '{OUTDIR}/{sample}/miRNA/raw/matrix.mtx.gz',
-        BB_map = lambda wildcards: BB_DICT[wildcards.sample]
+        BCS = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/raw/barcodes.tsv.gz',
+        GENES = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/{RECIPE}/raw/features.tsv.gz',
+        MAT = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/raw/matrix.mtx.gz',
+        BB_map = lambda wildcards: BB_DICT[wildcards.SAMPLE]
     output:
-        H5AD = "{OUTDIR}/{sample}/miRNA/raw/output.h5ad"
+        H5AD = "{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/raw/output.h5ad"
     threads:
         1
     run:
@@ -87,12 +87,12 @@ rule cache_preQC_h5ad_miRNA_raw:
 ## Removes barcodes for which there are no molecules detected [`--remove_zero_features`]
 rule cache_preQC_h5ad_piRNA_raw:
     input:
-        BCS = '{OUTDIR}/{sample}/piRNA/raw/barcodes.tsv.gz',
-        GENES = '{OUTDIR}/{sample}/piRNA/raw/features.tsv.gz',
-        MAT = '{OUTDIR}/{sample}/piRNA/raw/matrix.mtx.gz',
-        BB_map = lambda wildcards: BB_DICT[wildcards.sample]
+        BCS = '{OUTDIR}/{SAMPLE}/piRNA/{RECIPE}/raw/barcodes.tsv.gz',
+        GENES = '{OUTDIR}/{SAMPLE}/piRNA/{RECIPE}/raw/features.tsv.gz',
+        MAT = '{OUTDIR}/{SAMPLE}/piRNA/{RECIPE}/raw/matrix.mtx.gz',
+        BB_map = lambda wildcards: BB_DICT[wildcards.SAMPLE]
     output:
-        H5AD = "{OUTDIR}/{sample}/piRNA/raw/output.h5ad"
+        H5AD = "{OUTDIR}/{SAMPLE}/piRNA/{RECIPE}/raw/output.h5ad"
     threads:
         1
     run:
