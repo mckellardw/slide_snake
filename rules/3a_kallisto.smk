@@ -40,15 +40,16 @@ rule kallisto_align:
 
         shell(
             f"""
-            bash scripts/bash/kb.sh 
-                {OUTDIR}/{wildcards.sample}/kb \
-                {KB_IDX} \
-                {input.BB} \
-                {KB_X} \
-                {log} \
-                {threads} \
-                {params.MEMLIMIT} \
-                {R1} {R2}
+            bash scripts/bash/kb.sh \
+                --outdir {OUTDIR}/{wildcards.sample}/kb \
+                --kb_idx {KB_IDX} \
+                --whitelist {input.BB} \
+                --chemistry {KB_X} \
+                --log {log} \
+                --threads {threads} \
+                --memlimit {params.MEMLIMIT} \
+                --r1fq {R1} \
+                --r2fq {R2}
             """
         )
 
