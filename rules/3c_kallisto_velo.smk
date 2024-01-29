@@ -41,14 +41,16 @@ rule kallisto_align_velocity:
 
         shell(
             f"""
-            bash scripts/kb.sh {OUTDIR}/{wildcards.sample}/kb_velo \
-                {KB_IDX} \
-                {BB_WHITELIST} \
-                {KB_X} \
-                {log} \
-                {threads} \
-                {params.MEMLIMIT} \
-                {R1} {R2}
+            bash scripts/kb.sh \
+                --outdir {OUTDIR}/{wildcards.sample}/kb_velo \
+                --kb_idx {KB_IDX} \
+                --whitelist {input.BB} \
+                --chemistry {KB_X} \
+                --log {log} \
+                --threads {threads} \
+                --memlimit {params.MEMLIMIT} \
+                --r1fq {R1} \
+                --r2fq {R2}
             """
         )
 

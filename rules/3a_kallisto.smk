@@ -41,15 +41,15 @@ rule kallisto_align:
         shell(
             f"""
             bash scripts/bash/kb.sh \
-                --outdir {OUTDIR}/{wildcards.sample}/kb \
-                --kb_idx {KB_IDX} \
-                --whitelist {input.BB} \
-                --chemistry {KB_X} \
-                --log {log} \
-                --threads {threads} \
-                --memlimit {params.MEMLIMIT} \
-                --r1fq {R1} \
-                --r2fq {R2}
+            --outdir {OUTDIR}/{wildcards.sample}/kb \
+            --kb_idx {KB_IDX} \
+            --whitelist {input.BB} \
+            --chemistry {KB_X} \
+            --log {log} \
+            --threads {threads} \
+            --memlimit {params.MEMLIMIT} \
+            --r1fq {R1} \
+            --r2fq {R2}
             """
         )
 
@@ -75,7 +75,7 @@ rule bus2mat:
             mkdir -p {params.MATDIR}
 
             {EXEC['BUSTOOLS']} count \
-                --output {params.MATDIR}/ \
+                --output {params.MATDIR} \
                 --genemap {KB_T2G} \
                 --ecmap {input.ECMAP} \
                 --txnames {input.TRANSCRIPTS} \
