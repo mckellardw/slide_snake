@@ -6,11 +6,11 @@
 ## qualimap on deduplicated/aligned reads
 rule qualimapQC:
     input:
-        SORTEDBAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.bam'
+        SORTEDBAM = '{OUTDIR}/{sample}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out.bam'
     output:
-        qualimapDir = directory('{OUTDIR}/{sample}/qualimap'),
-        qualimapReport_txt = '{OUTDIR}/{sample}/qualimap/rnaseq_qc_results.txt',
-        qualimapReport_html = '{OUTDIR}/{sample}/qualimap/qualimapReport.html'
+        qualimapDir = directory('{OUTDIR}/{sample}/qualimap/{RECIPE}'),
+        qualimapReport_txt = '{OUTDIR}/{sample}/qualimap/{RECIPE}/rnaseq_qc_results.txt',
+        qualimapReport_html = '{OUTDIR}/{sample}/qualimap/{RECIPE}/qualimapReport.html'
     params:
         GENES_GTF = lambda wildcards: GTF_DICT[wildcards.sample]
     threads:
@@ -22,13 +22,13 @@ rule qualimapQC:
             cd {output.qualimapDir}
 
             {EXEC['QUALIMAP']} rnaseq \
-            -bam {input.SORTEDBAM} \
-            -gtf {params.GENES_GTF} \
-            --sequencing-protocol strand-specific-forward \
-            --sorted \
-            --java-mem-size=8G \
-            -outdir {output.qualimapDir} \
-            -outformat html
+                -bam {input.SORTEDBAM} \
+                -gtf {params.GENES_GTF} \
+                --sequencing-protocol strand-specific-forward \
+                --sorted \
+                --java-mem-size=8G \
+                -outdir {output.qualimapDir} \
+                -outformat html
             """ 
         )
         # -nt {threads} \
@@ -36,9 +36,9 @@ rule qualimapQC:
 
 rule qualimap_summary2csv:
     input:
-        qualimapReport_txt = '{OUTDIR}/{sample}/qualimap/rnaseq_qc_results.txt'
+        qualimapReport_txt = '{OUTDIR}/{sample}/qualimap/{RECIPE}/rnaseq_qc_results.txt'
     output:
-        qualimapReport_csv = '{OUTDIR}/{sample}/qualimap/rnaseq_qc_result.csv'
+        qualimapReport_csv = '{OUTDIR}/{sample}/qualimap/{RECIPE}/rnaseq_qc_result.csv'
     threads:
         1
     run:

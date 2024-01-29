@@ -1,28 +1,23 @@
 # Make output directory, align fastqs, and generate raw/filtered feature/cell-barcode matrices
 #   Info for STARsolo command line paramaters: https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md
 #TODO- dedup rRNA .bam files
-rule STARsolo_align_rRNA:
+rule bwamem_align_rRNA:
     input:
-        R1_FQ = '{OUTDIR}/{sample}/tmp/final_R1.fq.gz',
-        R2_FQ = '{OUTDIR}/{sample}/tmp/final_R2.fq.gz',
+        uBAM = temp('{OUTDIR}/{sample}/tmp/unaligned_barcoded.bam')
         BB_WHITELIST = "{OUTDIR}/{sample}/bb/whitelist.txt",
         BB_1 = "{OUTDIR}/{sample}/bb/whitelist_1.txt",
         BB_2 = "{OUTDIR}/{sample}/bb/whitelist_2.txt",
         BB_ADAPTER = "{OUTDIR}/{sample}/bb/whitelist_adapter.txt"
     output:
-        SORTEDBAM = '{OUTDIR}/{sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam', #TODO: add temp()
-        UNMAPPED1 = '{OUTDIR}/{sample}/STARsolo_rRNA/Unmapped.out.mate1',
-        UNMAPPED2 = '{OUTDIR}/{sample}/STARsolo_rRNA/Unmapped.out.mate2',
-        GENEDIRECTORY = directory('{OUTDIR}/{sample}/STARsolo_rRNA/Solo.out/GeneFull'),
-        GENEMAT = '{OUTDIR}/{sample}/STARsolo_rRNA/Solo.out/GeneFull/raw/matrix.mtx'
+        SORTEDBAM = '{OUTDIR}/{sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam', 
     params:
         MEMLIMIT = config['MEMLIMIT']
     threads:
         config['CORES']
     run: 
-        tmp_recipe = RECIPE_DICT[wildcards.sample]
-        STAR_REF = rRNA_DICT[wildcards.sample] # use rRNA ref
-        nBB = sum(1 for line in open(input.BB_WHITELIST)) # get number of bead barcodes for filtered count matrix, `--soloCellFilter`
+        # tmp_recipe = RECIPE_DICT[wildcards.sample]
+        # STAR_REF = rRNA_DICT[wildcards.sample] # use rRNA ref
+        # nBB = sum(1 for line in open(input.BB_WHITELIST)) # get number of bead barcodes for filtered count matrix, `--soloCellFilter`
 
         #TODO: add try catches
         soloType = RECIPE_SHEET["STAR.soloType"][tmp_recipe]

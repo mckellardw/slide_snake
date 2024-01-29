@@ -55,7 +55,7 @@ SPECIES_DICT = {}   # Dictionary of species listed for mirge3 analysis
 
 for i in range(0,SAMPLE_SHEET.shape[0]):
     tmp_sample = list(SAMPLE_SHEET["sampleID"])[i]
-    RECIPE_DICT[tmp_sample] = list(SAMPLE_SHEET["recipe"])[i]
+    RECIPE_DICT[tmp_sample] = list(SAMPLE_SHEET["recipe"])[i].split()
     rRNA_DICT[tmp_sample] = list(SAMPLE_SHEET["STAR_rRNA_ref"])[i]
     REF_DICT[tmp_sample] = list(SAMPLE_SHEET["STAR_ref"])[i]
     GTF_DICT[tmp_sample] = list(SAMPLE_SHEET["genes_gtf"])[i]
@@ -85,21 +85,25 @@ rule all:
             '{OUTDIR}/{sample}/{ALIGN_OUT}',
             OUTDIR=config['OUTDIR'],
             ALIGN_OUT=[
-                # 'kb/raw/output.h5ad',
+                'kb/raw/output.h5ad',
                 'STARsolo/Solo.out/GeneFull/raw/UniqueAndMultEM.h5ad'
                 # 'miRNA/raw/output.h5ad',
                 # 'piRNA/raw/output.h5ad'
             ],
             sample=SAMPLES
         ),
+        [
+            f"{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx.gz" for SAMPLE in SAMPLES for RECIPE in RECIPE_DICT[SAMPLE]
+        ],
         expand( #STAR count mats
-            '{OUTDIR}/{sample}/{REF}/Solo.out/GeneFull/raw/matrix.mtx.gz',
+            '{OUTDIR}/{SAMPLE}/{REF}/Solo.out/GeneFull/raw/matrix.mtx.gz',
             OUTDIR=config['OUTDIR'],
-            sample=SAMPLES,
+            SAMPLE=SAMPLES,
             REF=[
-                "STARsolo_rRNA", 
-                "STARsolo"
+                "STARsolo_rRNA"
+                # "STARsolo"
             ]
+            # RECIPE=RECIPE_DICT[SAMPLE] #TODO
         ),
         # expand( #non-deduplicated .bam
         #     '{OUTDIR}/{sample}/{REF}/Aligned.sortedByCoord.out.bam.bai',
@@ -125,7 +129,7 @@ rule all:
         #     FILE=["qualimapReport.html","rnaseq_qc_result.csv"]
         # ),
         # expand( # deduped and/or strand-split, umi_tools deduplicated .bam #TODO- REF=["STARsolo_rRNA", "STARsolo"])
-        #     '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out{STRAND}.bam.bai',
+        #     '{OUTDIR}/{sample}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out{STRAND}.bam.bai',
         #     OUTDIR=config['OUTDIR'],
         #     sample=SAMPLES,
         #     STRAND=["", ".fwd", ".rev"]
@@ -155,7 +159,8 @@ include: "rules/1b_trimQC.smk"
 include: "rules/1c_split_bb.smk"
 
 # STAR alignment, QC, and post-processing
-include: "rules/2a_rRNA_filter.smk"
+# include: "rules/2a_rRNA_bwa.smk"
+include: "rules/2b_rRNA_STAR.smk"
 include: "rules/2b_star_align.smk"
 include: "rules/2c_star_unmapped.smk"
 include: "rules/2d_star_qualimap.smk"
