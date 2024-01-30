@@ -18,7 +18,7 @@ The goal of this project is to build a snakemake workflow for assessing differen
 - `BLAST`  
 *Note-* these are the versions I used, not necessarily the only versions which will work
 
-### Install w/ `mamba`/`conda`:
+### Install w/ `mamba`/`conda` [recommended]:
 ```
 mamba create --name slide_snake -c bioconda cutadapt fastqc star=2.7.11a kallisto bustools samtools bamtools qualimap anndata scanpy vsearch blast umi_tools
 
@@ -31,16 +31,24 @@ mamba create --name snakemake_only -c bioconda snakemake
 mamba activate snakemake_only
 mamba activate slide_snake
 ```
+### Alternatively...
+All executables are called from the path specified in `config.yaml` (See `EXEC`). If you already have the dependencies installed, just change the path.
 
-### Example run w/ `slurm`:
+## Runtime details
+## Example run w/ `slurm`:
 ```
 snakemake --cluster-config slurm_config.yml \
 --cluster "sbatch --mail-type {cluster.mail-type} --mail-user {cluster.mail-user} -p {cluster.partition} -t {cluster.time} -N {cluster.nodes} --mem {cluster.mem} -D {cluster.chdir} -o {cluster.output}" \
 -j 32 -k -p --nt
 ```
-### Example run w/out `slurm`:
+
 ```
-snakemake -k -p --nt -j 32 
+snakemake --cluster-config slurm_config.yml --cluster "sbatch --mail-type {cluster.mail-type} --mail-user {cluster.mail-user} -p {cluster.partition} -t {cluster.time} -N {cluster.nodes} --mem {cluster.mem} -o {cluster.output}" -j 32 -k -p --nt --cluster-cancel scancel --rerun-incomplete --latency-wait 15
+```
+
+## Example run w/out `slurm`:
+```
+snakemake -k -p -j 32 
 ```
 
 
@@ -112,25 +120,36 @@ TODO
 
 
 ## **Recipe descriptions**:
+"Recipes" are descriptions for the alignment workflow- how to trim the barcode read, whether or not to filter out ribosomal RNA reads, additional alignment parameters, etc. One goal of `slide_snake` is to make the alignment preprocessing modular so that all of these parameters can be compared directly and rigorously. Please note the following:
+  - Multiple recipes can be passed for each sample. Include as many as you would like, each separated by a space in the sample sheet.
+  - You can also add a new recipe! Just add a new line to `resources/recipe_sheet.csv` and give it a unique name in the 1st (0th for you pythoners) column.
 <details close>
 <summary> SlideSeq/Seeker (Curio) </summary>
-  
-- `seeker_v3.1` - Hard trim the adapter read positions in R1, and use the best barcode correction algorithms in STARsolo
-- `seeker_v3.1_noTrim` - No hard trimming, and use the base positions for barcode/UMI (*Note*, this recipe doesn't work well w/ Curio Seeker b/c of in/del issues w/ the barcode synthesis)
-- `seeker_v3.1_noTrimMatchLinker` - Match the adapter sequence on R1 (w/ 2 mismatches allowed) and infer barcodes/UMIs from that position (*Note* best performer w/ Curio data)
-- `seeker_v3.1_noTrim_total` - Same as `seeker_v3.1_noTrimMatchLinker`, but with additional STAR parameters for total RNAseq alignment (more multimappers, looser alignment)
+
+Because of read quality issues (indels, low Q scores, etc.) in the SlideSeq barcode read, I have added a few custom strategies for handling these data:
+- `seeker_v3.1_hardTrim` - Hard trim the adapter read positions in R1, and use the best barcode correction algorithms in STARsolo
+- `seeker_v3.1` - No hard trimming, and use the base positions for barcode/UMI (*Note*, this recipe doesn't work well w/ Curio Seeker b/c of in/del issues w/ the barcode synthesis)
+- `seeker_v3.1_MatchLinker` - Match the adapter sequence on R1 (w/ 2 mismatches allowed) and infer barcodes/UMIs from that position (*Note* best performer w/ Curio data)
+- `seeker_v3.1_MatchLinker_total` - Same as `seeker_v3.1_noTrimMatchLinker`, but with additional STAR parameters for total RNAseq alignment (more multimappers, looser alignment)
 </details>
 
 <details close>
 <summary> StereoSeq/STOmics (BGI) </summary>
   
-- `stomics_noTrim` - Standard alignment for StereoSeq/STOmics (BGI) data
-- `stomics_noTrim_total` - Total RNA alignment for StereoSeq/STOmics (BGI) data
+- `stomics` - Standard alignment for StereoSeq/STOmics (BGI) data
+- `stomics_total` - Total RNA alignment for StereoSeq/STOmics (BGI) data
+- `stomics_rRNA.STAR` - Standard alignment performed after filtering rRNA with STAR alignment
+- `stomics_total_rRNA.STAR` - Total RNA alignment performed after filtering rRNA with STAR alignment
+
 </details>
 
 <details close>
-<summary> Add new recipe: </summary>
-Just add  a new line in `resources/recipe_sheet.csv`, and reference it based on the name you use in the leftmost column!
+<summary> Visium (10x Genomics) </summary>
+
+- `visium` - #description
+- `visium_total` - #description
+- `visium_total_rRNA.STAR` - #description
+
 </details>
 
 ## **Barcode handling:**
