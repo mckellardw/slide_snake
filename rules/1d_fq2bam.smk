@@ -1,8 +1,8 @@
 # convert fastq into an unaligned bam for simple passing to alignment tools
 rule fq2bam:
     input:
-        FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1_final.fq.gz',
-        FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz'
+        FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/final_R1.fq.gz',
+        FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/final_R2_.fq.gz'
     output:
         uBAM = temp('{OUTDIR}/{sample}/tmp/unaligned.bam')
     threads:
@@ -11,9 +11,41 @@ rule fq2bam:
     run:
         shell(
             f"""
-            {EXEC['SAMTOOLS']} import -i \
+            {EXEC['SAMTOOLS']} import \
                 -1 {input.FINAL_R1_FQ} \
                 -2 {input.FINAL_R2_FQ} \
                 -o {output.uBAM}
+            """
+        )
+
+#TODO: Rule to build whitelist if there isn't one explicitly given
+# rule build_whitelist:
+#     output:
+#         BB_WHITELIST = "{OUTDIR}/{sample}/bb/whitelist.txt"
+#     threads:
+#         config['CORES']
+#     params:
+#     run:
+#         shell(
+#             f"""
+#             {EXEC['UMITOOLS']} whitelist --stdin hgmm_100_R1.fastq.gz \
+#                 --bc-pattern=CCCCCCCCCCCCCCCCNNNNNNNNNN \
+#                 --set-cell-number=100 \
+#                 --log2stderr > whitelist.txt;
+#             """
+#         )
+
+rule barcode_ubam:
+    input:
+        uBAM = '{OUTDIR}/{sample}/tmp/unaligned.bam'
+    output:
+        uBAM = '{OUTDIR}/{sample}/tmp/unaligned_bc.bam'
+    threads:
+        config['CORES']
+    params:
+    run:
+        shell(
+            f"""
+            #TODO
             """
         )

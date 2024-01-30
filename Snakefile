@@ -70,84 +70,88 @@ for i in range(0,SAMPLE_SHEET.shape[0]):
 rule all:
     input:
         # expand( # count matrices for bowtie2 alignment to small RNA reference(s)
-        #     '{OUTDIR}/{sample}/{SMALL_RNA}/{TYPE}',
+        #     '{OUTDIR}/{SAMPLE}/{SMALL_RNA}/{TYPE}',
         #     OUTDIR=config['OUTDIR'],
-        #     sample=SAMPLES,
+        #     SAMPLE=SAMPLES,
         #     SMALL_RNA=['piRNA','miRNA'],
         #     TYPE=["counts.tsv.gz","raw/matrix.mtx.gz"]
         # ),
         # expand( # miRge3.0 pseudobulk analysis
-        #     '{OUTDIR}/{sample}/miRge_bulk/annotation.report.html',
+        #     '{OUTDIR}/{SAMPLE}/miRge_bulk/annotation.report.html',
         #     OUTDIR=config['OUTDIR'],
-        #     sample=SAMPLES
+        #     SAMPLE=SAMPLES
         # ),
-        expand( # anndata files (with spatial info)
-            '{OUTDIR}/{sample}/{ALIGN_OUT}',
-            OUTDIR=config['OUTDIR'],
-            ALIGN_OUT=[
-                'kb/raw/output.h5ad',
-                'STARsolo/Solo.out/GeneFull/raw/UniqueAndMultEM.h5ad'
-                # 'miRNA/raw/output.h5ad',
-                # 'piRNA/raw/output.h5ad'
-            ],
-            sample=SAMPLES
-        ),
-        [
-            f"{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx.gz" for SAMPLE in SAMPLES for RECIPE in RECIPE_DICT[SAMPLE]
-        ],
-        expand( #STAR count mats
-            '{OUTDIR}/{SAMPLE}/{REF}/Solo.out/GeneFull/raw/matrix.mtx.gz',
+        [f"{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/UniqueAndMultEM.h5ad" 
+            for SAMPLE in SAMPLES 
+            for RECIPE in RECIPE_DICT[SAMPLE] 
+            for SOLO in ['Gene','GeneFull']
+        ], # anndata files (with spatial info) - STAR
+        [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/raw/output.h5ad" 
+            for SAMPLE in SAMPLES 
+            for RECIPE in RECIPE_DICT[SAMPLE] 
+            for KB in ['kb']
+        ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`
+        # [f"{OUTDIR}/{SAMPLE}/{SMALL}/{RECIPE}/raw/output.h5ad" 
+        #     for SAMPLE in SAMPLES 
+        #     for RECIPE in RECIPE_DICT[SAMPLE] 
+        #     for SMALL in ['miRNA','piRNA']
+        # ],# anndata files (with spatial info) - small RNA            
+        [f"{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx.gz" 
+            for SAMPLE in SAMPLES 
+            for RECIPE in RECIPE_DICT[SAMPLE]
+        ], # STAR count mats
+        expand( #STAR count mats - rRNA
+            '{OUTDIR}/{SAMPLE}/rRNA/{ALIGNER}/raw/matrix.mtx.gz',
             OUTDIR=config['OUTDIR'],
             SAMPLE=SAMPLES,
-            REF=[
-                "STARsolo_rRNA"
-                # "STARsolo"
+            ALIGNER=[
+                "STARsolo/Solo.out/GeneFull"
+                # "bwa" #TODO
             ]
-            # RECIPE=RECIPE_DICT[SAMPLE] #TODO
         ),
         # expand( #non-deduplicated .bam
-        #     '{OUTDIR}/{sample}/{REF}/Aligned.sortedByCoord.out.bam.bai',
+        #     '{OUTDIR}/{SAMPLE}/{REF}/Aligned.sortedByCoord.out.bam.bai',
         #     OUTDIR=config['OUTDIR'],
-        #     sample=SAMPLES,
+        #     SAMPLE=SAMPLES,
         #     REF=["STARsolo_rRNA", "STARsolo"]
         # ),
         # expand( # kallisto/bustools count mats
-        #     '{OUTDIR}/{sample}/kb/raw/output.mtx.gz',
+        #     '{OUTDIR}/{SAMPLE}/kb/raw/output.mtx.gz',
         #     OUTDIR=config['OUTDIR'],
-        #     sample=SAMPLES
+        #     SAMPLE=SAMPLES
         # ),
         # expand( # kallisto/bustools count mats
-        #     '{OUTDIR}/{sample}/kb_velo/{LAYER}/output.mtx.gz',
+        #     '{OUTDIR}/{SAMPLE}/kb_velo/{LAYER}/output.mtx.gz',
         #     OUTDIR=config['OUTDIR'],
         #     LAYER=['spliced','unspliced'],
-        #     sample=SAMPLES
+        #     SAMPLE=SAMPLES
         # ),
         # expand(  # alignment QC with qualimap | requires deduped input!
-        #     '{OUTDIR}/{sample}/qualimap/{FILE}',
+        #     '{OUTDIR}/{SAMPLE}/qualimap/{FILE}',
         #     OUTDIR=config['OUTDIR'],
-        #     sample=SAMPLES,
+        #     SAMPLE=SAMPLES,
         #     FILE=["qualimapReport.html","rnaseq_qc_result.csv"]
         # ),
         # expand( # deduped and/or strand-split, umi_tools deduplicated .bam #TODO- REF=["STARsolo_rRNA", "STARsolo"])
-        #     '{OUTDIR}/{sample}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out{STRAND}.bam.bai',
+        #     '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out{STRAND}.bam.bai',
         #     OUTDIR=config['OUTDIR'],
-        #     sample=SAMPLES,
+        #     SAMPLE=SAMPLES,
         #     STRAND=["", ".fwd", ".rev"]
         # ),
         # expand( #fastQC results for unmapped reads
-        #     '{OUTDIR}/{sample}/fastqc/unmapped',
+        #     '{OUTDIR}/{SAMPLE}/fastqc/unmapped',
         #     OUTDIR=config['OUTDIR'],
-        #     sample=SAMPLES
+        #     SAMPLE=SAMPLES
         # ),
         # expand( # blastn results for unmapped R2 reads
-        #     '{OUTDIR}/{sample}/Unmapped.out.mate2_blastResults.txt',
+        #     '{OUTDIR}/{SAMPLE}/Unmapped.out.mate2_blastResults.txt',
         #     OUTDIR=config['OUTDIR'],
-        #     sample=SAMPLES
+        #     SAMPLE=SAMPLES
         # ),
         # expand( # fastQC results
-        #     '{OUTDIR}/{sample}/fastqc/{TRIM}_{READ}',
+        #     '{OUTDIR}/{SAMPLE}/fastqc/{TRIM}_{READ}',
         #     OUTDIR=config['OUTDIR'],
-        #     sample=SAMPLES,
+        #     SAMPLE=SAMPLES,
         #     READ=["R1","R2"],
         #     TRIM = ["preTrim","postTrim"]
         # )

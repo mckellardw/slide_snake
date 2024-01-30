@@ -1,13 +1,13 @@
 # initialize & cache the **raw** counts as an anndata file for easier loading later
 ## Removes barcodes for which there are no molecules detected [`--remove_zero_features`]
-rule cache_preQC_h5ad_STAR_raw:
+rule cache_preQC_h5ad_STAR:
     input:
-        BCS = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv.gz',
-        GENES = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/features.tsv.gz',
-        MAT = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx.gz',
+        BCS = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/barcodes.tsv.gz',
+        GENES = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/features.tsv.gz',
+        MAT = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/UniqueAndMult-EM.mtx.gz',
         BB_map = lambda wildcards: BB_DICT[wildcards.SAMPLE]
     output:
-        H5AD = '{OUTDIR}/{SAMPLE}/STARsolo/Solo.out/GeneFull/raw/UniqueAndMultEM.h5ad'
+        H5AD = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/UniqueAndMultEM.h5ad'
     params:
         var_names = "gene_symbols" # scanpy.read_10x_mtx()
     threads:
@@ -28,7 +28,7 @@ rule cache_preQC_h5ad_STAR_raw:
 
 # initialize & cache the **raw** counts as an anndata file for easier loading later
 ## Removes barcodes for which there are no molecules detected [`--remove_zero_features`]
-rule cache_preQC_h5ad_kb_raw:
+rule cache_preQC_h5ad_kb:
     input:
         BCS = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.barcodes.txt.gz',
         GENES = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.genes.txt.gz',
@@ -57,7 +57,7 @@ rule cache_preQC_h5ad_kb_raw:
 
 # initialize & cache the **raw** counts as an anndata file for easier loading later
 ## Removes barcodes for which there are no molecules detected [`--remove_zero_features`]
-rule cache_preQC_h5ad_miRNA_raw:
+rule cache_preQC_h5ad_miRNA:
     input:
         BCS = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/raw/barcodes.tsv.gz',
         GENES = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/{RECIPE}/raw/features.tsv.gz',
@@ -85,7 +85,7 @@ rule cache_preQC_h5ad_miRNA_raw:
 
 # initialize & cache the **raw** counts as an anndata file for easier loading later
 ## Removes barcodes for which there are no molecules detected [`--remove_zero_features`]
-rule cache_preQC_h5ad_piRNA_raw:
+rule cache_preQC_h5ad_piRNA:
     input:
         BCS = '{OUTDIR}/{SAMPLE}/piRNA/{RECIPE}/raw/barcodes.tsv.gz',
         GENES = '{OUTDIR}/{SAMPLE}/piRNA/{RECIPE}/raw/features.tsv.gz',
