@@ -74,19 +74,20 @@ rule STARsolo_align:
             # R1 = input.R1_FQ
         else:
             whitelist = input.BB_WHITELIST
-            # R1 = input.R1_FQ_HardTrim
 
-        # Select R2 based on alignment recipe
-        if "rRNA.STAR" in recipe: # Use trimmed & rRNA-filtered .fq's
+        # Select input reads based on alignment recipe
+        if "rRNA.STAR" in recipe: # Use trimmed & STAR-rRNA-filtered .fq's
             R1 = input.R1_FQ_FILTERED
             R2 = input.R2_FQ_FILTERED
-        if "rRNA.bwa" in recipe: #TODO Use trimmed & rRNA-filtered .fq's
+        elif "rRNA.bwa" in recipe: #TODO Use trimmed & bwa-rRNA-filtered .fq's
             print("TODO")
             # R1 = input.R1_FQ_FILTERED
             # R2 = input.R2_FQ_FILTERED
-        else: # just trimmed .fq's
+        elif "rRNA" not in recipe: # just trimmed .fq's
             R1 = input.R1_FQ
             R2 = input.R2_FQ
+        else:
+            print("I just don't know what to do with myself...")
 
         # Run STARsolo
         #TODO?: --twopassMode

@@ -57,11 +57,11 @@ echo " " >> ${LOG}
 # Pseudoalign and generate .bus file
 echo "~~~Pseudoaligning with `kallisto bus`... " >> ${LOG}
 kallisto bus \
-    -i ${KB_IDX} \
-    -x ${CHEMISTRY} \
+    --index ${KB_IDX} \
+    --technology ${CHEMISTRY} \
     --fr-stranded \
-    -o ${OUTDIR} \
-    -t ${THREADS} \
+    --output-dir ${OUTDIR} \
+    --threads ${THREADS} \
     --verbose \
     ${R1FQ} ${R2FQ} 2>> ${LOG}
 echo " " >> ${LOG}
@@ -70,16 +70,16 @@ echo " " >> ${LOG}
 echo "~~~Correcting barcodes... " >> ${LOG}
 bustools correct \
     --whitelist ${WHITELIST} \
-    -o output.sorted.bus \
+    --output output.sorted.bus \
     output.bus 2>> ${LOG}
 echo " " >> ${LOG}
 
 # Sort .bus file
 echo "~~~Sorting output bus... " >> ${LOG}
 bustools sort \
-    -t ${THREADS} \
+    --threads ${THREADS} \
     -m ${MEMLIMIT} \
-    -o output.corrected.bus \
+    --output output.corrected.bus \
     output.sorted.bus 2>> ${LOG}
 echo " " >> ${LOG}
 

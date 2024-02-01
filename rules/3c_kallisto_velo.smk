@@ -41,8 +41,8 @@ rule kallisto_align_velocity:
 
         shell(
             f"""
-            bash scripts/kb.sh \
-                --outdir {OUTDIR}/{wildcards.sample}/kb_velo \
+            bash scripts/bash/kb.sh \
+                --outdir $(dirname {output.BUS}) \
                 --kb_idx {KB_IDX} \
                 --whitelist {input.BB} \
                 --chemistry {KB_X} \
@@ -63,8 +63,6 @@ rule split_bus_velocity_spliced:
         ECMAP = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/matrix.ec'
     output:
         SPLICED = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/spliced.bus'
-    params:
-        MATDIR = directory('{OUTDIR}/{sample}/kb_velo/{RECIPE}/raw')
     log:
         '{OUTDIR}/{sample}/kb_velo/{RECIPE}/split_bus_velocity_spliced.log'
     threads:
@@ -73,7 +71,7 @@ rule split_bus_velocity_spliced:
         KB_IDX = IDX_VELO_DICT[wildcards.sample]
         shell(
             f"""
-            mkdir -p {params.MATDIR}
+            mkdir -p $(dirname {output.SPLICED})
 
             {EXEC['BUSTOOLS']} capture \
                 --transcripts \
@@ -94,15 +92,15 @@ rule split_bus_velocity_unspliced:
         ECMAP = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/matrix.ec'
     output:
         UNSPLICED = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/unspliced.bus'
-    params:
-        MATDIR = directory('{OUTDIR}/{sample}/kb_velo/{RECIPE}/raw')
+    log:
+        '{OUTDIR}/{sample}/kb_velo/{RECIPE}/split_bus_velocity_spliced.log'
     threads:
         1
     run:
         KB_IDX = IDX_VELO_DICT[wildcards.sample]
         shell(
             f"""
-            mkdir -p {params.MATDIR}
+            mkdir -p $(dirname {output.SPLICED})
 
             {EXEC['BUSTOOLS']} capture \
                 --transcripts \
@@ -131,10 +129,10 @@ rule bus2mat_velocity_spliced:
     run:
         shell(
             f"""
-            mkdir -p {params.MATDIR}
+            mkdir -p $(dirname {output.MAT})
 
             {EXEC['BUSTOOLS']} count \
-                --output {params.MATDIR}/ \
+                --output $(dirname {output.MAT}) \
                 --genemap {T2G_VELO_DICT[wildcards.sample]} \
                 --ecmap {input.ECMAP} \
                 --txnames {input.TRANSCRIPTS} \
@@ -162,10 +160,10 @@ rule bus2mat_velocity_unspliced:
     run:
         shell(
             f"""
-            mkdir -p {params.MATDIR}
+            mkdir -p $(dirname {output.MAT})
 
             {EXEC['BUSTOOLS']} count \
-                --output {params.MATDIR}/ \
+                --output $(dirname {output.MAT})/ \
                 --genemap {T2G_VELO_DICT[wildcards.sample]} \
                 --ecmap {input.ECMAP} \
                 --txnames {input.TRANSCRIPTS} \
