@@ -37,13 +37,7 @@ All executables are called from the path specified in `config.yaml` (See `EXEC`)
 ## Runtime details
 ## Example run w/ `slurm`:
 ```
-snakemake --cluster-config slurm_config.yml \
---cluster "sbatch --mail-type {cluster.mail-type} --mail-user {cluster.mail-user} -p {cluster.partition} -t {cluster.time} -N {cluster.nodes} --mem {cluster.mem} -D {cluster.chdir} -o {cluster.output}" \
--j 32 -k -p --nt
-```
-
-```
-snakemake --cluster-config slurm_config.yml --cluster "sbatch --mail-type {cluster.mail-type} --mail-user {cluster.mail-user} -p {cluster.partition} -t {cluster.time} -N {cluster.nodes} --mem {cluster.mem} -o {cluster.output}" -j 32 -k -p --nt --cluster-cancel scancel --rerun-incomplete --latency-wait 15
+snakemake --cluster-config slurm_config.yml --cluster "sbatch -p {cluster.partition} -t {cluster.time} -N {cluster.nodes} --mem {cluster.mem} -o {cluster.output}" -j 32 -k -p --nt --cluster-cancel scancel --rerun-incomplete --latency-wait 30
 ```
 
 ## Example run w/out `slurm`:
