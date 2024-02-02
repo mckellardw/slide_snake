@@ -1,175 +1,100 @@
 # Make output directory, align fastqs, and generate raw/filtered feature/cell-barcode matrices
 #   Info for STARsolo command line paramaters: https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md
 #TODO- dedup rRNA .bam files
-rule bwamem_align_rRNA:
+rule bwa_align_rRNA:
     input:
-        uBAM = temp('{OUTDIR}/{sample}/tmp/unaligned_barcoded.bam')
-        BB_WHITELIST = "{OUTDIR}/{sample}/bb/whitelist.txt",
-        BB_1 = "{OUTDIR}/{sample}/bb/whitelist_1.txt",
-        BB_2 = "{OUTDIR}/{sample}/bb/whitelist_2.txt",
-        BB_ADAPTER = "{OUTDIR}/{sample}/bb/whitelist_adapter.txt"
+        uBAM = temp('{OUTDIR}/{SAMPLE}/tmp/unaligned_barcoded.bam')
+        BB_WHITELIST = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
+        BB_1 = "{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
+        BB_2 = "{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
+        BB_ADAPTER = "{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt"
     output:
-        SORTEDBAM = '{OUTDIR}/{sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam', 
+        UNMAPPED1 = '{OUTDIR}/{SAMPLE}/rRNA/bwa/unmapped_R1.fq',
+        UNMAPPED2 = '{OUTDIR}/{SAMPLE}/rRNA/bwa/unmapped_R2.fq'
     params:
         MEMLIMIT = config['MEMLIMIT']
+    log:
+        log = "{OUTDIR}/{SAMPLE}/rRNA/bwa_rRNA.log"
     threads:
         config['CORES']
     run: 
-        # tmp_recipe = RECIPE_DICT[wildcards.sample]
-        # STAR_REF = rRNA_DICT[wildcards.sample] # use rRNA ref
+        # tmp_recipe = RECIPE_DICT[wildcards.SAMPLE]
+        # STAR_REF = rRNA_DICT[wildcards.SAMPLE] # use rRNA ref
         # nBB = sum(1 for line in open(input.BB_WHITELIST)) # get number of bead barcodes for filtered count matrix, `--soloCellFilter`
 
-        #TODO: add try catches
-        soloType = RECIPE_SHEET["STAR.soloType"][tmp_recipe]
-        soloUMI = RECIPE_SHEET["STAR.soloUMI"][tmp_recipe]
-        soloCB = RECIPE_SHEET["STAR.soloCB"][tmp_recipe]
-        soloCBmatchWLtype = RECIPE_SHEET["STAR.soloCBmatchWLtype"][tmp_recipe]
-        soloAdapter = RECIPE_SHEET["STAR.soloAdapter"][tmp_recipe]
-        extraSTAR = RECIPE_SHEET["STAR.extra"][tmp_recipe]
-
-        # Params for different barcode handling strategies
-        if "stomics" in tmp_recipe:
-            whitelist = input.BB_WHITELIST
-        elif "noTrim" in tmp_recipe:
-            whitelist = f"{input.BB_1} {input.BB_2}"
-        #     R1 = input.R1_FQ
-        elif "internalTrim" in tmp_recipe:
-            whitelist = input.BB_WHITELIST
-        #     R1 = input.R1_FQ_InternalTrim
-        elif "adapterInsert" in tmp_recipe:
-            whitelist = input.BB_ADAPTER
-        #     R1 = input.R1_FQ
-        else:
-            whitelist = input.BB_WHITELIST
-        #     R1 = input.R1_FQ_HardTrim
-
-        # R2 = input.R2_FQ
+        # soloType = RECIPE_SHEET["STAR.soloType"][tmp_recipe]
+        # soloUMI = RECIPE_SHEET["STAR.soloUMI"][tmp_recipe]
+        # soloCB = RECIPE_SHEET["STAR.soloCB"][tmp_recipe]
+        # soloCBmatchWLtype = RECIPE_SHEET["STAR.soloCBmatchWLtype"][tmp_recipe]
+        # soloAdapter = RECIPE_SHEET["STAR.soloAdapter"][tmp_recipe]
+        # extraSTAR = RECIPE_SHEET["STAR.extra"][tmp_recipe]
 
         if "bwa" in tmp_recipe:
             # Align to rRNA ref w/ `bwa mem` for cleaner/faster rRNA filtering 
-            ## Flip read numbers to match STAR
             ## Add empty count mat file for 
             ##TODO: fix .fasta passing here (*.fa is dangerous...)
-            ##TODO: fix folder/file naming schema...
-            ##TODO: add log file
+            ##TODO incorporate VASAseq style "long"/short read handling with multiple align steps
             shell(
                 f"""
-                {EXEC['BWA']} mem -t {threads} {STAR_REF}/*.fa {input.R1_FQ} {input.R2_FQ} \
-                > {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.sam \
-                | tee {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/bwa.log
-
-                {EXEC['SAMTOOLS']} sort -@ {threads} {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.sam \
-                > {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam
-
-                {EXEC['SAMTOOLS']} fastq -f 4 -1 {output.UNMAPPED2} -2 {output.UNMAPPED1} -0 /dev/null {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam
-
-                mkdir -p {output.GENEDIRECTORY}
-                echo "empty placeholder file..." > {output.GENEMAT} 
-                """
-            )
-                # rm {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/STARsolo_rRNA/Aligned.sortedByCoord.out.sam
-                # | {EXEC['SAMTOOLS']} view -f 4 -bh - \
-        else:
-            shell(
-                f"""
-                mkdir -p {OUTDIR}/{wildcards.sample}/STARsolo_rRNA
-
-                {EXEC['STAR']} \
-                    --runThreadN {threads} \
-                    --outFileNamePrefix {OUTDIR}/{wildcards.sample}/STARsolo_rRNA/ \
-                    --outSAMtype BAM SortedByCoordinate \
-                    --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
-                    --readFilesCommand zcat \
-                    --genomeDir {STAR_REF} \
-                    --limitBAMsortRAM={params.MEMLIMIT} \
-                    --readFilesIn {input.R2_FQ} {input.R1_FQ} \
-                    --clipAdapterType CellRanger4 \
-                    --outReadsUnmapped Fastx \
-                    --outSAMunmapped Within KeepPairs \
-                    --soloType {soloType} {soloUMI} {soloCB} {soloAdapter} {extraSTAR} \
-                    --soloCBwhitelist {whitelist} \
-                    --soloCBmatchWLtype {soloCBmatchWLtype} \
-                    --soloCellFilter TopCells {nBB} \
-                    --soloUMIfiltering MultiGeneUMI CR \
-                    --soloUMIdedup 1MM_CR \
-                    --soloBarcodeReadLength 0 \
-                    --soloFeatures GeneFull \
-                    --soloMultiMappers EM
+                {EXEC['BWA']} mem \
+                    -t {threads} \
+                    {STAR_REF}/*.fa \
+                    {input.R1_FQ} {input.R2_FQ} \
+                | {EXEC['SAMTOOLS']} sort \
+                    -@ {threads} \
+                | {EXEC['SAMTOOLS']} fastq \
+                    -f 4 \
+                    -1 {output.UNMAPPED2} \
+                    -2 {output.UNMAPPED1} \
+                    -0 /dev/null \
+                | tee {log.log}
                 """
             )
 
-# compress outputs from STAR (count matrices, cell barcodes, and gene lists)
-rule compress_STAR_rRNA_outs:
+
+                # {EXEC['BWA']} mem \
+                #     -t {threads} \
+                #     {STAR_REF}/*.fa \
+                #     {input.R1_FQ} {input.R2_FQ} \
+                # > {OUTDIR}/{wildcards.SAMPLE}/STARsolo_rRNA/Aligned.sortedByCoord.out.sam \
+                # | tee {log.log}
+
+                # {EXEC['SAMTOOLS']} sort \
+                #     -@ {threads} \
+                #     {OUTDIR}/{wildcards.SAMPLE}/STARsolo_rRNA/Aligned.sortedByCoord.out.sam \
+                # > {OUTDIR}/{wildcards.SAMPLE}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam
+
+                # {EXEC['SAMTOOLS']} fastq \
+                #     -f 4 -1 {output.UNMAPPED2} \
+                #     -2 {output.UNMAPPED1} \
+                #     -0 /dev/null {OUTDIR}/{wildcards.SAMPLE}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam
+
+
+rule compress_unmapped_bwa:
     input:
-        GENEMAT = "{OUTDIR}/{sample}/STARsolo_rRNA/Solo.out/GeneFull/raw/matrix.mtx"
+        UNMAPPED1 = '{OUTDIR}/{SAMPLE}/rRNA/bwa/unmapped_R1.fq',
+        UNMAPPED2 = '{OUTDIR}/{SAMPLE}/rRNA/bwa/unmapped_R2.fq'
     output:
-        GENEMAT = "{OUTDIR}/{sample}/STARsolo_rRNA/Solo.out/GeneFull/raw/matrix.mtx.gz"
-    params:
-        GENEDIR = directory("{OUTDIR}/{sample}/STARsolo_rRNA/Solo.out/GeneFull")
-    threads:
-        config['CORES']        
-    run:
-        tmp_recipe = RECIPE_DICT[wildcards.sample]
-        if "noTrim" in tmp_recipe:
-            #["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
-            shell(
-                f"""
-                cat {params.GENEDIR}/raw/barcodes.tsv | sed 's/_//' > {params.GENEDIR}/raw/barcodes_noUnderscore.tsv
-                cat {params.GENEDIR}/filtered/barcodes.tsv | sed 's/_//' > {params.GENEDIR}/filtered/barcodes_noUnderscore.tsv
-                """
-            )
-
-        # compress
-        shell(
-            f"""
-            pigz -p{threads} {params.GENEDIR}/*/*.tsv {params.GENEDIR}/*/*.mtx 
-            """
-        )
-
-# Index the .bam file produced by STAR
-rule indexSortedBAM_rRNA:
-    input:
-        SORTEDBAM = '{OUTDIR}/{sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam'
-    output:
-        BAI = '{OUTDIR}/{sample}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam.bai'
-    threads:
-        config['CORES']
-    run:
-        shell(
-            f"""
-            {EXEC['SAMTOOLS']} index -@ {threads} {input.SORTEDBAM}
-            """
-        )
-
-
-# Switch names because of STAR weirdness
-rule rename_compress_unmapped:
-    input:
-        UNMAPPED1 = '{OUTDIR}/{sample}/STARsolo_rRNA/Unmapped.out.mate1',
-        UNMAPPED2 = '{OUTDIR}/{sample}/STARsolo_rRNA/Unmapped.out.mate2'
-    output:
-        FILTERED1_FQ = '{OUTDIR}/{sample}/tmp/final_filtered_R1.fq.gz',
-        FILTERED2_FQ = '{OUTDIR}/{sample}/tmp/final_filtered_R2.fq.gz'
+        UNMAPPED1 = '{OUTDIR}/{SAMPLE}/rRNA/bwa/unmapped_R1.fq.gz',
+        UNMAPPED2 = '{OUTDIR}/{SAMPLE}/rRNA/bwa/unmapped_R2.fq.gz'
     params:
     threads:
         config['CORES']
     run:
         shell(
             f"""
-            mv {input.UNMAPPED1} {output.FILTERED2_FQ.replace('.gz','')}
-            mv {input.UNMAPPED2} {output.FILTERED1_FQ.replace('.gz','')}
-
-            {EXEC['PIGZ']} -p{threads} -f {OUTDIR}/{wildcards.sample}/tmp/*.fq
+            {EXEC['PIGZ']} -p{threads} {input}
             """
         )
+
 
 #  Run fastqc on unmapped reads;
-rule rRNA_filtered_fastqc:
+rule rRNA_filtered_fastqc_bwa:
     input:
-        FILTERED1_FQ = '{OUTDIR}/{sample}/tmp/final_filtered_R1.fq.gz',
-        FILTERED2_FQ = '{OUTDIR}/{sample}/tmp/final_filtered_R2.fq.gz',
+        FILTERED1_FQ = '{OUTDIR}/{SAMPLE}/rRNA/bwa/unmapped_R1.fq.gz',
+        FILTERED2_FQ = '{OUTDIR}/{SAMPLE}/rRNA/bwa/unmapped_R2.fq.gz'
     output:
-        FQC_DIR = directory('{OUTDIR}/{sample}/fastqc/rRNA_filtered')
+        FQC_DIR = directory('{OUTDIR}/{SAMPLE}/fastqc/rRNA_filtered_bwa')
     params:
         adapters = config['FASTQC_ADAPTERS']
     threads:

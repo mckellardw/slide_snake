@@ -3,27 +3,27 @@
 #TODO- dedup rRNA .bam files
 rule STARsolo_align_rRNA:
     input:
-        R1_FQ = '{OUTDIR}/{sample}/tmp/final_R1.fq.gz',
-        R2_FQ = '{OUTDIR}/{sample}/tmp/final_R2.fq.gz',
-        BB_WHITELIST = "{OUTDIR}/{sample}/bb/whitelist.txt",
-        BB_1 = "{OUTDIR}/{sample}/bb/whitelist_1.txt",
-        BB_2 = "{OUTDIR}/{sample}/bb/whitelist_2.txt",
-        BB_ADAPTER = "{OUTDIR}/{sample}/bb/whitelist_adapter.txt"
+        R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R1.fq.gz',
+        R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R2.fq.gz',
+        BB_WHITELIST = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
+        BB_1 = "{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
+        BB_2 = "{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
+        BB_ADAPTER = "{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt"
     output:
-        SORTEDBAM = '{OUTDIR}/{sample}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam', #TODO: add temp()
-        UNMAPPED1 = '{OUTDIR}/{sample}/rRNA/STARsolo/Unmapped.out.mate1',
-        UNMAPPED2 = '{OUTDIR}/{sample}/rRNA/STARsolo/Unmapped.out.mate2',
-        GENEDIRECTORY = directory('{OUTDIR}/{sample}/rRNA/STARsolo/Solo.out/GeneFull'),
-        GENEMAT = '{OUTDIR}/{sample}/rRNA/STARsolo/Solo.out/GeneFull/raw/matrix.mtx'
+        SORTEDBAM = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam', #TODO: add temp()
+        UNMAPPED1 = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Unmapped.out.mate1',
+        UNMAPPED2 = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Unmapped.out.mate2',
+        GENEDIRECTORY = directory('{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Solo.out/GeneFull'),
+        GENEMAT = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Solo.out/GeneFull/raw/matrix.mtx'
     params:
         MEMLIMIT = config['MEMLIMIT']
     threads:
         config['CORES']
     run: 
-        recipe = RECIPE_DICT[wildcards.sample][0] #TODO fix recipe handling here...
+        recipe = RECIPE_DICT[wildcards.SAMPLE][0] #TODO fix recipe handling here...
         # recipe = wildcards.RECIPE 
         
-        STAR_REF = rRNA_DICT[wildcards.sample] # use rRNA ref
+        STAR_REF = rRNA_DICT[wildcards.SAMPLE] # use rRNA ref
         nBB = sum(1 for line in open(input.BB_WHITELIST)) # get number of bead barcodes for filtered count matrix, `--soloCellFilter`
 
         #TODO: add try catches
@@ -48,11 +48,11 @@ rule STARsolo_align_rRNA:
 
         shell(
             f"""
-            mkdir -p {OUTDIR}/{wildcards.sample}/rRNA/STARsolo
+            mkdir -p {OUTDIR}/{wildcards.SAMPLE}/rRNA/STARsolo
 
             {EXEC['STAR']} \
                 --runThreadN {threads} \
-                --outFileNamePrefix {OUTDIR}/{wildcards.sample}/rRNA/STARsolo/ \
+                --outFileNamePrefix {OUTDIR}/{wildcards.SAMPLE}/rRNA/STARsolo/ \
                 --outSAMtype BAM SortedByCoordinate \
                 --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
                 --readFilesCommand zcat \
@@ -77,15 +77,15 @@ rule STARsolo_align_rRNA:
 # compress outputs from STAR (count matrices, cell barcodes, and gene lists)
 rule compress_STAR_rRNA_outs:
     input:
-        GENEMAT = "{OUTDIR}/{sample}/rRNA/STARsolo/Solo.out/GeneFull/raw/matrix.mtx"
+        GENEMAT = "{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Solo.out/GeneFull/raw/matrix.mtx"
     output:
-        GENEMAT = "{OUTDIR}/{sample}/rRNA/STARsolo/Solo.out/GeneFull/raw/matrix.mtx.gz"
+        GENEMAT = "{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Solo.out/GeneFull/raw/matrix.mtx.gz"
     params:
-        GENEDIR = directory("{OUTDIR}/{sample}/rRNA/STARsolo/Solo.out/GeneFull")
+        GENEDIR = directory("{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Solo.out/GeneFull")
     threads:
         config['CORES']        
     run:
-        recipe = RECIPE_DICT[wildcards.sample]
+        recipe = RECIPE_DICT[wildcards.SAMPLE]
         if "noTrim" in recipe:
             #["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
             shell(
@@ -105,9 +105,9 @@ rule compress_STAR_rRNA_outs:
 # Index the .bam file produced by STAR
 rule indexSortedBAM_rRNA:
     input:
-        SORTEDBAM = '{OUTDIR}/{sample}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam'
+        SORTEDBAM = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam'
     output:
-        BAI = '{OUTDIR}/{sample}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam.bai'
+        BAI = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam.bai'
     threads:
         config['CORES']
     run:
@@ -119,13 +119,13 @@ rule indexSortedBAM_rRNA:
 
 
 # Switch names because of STAR weirdness
-rule rename_compress_unmapped:
+rule rename_compress_unmapped_star:
     input:
-        UNMAPPED1 = '{OUTDIR}/{sample}/rRNA/STARsolo/Unmapped.out.mate1',
-        UNMAPPED2 = '{OUTDIR}/{sample}/rRNA/STARsolo/Unmapped.out.mate2'
+        UNMAPPED1 = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Unmapped.out.mate1',
+        UNMAPPED2 = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Unmapped.out.mate2'
     output:
-        FILTERED1_FQ = '{OUTDIR}/{sample}/tmp/final_filtered_R1.fq.gz',
-        FILTERED2_FQ = '{OUTDIR}/{sample}/tmp/final_filtered_R2.fq.gz'
+        FILTERED1_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_filtered_R1.fq.gz',
+        FILTERED2_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_filtered_R2.fq.gz'
     params:
     threads:
         config['CORES']
@@ -135,17 +135,17 @@ rule rename_compress_unmapped:
             mv {input.UNMAPPED1} {output.FILTERED2_FQ.replace('.gz','')}
             mv {input.UNMAPPED2} {output.FILTERED1_FQ.replace('.gz','')}
 
-            {EXEC['PIGZ']} -p{threads} -f {OUTDIR}/{wildcards.sample}/tmp/*.fq
+            {EXEC['PIGZ']} -p{threads} -f {OUTDIR}/{wildcards.SAMPLE}/tmp/*.fq
             """
         )
 
 #  Run fastqc on unmapped reads;
-rule rRNA_filtered_fastqc:
+rule rRNA_filtered_fastqc_star:
     input:
-        FILTERED1_FQ = '{OUTDIR}/{sample}/tmp/final_filtered_R1.fq.gz',
-        FILTERED2_FQ = '{OUTDIR}/{sample}/tmp/final_filtered_R2.fq.gz',
+        FILTERED1_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_filtered_R1.fq.gz',
+        FILTERED2_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_filtered_R2.fq.gz',
     output:
-        FQC_DIR = directory('{OUTDIR}/{sample}/fastqc/rRNA_filtered')
+        FQC_DIR = directory('{OUTDIR}/{SAMPLE}/fastqc/rRNA_filtered_STAR')
     params:
         adapters = config['FASTQC_ADAPTERS']
     threads:
