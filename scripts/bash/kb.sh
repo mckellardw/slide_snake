@@ -63,7 +63,7 @@ kallisto bus \
     --output-dir ${OUTDIR} \
     --threads ${THREADS} \
     --verbose \
-    ${R1FQ} ${R2FQ} 2>> ${LOG}
+    <(zcat ${R1FQ}) <(zcat ${R2FQ}) 2>> ${LOG}
 echo " " >> ${LOG}
 
 # Correct cell/spot/bead barcodes

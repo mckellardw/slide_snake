@@ -170,6 +170,7 @@ rule cutadapt:
         FINAL_R2_FQ = temp('{OUTDIR}/{sample}/tmp/final_R2.fq.gz')
     params:
         # R1_LENGTH = 50,
+        QUALITY_MIN=20,
         MIN_R2_LENGTH = 12,
         OVERLAP = 5,
         HOMOPOLYMER_ERROR_RATE = 0.2, # default error rate is 0.1
@@ -210,7 +211,7 @@ rule cutadapt:
             f"""
             {EXEC['CUTADAPT']} \
                 --minimum-length {R1_LENGTH}:{params.MIN_R2_LENGTH} \
-                --quality-cutoff 20 \
+                --quality-cutoff {params.QUALITY_MIN} \
                 --overlap {params.OVERLAP} \
                 --match-read-wildcards \
                 --nextseq-trim=20 \
@@ -229,7 +230,8 @@ rule cutadapt:
                 -o {output.FINAL_R1_FQ} \
                 -p {output.FINAL_R2_FQ} \
                 --cores {threads} \
-                {R1} {R2} 1> {log.log}
+                {R1} {R2} \
+            1> {log.log}
             """
         )
 
