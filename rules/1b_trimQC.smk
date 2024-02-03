@@ -1,12 +1,12 @@
 #############################################
 ## Read trimming & QC rules
 #############################################
-# fastqc on R2 before trimming
-rule fastQC_preTrim_R1:
+# fastqc on R1 & R2 before trimming
+rule fastQC_preTrim:
     input:
-        MERGED_R1_FQ = '{OUTDIR}/{sample}/tmp/merged_R1.fq.gz'
+        MERGED_FQ = '{OUTDIR}/{SAMPLE}/tmp/merged_{READ}.fq.gz'
     output:
-        fastqcDir = directory('{OUTDIR}/{sample}/fastqc/preTrim_R1')
+        fastqcDir = directory('{OUTDIR}/{SAMPLE}/fastqc/preTrim_{READ}')
     params:
         adapters = config['FASTQC_ADAPTERS']
     threads:
@@ -21,52 +21,52 @@ rule fastQC_preTrim_R1:
                 --outdir {output.fastqcDir} \
                 --threads {threads} \
                 -a {params.adapters} \
-                {input.MERGED_R1_FQ}
+                {input.MERGED_FQ}
             """
         )
 
 # fastqc on R2 before trimming
-rule fastQC_preTrim_R2:
-    input:
-        MERGED_R2_FQ = '{OUTDIR}/{sample}/tmp/merged_R2.fq.gz'
-    output:
-        fastqcDir = directory('{OUTDIR}/{sample}/fastqc/preTrim_R2')
-    params:
-        ADAPTERS = config['FASTQC_ADAPTERS']
-    threads:
-        config['CORES']
-        # min([config['CORES'],8]) # 8 core max
-    run:
-        shell(
-            f"""
-            mkdir -p {output.fastqcDir}
+# rule fastQC_preTrim_R2:
+#     input:
+#         MERGED_R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/merged_R2.fq.gz'
+#     output:
+#         fastqcDir = directory('{OUTDIR}/{SAMPLE}/fastqc/preTrim_R2')
+#     params:
+#         ADAPTERS = config['FASTQC_ADAPTERS']
+#     threads:
+#         config['CORES']
+#         # min([config['CORES'],8]) # 8 core max
+#     run:
+#         shell(
+#             f"""
+#             mkdir -p {output.fastqcDir}
 
-            {EXEC['FASTQC']} \
-                --outdir {output.fastqcDir} \
-                --threads {threads} \
-                -a {params.ADAPTERS} \
-                {input.MERGED_R2_FQ}
-            """
-        )
+#             {EXEC['FASTQC']} \
+#                 --outdir {output.fastqcDir} \
+#                 --threads {threads} \
+#                 -a {params.ADAPTERS} \
+#                 {input.MERGED_R2_FQ}
+#             """
+#         )
 
 
 #TODO merge trimming rules
 # Internal adapter trimming on R1
 # rule internal_adapter_trim_R1:
 #     input:
-#         MERGED_R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz',
-#         # MERGED_R2_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R2.fq.gz'
+#         MERGED_R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/{SAMPLE}_R1.fq.gz',
+#         # MERGED_R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/{SAMPLE}_R2.fq.gz'
 #     output:
-#         INTERNAL_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_InternalTrim.fq.gz'),
-#         INTERNAL_TRIM_QC_LOG = '{OUTDIR}/{sample}/internal_trim_qc.txt'
-#         # FINAL_R2_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz')
+#         INTERNAL_R1_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/{SAMPLE}_R1_InternalTrim.fq.gz'),
+#         INTERNAL_TRIM_QC_LOG = '{OUTDIR}/{SAMPLE}/internal_trim_qc.txt'
+#         # FINAL_R2_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/{SAMPLE}_R2_final.fq.gz')
 #     params:
-#         TMPDIR = "{OUTDIR}/{sample}/tmp/seqkit",
+#         TMPDIR = "{OUTDIR}/{SAMPLE}/tmp/seqkit",
 #         INTERNAL_ADAPTER = config["R1_INTERNAL_ADAPTER"] # Curio R1 internal adapter
 #     threads:
 #         config['CORES']        
 #     log:
-#         '{OUTDIR}/{sample}/internal_adapter_trim_R1.log'
+#         '{OUTDIR}/{SAMPLE}/internal_adapter_trim_R1.log'
 #     run:
 #         shell(
 #             f"""
@@ -78,9 +78,9 @@ rule fastQC_preTrim_R2:
 ## Source: https://unix.stackexchange.com/questions/510164/remove-and-add-sequence-information-at-specific-position-in-a-file
 # rule removeLinker_R1:
 #     input:
-#         R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz'
+#         R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/{SAMPLE}_R1.fq.gz'
 #     output:
-#         FINAL_R1_FQ = temp('{OUTDIR}/{sample}/tmp/{sample}_R1_HardTrim.fq.gz')
+#         FINAL_R1_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/{SAMPLE}_R1_HardTrim.fq.gz')
 #     params:
 #         script = "scripts/hardTrimFq.awk",
 #         CB1end = 8, #TODO- move to config? or recipe_sheet?
@@ -89,35 +89,35 @@ rule fastQC_preTrim_R2:
 #     threads:
 #         config['CORES']
 #     run:
-#         # tmp_recipe = RECIPE_DICT[wildcards.sample]
+#         # tmp_recipe = RECIPE_DICT[wildcards.SAMPLE]
 #         shell(
 #             f"""
 #             zcat {input.R1_FQ} | \
-#             awk -v s={params.CB1end} -v S={params.CB2start} -v E={params.CB2end} -f {params.script} > {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_HardTrim.fq
+#             awk -v s={params.CB1end} -v S={params.CB2start} -v E={params.CB2end} -f {params.script} > {OUTDIR}/{wildcards.SAMPLE}/tmp/{wildcards.SAMPLE}_R1_HardTrim.fq
 
-#             pigz -f -p{threads} {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_HardTrim.fq
+#             pigz -f -p{threads} {OUTDIR}/{wildcards.SAMPLE}/tmp/{wildcards.SAMPLE}_R1_HardTrim.fq
 #             """
 #         )
 
 # Trimming for R1 to handle Curio adapter issues. See README for recipe details (#TODO)
 rule R1_trimming:
     input:
-        R1_FQ = '{OUTDIR}/{sample}/tmp/merged_R1.fq.gz'
+        R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/merged_R1.fq.gz'
     output:
-        R1_FQ = temp('{OUTDIR}/{sample}/tmp/merged_trimmed_R1.fq.gz')
+        R1_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/merged_trimmed_R1.fq.gz')
     params:
         CB1end = 8, #TODO- move to config? or recipe_sheet?
         CB2start = 27,
         CB2end = 42,
-        INTERNAL_TRIM_QC_LOG = '{OUTDIR}/{sample}/internal_trim_qc.txt',
-        TMPDIR = "{OUTDIR}/{sample}/tmp/seqkit",
+        INTERNAL_TRIM_QC_LOG = '{OUTDIR}/{SAMPLE}/internal_trim_qc.txt',
+        TMPDIR = "{OUTDIR}/{SAMPLE}/tmp/seqkit",
         INTERNAL_ADAPTER = config["R1_INTERNAL_ADAPTER"] # Curio R1 internal adapter
     threads:
         config['CORES']
     log:
-        '{OUTDIR}/{sample}/R1_trimming.log'
+        '{OUTDIR}/{SAMPLE}/R1_trimming.log'
     run:
-        recipe = RECIPE_DICT[wildcards.sample]
+        recipe = RECIPE_DICT[wildcards.SAMPLE]
         R1_LENGTH = RECIPE_SHEET["R1.finalLength"][recipe]
 
         #param handling for different alignment strategies
@@ -129,7 +129,7 @@ rule R1_trimming:
                     -v S={params.CB2start} \
                     -v E={params.CB2end} \
                     -f scripts/awk/hardTrimFq.awk \
-                > {OUTDIR}/{wildcards.sample}/tmp/{wildcards.sample}_R1_Trimmed.fq
+                > {OUTDIR}/{wildcards.SAMPLE}/tmp/{wildcards.SAMPLE}_R1_Trimmed.fq
 
                 {EXEC['PIGZ']} -f -p{threads} {output.R1_FQ.removesuffix('.gz')}
 
@@ -160,14 +160,14 @@ rule R1_trimming:
 #TODO: add "{ADAPTER};noindels" to adapter sequence trimming? - *Note- do not do this for the BB_ADAPTER
 rule cutadapt:
     input:
-        # R1_FQ = '{OUTDIR}/{sample}/tmp/{sample}_R1.fq.gz',
-        # R1_FQ_HardTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_HardTrim.fq.gz',
-        # R1_FQ_InternalTrim = '{OUTDIR}/{sample}/tmp/{sample}_R1_InternalTrim.fq.gz',
-        R1_FQ_Trimmed = '{OUTDIR}/{sample}/tmp/merged_trimmed_R1.fq.gz',
-        R2_FQ = '{OUTDIR}/{sample}/tmp/merged_R2.fq.gz'
+        # R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/{SAMPLE}_R1.fq.gz',
+        # R1_FQ_HardTrim = '{OUTDIR}/{SAMPLE}/tmp/{SAMPLE}_R1_HardTrim.fq.gz',
+        # R1_FQ_InternalTrim = '{OUTDIR}/{SAMPLE}/tmp/{SAMPLE}_R1_InternalTrim.fq.gz',
+        R1_FQ_Trimmed = '{OUTDIR}/{SAMPLE}/tmp/merged_trimmed_R1.fq.gz',
+        R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/merged_R2.fq.gz'
     output:
-        FINAL_R1_FQ = temp('{OUTDIR}/{sample}/tmp/final_R1.fq.gz'),
-        FINAL_R2_FQ = temp('{OUTDIR}/{sample}/tmp/final_R2.fq.gz')
+        FINAL_R1_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/final_R1.fq.gz'),
+        FINAL_R2_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/final_R2.fq.gz')
     params:
         # R1_LENGTH = 50,
         QUALITY_MIN=20,
@@ -191,9 +191,9 @@ rule cutadapt:
         # min([config['CORES'],8]) # 8 core max
         config['CORES']
     log:
-        log = '{OUTDIR}/{sample}/cutadapt.log'
+        log = '{OUTDIR}/{SAMPLE}/cutadapt.log'
     run:
-        tmp_recipe = RECIPE_DICT[wildcards.sample]
+        tmp_recipe = RECIPE_DICT[wildcards.SAMPLE]
         R1_LENGTH = RECIPE_SHEET["R1.finalLength"][tmp_recipe]
 
         #param handling for different alignment strategies
@@ -237,11 +237,11 @@ rule cutadapt:
 
 
 # fastqc on R1 after linker removal & R2 trimming/filtering
-rule fastQC_postTrim_R1:
+rule fastQC_postTrim:
     input:
-        FINAL_R1_FQ =  '{OUTDIR}/{sample}/tmp/final_R1.fq.gz'
+        FINAL_R1_FQ =  '{OUTDIR}/{SAMPLE}/tmp/final_{READ}.fq.gz'
     output:
-        fastqcDir = directory('{OUTDIR}/{sample}/fastqc/postTrim_R1'),
+        fastqcDir = directory('{OUTDIR}/{SAMPLE}/fastqc/postTrim_{READ}'),
         # fastqcReport = ''
     threads:
         config['CORES']
@@ -262,26 +262,26 @@ rule fastQC_postTrim_R1:
         )
 
 # fastqc after trimming on R2
-rule fastQC_postTrim_R2:
-    input:
-        FINAL_R2_FQ =  '{OUTDIR}/{sample}/tmp/{sample}_R2_final.fq.gz'
-    output:
-        fastqcDir = directory('{OUTDIR}/{sample}/fastqc/postTrim_R2'),
-        # fastqcReport = ''
-    threads:
-        config['CORES']
-        # min([config['CORES'],8]) # 8 core max
-    params:
-        adapters = config['FASTQC_ADAPTERS']
-    run:
-        shell(
-        f"""
-            mkdir -p {output.fastqcDir}
+# rule fastQC_postTrim_R2:
+#     input:
+#         FINAL_R2_FQ =  '{OUTDIR}/{SAMPLE}/tmp/{SAMPLE}_R2_final.fq.gz'
+#     output:
+#         fastqcDir = directory('{OUTDIR}/{SAMPLE}/fastqc/postTrim_R2'),
+#         # fastqcReport = ''
+#     threads:
+#         config['CORES']
+#         # min([config['CORES'],8]) # 8 core max
+#     params:
+#         adapters = config['FASTQC_ADAPTERS']
+#     run:
+#         shell(
+#         f"""
+#             mkdir -p {output.fastqcDir}
 
-            {EXEC['FASTQC']} \
-                --outdir {output.fastqcDir} \
-                --threads {threads} \
-                -a {params.adapters} \
-                {input.FINAL_R2_FQ}
-            """
-        )
+#             {EXEC['FASTQC']} \
+#                 --outdir {output.fastqcDir} \
+#                 --threads {threads} \
+#                 -a {params.adapters} \
+#                 {input.FINAL_R2_FQ}
+#             """
+#         )

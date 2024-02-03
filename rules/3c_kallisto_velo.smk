@@ -6,27 +6,27 @@
 
 rule kallisto_align_velocity:
     input:
-        R1_FQ = '{OUTDIR}/{sample}/tmp/final_R1.fq.gz',
-        R2_FQ = '{OUTDIR}/{sample}/tmp/final_R2.fq.gz',
-        R1_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/final_filtered_R1.fq.gz',
-        R2_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/final_filtered_R2.fq.gz',
-        BB = "{OUTDIR}/{sample}/bb/whitelist.txt"
+        R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R1.fq.gz',
+        R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R2.fq.gz',
+        R1_FQ_FILTERED = '{OUTDIR}/{SAMPLE}/tmp/final_filtered_R1.fq.gz',
+        R2_FQ_FILTERED = '{OUTDIR}/{SAMPLE}/tmp/final_filtered_R2.fq.gz',
+        BB = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt"
     output:
-        BUS = temp('{OUTDIR}/{sample}/kb_velo/{RECIPE}/output.bus'),
-        BUS_CORRECTED = temp('{OUTDIR}/{sample}/kb_velo/{RECIPE}/output.corrected.bus'),
-        TRANSCRIPTS = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/transcripts.txt',
-        ECMAP = temp('{OUTDIR}/{sample}/kb_velo/{RECIPE}/matrix.ec')
+        BUS = temp('{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/output.bus'),
+        BUS_CORRECTED = temp('{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/output.corrected.bus'),
+        TRANSCRIPTS = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/transcripts.txt',
+        ECMAP = temp('{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/matrix.ec')
     params:
         MEMLIMIT = config['MEMLIMIT_GB']
     log:
-        '{OUTDIR}/{sample}/kb_velo/{RECIPE}/kallisto_align.log'
+        '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/kallisto_align.log'
     threads:
         config['CORES']
     priority:
         42
     run:
-        recipe = RECIPE_DICT[wildcards.sample]
-        KB_IDX = IDX_VELO_DICT[wildcards.sample]
+        recipe = RECIPE_DICT[wildcards.SAMPLE]
+        KB_IDX = IDX_VELO_DICT[wildcards.SAMPLE]
         BB_WHITELIST = f"{input.BB}"
         
         KB_X = RECIPE_SHEET["kb.x"][recipe]
@@ -58,17 +58,17 @@ rule kallisto_align_velocity:
 #TODO - fix hardcoded bits...
 rule split_bus_velocity_spliced:
     input:
-        BUS = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/output.corrected.bus',
-        TRANSCRIPTS = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/transcripts.txt',
-        ECMAP = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/matrix.ec'
+        BUS = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/output.corrected.bus',
+        TRANSCRIPTS = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/transcripts.txt',
+        ECMAP = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/matrix.ec'
     output:
-        SPLICED = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/spliced.bus'
+        SPLICED = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/spliced.bus'
     log:
-        '{OUTDIR}/{sample}/kb_velo/{RECIPE}/split_bus_velocity_spliced.log'
+        '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/split_bus_velocity_spliced.log'
     threads:
         1
     run:
-        KB_IDX = IDX_VELO_DICT[wildcards.sample]
+        KB_IDX = IDX_VELO_DICT[wildcards.SAMPLE]
         shell(
             f"""
             mkdir -p $(dirname {output.SPLICED})
@@ -87,17 +87,17 @@ rule split_bus_velocity_spliced:
 #TODO - fix hardcoded bits...
 rule split_bus_velocity_unspliced:
     input:
-        BUS = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/output.corrected.bus',
-        TRANSCRIPTS = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/transcripts.txt',
-        ECMAP = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/matrix.ec'
+        BUS = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/output.corrected.bus',
+        TRANSCRIPTS = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/transcripts.txt',
+        ECMAP = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/matrix.ec'
     output:
-        UNSPLICED = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/unspliced.bus'
+        UNSPLICED = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/unspliced.bus'
     log:
-        '{OUTDIR}/{sample}/kb_velo/{RECIPE}/split_bus_velocity_spliced.log'
+        '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/split_bus_velocity_spliced.log'
     threads:
         1
     run:
-        KB_IDX = IDX_VELO_DICT[wildcards.sample]
+        KB_IDX = IDX_VELO_DICT[wildcards.SAMPLE]
         shell(
             f"""
             mkdir -p $(dirname {output.SPLICED})
@@ -115,15 +115,15 @@ rule split_bus_velocity_unspliced:
 # build spliced matrix
 rule bus2mat_velocity_spliced:
     input:
-        SPLICED = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/spliced.bus',
-        TRANSCRIPTS = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/transcripts.txt',
-        ECMAP = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/matrix.ec'
+        SPLICED = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/spliced.bus',
+        TRANSCRIPTS = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/transcripts.txt',
+        ECMAP = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/matrix.ec'
     output:
-        BCS = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/spliced/output.barcodes.txt',
-        GENES = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/spliced/output.genes.txt',
-        MAT = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/spliced/output.mtx'
+        BCS = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/spliced/output.barcodes.txt',
+        GENES = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/spliced/output.genes.txt',
+        MAT = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/spliced/output.mtx'
     params:
-        MATDIR = directory('{OUTDIR}/{sample}/kb_velo/{RECIPE}/spliced')
+        MATDIR = directory('{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/spliced')
     threads:
         1
     run:
@@ -133,7 +133,7 @@ rule bus2mat_velocity_spliced:
 
             {EXEC['BUSTOOLS']} count \
                 --output $(dirname {output.MAT}) \
-                --genemap {T2G_VELO_DICT[wildcards.sample]} \
+                --genemap {T2G_VELO_DICT[wildcards.SAMPLE]} \
                 --ecmap {input.ECMAP} \
                 --txnames {input.TRANSCRIPTS} \
                 --genecounts \
@@ -146,15 +146,15 @@ rule bus2mat_velocity_spliced:
 # unspliced matrix
 rule bus2mat_velocity_unspliced:
     input:
-        UNSPLICED = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/unspliced.bus',
-        TRANSCRIPTS = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/transcripts.txt',
-        ECMAP = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/matrix.ec'
+        UNSPLICED = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/unspliced.bus',
+        TRANSCRIPTS = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/transcripts.txt',
+        ECMAP = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/matrix.ec'
     output:
-        BCS = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/unspliced/output.barcodes.txt',
-        GENES = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/unspliced/output.genes.txt',
-        MAT = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/unspliced/output.mtx'
+        BCS = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/unspliced/output.barcodes.txt',
+        GENES = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/unspliced/output.genes.txt',
+        MAT = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/unspliced/output.mtx'
     params:
-        MATDIR = directory('{OUTDIR}/{sample}/kb_velo/{RECIPE}/unspliced')
+        MATDIR = directory('{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/unspliced')
     threads:
         1
     run:
@@ -164,7 +164,7 @@ rule bus2mat_velocity_unspliced:
 
             {EXEC['BUSTOOLS']} count \
                 --output $(dirname {output.MAT})/ \
-                --genemap {T2G_VELO_DICT[wildcards.sample]} \
+                --genemap {T2G_VELO_DICT[wildcards.SAMPLE]} \
                 --ecmap {input.ECMAP} \
                 --txnames {input.TRANSCRIPTS} \
                 --genecounts \
@@ -177,19 +177,19 @@ rule bus2mat_velocity_unspliced:
 # gzip the count matrix, etc.
 rule compress_kb_outs_velocity:
     input:
-        BCS_SPLICED = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/spliced/output.barcodes.txt',
-        GENES_SPLICED = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/spliced/output.genes.txt',
-        MAT_SPLICED = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/spliced/output.mtx',
-        BCS_UNSPLICED = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/unspliced/output.barcodes.txt',
-        GENES_UNSPLICED = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/unspliced/output.genes.txt',
-        MAT_UNSPLICED = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/unspliced/output.mtx'
+        BCS_SPLICED = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/spliced/output.barcodes.txt',
+        GENES_SPLICED = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/spliced/output.genes.txt',
+        MAT_SPLICED = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/spliced/output.mtx',
+        BCS_UNSPLICED = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/unspliced/output.barcodes.txt',
+        GENES_UNSPLICED = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/unspliced/output.genes.txt',
+        MAT_UNSPLICED = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/unspliced/output.mtx'
     output:
-        BCS_SPLICED = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/spliced/output.barcodes.txt.gz',
-        GENES_SPLICED = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/spliced/output.genes.txt.gz',
-        MAT_SPLICED = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/spliced/output.mtx.gz',
-        BCS_UNSPLICED = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/unspliced/output.barcodes.txt.gz',
-        GENES_UNSPLICED = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/unspliced/output.genes.txt.gz',
-        MAT_UNSPLICED = '{OUTDIR}/{sample}/kb_velo/{RECIPE}/unspliced/output.mtx.gz'
+        BCS_SPLICED = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/spliced/output.barcodes.txt.gz',
+        GENES_SPLICED = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/spliced/output.genes.txt.gz',
+        MAT_SPLICED = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/spliced/output.mtx.gz',
+        BCS_UNSPLICED = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/unspliced/output.barcodes.txt.gz',
+        GENES_UNSPLICED = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/unspliced/output.genes.txt.gz',
+        MAT_UNSPLICED = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/unspliced/output.mtx.gz'
     threads:
         config['CORES']        
     run:

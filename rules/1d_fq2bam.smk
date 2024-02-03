@@ -1,10 +1,10 @@
 # convert fastq into an unaligned bam for simple passing to alignment tools
 rule fq2bam:
     input:
-        FINAL_R1_FQ = '{OUTDIR}/{sample}/tmp/final_R1.fq.gz',
-        FINAL_R2_FQ = '{OUTDIR}/{sample}/tmp/final_R2_.fq.gz'
+        FINAL_R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R1.fq.gz',
+        FINAL_R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R2_.fq.gz'
     output:
-        uBAM = temp('{OUTDIR}/{sample}/tmp/unaligned.bam')
+        uBAM = temp('{OUTDIR}/{SAMPLE}/tmp/unaligned.bam')
     threads:
         config['CORES']
     params:
@@ -21,7 +21,7 @@ rule fq2bam:
 #TODO: Rule to build whitelist if there isn't one explicitly given
 # rule build_whitelist:
 #     output:
-#         BB_WHITELIST = "{OUTDIR}/{sample}/bb/whitelist.txt"
+#         BB_WHITELIST = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt"
 #     threads:
 #         config['CORES']
 #     params:
@@ -37,9 +37,9 @@ rule fq2bam:
 
 rule barcode_ubam:
     input:
-        uBAM = '{OUTDIR}/{sample}/tmp/unaligned.bam'
+        uBAM = '{OUTDIR}/{SAMPLE}/tmp/unaligned.bam'
     output:
-        uBAM = '{OUTDIR}/{sample}/tmp/unaligned_bc.bam'
+        uBAM = '{OUTDIR}/{SAMPLE}/tmp/unaligned_bc.bam'
     threads:
         config['CORES']
     params:

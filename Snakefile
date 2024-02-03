@@ -77,7 +77,7 @@ rule all:
         #     TYPE=["counts.tsv.gz","raw/matrix.mtx.gz"]
         # ),
         # expand( # miRge3.0 pseudobulk analysis
-        #     '{OUTDIR}/{SAMPLE}/miRge_bulk/annotation.report.html',
+        #     '{OUTDIR}/{SAMPLE}/miRge_bulk/{RECIPE}/annotation.report.html',
         #     OUTDIR=config['OUTDIR'],
         #     SAMPLE=SAMPLES
         # ),
