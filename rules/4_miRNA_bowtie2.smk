@@ -32,9 +32,9 @@
 #   - Clip the 3' end of the read, to remove non-templated additions
 rule bowtie2_prep_bam_miRNA:
     input:
-        BAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.bam'
+        BAM = '{OUTDIR}/{SAMPLE}/STARsolo/Aligned.sortedByCoord.dedup.out.bam'
     output:
-        BAM = temp('{OUTDIR}/{sample}/iRNA/{RECIPE}/tmp.bam')
+        BAM = temp('{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/tmp.bam')
     params:
         OUTDIR = config['OUTDIR'],
         MEMLIMIT = config['MEMLIMIT'],
@@ -47,7 +47,7 @@ rule bowtie2_prep_bam_miRNA:
     run:
         shell(
             f"""
-            mkdir -p {OUTDIR}/{wildcards.sample}/miRNA
+            mkdir -p {OUTDIR}/{wildcards.SAMPLE}/miRNA
 
             {EXEC['SAMTOOLS']} view {input.BAM} \
             | awk -v tag=CB -f scripts/awk/bam_filterEmptyTag.awk - \
@@ -68,19 +68,19 @@ rule bowtie2_prep_bam_miRNA:
 # To generate: `bowtie2-build mmu.gold.fa.gz ./index > build.log`
 rule bowtie2_align_mature_miRNA:
     input:
-        BAM = '{OUTDIR}/{sample}/iRNA/{RECIPE}/tmp.bam'
-        # R1_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R1_final_filtered_short.fq.gz',
-        # R2_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/{sample}_R2_final_filtered_short.fq.gz'        
+        BAM = '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/tmp.bam'
+        # R1_FQ_FILTERED = '{OUTDIR}/{SAMPLE}/tmp/{SAMPLE}_R1_final_filtered_short.fq.gz',
+        # R2_FQ_FILTERED = '{OUTDIR}/{SAMPLE}/tmp/{SAMPLE}_R2_final_filtered_short.fq.gz'        
     output:
-        TMP_ALIGNED_BAM = temp('{OUTDIR}/{sample}/iRNA/{RECIPE}/tmp.aligned.bam'),
-        MATURE_BAM = '{OUTDIR}/{sample}/iRNA/{RECIPE}/mature.aligned.bam',
-        UNALIGNED_BAM = temp('{OUTDIR}/{sample}/iRNA/{RECIPE}/unaligned.bam')
+        TMP_ALIGNED_BAM = temp('{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/tmp.aligned.bam'),
+        MATURE_BAM = '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/mature.aligned.bam',
+        UNALIGNED_BAM = temp('{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/unaligned.bam')
     params:
         OUTDIR = config['OUTDIR'],
         MEMLIMIT = config['MEMLIMIT'],
         REF = config['miRNA_MATURE_INDEX']
     log:
-        '{OUTDIR}/{sample}/iRNA/{RECIPE}/bowtie2_mature.log'    
+        '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/bowtie2_mature.log'    
     threads:
         # 1
         config['CORES']
@@ -122,15 +122,15 @@ rule bowtie2_align_mature_miRNA:
 # Align to hairpin miR reference, toss unaligned
 rule bowtie2_align_hairpin_miRNA:
     input:
-        BAM = '{OUTDIR}/{sample}/iRNA/{RECIPE}/unaligned.bam'      
+        BAM = '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/unaligned.bam'      
     output:
-        BAM = '{OUTDIR}/{sample}/iRNA/{RECIPE}/hairpin.aligned.bam'
+        BAM = '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/hairpin.aligned.bam'
     params:
         OUTDIR = config['OUTDIR'],
         MEMLIMIT = config['MEMLIMIT'],
         REF = config['miRNA_HAIRPIN_INDEX']
     log:
-        '{OUTDIR}/{sample}/iRNA/{RECIPE}/bowtie2_hairpin.log'    
+        '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/bowtie2_hairpin.log'    
     threads:
         # 1
         config['CORES']
@@ -153,10 +153,10 @@ rule bowtie2_align_hairpin_miRNA:
 # Merge hairpin & mature alignment records
 rule merge_aligned_bams_miRNA:
     input:
-        MATURE_BAM = '{OUTDIR}/{sample}/iRNA/{RECIPE}/mature.aligned.bam',
-        HAIRPIN_BAM = '{OUTDIR}/{sample}/iRNA/{RECIPE}/hairpin.aligned.bam'
+        MATURE_BAM = '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/mature.aligned.bam',
+        HAIRPIN_BAM = '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/hairpin.aligned.bam'
     output:
-        BAM = '{OUTDIR}/{sample}/iRNA/{RECIPE}/aligned.bam'
+        BAM = '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/aligned.bam'
     params:
         OUTDIR = config['OUTDIR'],
         MEMLIMIT = config['MEMLIMIT'],
@@ -175,9 +175,9 @@ rule merge_aligned_bams_miRNA:
 # Index the deduplicated .bam file
 rule sortAlignedBAM_miRNA:
     input:
-        BAM = '{OUTDIR}/{sample}/iRNA/{RECIPE}/aligned.bam'
+        BAM = '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/aligned.bam'
     output:
-        BAM = temp('{OUTDIR}/{sample}/iRNA/{RECIPE}/aligned.sorted.bam')
+        BAM = temp('{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/aligned.sorted.bam')
     threads:
         config['CORES']
     run:
@@ -191,9 +191,9 @@ rule sortAlignedBAM_miRNA:
 # Tag bam w/ chromosome/miRNA it aligned to (saved in "GN" tag, like STARsolo)
 rule tagSortedBam_miRNA:
     input:
-        BAM = '{OUTDIR}/{sample}/iRNA/{RECIPE}/aligned.sorted.bam'
+        BAM = '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/aligned.sorted.bam'
     output:
-        BAM = '{OUTDIR}/{sample}/iRNA/{RECIPE}/aligned.sorted.tagged.bam' #TODO: add temp() in favor of just keeping the deduped bam?
+        BAM = '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/aligned.sorted.tagged.bam' #TODO: add temp() in favor of just keeping the deduped bam?
     params:
         OUTDIR = config['OUTDIR']
     threads:
@@ -212,9 +212,9 @@ rule tagSortedBam_miRNA:
 # Index the sorted & deduplicated .bam file
 rule indexSortedTaggedBAM_miRNA:
     input:
-        BAM = '{OUTDIR}/{sample}/iRNA/{RECIPE}/aligned.sorted.tagged.bam'
+        BAM = '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/aligned.sorted.tagged.bam'
     output:
-        BAI = temp('{OUTDIR}/{sample}/iRNA/{RECIPE}/aligned.sorted.tagged.bam.bai')
+        BAI = temp('{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/aligned.sorted.tagged.bam.bai')
     threads:
         config['CORES']
     run:
@@ -227,14 +227,14 @@ rule indexSortedTaggedBAM_miRNA:
 # Generate count matrix w/ umi-tools for miRNAs
 rule umitools_count_miRNA:
     input:
-        BAM = '{OUTDIR}/{sample}/iRNA/{RECIPE}/aligned.sorted.tagged.bam',
-        BAI = '{OUTDIR}/{sample}/iRNA/{RECIPE}/aligned.sorted.tagged.bam.bai'
+        BAM = '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/aligned.sorted.tagged.bam',
+        BAI = '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/aligned.sorted.tagged.bam.bai'
     output:        
-        COUNTS = '{OUTDIR}/{sample}/iRNA/{RECIPE}/counts.tsv.gz'
+        COUNTS = '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/counts.tsv.gz'
     params:
         OUTDIR = config['OUTDIR']
     log:
-        '{OUTDIR}/{sample}/iRNA/{RECIPE}/count.log'
+        '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/count.log'
     threads:
         1
     run:
@@ -257,11 +257,11 @@ rule umitools_count_miRNA:
 # Convert the long-format counts into a format that people can actually use
 rule counts_to_sparse_miRNA:
     input:
-        COUNTS = '{OUTDIR}/{sample}/iRNA/{RECIPE}/counts.tsv.gz'
+        COUNTS = '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/counts.tsv.gz'
     output:
-        BCS = '{OUTDIR}/{sample}/iRNA/{RECIPE}/raw/barcodes.tsv.gz',
-        FEATS = '{OUTDIR}/{sample}/iRNA/{RECIPE}/raw/features.tsv.gz',
-        COUNTS = '{OUTDIR}/{sample}/iRNA/{RECIPE}/raw/matrix.mtx.gz'
+        BCS = '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/raw/barcodes.tsv.gz',
+        FEATS = '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/raw/features.tsv.gz',
+        COUNTS = '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/raw/matrix.mtx.gz'
     params:
         OUTDIR = config['OUTDIR']
     threads:
@@ -279,16 +279,16 @@ rule counts_to_sparse_miRNA:
 # Dedup the .bam (do NOT split across chromosomes, b/c of custom reference)
 rule umitools_dedupSortedBAM_miRNA:
     input:
-        BB_WHITELIST = "{OUTDIR}/{sample}/bb/whitelist.txt",
-        BAM = '{OUTDIR}/{sample}/iRNA/{RECIPE}/aligned.sorted.tagged.bam'
+        BB_WHITELIST = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
+        BAM = '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/aligned.sorted.tagged.bam'
     output:
-        BAM = '{OUTDIR}/{sample}/iRNA/{RECIPE}/aligned.sorted.tagged.dedup.bam'
+        BAM = '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/aligned.sorted.tagged.dedup.bam'
     threads:
         config['CORES']
     log:
-        '{OUTDIR}/{sample}/iRNA/{RECIPE}/dedup.log'
+        '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/dedup.log'
     run:
-        tmp_recipe = RECIPE_DICT[wildcards.sample]
+        tmp_recipe = RECIPE_DICT[wildcards.SAMPLE]
 
         whitelist = input.BB_WHITELIST
 
@@ -299,7 +299,7 @@ rule umitools_dedupSortedBAM_miRNA:
                 {whitelist} \
                 {threads} \
                 {output.BAM} \
-                {OUTDIR}/{wildcards.sample}/tmp/dedup \
+                {OUTDIR}/{wildcards.SAMPLE}/tmp/dedup \
                 {log}
             """
         )
@@ -308,9 +308,9 @@ rule umitools_dedupSortedBAM_miRNA:
 # Index the sorted & deduplicated .bam file
 rule indexSortedTaggedDedupBAM_miRNA:
     input:
-        BAM = '{OUTDIR}/{sample}/iRNA/{RECIPE}/aligned.sorted.tagged.dedup.bam'
+        BAM = '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/aligned.sorted.tagged.dedup.bam'
     output:
-        BAI = '{OUTDIR}/{sample}/iRNA/{RECIPE}/aligned.sorted.tagged.dedup.bam.bai'
+        BAI = '{OUTDIR}/{SAMPLE}/iRNA/{RECIPE}/aligned.sorted.tagged.dedup.bam.bai'
     threads:
         config['CORES']
     run:

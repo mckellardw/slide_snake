@@ -1,13 +1,13 @@
 # Filter .fastqs to only keep short reads (for small RNA stuff)
 rule shortPass_filter_fromfastq:
     input:
-        R1_FQ = '{OUTDIR}/{sample}/tmp/final_R1.fq.gz',
-        R2_FQ = '{OUTDIR}/{sample}/tmp/final_R2.fq.gz',
-        R1_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/final_filtered_R1.fq.gz',
-        R2_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/final_filtered_R2.fq.gz',
+        R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R1.fq.gz',
+        R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R2.fq.gz',
+        R1_FQ_FILTERED = '{OUTDIR}/{SAMPLE}/tmp/final_filtered_R1.fq.gz',
+        R2_FQ_FILTERED = '{OUTDIR}/{SAMPLE}/tmp/final_filtered_R2.fq.gz',
     output:        
-        R1_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/final_filtered_short_R1.fq.gz',
-        R2_FQ_FILTERED = '{OUTDIR}/{sample}/tmp/final_filtered_short_R2.fq.gz',
+        R1_FQ_FILTERED = '{OUTDIR}/{SAMPLE}/tmp/final_filtered_short_R1.fq.gz',
+        R2_FQ_FILTERED = '{OUTDIR}/{SAMPLE}/tmp/final_filtered_short_R2.fq.gz',
     params:
         OUTDIR = config['OUTDIR'],
         MEMLIMIT = config['MEMLIMIT'],
@@ -17,7 +17,7 @@ rule shortPass_filter_fromfastq:
     priority:
         42
     run:
-        recipe = RECIPE_DICT[wildcards.sample]
+        recipe = RECIPE_DICT[wildcards.SAMPLE] #TODO
 
         # Select R2 based on alignment recipe
         if "rRNA" in recipe: # Use trimmed & rRNA-filtered .fq's

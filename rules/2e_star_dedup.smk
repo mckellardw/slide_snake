@@ -4,37 +4,37 @@
 #TODO: add exec paths for samtools, bamtools
 rule umitools_dedupBAM:
     input:
-        BB_WHITELIST = "{OUTDIR}/{sample}/bb/whitelist.txt",
-        BB_1 = "{OUTDIR}/{sample}/bb/whitelist_1.txt",
-        BB_2 = "{OUTDIR}/{sample}/bb/whitelist_2.txt",
-        SORTEDBAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.out.bam'
+        BB_WHITELIST = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
+        BB_1 = "{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
+        BB_2 = "{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
+        SORTEDBAM = '{OUTDIR}/{SAMPLE}/STARsolo/Aligned.sortedByCoord.out.bam'
     output:
-        DEDUPBAM = '{OUTDIR}/{sample}/STARsolo/Aligned.sortedByCoord.dedup.out.bam'
+        DEDUPBAM = '{OUTDIR}/{SAMPLE}/STARsolo/Aligned.sortedByCoord.dedup.out.bam'
     threads:
         config['CORES']
     log:
-        '{OUTDIR}/{sample}/dedup.log'
+        log = '{OUTDIR}/{SAMPLE}/dedup.log'
     run:
-        tmp_recipe = RECIPE_DICT[wildcards.sample]
+        tmp_recipe = RECIPE_DICT[wildcards.SAMPLE]
 
         shell(
             f"""
-            bash scripts/split_dedup.sh \
+            bash scripts/bash/split_dedup.sh \
                 {input.SORTEDBAM} \
                 {input.BB_WHITELIST} \
                 {threads} \
                 {output.DEDUPBAM} \
-                {OUTDIR}/{wildcards.sample}/tmp/dedup \
-                | tee {log}
+                {OUTDIR}/{wildcards.SAMPLE}/tmp/dedup \
+            | tee {log.log}
             """
         )
 
 # Index the deduplicated .bam file
 rule umitools_indexDedupBAM:
     input:
-        SORTEDBAM = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.bam'
+        SORTEDBAM = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out.bam'
     output:
-        BAI = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.bam.bai'
+        BAI = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out.bam.bai'
     threads:
         config['CORES']
     run:
@@ -47,10 +47,10 @@ rule umitools_indexDedupBAM:
 # Split .bam file by strand for IGV browsing
 rule strand_split_dedup_bam:
     input:
-        DEDUPBAM = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.bam'
+        DEDUPBAM = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out.bam'
     output:
-        FWDBAM = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.fwd.bam',
-        REVBAM = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.rev.bam'
+        FWDBAM = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out.fwd.bam',
+        REVBAM = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out.rev.bam'
     threads:
         1
     run:
@@ -64,11 +64,11 @@ rule strand_split_dedup_bam:
 # Index the split/deduped bam files
 rule indexSplitBAMs:
     input:
-        FWDBAM = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.fwd.bam',
-        REVBAM = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.rev.bam'
+        FWDBAM = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out.fwd.bam',
+        REVBAM = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out.rev.bam'
     output:
-        FWDBAI = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.fwd.bam.bai',
-        REVBAI = '{OUTDIR}/{sample}/Aligned.sortedByCoord.dedup.out.rev.bam.bai'
+        FWDBAI = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out.fwd.bam.bai',
+        REVBAI = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out.rev.bam.bai'
     threads:
         config['CORES']
     run:

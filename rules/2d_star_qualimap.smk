@@ -6,20 +6,19 @@
 ## qualimap on deduplicated/aligned reads
 rule qualimapQC:
     input:
-        SORTEDBAM = '{OUTDIR}/{sample}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out.bam'
+        SORTEDBAM = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out.bam'
     output:
-        qualimapDir = directory('{OUTDIR}/{sample}/qualimap/{RECIPE}'),
-        qualimapReport_txt = '{OUTDIR}/{sample}/qualimap/{RECIPE}/rnaseq_qc_results.txt',
-        qualimapReport_html = '{OUTDIR}/{sample}/qualimap/{RECIPE}/qualimapReport.html'
+        qualimapDir = directory('{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}'),
+        qualimapReport_txt = '{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/rnaseq_qc_results.txt',
+        qualimapReport_html = '{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/qualimapReport.html'
     params:
-        GENES_GTF = lambda wildcards: GTF_DICT[wildcards.sample]
+        GENES_GTF = lambda wildcards: GTF_DICT[wildcards.SAMPLE]
     threads:
         1
     run:
         shell(
             f"""
             mkdir -p {output.qualimapDir}
-            cd {output.qualimapDir}
 
             {EXEC['QUALIMAP']} rnaseq \
                 -bam {input.SORTEDBAM} \
@@ -31,14 +30,15 @@ rule qualimapQC:
                 -outformat html
             """ 
         )
+        # cd {output.qualimapDir}
         # -nt {threads} \
 
 
 rule qualimap_summary2csv:
     input:
-        qualimapReport_txt = '{OUTDIR}/{sample}/qualimap/{RECIPE}/rnaseq_qc_results.txt'
+        qualimapReport_txt = '{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/rnaseq_qc_results.txt'
     output:
-        qualimapReport_csv = '{OUTDIR}/{sample}/qualimap/{RECIPE}/rnaseq_qc_result.csv'
+        qualimapReport_csv = '{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/rnaseq_qc_result.csv'
     threads:
         1
     run:

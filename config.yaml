@@ -10,7 +10,7 @@
 SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/visium/vy3.csv
 
 # STARsolo parameters
-CORES: 8 # how many cores to give each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
+CORES: 16 # how many cores to give each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
 MEMLIMIT: 127000000000  # limit in bytes
 MEMLIMIT_MB: 127000     # limit in megabytes
 MEMLIMIT_GB: 127G       # mem limit for kallisto
@@ -36,6 +36,7 @@ EXEC:
   BUSTOOLS: bustools 
   CUTADAPT: cutadapt 
   FASTQC: fastqc 
+  FASTX_COLLAPSER: fastx_collapser
   KALLISTO: kallisto
   MIRGE: miRge3.0
   PIGZ: pigz
@@ -43,7 +44,7 @@ EXEC:
   SAMTOOLS: samtools
   STAR: STAR 
   UMITOOLS: umi_tools
-  FASTX_COLLAPSER: fastx_collapser
+  VSEARCH: vsearch
 
 ########################################################################################################
 # Resources - file paths
