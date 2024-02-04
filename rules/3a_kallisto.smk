@@ -6,8 +6,10 @@ rule kallisto_align:
     input:
         R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R1.fq.gz',
         R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R2.fq.gz',
-        R1_FQ_FILTERED = '{OUTDIR}/{SAMPLE}/tmp/final_filtered_R1.fq.gz',
-        R2_FQ_FILTERED = '{OUTDIR}/{SAMPLE}/tmp/final_filtered_R2.fq.gz',
+        R1_FQ_STAR_FILTERED = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz',
+        R2_FQ_STAR_FILTERED = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz',
+        R1_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz',
+        R2_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz',
         BB = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt"
     output:
         BUS = temp('{OUTDIR}/{SAMPLE}/kb/{RECIPE}/output.bus'),
@@ -32,13 +34,14 @@ rule kallisto_align:
         KB_X = RECIPE_SHEET["kb.x"][recipe]
         
         # Select input reads based on alignment recipe
+        # Select input reads based on alignment recipe
         if "rRNA.STAR" in recipe: # Use trimmed & STAR-rRNA-filtered .fq's
-            R1 = input.R1_FQ_FILTERED
-            R2 = input.R2_FQ_FILTERED
+            R1 = input.R1_FQ_STAR_FILTERED
+            R2 = input.R2_FQ_STAR_FILTERED
         elif "rRNA.bwa" in recipe: #TODO Use trimmed & bwa-rRNA-filtered .fq's
             print("TODO")
-            # R1 = input.R1_FQ_FILTERED
-            # R2 = input.R2_FQ_FILTERED
+            R1 = input.R1_FQ_BWA_FILTERED
+            R2 = input.R2_FQ_BWA_FILTERED
         elif "rRNA" not in recipe: # just trimmed .fq's
             R1 = input.R1_FQ
             R2 = input.R2_FQ

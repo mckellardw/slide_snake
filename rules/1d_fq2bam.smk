@@ -35,17 +35,17 @@ rule fq2bam:
 #             """
 #         )
 
-rule barcode_ubam:
-    input:
-        uBAM = '{OUTDIR}/{SAMPLE}/tmp/unaligned.bam'
-    output:
-        uBAM = '{OUTDIR}/{SAMPLE}/tmp/unaligned_bc.bam'
-    threads:
-        config['CORES']
-    params:
-    run:
-        shell(
-            f"""
-            #TODO
-            """
-        )
+# rule barcode_ubam:
+#     input:
+#         uBAM = '{OUTDIR}/{SAMPLE}/tmp/unaligned.bam'
+#     output:
+#         uBAM = '{OUTDIR}/{SAMPLE}/tmp/unaligned_bc.bam'
+#     threads:
+#         config['CORES']
+#     params:
+#     run:
+#         shell(
+#             f"""
+#             #TODO
+#             """
+#         )

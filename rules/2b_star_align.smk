@@ -11,14 +11,16 @@ rule STARsolo_align:
         # R1_FQ_InternalTrim = '{OUTDIR}/{SAMPLE}/tmp/{SAMPLE}_R1_InternalTrim.fq.gz',
         R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R1.fq.gz',
         R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R2.fq.gz',
-        R1_FQ_FILTERED = '{OUTDIR}/{SAMPLE}/tmp/final_filtered_R1.fq.gz',
-        R2_FQ_FILTERED = '{OUTDIR}/{SAMPLE}/tmp/final_filtered_R2.fq.gz',
+        R1_FQ_STAR_FILTERED = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz',
+        R2_FQ_STAR_FILTERED = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz',
+        R1_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz',
+        R2_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz',
         BB_WHITELIST = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
         BB_1 = "{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
         BB_2 = "{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
         BB_ADAPTER = "{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt"
     output:
-        SORTEDBAM = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.bam', #TODO: add temp()
+        BAM = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.bam', #TODO: add temp()
         UNMAPPED1 = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Unmapped.out.mate1',
         UNMAPPED2 = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Unmapped.out.mate2',
         # MATS = [f"{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{MAT}.mtx" for SAMPLE in SAMPLES for RECIPE in RECIPE_DICT[SAMPLE] for SOLO in ["Gene","GeneFull"] for MAT in ["matrix", "UniqueAndMult-EM"]],
@@ -58,31 +60,26 @@ rule STARsolo_align:
         soloAdapter = RECIPE_SHEET["STAR.soloAdapter"][recipe]
         extraSTAR = RECIPE_SHEET["STAR.extra"][recipe]
 
-        #param handling for different alignment strategies
+        #param handling for different SlideSeq R1 strategies
         if "stomics" in recipe:
             whitelist = input.BB_WHITELIST
         elif "noTrim" in recipe:
-            # ["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
             whitelist = f"{input.BB_1} {input.BB_2}"
-            # R1 = input.R1_FQ
         elif "internalTrim" in recipe:
-            # ["seeker_v3.1_internalTrim_total"]:
             whitelist = input.BB_WHITELIST
-            # R1 = input.R1_FQ_InternalTrim
         elif "adapterInsert" in recipe:
             whitelist = input.BB_ADAPTER
-            # R1 = input.R1_FQ
         else:
             whitelist = input.BB_WHITELIST
 
         # Select input reads based on alignment recipe
         if "rRNA.STAR" in recipe: # Use trimmed & STAR-rRNA-filtered .fq's
-            R1 = input.R1_FQ_FILTERED
-            R2 = input.R2_FQ_FILTERED
+            R1 = input.R1_FQ_STAR_FILTERED
+            R2 = input.R2_FQ_STAR_FILTERED
         elif "rRNA.bwa" in recipe: #TODO Use trimmed & bwa-rRNA-filtered .fq's
             print("TODO")
-            # R1 = input.R1_FQ_FILTERED
-            # R2 = input.R2_FQ_FILTERED
+            R1 = input.R1_FQ_BWA_FILTERED
+            R2 = input.R2_FQ_BWA_FILTERED
         elif "rRNA" not in recipe: # just trimmed .fq's
             R1 = input.R1_FQ
             R2 = input.R2_FQ
@@ -94,11 +91,11 @@ rule STARsolo_align:
         #WASP?
         shell(
             f"""
-            mkdir -p {OUTDIR}/{wildcards.SAMPLE}/STARsolo/{recipe}
+            mkdir -p $(dirname {output.BAM})
 
             {EXEC['STAR']} \
                 --runThreadN {threads} \
-                --outFileNamePrefix {OUTDIR}/{wildcards.SAMPLE}/STARsolo/{recipe}/ \
+                --outFileNamePrefix $(dirname {output.BAM}) \
                 --outSAMtype BAM SortedByCoordinate \
                 --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
                 --readFilesCommand zcat \
@@ -191,7 +188,7 @@ rule compress_STAR_outs:
 # Index .bam output by STAR
 rule indexSortedBAM:
     input:
-        SORTEDBAM = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.bam'
+        BAM = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.bam'
     output:
         BAI = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.bam.bai'
     threads:
@@ -200,6 +197,6 @@ rule indexSortedBAM:
     run:
         shell(
             f"""
-            {EXEC['SAMTOOLS']} index -@ {threads} {input.SORTEDBAM}
+            {EXEC['SAMTOOLS']} index -@ {threads} {input.BAM}
             """
         )

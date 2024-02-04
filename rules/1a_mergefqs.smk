@@ -15,7 +15,11 @@ rule merge_fastqs:
             shell(f"cp {params.R2_FQ} {output.MERGED_R2_FQ}")
         else: # multi-fastq input; concatenate inputs
             print("Concatenating",len(params.R1_FQ.split(" ")), ".fastq's for", wildcards.SAMPLE)
-            shell(f"mkdir -p {params.TMP_DIR}")
-            shell(f"zcat {params.R1_FQ} > {params.TMP_DIR}/{wildcards.SAMPLE}_R1.fq")
-            shell(f"zcat {params.R2_FQ} > {params.TMP_DIR}/{wildcards.SAMPLE}_R2.fq")
-            shell(f"pigz -p {threads} {params.TMP_DIR}/*.fq")
+            shell(
+                f"""
+                mkdir -p {params.TMP_DIR}
+                zcat {params.R1_FQ} > {params.TMP_DIR}/merged_R1.fq
+                zcat {params.R2_FQ} > {params.TMP_DIR}/merged_R2.fq
+                {EXEC['PIGZ']} -p {threads} {params.TMP_DIR}/*.fq
+                """
+            )

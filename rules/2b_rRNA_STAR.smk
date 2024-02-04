@@ -124,8 +124,8 @@ rule rename_compress_unmapped_star:
         UNMAPPED1 = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Unmapped.out.mate1',
         UNMAPPED2 = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Unmapped.out.mate2'
     output:
-        FILTERED1_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_filtered_R1.fq.gz',
-        FILTERED2_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_filtered_R2.fq.gz'
+        FILTERED1_FQ = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz',
+        FILTERED2_FQ = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz'
     params:
     threads:
         config['CORES']
@@ -142,8 +142,8 @@ rule rename_compress_unmapped_star:
 #  Run fastqc on unmapped reads;
 rule rRNA_filtered_fastqc_star:
     input:
-        FILTERED1_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_filtered_R1.fq.gz',
-        FILTERED2_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_filtered_R2.fq.gz',
+        FILTERED1_FQ = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz',
+        FILTERED2_FQ = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz',
     output:
         FQC_DIR = directory('{OUTDIR}/{SAMPLE}/fastqc/rRNA_filtered_STAR')
     params:

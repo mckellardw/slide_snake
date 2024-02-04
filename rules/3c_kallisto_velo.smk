@@ -8,8 +8,10 @@ rule kallisto_align_velocity:
     input:
         R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R1.fq.gz',
         R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R2.fq.gz',
-        R1_FQ_FILTERED = '{OUTDIR}/{SAMPLE}/tmp/final_filtered_R1.fq.gz',
-        R2_FQ_FILTERED = '{OUTDIR}/{SAMPLE}/tmp/final_filtered_R2.fq.gz',
+        R1_FQ_STAR_FILTERED = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz',
+        R2_FQ_STAR_FILTERED = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz',
+        R1_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz',
+        R2_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz',
         BB = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt"
     output:
         BUS = temp('{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/output.bus'),
@@ -25,19 +27,25 @@ rule kallisto_align_velocity:
     priority:
         42
     run:
-        recipe = RECIPE_DICT[wildcards.SAMPLE]
-        KB_IDX = IDX_VELO_DICT[wildcards.SAMPLE]
-        BB_WHITELIST = f"{input.BB}"
+        # recipe = RECIPE_DICT[wildcards.SAMPLE]
+        recipe = wildcards.RECIPE
         
+        KB_IDX = IDX_DICT[wildcards.SAMPLE]        
         KB_X = RECIPE_SHEET["kb.x"][recipe]
-
-        # Select R2 based on alignment recipe
-        if "rRNA" in recipe: # Use trimmed & rRNA-filtered .fq's
-            R1 = input.R1_FQ_FILTERED
-            R2 = input.R2_FQ_FILTERED
-        else: # just trimmed .fq's
+        
+        # Select input reads based on alignment recipe
+        if "rRNA.STAR" in recipe: # Use trimmed & STAR-rRNA-filtered .fq's
+            R1 = input.R1_FQ_STAR_FILTERED
+            R2 = input.R2_FQ_STAR_FILTERED
+        elif "rRNA.bwa" in recipe: #TODO Use trimmed & bwa-rRNA-filtered .fq's
+            print("TODO")
+            R1 = input.R1_FQ_BWA_FILTERED
+            R2 = input.R2_FQ_BWA_FILTERED
+        elif "rRNA" not in recipe: # just trimmed .fq's
             R1 = input.R1_FQ
             R2 = input.R2_FQ
+        else:
+            print("I just don't know what to do with myself...")
 
         shell(
             f"""
@@ -64,7 +72,7 @@ rule split_bus_velocity_spliced:
     output:
         SPLICED = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/spliced.bus'
     log:
-        '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/split_bus_velocity_spliced.log'
+        log = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/split_bus_velocity_spliced.log'
     threads:
         1
     run:
@@ -79,7 +87,8 @@ rule split_bus_velocity_spliced:
                 --capture {KB_IDX}/cDNA.t2c \
                 --ecmap {input.ECMAP} \
                 --txnames {input.TRANSCRIPTS} \
-                {input.BUS}
+                {input.BUS} \
+            1> {log.log}
             """
         )
 
@@ -93,7 +102,7 @@ rule split_bus_velocity_unspliced:
     output:
         UNSPLICED = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/unspliced.bus'
     log:
-        '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/split_bus_velocity_spliced.log'
+        log = '{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/split_bus_velocity_unspliced.log'
     threads:
         1
     run:
@@ -108,7 +117,8 @@ rule split_bus_velocity_unspliced:
                 --capture {KB_IDX}/introns.t2c \
                 --ecmap {input.ECMAP} \
                 --txnames {input.TRANSCRIPTS} \
-                {input.BUS}
+                {input.BUS} \
+            1> {log.log}
             """
         )
 
