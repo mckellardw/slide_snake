@@ -31,45 +31,44 @@ rule bwa_align_rRNA:
         # soloAdapter = RECIPE_SHEET["STAR.soloAdapter"][tmp_recipe]
         # extraSTAR = RECIPE_SHEET["STAR.extra"][tmp_recipe]
 
-        if "bwa" in tmp_recipe:
-            # Align to rRNA ref w/ `bwa mem` for cleaner/faster rRNA filtering 
-            ## Add empty count mat file for 
-            ##TODO: fix .fasta passing here (*.fa is dangerous...)
-            ##TODO incorporate VASAseq style "long"/short read handling with multiple align steps
-            shell(
-                f"""
-                {EXEC['BWA']} mem \
-                    -t {threads} \
-                    {STAR_REF}/*.fa \
-                    {input.R1_FQ} {input.R2_FQ} \
-                | {EXEC['SAMTOOLS']} sort \
-                    -@ {threads} \
-                | {EXEC['SAMTOOLS']} fastq \
-                    -f 4 \
-                    -1 {output.R1_FQ_BWA_FILTERED} \
-                    -2 {output.R2_FQ_BWA_FILTERED} \
-                    -0 /dev/null \
-                | tee {log.log}
-                """
-            )
+        # Align to rRNA ref w/ `bwa mem` for cleaner/faster rRNA filtering 
+        ## Add empty count mat file for 
+        ##TODO: fix .fasta passing here (*.fa is dangerous...)
+        ##TODO incorporate VASAseq style "long"/short read handling with multiple align steps
+        shell(
+            f"""
+            {EXEC['BWA']} mem \
+                -t {threads} \
+                {STAR_REF}/*.fa \
+                {input.R1_FQ} {input.R2_FQ} \
+            | {EXEC['SAMTOOLS']} sort \
+                -@ {threads} \
+            | {EXEC['SAMTOOLS']} fastq \
+                -f 4 \
+                -1 {output.R1_FQ_BWA_FILTERED} \
+                -2 {output.R2_FQ_BWA_FILTERED} \
+                -0 /dev/null \
+            | tee {log.log}
+            """
+        )
 
 
-                # {EXEC['BWA']} mem \
-                #     -t {threads} \
-                #     {STAR_REF}/*.fa \
-                #     {input.R1_FQ} {input.R2_FQ} \
-                # > {OUTDIR}/{wildcards.SAMPLE}/STARsolo_rRNA/Aligned.sortedByCoord.out.sam \
-                # | tee {log.log}
+        # {EXEC['BWA']} mem \
+        #     -t {threads} \
+        #     {STAR_REF}/*.fa \
+        #     {input.R1_FQ} {input.R2_FQ} \
+        # > {OUTDIR}/{wildcards.SAMPLE}/STARsolo_rRNA/Aligned.sortedByCoord.out.sam \
+        # | tee {log.log}
 
-                # {EXEC['SAMTOOLS']} sort \
-                #     -@ {threads} \
-                #     {OUTDIR}/{wildcards.SAMPLE}/STARsolo_rRNA/Aligned.sortedByCoord.out.sam \
-                # > {OUTDIR}/{wildcards.SAMPLE}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam
+        # {EXEC['SAMTOOLS']} sort \
+        #     -@ {threads} \
+        #     {OUTDIR}/{wildcards.SAMPLE}/STARsolo_rRNA/Aligned.sortedByCoord.out.sam \
+        # > {OUTDIR}/{wildcards.SAMPLE}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam
 
-                # {EXEC['SAMTOOLS']} fastq \
-                #     -f 4 -1 {output.UNMAPPED2} \
-                #     -2 {output.UNMAPPED1} \
-                #     -0 /dev/null {OUTDIR}/{wildcards.SAMPLE}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam
+        # {EXEC['SAMTOOLS']} fastq \
+        #     -f 4 -1 {output.UNMAPPED2} \
+        #     -2 {output.UNMAPPED1} \
+        #     -0 /dev/null {OUTDIR}/{wildcards.SAMPLE}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam
 
 
 rule compress_unmapped_bwa:
