@@ -3,14 +3,16 @@
 #TODO- dedup rRNA .bam files
 rule bwa_align_rRNA:
     input:
-        uBAM = temp('{OUTDIR}/{SAMPLE}/tmp/unaligned_barcoded.bam')
+        # uBAM = temp('{OUTDIR}/{SAMPLE}/tmp/unaligned_barcoded.bam'),        
+        R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R1.fq.gz',
+        R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R2.fq.gz',
         BB_WHITELIST = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
         BB_1 = "{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
         BB_2 = "{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
         BB_ADAPTER = "{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt"
     output:
-        UNMAPPED1 = '{OUTDIR}/{SAMPLE}/rRNA/bwa/unmapped_R1.fq',
-        UNMAPPED2 = '{OUTDIR}/{SAMPLE}/rRNA/bwa/unmapped_R2.fq'
+        R1_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq',
+        R2_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq'
     params:
         MEMLIMIT = config['MEMLIMIT']
     log:
@@ -44,8 +46,8 @@ rule bwa_align_rRNA:
                     -@ {threads} \
                 | {EXEC['SAMTOOLS']} fastq \
                     -f 4 \
-                    -1 {output.UNMAPPED2} \
-                    -2 {output.UNMAPPED1} \
+                    -1 {output.R1_FQ_BWA_FILTERED} \
+                    -2 {output.R2_FQ_BWA_FILTERED} \
                     -0 /dev/null \
                 | tee {log.log}
                 """
@@ -72,11 +74,11 @@ rule bwa_align_rRNA:
 
 rule compress_unmapped_bwa:
     input:
-        UNMAPPED1 = '{OUTDIR}/{SAMPLE}/rRNA/bwa/unmapped_R1.fq',
-        UNMAPPED2 = '{OUTDIR}/{SAMPLE}/rRNA/bwa/unmapped_R2.fq'
-    output:
-        UNMAPPED1 = '{OUTDIR}/{SAMPLE}/rRNA/bwa/unmapped_R1.fq.gz',
-        UNMAPPED2 = '{OUTDIR}/{SAMPLE}/rRNA/bwa/unmapped_R2.fq.gz'
+        R1_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq',
+        R2_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq'
+    output:        
+        R1_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz',
+        R2_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz'
     params:
     threads:
         config['CORES']
@@ -91,8 +93,8 @@ rule compress_unmapped_bwa:
 #  Run fastqc on unmapped reads;
 rule rRNA_filtered_fastqc_bwa:
     input:
-        FILTERED1_FQ = '{OUTDIR}/{SAMPLE}/rRNA/bwa/unmapped_R1.fq.gz',
-        FILTERED2_FQ = '{OUTDIR}/{SAMPLE}/rRNA/bwa/unmapped_R2.fq.gz'
+        R1_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz',
+        R2_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz'
     output:
         FQC_DIR = directory('{OUTDIR}/{SAMPLE}/fastqc/rRNA_filtered_bwa')
     params:
@@ -108,6 +110,6 @@ rule rRNA_filtered_fastqc_bwa:
                 -o {output.FQC_DIR} \
                 -t {threads} \
                 -a {params.adapters} \
-                {input.FILTERED1_FQ} {input.FILTERED2_FQ}
+                {input}
             """
         )

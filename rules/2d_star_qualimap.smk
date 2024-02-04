@@ -1,7 +1,4 @@
-
-#############################################
-## QC on STAR outputs
-#############################################
+# QC on STAR outputs
 
 ## qualimap on deduplicated/aligned reads
 rule qualimapQC:

@@ -161,9 +161,10 @@ rule all:
 include: "rules/1a_mergefqs.smk"
 include: "rules/1b_trimQC.smk"
 include: "rules/1c_split_bb.smk"
+include: "rules/1d_fq2bam.smk"
 
 # STAR alignment, QC, and post-processing
-# include: "rules/2a_rRNA_bwa.smk"
+include: "rules/2a_rRNA_bwa.smk"
 include: "rules/2b_rRNA_STAR.smk"
 include: "rules/2b_star_align.smk"
 include: "rules/2c_star_unmapped.smk"
