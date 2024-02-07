@@ -50,7 +50,8 @@ rule bowtie2_prep_bam_piRNA:
             | awk -v tag=AS -f scripts/awk/bam_clearTag.awk - \
             | awk -v tag=GN -f scripts/awk/bam_clearTag.awk - \
             | awk -v tag=GX -f scripts/awk/bam_clearTag.awk - \
-            | {EXEC['SAMTOOLS']} view -bS > {output.BAM}
+            | {EXEC['SAMTOOLS']} view -bS \
+            > {output.BAM}
             """
         )
 
@@ -69,7 +70,7 @@ rule bowtie2_align_piRNA:
         MEMLIMIT = config['MEMLIMIT'],
         REF = config['piRNA_INDEX']
     log:
-        '{OUTDIR}/{SAMPLE}/piRNA/{RECIPE}/bowtie2.log'    
+        log = '{OUTDIR}/{SAMPLE}/piRNA/{RECIPE}/bowtie2.log'    
     threads:
         # 1
         config['CORES']
@@ -83,8 +84,9 @@ rule bowtie2_align_piRNA:
                 --very-sensitive-local \
                 --preserve-tags \
                 --no-unal \
-            2> {log} \
-            | {EXEC['SAMTOOLS']} view -bS > {output.BAM}
+            2> {log.log} \
+            | {EXEC['SAMTOOLS']} view -bS \
+            > {output.BAM}
             """
         )
 
@@ -100,7 +102,8 @@ rule sortAlignedBAM_piRNA:
     run:
         shell(
             f"""
-            {EXEC['SAMTOOLS']} sort -@ {threads} {input.BAM} > {output.BAM}
+            {EXEC['SAMTOOLS']} sort -@ {threads} {input.BAM} \
+            > {output.BAM}
             """
         )
 
@@ -151,7 +154,7 @@ rule umitools_count_piRNA:
     params:
         OUTDIR = config['OUTDIR']
     log:
-        '{OUTDIR}/{SAMPLE}/piRNA/{RECIPE}/count.log'
+        log = '{OUTDIR}/{SAMPLE}/piRNA/{RECIPE}/count.log'
     run:
         shell(
             f"""
@@ -162,7 +165,7 @@ rule umitools_count_piRNA:
                 --cell-tag=CB \
                 --gene-tag=GN \
                 --umi-tag=UB \
-                --log={log} \
+                --log={log.log} \
                 -I {input.BAM} \
                 -S {output.COUNTS}
             """
@@ -200,7 +203,7 @@ rule umitools_dedupSortedBAM_piRNA:
     threads:
         config['CORES']
     log:
-        '{OUTDIR}/{SAMPLE}/piRNA/{RECIPE}/dedup.log'
+        log = '{OUTDIR}/{SAMPLE}/piRNA/{RECIPE}/dedup.log'
     run:
         tmp_recipe = RECIPE_DICT[wildcards.SAMPLE]
 
@@ -212,7 +215,7 @@ rule umitools_dedupSortedBAM_piRNA:
                 {threads} \
                 {output.BAM} \
                 {OUTDIR}/{wildcards.SAMPLE}/tmp/dedup \
-                {log}
+                {log.log}
             """
         )
 

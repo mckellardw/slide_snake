@@ -1,6 +1,8 @@
 # `slide_snake`
-![slide_snake](images/slide_snake_logo.png)  
-## **Flexible alignment workflow for spatial transcriptomics data**  
+![slide_snake](images/slide_snake_logo.png)
+## Flexible alignment workflow for spatial transcriptomics data  
+
+# [**UNDER CONSTRUCTION**]
 
 The goal of this project is to build a snakemake workflow for assessing different preprocessing, alignment, and quantification configurations, and digging into artifacts.  
 
@@ -16,7 +18,6 @@ The goal of this project is to build a snakemake workflow for assessing differen
 - `scanpy` [v1.7.2](https://scanpy.readthedocs.io/en/stable/)
 - `vsearch` [v2.17.0_linux_x86_64](https://github.com/torognes/vsearch)
 - `BLAST`  
-*Note-* these are the versions I used, not necessarily the only versions which will work
 
 ### Install w/ `mamba`/`conda` [recommended]:
 ```
@@ -30,14 +31,15 @@ I had solve issues putting snakemake into the same conda environment- if you don
 mamba create --name snakemake_only -c bioconda snakemake
 mamba activate snakemake_only
 mamba activate slide_snake
-```
+```  
+
 ### Alternatively...
 All executables are called from the path specified in `config.yaml` (See `EXEC`). If you already have the dependencies installed, just change the path.
 
 ## Runtime details
 ## Example run w/ `slurm`:
 ```
-snakemake --cluster-config slurm_config.yml --cluster "sbatch -p {cluster.partition} -t {cluster.time} -N {cluster.nodes} --mem {cluster.mem} -o {cluster.output}" -j 32 -k -p --nt --cluster-cancel scancel --rerun-incomplete --latency-wait 30
+snakemake --cluster-config slurm_config.yml --cluster "sbatch -p {cluster.partition} -t {cluster.time} -N {cluster.nodes} --mem {cluster.mem} -o {cluster.output} --cpus-per-task={cluster.threads}" -j 16 -k -p --nt --cluster-cancel scancel --rerun-incomplete --latency-wait 30
 ```
 
 ## Example run w/out `slurm`:
