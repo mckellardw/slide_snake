@@ -31,17 +31,20 @@ OUTDIR: /gpfs/commons/groups/innovation/dwm/ontxg/data/slide_out
 ########################################################################################################
 EXEC:
   BLASTN: blastn
-  BWA: bwa
+  BWA: bwa-mem2
   BOWTIE2: bowtie2
   BUSTOOLS: bustools 
   CUTADAPT: cutadapt 
   FASTQC: fastqc 
   FASTX_COLLAPSER: fastx_collapser
+  K8: scripts/k8-0.2.4/k8-Linux
   KALLISTO: kallisto
   MIRGE: miRge3.0
+  MINIMAP2: minimap2
   PIGZ: pigz
   QUALIMAP: qualimap
   SAMTOOLS: samtools
+  SEQTK: seqtk
   STAR: STAR 
   UMITOOLS: umi_tools
   VSEARCH: vsearch
@@ -57,5 +60,26 @@ MIRGE_LIB: /home/dwm269/usr/bin/miRge3_Lib
 # Library details
 ########################################################################################################
 R1_INTERNAL_ADAPTER: "TCTTCAGCGTTCCCGAGA" # internal R1 adapter between slideseq barcodes
-piRNA_INDEX: '/workdir/dwm269/genomes/pirbase/mmu/gold/bowtie2/index' # bowtie2 index of piRNAs; just mouse implemented now...
+piRNA_INDEX: '/path/to/genomes/pirbase/mmu/gold/bowtie2/index' # bowtie2 index of piRNAs; just mouse implemented now...
 MAX_SHORT_READ_LENGTH: 34 # max read length for reads to be aligned to short RNA references
+
+
+########################################################################################################
+# ONT options
+########################################################################################################
+READ_STRUCTURE_BATCH_SIZE: 40000
+READ_STRUCTURE_FLAGS: ""
+
+MM2_REF: "/gpfs/commons/groups/innovation/dwm/ref_snake/out/mus_musculus/genome/minimap2"
+REF_GENOME_FASTA: "/gpfs/commons/groups/innovation/dwm/ref_snake/out/mus_musculus/genome/raw/genome.fa"
+REF_CHROM_SIZES: "/gpfs/commons/groups/innovation/dwm/ref_snake/out/mus_musculus/genome/raw/chrom_sizes.tsv"
+REF_GENES_BED: "/gpfs/commons/groups/innovation/dwm/ref_snake/out/mus_musculus/genome/raw/annotations.bed"
+
+RESOURCES_MM2_MEM_GB: 6
+RESOURCES_MM2_MAX_THREADS: 12
+RESOURCES_MM2_FLAGS: "-I 4G"
+
+BARCODE_ADAPTER1_SUFF_LENGTH: 10
+BARCODE_MIN_QUALITY: 15
+BARCODE_MAX_ED: 2
+BARCODE_MIN_ED_DIFF: 2

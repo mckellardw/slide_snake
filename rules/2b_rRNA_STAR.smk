@@ -23,7 +23,7 @@ rule STARsolo_align_rRNA:
         recipe = RECIPE_DICT[wildcards.SAMPLE][0] #TODO fix recipe handling here...
         # recipe = wildcards.RECIPE 
         
-        STAR_REF = rRNA_DICT[wildcards.SAMPLE] # use rRNA ref
+        STAR_REF = rRNA_STAR_DICT[wildcards.SAMPLE] # use rRNA ref
         nBB = sum(1 for line in open(input.BB_WHITELIST)) # get number of bead barcodes for filtered count matrix, `--soloCellFilter`
 
         #TODO: add try catches
@@ -135,7 +135,10 @@ rule rename_compress_unmapped_star:
             mv {input.UNMAPPED1} {output.FILTERED2_FQ.replace('.gz','')}
             mv {input.UNMAPPED2} {output.FILTERED1_FQ.replace('.gz','')}
 
-            {EXEC['PIGZ']} -p{threads} -f {OUTDIR}/{wildcards.SAMPLE}/tmp/*.fq
+            {EXEC['PIGZ']} \
+                -p{threads} \
+                {output.FILTERED2_FQ.replace('.gz','')} \
+                {output.FILTERED1_FQ.replace('.gz','')}
             """
         )
 

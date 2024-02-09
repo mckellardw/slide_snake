@@ -5,12 +5,12 @@
 # Run fastqc on unmapped reads; switch names because of STAR weirdness
 rule fastqc_unmapped:
     input:
-        UNMAPPED1 = '{OUTDIR}/{SAMPLE}/STARsolo/Unmapped.out.mate1',
-        UNMAPPED2 = '{OUTDIR}/{SAMPLE}/STARsolo/Unmapped.out.mate2'
+        UNMAPPED1 = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Unmapped.out.mate1',
+        UNMAPPED2 = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Unmapped.out.mate2',
     output:
-        UNMAPPED1_FQ = '{OUTDIR}/{SAMPLE}/STARsolo/Unmapped.out.mate1.fastq.gz',
-        UNMAPPED2_FQ = '{OUTDIR}/{SAMPLE}/STARsolo/Unmapped.out.mate2.fastq.gz',
-        FQC_DIR = directory('{OUTDIR}/{SAMPLE}/fastqc/unmapped')
+        UNMAPPED1_FQ = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Unmapped.out.mate1.fastq.gz',
+        UNMAPPED2_FQ = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Unmapped.out.mate2.fastq.gz',
+        FQC_DIR = directory('{OUTDIR}/{SAMPLE}/fastqc/unmapped/{RECIPE}')
     params:
         FASTQC_ADAPTERS = config['FASTQC_ADAPTERS']
     threads:

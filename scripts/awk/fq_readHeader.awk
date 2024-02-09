@@ -1,0 +1,1 @@
+{if(NR%4==1) print substr($0,2)}

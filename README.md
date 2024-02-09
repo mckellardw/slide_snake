@@ -21,7 +21,7 @@ The goal of this project is to build a snakemake workflow for assessing differen
 
 ### Install w/ `mamba`/`conda` [recommended]:
 ```
-mamba create --name slide_snake -c bioconda cutadapt fastqc star=2.7.11a kallisto bustools samtools bamtools qualimap anndata scanpy vsearch blast umi_tools
+mamba create --name slide_snake -c bioconda cutadapt fastqc star=2.7.11a kallisto bustools samtools bamtools qualimap anndata scanpy vsearch blast umi_tools seqtk
 
 mamba activate slide_snake
 ```
