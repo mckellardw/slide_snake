@@ -3,8 +3,8 @@
 rule bwa_align_rRNA:
     input:
         # uBAM = temp('{OUTDIR}/{SAMPLE}/tmp/unaligned_barcoded.bam'),        
-        # R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R1.fq.gz',
-        R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R2.fq.gz',
+        # R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz',
+        R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz',
         BB_WHITELIST = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
         BB_1 = "{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
         BB_2 = "{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
@@ -54,13 +54,13 @@ rule bwa_align_rRNA:
             
             {EXEC['SAMTOOLS']} fastq \
                 -f 4 \
-                -1 {OUTDIR}/{wildcards.SAMPLE}/rRNA/bwa/tmp_r1.fq \
-                -2 {output.R2_FQ_BWA_FILTERED} \
-                -0 /dev/null \
-                {output.BAM2} 
+                {output.BAM2} \
+            > {output.R2_FQ_BWA_FILTERED} 
             """
         )
 
+                # -2 \
+                # -0 /dev/null \
         # {EXEC['BWA']} mem \
         #     -t {threads} \
         #     {STAR_REF}/*.fa \
@@ -81,11 +81,11 @@ rule bwa_align_rRNA:
 
 rule filter_R1_bwa:
     input:
-        R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R1.fq.gz',
-        R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R2.fq.gz',
+        R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz',
+        R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz',
         R2_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq'
     output:
-        R1_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/final_R1.fq'),
+        R1_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq'),
         R1_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq',
         # rRNA_LIST  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/rRNA_readID.list', #temp()
         UNMAPPED_LIST  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/rRNA_readID.list'  #temp()

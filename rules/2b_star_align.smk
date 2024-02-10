@@ -9,8 +9,10 @@ rule STARsolo_align:
     input:
         # R1_FQ_HardTrim = '{OUTDIR}/{SAMPLE}/tmp/{SAMPLE}_R1_HardTrim.fq.gz',
         # R1_FQ_InternalTrim = '{OUTDIR}/{SAMPLE}/tmp/{SAMPLE}_R1_InternalTrim.fq.gz',
-        R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R1.fq.gz',
-        R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R2.fq.gz',
+        R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz',
+        R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz',
+        R1_FQ_TWICE_CUT = '{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz',
+        R2_FQ_TWICE_CUT = '{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz',
         R1_FQ_STAR_FILTERED = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz',
         R2_FQ_STAR_FILTERED = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz',
         R1_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz',
@@ -77,12 +79,13 @@ rule STARsolo_align:
             R1 = input.R1_FQ_STAR_FILTERED
             R2 = input.R2_FQ_STAR_FILTERED
         elif "rRNA.bwa" in recipe: #TODO Use trimmed & bwa-rRNA-filtered .fq's
-            print("TODO")
             R1 = input.R1_FQ_BWA_FILTERED
             R2 = input.R2_FQ_BWA_FILTERED
         elif "rRNA" not in recipe: # just trimmed .fq's
-            R1 = input.R1_FQ
-            R2 = input.R2_FQ
+            # R1 = input.R1_FQ
+            # R2 = input.R2_FQ
+            R1 = input.R1_FQ_TWICE_CUT
+            R2 = input.R2_FQ_TWICE_CUT
         else:
             print("I just don't know what to do with myself...")
 

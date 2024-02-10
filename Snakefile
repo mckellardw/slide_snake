@@ -116,16 +116,26 @@ rule all:
         #     OUTDIR=config['OUTDIR'],
         #     SAMPLE=SAMPLES
         # ),
-        # [f"{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/UniqueAndMultEM.h5ad" 
-        #     for SAMPLE in SAMPLES 
-        #     for RECIPE in RECIPE_DICT[SAMPLE] 
-        #     for SOLO in ['Gene','GeneFull']
-        # ], # anndata files (with spatial info) - STAR
-        # [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/raw/output.h5ad" 
-        #     for SAMPLE in SAMPLES 
-        #     for RECIPE in RECIPE_DICT[SAMPLE] 
-        #     for KB in ['kb']
-        # ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`        
+        
+        expand( # fastQC results
+            '{OUTDIR}/{SAMPLE}/fastqc/{TRIM}_{READ}',
+            OUTDIR=config['OUTDIR'],
+            SAMPLE=SAMPLES,
+            READ=["R1","R2"],
+            TRIM = ["preCutadapt","postCutadapt","twiceCutadapt"]
+        ),
+        [f"{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.h5ad" 
+            for SAMPLE in SAMPLES 
+            for RECIPE in RECIPE_DICT[SAMPLE] 
+            for SOLO in ['Gene','GeneFull']
+            for ALGO in ["UniqueAndMult-EM","matrix"]
+        ], # anndata files (with spatial info) - STAR
+        [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/raw/output.h5ad" 
+            for SAMPLE in SAMPLES 
+            for RECIPE in RECIPE_DICT[SAMPLE] 
+            for KB in ['kb']
+        ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`
+        
         # [f"{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx.gz" 
         #     for SAMPLE in SAMPLES 
         #     for RECIPE in RECIPE_DICT[SAMPLE]
@@ -183,10 +193,3 @@ rule all:
         #     OUTDIR=config['OUTDIR'],
         #     SAMPLE=SAMPLES
         # ),
-        # expand( # fastQC results
-        #     '{OUTDIR}/{SAMPLE}/fastqc/{TRIM}_{READ}',
-        #     OUTDIR=config['OUTDIR'],
-        #     SAMPLE=SAMPLES,
-        #     READ=["R1","R2"],
-        #     TRIM = ["preTrim","postTrim"]
-        # )
