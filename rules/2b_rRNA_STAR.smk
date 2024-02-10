@@ -3,8 +3,8 @@
 #TODO- dedup rRNA .bam files
 rule STARsolo_align_rRNA:
     input:
-        R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R1.fq.gz',
-        R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R2.fq.gz',
+        R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz',
+        R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz',
         BB_WHITELIST = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
         BB_1 = "{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
         BB_2 = "{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",

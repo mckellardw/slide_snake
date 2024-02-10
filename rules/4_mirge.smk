@@ -9,8 +9,9 @@
 ## Note- `--outDirNam` is a hidden argument for miRge3 that allows direct naming of the output directory
 rule miRge3_pseudobulk:
     input:
-        FINAL_R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/final_R2.fq.gz'
+        R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz'
     output:
+        GIUNZIP_R2_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq'),
         MIRGE_DIR = directory('{OUTDIR}/{SAMPLE}/miRge_bulk'),
         MIRGE_HTML = '{OUTDIR}/{SAMPLE}/miRge_bulk/annotation.report.html'
         # MIRGE_CHECK = '{OUTDIR}/{SAMPLE}/miRge_check.txt'
@@ -26,10 +27,10 @@ rule miRge3_pseudobulk:
 
         shell(
             f"""
-            zcat {input.FINAL_R2_FQ} > {OUTDIR}/{wildcards.SAMPLE}/tmp/tmp_R2.fastq
+            zcat {input.R2_FQ} > {input.R2_FQ.strip('.gz')}
 
             {EXEC['MIRGE']} \
-                -s {OUTDIR}/{wildcards.SAMPLE}/tmp/tmp_R2.fastq \
+                -s {input.R2_FQ.strip('.gz')} \
                 -lib {params.MIRGE_LIB} \
                 -on {SPECIES} \
                 -db mirbase \
@@ -38,11 +39,11 @@ rule miRge3_pseudobulk:
                 --outDirName {output.MIRGE_DIR} \
                 --threads {threads} \
                 -gff -nmir -ai             
-
-            rm {OUTDIR}/{wildcards.SAMPLE}/tmp/tmp_R2.fastq
             """            
         )
 # -a illumina \
 # -trf
 
+# TODO split bame across barcodes
+# TODO convert split bams to fqs
 # TODO- miRge across cells/spots/barcodes

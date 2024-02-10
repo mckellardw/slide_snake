@@ -12,7 +12,7 @@ rule BLAST_align_mature_miRNA:
         MEMLIMIT = config['MEMLIMIT'],
         REF = config['miRNA_MATURE_INDEX']
     log:
-        '{OUTDIR}/{SAMPLE}/miRNA/BLAST_mature.log'    
+        log = '{OUTDIR}/{SAMPLE}/miRNA/BLAST_mature.log'    
     threads:
         1
         # config['CORES']
@@ -82,7 +82,7 @@ rule BLAST_align_hairpin_miRNA:
         MEMLIMIT = config['MEMLIMIT'],
         REF = config['miRNA_HAIRPIN_INDEX']
     log:
-        '{OUTDIR}/{SAMPLE}/miRNA/BLAST_hairpin.log'    
+        log = '{OUTDIR}/{SAMPLE}/miRNA/BLAST_hairpin.log'    
     threads:
         1
         # config['CORES']
@@ -96,7 +96,7 @@ rule BLAST_align_hairpin_miRNA:
                 --very-sensitive-local \
                 --no-unal \
                 --preserve-tags \
-            2> {log} \
+            2> {log.log} \
             | {EXEC['SAMTOOLS']} view -bS > {output.BAM}
             """
         )

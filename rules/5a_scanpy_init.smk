@@ -4,10 +4,10 @@ rule cache_preQC_h5ad_STAR:
     input:
         BCS = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/barcodes.tsv.gz',
         GENES = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/features.tsv.gz',
-        MAT = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/UniqueAndMult-EM.mtx.gz',
+        MAT = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.mtx.gz',
         BB_map = lambda wildcards: BB_DICT[wildcards.SAMPLE]
     output:
-        H5AD = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/UniqueAndMultEM.h5ad'
+        H5AD = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.h5ad'
     params:
         var_names = "gene_symbols" # scanpy.read_10x_mtx()
     threads:
@@ -99,12 +99,12 @@ rule cache_preQC_h5ad_piRNA:
         shell(
             f"""
             python scripts/cache_mtx_to_h5ad.py \
-            --mat_in {input.MAT} \
-            --feat_in {input.GENES} \
-            --bc_in {input.BCS} \
-            --bb_map {input.BB_map}\
-            --ad_out {output.H5AD}\
-            --feat_col 0 \
-            --remove_zero_features
+                --mat_in {input.MAT} \
+                --feat_in {input.GENES} \
+                --bc_in {input.BCS} \
+                --bb_map {input.BB_map}\
+                --ad_out {output.H5AD}\
+                --feat_col 0 \
+                --remove_zero_features
             """
         )

@@ -6,7 +6,7 @@ rule fastQC_preTrim:
     input:
         MERGED_FQ = '{OUTDIR}/{SAMPLE}/tmp/merged_{READ}.fq.gz'
     output:
-        fastqcDir = directory('{OUTDIR}/{SAMPLE}/fastqc/preTrim_{READ}')
+        fastqcDir = directory('{OUTDIR}/{SAMPLE}/fastqc/preCutadapt_{READ}')
     params:
         adapters = config['FASTQC_ADAPTERS']
     threads:
@@ -88,13 +88,14 @@ rule R1_trimming:
 rule cutadapt:
     input:
         R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/merged_R1.fq.gz',
-        # R1_FQ_HardTrim = '{OUTDIR}/{SAMPLE}/tmp/{SAMPLE}_R1_HardTrim.fq.gz',
-        # R1_FQ_InternalTrim = '{OUTDIR}/{SAMPLE}/tmp/{SAMPLE}_R1_InternalTrim.fq.gz',
+        # R1_FQ_HardTrim = '{OUTDIR}/{SAMPLE}/tmp/merged_R1_HardTrim.fq.gz',
+        # R1_FQ_InternalTrim = '{OUTDIR}/{SAMPLE}/tmp/merged_R1_InternalTrim.fq.gz',
         R1_FQ_Trimmed = '{OUTDIR}/{SAMPLE}/tmp/merged_trimmed_R1.fq.gz',
         R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/merged_R2.fq.gz'
     output:
-        FINAL_R1_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/final_R1.fq.gz'),
-        FINAL_R2_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/final_R2.fq.gz')
+        FINAL_R1_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz'),
+        FINAL_R2_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz'),
+        JSON = '{OUTDIR}/{SAMPLE}/cutadapt.json'
     params:
         # R1_LENGTH = 50,
         QUALITY_MIN=20,
@@ -120,8 +121,8 @@ rule cutadapt:
     log:
         log = '{OUTDIR}/{SAMPLE}/cutadapt.log'
     run:
-        recipe = RECIPE_DICT[wildcards.SAMPLE][0] #TODO- fix multi-R1 trimming handling
-        
+        recipe = str(RECIPE_DICT[wildcards.SAMPLE][0]) #TODO- fix multi-R1 trimming handling
+
         R1_LENGTH = RECIPE_SHEET["R1.finalLength"][recipe]
 
         #TODO- fix multi-R1 trimming handling
@@ -157,6 +158,7 @@ rule cutadapt:
                 -o {output.FINAL_R1_FQ} \
                 -p {output.FINAL_R2_FQ} \
                 --cores {threads} \
+                --json {output.JSON} \
                 {R1} {R2} \
             1> {log.log}
             """
@@ -166,9 +168,107 @@ rule cutadapt:
 # fastqc on R1 after linker removal & R2 trimming/filtering
 rule fastQC_postTrim:
     input:
-        FINAL_FQ =  '{OUTDIR}/{SAMPLE}/tmp/final_{READ}.fq.gz'
+        FINAL_FQ =  '{OUTDIR}/{SAMPLE}/tmp/cut_{READ}.fq.gz'
     output:
-        fastqcDir = directory('{OUTDIR}/{SAMPLE}/fastqc/postTrim_{READ}'),
+        fastqcDir = directory('{OUTDIR}/{SAMPLE}/fastqc/postCutadapt_{READ}'),
+        # fastqcReport = ''
+    threads:
+        config['CORES']
+        # min([config['CORES'],8]) # 8 core max
+    params:
+        adapters = config['FASTQC_ADAPTERS']
+    run:
+        shell(
+            f"""
+            mkdir -p {output.fastqcDir}
+
+            {EXEC['FASTQC']} \
+                --outdir {output.fastqcDir} \
+                --threads {threads} \
+                -a {params.adapters} \
+                {input.FINAL_FQ}
+            """
+        )
+
+
+
+##########################################
+
+
+rule cutadapt2:
+    input:
+        FINAL_R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz',
+        FINAL_R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz'
+    output:
+        FINAL_R1_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz'),
+        FINAL_R2_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz'),
+        JSON = '{OUTDIR}/{SAMPLE}/cutadapt2.json'
+    params:
+        # R1_LENGTH = 50,
+        QUALITY_MIN=20,
+        MIN_R2_LENGTH = 12,
+        OVERLAP = 5,
+        HOMOPOLYMER_ERROR_RATE = 0.2, # default error rate is 0.1
+        # THREE_PRIME_R1_POLYA = "A"*100,
+        THREE_PRIME_R2_POLYA = "A"*100,
+        # THREE_PRIME_R2_POLYG = "G"*100,
+        THREE_PRIME_R2_POLYT = "T"*100,
+        THREE_PRIME_R2_NEXTERA = "CTGTCTCTTATA", # Nextera sequence
+        THREE_PRIME_R2_rcNEXTERA = "TATAAGAGACAG", # Rev Comp of Nextera sequence
+        THREE_PRIME_R2_TSO = "AAGCTGGTATCAACGCAGAGTGAATGGG", # SlideSeq TSO - remove any polyadenylated TSOs
+        THREE_PRIME_R2_TXG_TSO = "AAGCAGTGGTATCAACGCAGAGTACATGGG", # 10x TSO - remove any polyadenylated TSOs
+        THREE_PRIME_R2_ILLUMINA_UNI = "AGATCGGAAGAG", # Illumina Universal
+        FIVE_PRIME_R2_TSO = "CCCATTCACTCTGCGTTGATACCAGCTT", # rev comp of SlideSeq TSO
+        FIVE_PRIME_R2_TXG_TSO = "CCCATGTACTCTGCGTTGATACCACTGCTT", # rev-comp of 10x TSO sequence
+        THREE_PRIME_R2_SEEKER_BB_ADAPTER = "TCTTCAGCGTTCCCGAGA", # Adapter between BB1 & BB2 in R1 
+        FIVE_PRIME_R2_SEEKER_BB_ADAPTER = "AGAGCCCTTGCGACTTCT" # Reverse of the adapter between BB1 & BB2 in R1 
+    threads:
+        # min([config['CORES'],8]) # 8 core max
+        config['CORES']
+    log:
+        log = '{OUTDIR}/{SAMPLE}/cutadapt_round2.log'
+    run:
+        recipe = str(RECIPE_DICT[wildcards.SAMPLE][0]) #TODO- fix multi-R1 trimming handling
+
+        R1_LENGTH = RECIPE_SHEET["R1.finalLength"][recipe]
+        
+        R1 = input.FINAL_R1_FQ
+        R2 = input.FINAL_R2_FQ
+
+        shell(
+            f"""
+            {EXEC['CUTADAPT']} \
+                --minimum-length {R1_LENGTH}:{params.MIN_R2_LENGTH} \
+                --quality-cutoff {params.QUALITY_MIN} \
+                --overlap {params.OVERLAP} \
+                --match-read-wildcards \
+                --nextseq-trim=20 \
+                -A "{params.THREE_PRIME_R2_POLYA};max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
+                -A "{params.THREE_PRIME_R2_POLYT};max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
+                -A {params.THREE_PRIME_R2_TSO} \
+                -A {params.THREE_PRIME_R2_TXG_TSO} \
+                -A {params.THREE_PRIME_R2_SEEKER_BB_ADAPTER} \
+                -A {params.THREE_PRIME_R2_NEXTERA} \
+                -A {params.THREE_PRIME_R2_rcNEXTERA} \
+                -A {params.THREE_PRIME_R2_ILLUMINA_UNI} \
+                -G {params.FIVE_PRIME_R2_TSO} \
+                -G {params.FIVE_PRIME_R2_TXG_TSO} \
+                -G {params.FIVE_PRIME_R2_SEEKER_BB_ADAPTER} \
+                --pair-filter=any \
+                -o {output.FINAL_R1_FQ} \
+                -p {output.FINAL_R2_FQ} \
+                --cores {threads} \
+                --json {output.JSON} \
+                {R1} {R2} \
+            1> {log.log}
+            """
+        )
+
+rule fastQC_twiceTrim:
+    input:
+        FINAL_FQ =  '{OUTDIR}/{SAMPLE}/tmp/twiceCut_{READ}.fq.gz'
+    output:
+        fastqcDir = directory('{OUTDIR}/{SAMPLE}/fastqc/twiceCutadapt_{READ}'),
         # fastqcReport = ''
     threads:
         config['CORES']
