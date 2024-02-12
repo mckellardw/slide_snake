@@ -55,7 +55,7 @@ echo "RNA read file:          " ${R2FQ} >> ${LOG}
 echo " " >> ${LOG}
 
 # Pseudoalign and generate .bus file
-echo "~~~Pseudoaligning with `kallisto bus`... " >> ${LOG}
+echo "~~~Pseudoaligning with kallisto bus... " >> ${LOG}
 kallisto bus \
     --index ${KB_IDX} \
     --technology ${CHEMISTRY} \
