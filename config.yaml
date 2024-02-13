@@ -54,7 +54,7 @@ EXEC:
 ########################################################################################################
 FASTQC_ADAPTERS: resources/fastqc_adapters.txt 
 BLASTDB: /shared_data/genome_db/BLAST_NCBI # path to where the nt BLAST database is stored
-MIRGE_LIB: /home/dwm269/usr/bin/miRge3_Lib
+MIRGE_LIB: resources/miRge3_Lib
 
 ########################################################################################################
 # Library details

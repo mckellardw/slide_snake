@@ -1,6 +1,6 @@
 # Filter out rRNA reads w/ bwa alignment
 # VASAseq implementation - https://github.com/anna-alemany/VASAseq/blob/main/mapping/ribo-bwamem.sh
-rule bwa_align_rRNA:
+rule bwa_rRNA_align:
     input:
         # uBAM = temp('{OUTDIR}/{SAMPLE}/tmp/unaligned_barcoded.bam'),        
         # R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz',
@@ -10,8 +10,8 @@ rule bwa_align_rRNA:
         BB_2 = "{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
         BB_ADAPTER = "{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt"
     output:
-        BAM1 = '{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned.bam', #temp()?
-        BAM2 = '{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam', #temp()?
+        BAM1 = temp('{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned.bam'),
+        BAM2 = '{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam', 
         # R1_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq',
         R2_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq'
     params:
@@ -78,8 +78,20 @@ rule bwa_align_rRNA:
         #     -2 {output.UNMAPPED1} \
         #     -0 /dev/null {OUTDIR}/{wildcards.SAMPLE}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam
 
+rule bwa_rRNA_index_alignment:
+    input:
+        BAM = '{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam', 
+    output:
+        BAI = '{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam.bai',
+    run:
+        shell(
+            f"""
+            {EXEC['SAMTOOLS']} index {input.BAM}
+            """
+        )
 
-rule filter_R1_bwa:
+
+rule bwa_rRNA_filter_R1:
     input:
         R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz',
         R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz',
@@ -109,7 +121,7 @@ rule filter_R1_bwa:
         # {EXEC['PIGZ']} -p{threads} {output.R1_FQ_BWA_FILTERED.strip('.gz')}
 
 
-rule compress_unmapped_bwa:
+rule bwa_rRNA_compress_unmapped:
     input:
         R1_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq',
         R2_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq'
@@ -128,12 +140,11 @@ rule compress_unmapped_bwa:
 
 
 #  Run fastqc on unmapped reads;
-rule rRNA_filtered_fastqc_bwa:
+rule bwa_rRNA_filtered_fastqc:
     input:
-        R1_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz',
-        R2_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz'
+        FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_{READ}.fq.gz',
     output:
-        FQC_DIR = directory('{OUTDIR}/{SAMPLE}/fastqc/rRNA_filtered_bwa')
+        FQC_DIR = directory('{OUTDIR}/{SAMPLE}/fastqc/rRNA_bwa_{READ}')
     params:
         adapters = config['FASTQC_ADAPTERS']
     threads:
@@ -147,6 +158,6 @@ rule rRNA_filtered_fastqc_bwa:
                 -o {output.FQC_DIR} \
                 -t {threads} \
                 -a {params.adapters} \
-                {input}
+                {input.FQ_BWA_FILTERED}
             """
         )
