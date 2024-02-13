@@ -88,7 +88,7 @@ include: "rules/3b_kallisto_pseudobam.smk"
 include: "rules/3c_kallisto_velo.smk"
 
 # small RNA stuff
-# include: "rules/4_mirge.smk"
+include: "rules/4_mirge.smk"
 # include: "rules/4_piRNA_bowtie2.smk"
 # include: "rules/4_miRNA_bowtie2.smk"
 
@@ -104,26 +104,11 @@ rule all:
             for RECIPE in RECIPE_DICT[SAMPLE]
             for FILE in ['merged_stranded.fq.gz','sorted.bam']
         ], # ONT outputs
-        # expand( # count matrices for bowtie2 alignment to small RNA reference(s)
-        #     '{OUTDIR}/{SAMPLE}/{SMALL_RNA}/{TYPE}',
-        #     OUTDIR=config['OUTDIR'],
-        #     SAMPLE=SAMPLES,
-        #     SMALL_RNA=['piRNA','miRNA'],
-        #     TYPE=["counts.tsv.gz","raw/matrix.mtx.gz"]
-        # ),
-        # expand( # miRge3.0 pseudobulk analysis
-        #     '{OUTDIR}/{SAMPLE}/miRge_bulk/{RECIPE}/annotation.report.html',
-        #     OUTDIR=config['OUTDIR'],
-        #     SAMPLE=SAMPLES
-        # ),
-        
-        expand( # fastQC results
-            '{OUTDIR}/{SAMPLE}/fastqc/{TRIM}_{READ}',
-            OUTDIR=config['OUTDIR'],
-            SAMPLE=SAMPLES,
-            READ=["R1","R2"],
-            TRIM = ["preCutadapt","postCutadapt","twiceCutadapt"]
-        ),
+        [f"{OUTDIR}/{SAMPLE}/fastqc/{TRIM}_{READ}",
+            for SAMPLE in SAMPLES             
+            for READ in ["R1","R2"] 
+            for TRIM in ["preCutadapt","postCutadapt","twiceCutadapt","rRNA_bwa","rRNA_STAR"]
+        ],  # fastQC results
         [f"{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.h5ad" 
             for SAMPLE in SAMPLES 
             for RECIPE in RECIPE_DICT[SAMPLE] 
@@ -155,23 +140,23 @@ rule all:
         #     for RECIPE in RECIPE_DICT[SAMPLE] 
         #     for SMALL in ['miRNA','piRNA']
         # ],# anndata files (with spatial info) - small RNA
-        # expand( #non-deduplicated .bam
-        #     '{OUTDIR}/{SAMPLE}/{REF}/Aligned.sortedByCoord.out.bam.bai',
+        # expand( # count matrices for bowtie2 alignment to small RNA reference(s)
+        #     '{OUTDIR}/{SAMPLE}/{SMALL_RNA}/{TYPE}',
         #     OUTDIR=config['OUTDIR'],
         #     SAMPLE=SAMPLES,
-        #     REF=["STARsolo_rRNA", "STARsolo"]
+        #     SMALL_RNA=['piRNA','miRNA'],
+        #     TYPE=["counts.tsv.gz","raw/matrix.mtx.gz"]
         # ),
-        # expand( # kallisto/bustools count mats
-        #     '{OUTDIR}/{SAMPLE}/kb/raw/output.mtx.gz',
+        # expand( # miRge3.0 pseudobulk analysis
+        #     '{OUTDIR}/{SAMPLE}/miRge_bulk/{RECIPE}/annotation.report.html',
         #     OUTDIR=config['OUTDIR'],
         #     SAMPLE=SAMPLES
         # ),
-        # expand( # kallisto/bustools count mats
-        #     '{OUTDIR}/{SAMPLE}/kb_velo/{LAYER}/output.mtx.gz',
-        #     OUTDIR=config['OUTDIR'],
-        #     LAYER=['spliced','unspliced'],
-        #     SAMPLE=SAMPLES
-        # ),
+        [f"{OUTDIR}/{SAMPLE}/miRge_bulk/{RECIPE}/annotation.report.html" 
+            for SAMPLE in SAMPLES 
+            for RECIPE in RECIPE_DICT[SAMPLE] 
+        ], # miRge3.0 pseudobulk analysis
+
         # expand(  # alignment QC with qualimap | requires deduped input!
         #     '{OUTDIR}/{SAMPLE}/qualimap/{FILE}',
         #     OUTDIR=config['OUTDIR'],
@@ -191,5 +176,24 @@ rule all:
         # expand( # blastn results for unmapped R2 reads
         #     '{OUTDIR}/{SAMPLE}/Unmapped.out.mate2_blastResults.txt',
         #     OUTDIR=config['OUTDIR'],
+        #     SAMPLE=SAMPLES
+        # ), # Top BLAST results for unmapped reads
+        
+        #EXTRANEOUS
+        # expand( #non-deduplicated .bam
+        #     '{OUTDIR}/{SAMPLE}/{REF}/Aligned.sortedByCoord.out.bam.bai',
+        #     OUTDIR=config['OUTDIR'],
+        #     SAMPLE=SAMPLES,
+        #     REF=["STARsolo_rRNA", "STARsolo"]
+        # ),
+        # expand( # kallisto/bustools count mats
+        #     '{OUTDIR}/{SAMPLE}/kb/raw/output.mtx.gz',
+        #     OUTDIR=config['OUTDIR'],
+        #     SAMPLE=SAMPLES
+        # ),
+        # expand( # kallisto/bustools count mats
+        #     '{OUTDIR}/{SAMPLE}/kb_velo/{LAYER}/output.mtx.gz',
+        #     OUTDIR=config['OUTDIR'],
+        #     LAYER=['spliced','unspliced'],
         #     SAMPLE=SAMPLES
         # ),
