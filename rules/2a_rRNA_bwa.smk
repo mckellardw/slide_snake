@@ -2,18 +2,18 @@
 # VASAseq implementation - https://github.com/anna-alemany/VASAseq/blob/main/mapping/ribo-bwamem.sh
 rule bwa_rRNA_align:
     input:
-        # uBAM = temp('{OUTDIR}/{SAMPLE}/tmp/unaligned_barcoded.bam'),        
-        # R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz',
-        R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz',
+        # uBAM = temp('{OUTDIR}/{SAMPLE}/tmp/unaligned_barcoded.bam'),
+        # R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz',
+        R2_FQ = "{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
         BB_WHITELIST = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
         BB_1 = "{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
         BB_2 = "{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
         BB_ADAPTER = "{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt"
     output:
-        BAM1 = temp('{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned.bam'),
-        BAM2 = '{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam', 
+        BAM1 = temp("{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned.bam"),
+        BAM2 = "{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam", 
         # R1_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq',
-        R2_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq'
+        R2_FQ_BWA_FILTERED  = "{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq"
     params:
         MEMLIMIT = config['MEMLIMIT']
     log:
