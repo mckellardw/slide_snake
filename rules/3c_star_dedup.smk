@@ -7,24 +7,24 @@ rule umitools_dedupBAM:
         BB_WHITELIST = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
         BB_1 = "{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
         BB_2 = "{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
-        SORTEDBAM = '{OUTDIR}/{SAMPLE}/STARsolo/Aligned.sortedByCoord.out.bam'
+        BAM = "{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.bam"
     output:
-        DEDUPBAM = '{OUTDIR}/{SAMPLE}/STARsolo/Aligned.sortedByCoord.dedup.out.bam'
+        BAM = "{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out.bam"
     threads:
         config['CORES']
     log:
-        log = '{OUTDIR}/{SAMPLE}/dedup.log'
+        log = "{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/dedup.log"
     run:
         tmp_recipe = RECIPE_DICT[wildcards.SAMPLE]
 
         shell(
             f"""
             bash scripts/bash/split_dedup.sh \
-                {input.SORTEDBAM} \
+                {input.BAM} \
                 {input.BB_WHITELIST} \
                 {threads} \
-                {output.DEDUPBAM} \
-                {OUTDIR}/{wildcards.SAMPLE}/tmp/dedup \
+                {output.BAM} \
+                $(dirname {output.BAM})/tmp/dedup \
             | tee {log.log}
             """
         )
@@ -32,7 +32,7 @@ rule umitools_dedupBAM:
 # Index the deduplicated .bam file
 rule umitools_indexDedupBAM:
     input:
-        SORTEDBAM = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out.bam'
+        BAM = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out.bam'
     output:
         BAI = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out.bam.bai'
     threads:
@@ -40,7 +40,7 @@ rule umitools_indexDedupBAM:
     run:
         shell(
             f"""
-            {EXEC['SAMTOOLS']} index -@ {threads} {input.SORTEDBAM}
+            {EXEC['SAMTOOLS']} index -@ {threads} {input.BAM}
             """
         )
 
