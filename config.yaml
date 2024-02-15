@@ -8,12 +8,13 @@
 ### See `example_sample_sheet.csv` for details
 # SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/visium/CS001-5.csv
 SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/visium/vy3.csv
+# SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/visium/vy3D.csv
 
 # STARsolo parameters
 CORES: 16 # how many cores to give each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
-MEMLIMIT: 127000000000  # limit in bytes
-MEMLIMIT_MB: 127000     # limit in megabytes
-MEMLIMIT_GB: 127G       # mem limit for kallisto
+MEMLIMIT: 128000000000  # limit in bytes
+MEMLIMIT_MB: 128000     # limit in megabytes
+MEMLIMIT_GB: 128G       # mem limit for kallisto
 
 ## Recipe details (whitelists, barcode/UMI design, etc.)
 RECIPE_SHEET: resources/recipe_sheet.csv
@@ -39,6 +40,7 @@ EXEC:
   FASTX_COLLAPSER: fastx_collapser
   K8: scripts/k8-0.2.4/k8-Linux
   KALLISTO: kallisto
+  KB: kb
   MIRGE: miRge3.0
   MINIMAP2: minimap2
   PIGZ: pigz
