@@ -84,6 +84,7 @@ include: "rules/3d_star_qualimap.smk"
 
 # kallisto/bustools alignment
 include: "rules/4a_kallisto.smk"
+include: "rules/4a_kbpython.smk"
 include: "rules/4b_kallisto_pseudobam.smk"
 include: "rules/4c_kallisto_velo.smk"
 
@@ -118,10 +119,16 @@ rule all:
             for ALGO in ["UniqueAndMult-EM","matrix"]
         ], # anndata files (with spatial info) - STAR
 
-        [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/raw/output.h5ad" 
+        # [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/raw/output.h5ad" 
+        #     for SAMPLE in SAMPLES 
+        #     for RECIPE in RECIPE_DICT[SAMPLE] 
+        #     for KB in ["kb"] # 'kb_velo', 'kb_nuc' 
+        # ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`
+        
+        [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/counts_unfiltered/output.h5ad" 
             for SAMPLE in SAMPLES 
             for RECIPE in RECIPE_DICT[SAMPLE] 
-            for KB in ["kb"] # 'kb_velo', 'kb_nuc' 
+            for KB in ["kbpython"] # 'kb_velo', 'kb_nuc' 
         ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`
         
         # [f"{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx.gz" 
