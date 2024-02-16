@@ -135,7 +135,6 @@ rule bus2mat:
 #             """
 #         )
 
-
 # gzip the count matrix, etc.
 rule compress_kb_outs:
     input:

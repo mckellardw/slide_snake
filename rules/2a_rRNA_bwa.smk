@@ -15,7 +15,8 @@ rule bwa_rRNA_align:
         # R1_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq',
         R2_FQ_BWA_FILTERED  = "{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq"
     params:
-        MEMLIMIT = config['MEMLIMIT']
+        MEMLIMIT = config['MEMLIMIT'],
+        MIN_ALIGNSCORE = 40
     log:
         log = "{OUTDIR}/{SAMPLE}/rRNA/bwa/bwa_rRNA.log"
     threads:
@@ -51,13 +52,17 @@ rule bwa_rRNA_align:
                 -O BAM \
                 {output.BAM1} \
             > {output.BAM2} 
-            
-            {EXEC['SAMTOOLS']} fastq \
-                -f 4 \
+
+            {EXEC['SAMTOOLS']} view \
+                -h input.sam \
+            | awk '$5 < {params.MIN_ALIGNSCORE} {print}' \
+            | {EXEC['SAMTOOLS']} fastq \
                 {output.BAM2} \
             > {output.R2_FQ_BWA_FILTERED} 
             """
         )
+        
+                # -f 4
 
                 # -2 \
                 # -0 /dev/null \

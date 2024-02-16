@@ -65,6 +65,7 @@ rule kbpython_standard:
                 --bustools {EXEC["BUSTOOLS"]} \
                 -o $(dirname {output.BUS}) \
                 --strand forward \
+                -mm \
                 -x {KB_X} \
                 -w {input.BB} \
                 -t {threads} \

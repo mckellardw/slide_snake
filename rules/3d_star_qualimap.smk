@@ -5,9 +5,8 @@ rule qualimapQC_STAR:
     input:
         SORTEDBAM = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out.bam'
     output:
-        qualimapDir = directory('{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}'),
-        qualimapReport_txt = '{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/rnaseq_qc_results.txt',
-        qualimapReport_html = '{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/report.html'
+        TXT = '{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/rnaseq_qc_results.txt',
+        HTML = '{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/report.html'
     params:
         GENES_GTF = lambda wildcards: GTF_DICT[wildcards.SAMPLE]
     threads:
@@ -15,7 +14,7 @@ rule qualimapQC_STAR:
     run:
         shell(
             f"""
-            mkdir -p {output.qualimapDir}
+            mkdir -p $(dirname {output.TXT})
 
             {EXEC['QUALIMAP']} rnaseq \
                 -bam {input.SORTEDBAM} \
@@ -23,7 +22,7 @@ rule qualimapQC_STAR:
                 --sequencing-protocol strand-specific-forward \
                 --sorted \
                 --java-mem-size=8G \
-                -outdir {output.qualimapDir} \
+                -outdir $(dirname {output.TXT}) \
                 -outformat html
             """ 
         )

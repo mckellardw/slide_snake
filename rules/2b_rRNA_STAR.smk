@@ -1,16 +1,16 @@
 # Make output directory, align fastqs, and generate raw/filtered feature/cell-barcode matrices
 #   Info for STARsolo command line paramaters: https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md
 #TODO- dedup rRNA .bam files
-rule STARsolo_align_rRNA:
+rule STAR_rRNA_align:
     input:
-        R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz',
-        R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz',
+        R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz',
+        R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz',
         BB_WHITELIST = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
         BB_1 = "{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
         BB_2 = "{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
         BB_ADAPTER = "{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt"
     output:
-        SORTEDBAM = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam', #TODO: add temp()
+        BAM = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam', #TODO: add temp()
         UNMAPPED1 = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Unmapped.out.mate1',
         UNMAPPED2 = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Unmapped.out.mate2',
         GENEDIRECTORY = directory('{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Solo.out/GeneFull'),
@@ -48,11 +48,11 @@ rule STARsolo_align_rRNA:
 
         shell(
             f"""
-            mkdir -p {OUTDIR}/{wildcards.SAMPLE}/rRNA/STARsolo
+            mkdir -p $(dirname {output.BAM})
 
             {EXEC['STAR']} \
                 --runThreadN {threads} \
-                --outFileNamePrefix {OUTDIR}/{wildcards.SAMPLE}/rRNA/STARsolo/ \
+                --outFileNamePrefix $(dirname {output.BAM}) \
                 --outSAMtype BAM SortedByCoordinate \
                 --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
                 --readFilesCommand zcat \
@@ -75,7 +75,7 @@ rule STARsolo_align_rRNA:
         )
 
 # compress outputs from STAR (count matrices, cell barcodes, and gene lists)
-rule compress_STAR_rRNA_outs:
+rule STAR_rRNA_compress_outs:
     input:
         GENEMAT = "{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Solo.out/GeneFull/raw/matrix.mtx"
     output:
@@ -103,7 +103,7 @@ rule compress_STAR_rRNA_outs:
         )
 
 # Index the .bam file produced by STAR
-rule indexSortedBAM_rRNA:
+rule STAR_rRNA_indexSortedBAM:
     input:
         SORTEDBAM = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam'
     output:
@@ -119,7 +119,7 @@ rule indexSortedBAM_rRNA:
 
 
 # Switch names because of STAR weirdness
-rule rename_compress_unmapped_star:
+rule STAR_rRNA_rename_compress_unmapped:
     input:
         UNMAPPED1 = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Unmapped.out.mate1',
         UNMAPPED2 = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Unmapped.out.mate2'
@@ -142,8 +142,9 @@ rule rename_compress_unmapped_star:
             """
         )
 
+
 #  Run fastqc on unmapped reads;
-rule rRNA_filtered_fastqc_star:
+rule STAR_rRNA_filtered_fastqc:
     input:
         FQ  = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_{READ}.fq.gz',
     output:

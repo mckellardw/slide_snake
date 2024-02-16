@@ -3,29 +3,61 @@
 ## qualimap on deduplicated/aligned reads
 rule qualimapQC_rRNA_STAR:
     input:
-        BAM = '{OUTDIR}/{SAMPLE}/rRNA/STAR/aligned_sorted.bam', 
-        BAI = '{OUTDIR}/{SAMPLE}/rRNA/STAR/aligned_sorted.bam.bai',
+        BAM = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam', 
+        BAI = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam.bai',
     output:
-        qualimapDir = directory('{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/rRNA/STAR/'),
-        TXT = '{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/rRNA/STAR/rnaseq_qc_results.txt',
-        qualimapReport_html = '{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/rRNA/STAR/qualimapReport.html'
+        TXT  = '{OUTDIR}/{SAMPLE}/qualimap/rRNA/STAR/rnaseq_qc_results.txt',
+        HTML = '{OUTDIR}/{SAMPLE}/qualimap/rRNA/STAR/report.html'
     params:
         # GENES_GTF = lambda wildcards: GTF_DICT[wildcards.SAMPLE]
-        GENES_GTF = ''
+        GENES_GTF = '/gpfs/commons/groups/innovation/dwm/ref_snake/out/mus_musculus/rRNA/raw/annotations.gtf' #TODO
     threads:
         1
     run:
         shell(
             f"""
-            mkdir -p {output.qualimapDir}
+            mkdir -p $(dirname {output.TXT})
 
             {EXEC['QUALIMAP']} rnaseq \
-                -bam {input.SORTEDBAM} \
+                -bam {input.BAM} \
                 -gtf {params.GENES_GTF} \
                 --sequencing-protocol strand-specific-forward \
                 --sorted \
                 --java-mem-size=8G \
-                -outdir {output.qualimapDir} \
+                -outdir $(dirname {output.TXT}) \
+                -outformat html
+            """ 
+        )
+        # cd {output.qualimapDir}
+        # -nt {threads} \
+
+
+# Qualimap on bwa outputs
+## qualimap on deduplicated/aligned reads
+rule qualimapQC_rRNA_bwa:
+    input:
+        BAM = '{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam', 
+        BAI = '{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam.bai',
+    output:
+        TXT = '{OUTDIR}/{SAMPLE}/qualimap/rRNA/bwa/rnaseq_qc_results.txt',
+        HTML = '{OUTDIR}/{SAMPLE}/qualimap/rRNA/bwa/report.html'
+    params:
+        # GENES_GTF = lambda wildcards: GTF_DICT[wildcards.SAMPLE]
+        GENES_GTF = '/gpfs/commons/groups/innovation/dwm/ref_snake/out/mus_musculus/rRNA/raw/annotations.gtf' #TODO
+    threads:
+        1
+    run:
+        shell(
+            f"""
+            mkdir -p $(dirname {output.TXT})
+
+            {EXEC['QUALIMAP']} rnaseq \
+                -bam {input.BAM} \
+                -gtf {params.GENES_GTF} \
+                --sequencing-protocol strand-specific-forward \
+                --sorted \
+                --java-mem-size=8G \
+                -outdir $(dirname {output.TXT}) \
                 -outformat html
             """ 
         )
@@ -35,109 +67,14 @@ rule qualimapQC_rRNA_STAR:
 
 rule qualimap_summary2csv_rRNA_STAR:
     input:
-        TXT = '{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/rnaseq_qc_results.txt'
+        TXT = '{OUTDIR}/{SAMPLE}/qualimap/rRNA/{TOOL}/rnaseq_qc_results.txt',
     output:
-        CSV = '{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/rnaseq_qc_result.csv'
-    threads:
-        1
-    run:
-        with open(input.TXT, 'r') as file:
-            lines = file.readlines()
-
-        out_dict = {}
-        for line in lines:
-            if '=' in line:
-                key, value = line.split('=')
-                if '(' in value:
-                    value, tmp = value.split('(')
-                    value = float(value.strip().replace(',',''))
-                elif '%' in value:
-                    value = float(value.rstrip('%').strip().replace(',',''))
-                elif ',' in value:
-                    value = float(value.strip().replace(',',''))
-            #TODO - "Junction analysis" section
-            # if ':' in line:
-            #     key, value = line.split(':')
-                out_dict[key.strip()]=value
-
-        # df = pd.json_normalize(sections)
-        # print(out_dict)
-        out_df = pd.DataFrame.from_dict(
-            out_dict, 
-            orient='index'
-        ) 
-        out_df.T.to_csv(
-            output.CSV, 
-            index=False
-        )
-
-# Qualimap on bwa outputs
-## qualimap on deduplicated/aligned reads
-rule qualimapQC_rRNA_bwa:
-    input:
-        BAM = '{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam', 
-        BAI = '{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam.bai',
-    output:
-        qualimapDir = directory('{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/rRNA/bwa/'),
-        TXT = '{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/rRNA/bwa/rnaseq_qc_results.txt',
-        qualimapReport_html = '{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/rRNA/bwa/qualimapReport.html'
-    params:
-        GENES_GTF = lambda wildcards: GTF_DICT[wildcards.SAMPLE]
+        CSV = '{OUTDIR}/{SAMPLE}/qualimap/rRNA/{TOOL}/rnaseq_qc_results.csv',
     threads:
         1
     run:
         shell(
             f"""
-            mkdir -p {output.qualimapDir}
-
-            {EXEC['QUALIMAP']} rnaseq \
-                -bam {input.SORTEDBAM} \
-                -gtf {params.GENES_GTF} \
-                --sequencing-protocol strand-specific-forward \
-                --sorted \
-                --java-mem-size=8G \
-                -outdir {output.qualimapDir} \
-                -outformat html
-            """ 
-        )
-        # cd {output.qualimapDir}
-        # -nt {threads} \
-
-
-rule qualimap_summary2csv_rRNA_bwa:
-    input:
-        TXT = '{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/rnaseq_qc_results.txt'
-    output:
-        CSV = '{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/rnaseq_qc_result.csv'
-    threads:
-        1
-    run:
-        with open(input.TXT, 'r') as file:
-            lines = file.readlines()
-
-        out_dict = {}
-        for line in lines:
-            if '=' in line:
-                key, value = line.split('=')
-                if '(' in value:
-                    value, tmp = value.split('(')
-                    value = float(value.strip().replace(',',''))
-                elif '%' in value:
-                    value = float(value.rstrip('%').strip().replace(',',''))
-                elif ',' in value:
-                    value = float(value.strip().replace(',',''))
-            #TODO - "Junction analysis" section
-            # if ':' in line:
-            #     key, value = line.split(':')
-                out_dict[key.strip()]=value
-
-        # df = pd.json_normalize(sections)
-        # print(out_dict)
-        out_df = pd.DataFrame.from_dict(
-            out_dict, 
-            orient='index'
-        ) 
-        out_df.T.to_csv(
-            output.CSV, 
-            index=False
+            python scripts/py/qualimap_summary2csv.py {input.TXT} {output.CSV}
+            """
         )
