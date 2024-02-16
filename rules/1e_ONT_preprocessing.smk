@@ -104,7 +104,7 @@ rule call_adapter_scan:
                 {input.FQ} 
             """
         )
-    # --batch_size {params.batch_size} \
+# --batch_size {params.batch_size} \
 
 
 # rule call_paftools:
@@ -162,13 +162,6 @@ rule align_ONT_minimap2:
             """
         )
 #
-# \
-#             && {EXEC['SAMTOOLS']} view \
-#                 {output.SAM_TMP} \
-#                 -t {params.chrom_sizes} \
-#                 -o {output.BAM_UNSORT_TMP}
-
-            # {EXEC['SAMTOOLS']} index {output.BAM_SORT}
 
 
 rule sort_index_ONT_output:
@@ -229,7 +222,7 @@ rule extract_barcodes:
                 {input.BAM} {input.BB_WHITELIST}
             """
         )
-
+#
 
 # rule cleanup_headers_1:
 #     input:

@@ -7,8 +7,8 @@
 ## ~~~~~ sample sheet ~~~~~
 ### See `example_sample_sheet.csv` for details
 # SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/visium/CS001-5.csv
-SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/visium/vy3.csv
-# SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/visium/vy3D.csv
+# SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/visium/vy3.csv
+SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/visium/vy3D.csv
 
 # STARsolo parameters
 CORES: 16 # how many cores to give each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")

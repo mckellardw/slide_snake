@@ -7,14 +7,15 @@ import pandas as pd
 import scipy.io
 import scipy.sparse
 
-### Config file ########################################################################
-configfile:'config.yaml'
+### Config #############################################################################
+configfile:'config/config.yaml'
+
 RECIPE_SHEET = pd.read_csv(
     # config["RECIPE_SHEET"], 
     "resources/recipe_sheet.csv",
     na_filter=False,
     index_col=0
-) #"resources/recipe_sheet.csv"
+) 
 
 ### Directories and locations ##########################################################
 TMPDIR = config['TMPDIR']
@@ -161,7 +162,13 @@ rule all:
         #     for SAMPLE in SAMPLES 
         #     for RECIPE in RECIPE_DICT[SAMPLE] 
         #     for FILE in ["report.html","rnaseq_qc_result.csv"] 
-        # ], # alignment QC with qualimap | requires deduped input!        
+        # ], # alignment QC with qualimap | requires deduped input!    
+        
+        [f"{OUTDIR}/{SAMPLE}/qualimap/rRNA/{TOOL}/{FILE}"
+            for SAMPLE in SAMPLES 
+            for TOOL in ["bwa","STARsolo"]
+            for FILE in ["report.html","rnaseq_qc_result.csv"] 
+        ], # alignment QC with qualimap [rRNA alignments]      
 
         # expand( # deduped and/or strand-split, umi_tools deduplicated .bam #TODO- REF=["STARsolo_rRNA", "STARsolo"])
         #     '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out{STRAND}.bam.bai',
@@ -181,7 +188,9 @@ rule all:
         #     SAMPLE=SAMPLES
         # ), # Top BLAST results for unmapped reads
         
-        #EXTRANEOUS
+
+
+        ## EXTRANEOUS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # expand( # count matrices for bowtie2 alignment to small RNA reference(s)
         #     '{OUTDIR}/{SAMPLE}/{SMALL_RNA}/{TYPE}',
         #     OUTDIR=config['OUTDIR'],
