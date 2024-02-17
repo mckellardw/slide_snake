@@ -54,8 +54,10 @@ rule bwa_rRNA_align:
             > {output.BAM2} 
 
             {EXEC['SAMTOOLS']} view \
-                -h input.sam \
-            | awk '$5 < {params.MIN_ALIGNSCORE} {print}' \
+                -h {output.BAM2} \
+            | awk \
+                -v quality={params.MIN_ALIGNSCORE} \
+                -f scripts/awk/bam_filterLowMAPQ.awk \
             | {EXEC['SAMTOOLS']} fastq \
                 {output.BAM2} \
             > {output.R2_FQ_BWA_FILTERED} 
