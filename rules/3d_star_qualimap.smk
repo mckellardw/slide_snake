@@ -3,10 +3,10 @@
 ## qualimap on deduplicated/aligned reads
 rule qualimapQC_STAR:
     input:
-        SORTEDBAM = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out.bam'
+        SORTEDBAM = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.bam'
     output:
-        TXT = '{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/rnaseq_qc_results.txt',
-        HTML = '{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/report.html'
+        TXT = '{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/rnaseq_qc_results.txt',
+        HTML = '{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/report.html'
     params:
         GENES_GTF = lambda wildcards: GTF_DICT[wildcards.SAMPLE]
     threads:
@@ -32,9 +32,9 @@ rule qualimapQC_STAR:
 
 rule qualimap_summary2csv_STAR:
     input:
-        TXT = '{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/rnaseq_qc_results.txt'
+        TXT = '{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/rnaseq_qc_results.txt'
     output:
-        CSV = '{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/rnaseq_qc_result.csv'
+        CSV = '{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/rnaseq_qc_result.csv'
     threads:
         1
     run:
