@@ -76,6 +76,7 @@ include: "rules/1e_ONT_preprocessing.smk"
 # rRNA Filtering 
 include: "rules/2a_rRNA_bwa.smk"
 include: "rules/2b_rRNA_STAR.smk"
+include: "rules/2c_rRNA_qualimap.smk"
 
 # STAR alignment, QC, and post-processing - TODO update numbering
 include: "rules/3a_star_align.smk"
@@ -113,12 +114,12 @@ rule all:
             for READ in ["R1","R2"] 
         ],  # fastQC results
 
-        [f"{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.h5ad" 
-            for SAMPLE in SAMPLES 
-            for RECIPE in RECIPE_DICT[SAMPLE] 
-            for SOLO in ["Gene","GeneFull"]
-            for ALGO in ["UniqueAndMult-EM","matrix"]
-        ], # anndata files (with spatial info) - STAR
+        # [f"{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.h5ad" 
+        #     for SAMPLE in SAMPLES 
+        #     for RECIPE in RECIPE_DICT[SAMPLE] 
+        #     for SOLO in ["Gene","GeneFull"]
+        #     for ALGO in ["UniqueAndMult-EM","matrix"]
+        # ], # anndata files (with spatial info) - STAR
 
         # [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/raw/output.h5ad" 
         #     for SAMPLE in SAMPLES 
@@ -126,11 +127,11 @@ rule all:
         #     for KB in ["kb"] # 'kb_velo', 'kb_nuc' 
         # ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`
         
-        [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/counts_unfiltered/output.h5ad" 
-            for SAMPLE in SAMPLES 
-            for RECIPE in RECIPE_DICT[SAMPLE] 
-            for KB in ["kbpython"] # 'kb_velo', 'kb_nuc' 
-        ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`
+        # [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/counts_unfiltered/output.h5ad" 
+        #     for SAMPLE in SAMPLES 
+        #     for RECIPE in RECIPE_DICT[SAMPLE] 
+        #     for KB in ["kbpython"] # 'kb_velo', 'kb_nuc' 
+        # ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`
         
         # [f"{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx.gz" 
         #     for SAMPLE in SAMPLES 
@@ -166,8 +167,8 @@ rule all:
         
         [f"{OUTDIR}/{SAMPLE}/qualimap/rRNA/{TOOL}/{FILE}"
             for SAMPLE in SAMPLES 
-            for TOOL in ["bwa","STARsolo"]
-            for FILE in ["report.html","rnaseq_qc_result.csv"] 
+            for TOOL in ["bwa"]#,"STARsolo"
+            for FILE in ["report.html","rnaseq_qc_results.csv"] 
         ], # alignment QC with qualimap [rRNA alignments]      
 
         # expand( # deduped and/or strand-split, umi_tools deduplicated .bam #TODO- REF=["STARsolo_rRNA", "STARsolo"])

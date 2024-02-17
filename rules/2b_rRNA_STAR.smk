@@ -52,7 +52,7 @@ rule STAR_rRNA_align:
 
             {EXEC['STAR']} \
                 --runThreadN {threads} \
-                --outFileNamePrefix $(dirname {output.BAM}) \
+                --outFileNamePrefix $(dirname {output.BAM})/ \
                 --outSAMtype BAM SortedByCoordinate \
                 --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
                 --readFilesCommand zcat \
