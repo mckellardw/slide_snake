@@ -18,7 +18,7 @@ rule bwa_rRNA_align:
         MEMLIMIT = config['MEMLIMIT'],
         MIN_ALIGNSCORE = 40
     log:
-        log = "{OUTDIR}/{SAMPLE}/rRNA/bwa/bwa_rRNA.log"
+        log = "{OUTDIR}/{SAMPLE}/rRNA/bwa/bwa_mem.log"
     threads:
         config['CORES']
     run: 
@@ -57,7 +57,7 @@ rule bwa_rRNA_align:
                 -h {output.BAM2} \
             | awk \
                 -v quality={params.MIN_ALIGNSCORE} \
-                -f scripts/awk/bam_filterLowMAPQ.awk \
+                -f scripts/awk/bam_lowPassMAPQFilter.awk \
             | {EXEC['SAMTOOLS']} fastq \
                 {output.BAM2} \
             > {output.R2_FQ_BWA_FILTERED} 
@@ -108,7 +108,6 @@ rule bwa_rRNA_filter_R1:
         R1_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq',
         # rRNA_LIST  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/rRNA_readID.list', #temp()
         UNMAPPED_LIST  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/rRNA_readID.list'  #temp()
-    params:
     threads:
         config['CORES']
     run:
@@ -135,7 +134,6 @@ rule bwa_rRNA_compress_unmapped:
     output:        
         R1_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz',
         R2_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz'
-    params:
     threads:
         config['CORES']
     run:
