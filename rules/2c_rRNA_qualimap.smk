@@ -39,13 +39,17 @@ rule qualimapQC_rRNA_bwa:
         BAM = '{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam', 
         BAI = '{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam.bai',
     output:
-        TXT = '{OUTDIR}/{SAMPLE}/qualimap/rRNA/bwa/rnaseq_qc_results.txt',
+        TXT  = '{OUTDIR}/{SAMPLE}/qualimap/rRNA/bwa/rnaseq_qc_results.txt',
         HTML = '{OUTDIR}/{SAMPLE}/qualimap/rRNA/bwa/report.html'
     params:
         # GENES_GTF = lambda wildcards: GTF_DICT[wildcards.SAMPLE]
         GENES_GTF = '/gpfs/commons/groups/innovation/dwm/ref_snake/out/mus_musculus/rRNA/raw/annotations.gtf' #TODO
+    log:
+        log = "{OUTDIR}/{SAMPLE}/qualimap/rRNA/bwa/rnaseq_qc.log"
     threads:
         1
+    resources:
+        mem = "32G"
     run:
         shell(
             f"""
@@ -56,9 +60,10 @@ rule qualimapQC_rRNA_bwa:
                 -gtf {params.GENES_GTF} \
                 --sequencing-protocol strand-specific-forward \
                 --sorted \
-                --java-mem-size=8G \
+                --java-mem-size={resources.mem} \
                 -outdir $(dirname {output.TXT}) \
-                -outformat html
+                -outformat html \
+            2> {log.log}
             """ 
         )
         # cd {output.qualimapDir}
