@@ -15,7 +15,8 @@ def qualimap_summary2csv_STAR(qualimapReport_txt, qualimapReport_csv):
                 value = float(value.rstrip('%').strip().replace(',', ''))
             elif ',' in value:
                 value = float(value.strip().replace(',', ''))
-        out_dict[key.strip()] = value
+            
+            out_dict[key.strip()] = value
 
     out_df = pd.DataFrame.from_dict(out_dict, orient='index')
     out_df.T.to_csv(qualimapReport_csv, index=False)

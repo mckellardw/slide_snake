@@ -7,7 +7,7 @@ rule qualimapQC_rRNA_STAR:
         BAI = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam.bai',
     output:
         TXT  = '{OUTDIR}/{SAMPLE}/qualimap/rRNA/STAR/rnaseq_qc_results.txt',
-        HTML = '{OUTDIR}/{SAMPLE}/qualimap/rRNA/STAR/report.html'
+        HTML = '{OUTDIR}/{SAMPLE}/qualimap/rRNA/STAR/qualimapReport.html'
     params:
         # GENES_GTF = lambda wildcards: GTF_DICT[wildcards.SAMPLE]
         GENES_GTF = '/gpfs/commons/groups/innovation/dwm/ref_snake/out/mus_musculus/rRNA/raw/annotations.gtf' #TODO
@@ -40,7 +40,7 @@ rule qualimapQC_rRNA_bwa:
         BAI = '{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam.bai',
     output:
         TXT  = '{OUTDIR}/{SAMPLE}/qualimap/rRNA/bwa/rnaseq_qc_results.txt',
-        HTML = '{OUTDIR}/{SAMPLE}/qualimap/rRNA/bwa/report.html'
+        HTML = '{OUTDIR}/{SAMPLE}/qualimap/rRNA/bwa/qualimapReport.html'
     params:
         # GENES_GTF = lambda wildcards: GTF_DICT[wildcards.SAMPLE]
         GENES_GTF = '/gpfs/commons/groups/innovation/dwm/ref_snake/out/mus_musculus/rRNA/raw/annotations.gtf' #TODO
@@ -66,9 +66,6 @@ rule qualimapQC_rRNA_bwa:
             2> {log.log}
             """ 
         )
-        # cd {output.qualimapDir}
-        # -nt {threads} \
-
 
 rule qualimap_summary2csv_rRNA_STAR:
     input:
