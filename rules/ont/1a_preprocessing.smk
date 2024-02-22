@@ -43,19 +43,13 @@ rule merge_formats_ONT:
         config['CORES']
     run:
         shell(f"rm -rf {params.TMPDIR}/*") # clear out tmp dir
-        for F in params.ONT_reads:
-            F_base = os.path.basename(F).split('.')[0]
+        if len(params.ONT_reads) == 1:
+            F = params.ONT_reads[0]
             if ".fq.gz" in F or ".fastq.gz" in F:
                 shell(
                     f"""
-                    if [ -f {F} ]; then
-                        mkdir -p {params.TMPDIR}
-                        echo "Adding {F} to output fastq" >> {log.log}
-
-                        zcat {F} > {params.TMPDIR}/{F_base}.fq
-                    else
-                        echo "File [ {F} ] does not exist." >> {log.log}
-                    fi
+                    mkdir -p {params.TMPDIR}
+                    cp {F} {output.MERGED_FQ}
                     """
                 )
             elif ".sam" in F or "bam" in F:
@@ -64,14 +58,44 @@ rule merge_formats_ONT:
                     if [ -f {F} ]; then
                         mkdir -p {params.TMPDIR}
 
-                        {EXEC['SAMTOOLS']} fastq {F} > {params.TMPDIR}/{F_base}.fq \
+                        {EXEC['SAMTOOLS']} fastq {F} \
+                        > {params.TMPDIR}/{F_base}.fq \
                         2> {log.log}
                     else
                         echo "File [ {F} ] does not exist." >> {log.log}
                     fi                    
                     """
-                )            
-            # end loop
+                )
+        else:
+            for F in params.ONT_reads:
+                F_base = os.path.basename(F).split('.')[0]
+                if ".fq.gz" in F or ".fastq.gz" in F:
+                    shell(
+                        f"""
+                        if [ -f {F} ]; then
+                            mkdir -p {params.TMPDIR}
+                            echo "Adding {F} to output fastq" >> {log.log}
+
+                            zcat {F} > {params.TMPDIR}/{F_base}.fq
+                        else
+                            echo "File [ {F} ] does not exist." >> {log.log}
+                        fi
+                        """
+                    )
+                elif ".sam" in F or "bam" in F:
+                    shell(
+                        f"""
+                        if [ -f {F} ]; then
+                            mkdir -p {params.TMPDIR}
+
+                            {EXEC['SAMTOOLS']} fastq {F} > {params.TMPDIR}/{F_base}.fq \
+                            2> {log.log}
+                        else
+                            echo "File [ {F} ] does not exist." >> {log.log}
+                        fi                    
+                        """
+                    )
+                # end loop
 
         shell(
             f"""
@@ -83,7 +107,7 @@ rule merge_formats_ONT:
 
 
 # borrowed from sockeye
-rule call_adapter_scan:
+rule ont_call_adapter_scan:
     input:
         FQ = "{OUTDIR}/{SAMPLE}/ont/merged.fq.gz"
         # FOFN = "{OUTDIR}/{SAMPLE}/ont/chunk/fofn.txt",
@@ -111,6 +135,51 @@ rule call_adapter_scan:
         )
 # --batch_size {params.batch_size} \
 
+# Write lists of read IDs for each adapter type 
+rule ont_readIDs_by_adapter_type:
+    input:
+        TSV = "{OUTDIR}/{SAMPLE}/ont/adapter_scan.tsv",
+        FQ  = "{OUTDIR}/{SAMPLE}/ont/merged_stranded.fq.gz"
+    output:
+        LST = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
+        DIR = directory("{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids"),
+    threads: 
+        config["CORES"]
+    run:
+        shell(
+            f"""
+            python scripts/py/write_adapterscan_read_id_lists.py \
+                --tsv_file_path {input.TSV} \
+                --output_directory {output.DIR}
+            """
+        )
+
+#TODO
+# rule ont_split_fastq_by_adapter_type:
+#     input:
+#         FQ  = "{OUTDIR}/{SAMPLE}/ont/merged_stranded.fq.gz"
+#         LST = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
+#         DIR = directory("{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids"),
+#     output:
+#         FQS = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.fq.gz"
+#     threads: 
+#         config["CORES"]
+#     run:
+#         for ADAPTER in input.ADAPTER_TYPES: #TODO
+#             shell(
+#                 f"""
+#                 {EXEC['SEQTK']} subseq {input.FQ} {input.DIR}/{ADAPTER}.txt \
+#                 > {output.FQ.strip('.gz')}
+#                 """
+#             )
+#         shell(
+#             f"""
+#             {EXEC['PIGZ']} -p{threads} {output.FQ.strip('.gz')}
+#             """
+#         )
+
+#TODO- rule to split fastqs into R1 + R2, then input to STARsolo
+#TODO other rules to salvage non-full_len reads
 
 # rule call_paftools:
 #     input:

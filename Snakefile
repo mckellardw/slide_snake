@@ -104,52 +104,43 @@ include: "rules/6a_scanpy_init.smk"
 include: "rules/ont/1a_preprocessing.smk"
 include: "rules/ont/1b_trimQC.smk"
 include: "rules/ont/1c_minimap2.smk"
+include: "rules/ont/1d_qualimap.smk"
 
 
 ### target rule(s) #####################################################################
 rule all:
     input:
+        ### ONT targets ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         [f"{OUTDIR}/{SAMPLE}/ont/{FILE}" 
             for SAMPLE in ONT.keys() 
             for RECIPE in RECIPE_DICT[SAMPLE]
-            for FILE in ["merged_stranded.fq.gz","sorted.bam"]
+            for FILE in ["merged_stranded.fq.gz","sorted.bam","adapter_scan_readids/full_len.txt"]
         ], # ONT outputs
         [f"{OUTDIR}/{SAMPLE}/fastqc/{TRIM}" 
             for SAMPLE in ONT.keys() 
             for RECIPE in RECIPE_DICT[SAMPLE]
             for TRIM in ["ont_preAdapterScan"]
-        ], # ONT outputs
+        ], # ONT fastqc
+        [f"{OUTDIR}/{SAMPLE}/qualimap/ont/{TOOL}/{FILE}"
+            for SAMPLE in ONT.keys() 
+            for TOOL in ["minimap2"]#,"STARsolo"
+            for FILE in ["qualimapReport.html","rnaseq_qc_results.csv"] 
+        ], # alignment QC with qualimap      
 
+        ### short-read targets ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Module 1 - trimming & QC
         [f"{OUTDIR}/{SAMPLE}/fastqc/{TRIM}_{READ}"
             for SAMPLE in R2_FQS.keys()
             for TRIM in ["preCutadapt","postCutadapt","twiceCutadapt","rRNA_bwa","rRNA_STAR"] 
             for READ in ["R1","R2"] 
-        ],  # fastQC results
+        ],  # fastQC results        
 
-        [f"{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.h5ad" 
+        # Module 2 - rRNA filtering        
+        [f"{OUTDIR}/{SAMPLE}/qualimap/rRNA/{TOOL}/{FILE}"
             for SAMPLE in R2_FQS.keys() 
-            for RECIPE in RECIPE_DICT[SAMPLE] 
-            for SOLO in ["Gene","GeneFull"]
-            for ALGO in ["UniqueAndMult-EM","matrix"]
-        ], # anndata files (with spatial info) - STAR
-
-        # [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/raw/output.h5ad" 
-        #     for SAMPLE in R2_FQS.keys() 
-        #     for RECIPE in RECIPE_DICT[SAMPLE] 
-        #     for KB in ["kb"] # "kb_velo", "kb_nuc" 
-        # ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`
-        
-        # [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/counts_unfiltered/output.h5ad" 
-        #     for SAMPLE in R2_FQS.keys() 
-        #     for RECIPE in RECIPE_DICT[SAMPLE] 
-        #     for KB in ["kbpython"] # "kb_velo", "kb_nuc" 
-        # ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`
-        
-        # [f"{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx.gz" 
-        #     for SAMPLE in R2_FQS.keys() 
-        #     for RECIPE in RECIPE_DICT[SAMPLE]
-        # ], # STAR count mats
-
+            for TOOL in ["bwa"]#,"STARsolo"
+            for FILE in ["qualimapReport.html","rnaseq_qc_results.csv"] 
+        ], # alignment QC with qualimap [rRNA alignments]
         # expand( #STAR count mats - rRNA
         #     "{OUTDIR}/{SAMPLE}/rRNA/{ALIGNER}/raw/matrix.mtx.gz",
         #     OUTDIR=config["OUTDIR"],
@@ -158,47 +149,64 @@ rule all:
         #         "STARsolo/Solo.out/GeneFull"
         #         # "bwa" #TODO
         #     ]
-        # ),
-        
-        # [f"{OUTDIR}/{SAMPLE}/{SMALL}/{RECIPE}/raw/output.h5ad" 
-        #     for SAMPLE in R2_FQS.keys() 
-        #     for RECIPE in RECIPE_DICT[SAMPLE] 
-        #     for SMALL in ["miRNA","piRNA"]
-        # ],# anndata files (with spatial info) - small RNA
+        # ),        
 
-        # [f"{OUTDIR}/{SAMPLE}/miRge_bulk/{RECIPE}/annotation.report.html" 
-        #     for SAMPLE in R2_FQS.keys() 
-        #     for RECIPE in RECIPE_DICT[SAMPLE] 
-        # ], # miRge3.0 pseudobulk analysis
-
-        # [f"{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/{FILE}"
-        #     for SAMPLE in R2_FQS.keys() 
-        #     for RECIPE in RECIPE_DICT[SAMPLE] 
-        #     for FILE in ["qualimapReport.html","rnaseq_qc_result.csv"] 
-        # ], # alignment QC with qualimap | requires deduped input!    
-        
-        [f"{OUTDIR}/{SAMPLE}/qualimap/rRNA/{TOOL}/{FILE}"
-            for SAMPLE in R2_FQS.keys() 
-            for TOOL in ["bwa"]#,"STARsolo"
-            for FILE in ["qualimapReport.html","rnaseq_qc_results.csv"] 
-        ], # alignment QC with qualimap [rRNA alignments]      
-
+        # Module 3 - STAR alignment
         # expand( # deduped and/or strand-split, umi_tools deduplicated .bam #TODO- REF=["STARsolo_rRNA", "STARsolo"]
         #     "{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out{STRAND}.bam.bai",
         #     OUTDIR=config["OUTDIR"],
         #     SAMPLE=R2_FQS.keys(),
         #     STRAND=["", ".fwd", ".rev"]
         # ),
-
         [f"{OUTDIR}/{SAMPLE}/fastqc/unmapped/{RECIPE}" 
             for SAMPLE in R2_FQS.keys() 
             for RECIPE in RECIPE_DICT[SAMPLE]
         ], #fastQC results for unmapped reads
-
         # [f"{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/blast/Unmapped.out.mate2_blastResults.txt",
         #     SAMPLE=R2_FQS.keys()
         #     for RECIPE in RECIPE_DICT[SAMPLE]
-        # ], # Top BLAST results for unmapped R2 reads
+        # ], # Top BLAST results for unmapped R2 reads        
+        # [f"{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/{FILE}"
+        #     for SAMPLE in R2_FQS.keys() 
+        #     for RECIPE in RECIPE_DICT[SAMPLE] 
+        #     for FILE in ["qualimapReport.html","rnaseq_qc_result.csv"] 
+        # ], # alignment QC with qualimap | requires deduped input!    
+        
+        # Module 4 - kallisto & bustools
+        # [f"{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx.gz" 
+        #     for SAMPLE in R2_FQS.keys() 
+        #     for RECIPE in RECIPE_DICT[SAMPLE]
+        # ], # STAR count mats
+
+        # Module 5 - small RNA
+        # [f"{OUTDIR}/{SAMPLE}/{SMALL}/{RECIPE}/raw/output.h5ad" 
+        #     for SAMPLE in R2_FQS.keys() 
+        #     for RECIPE in RECIPE_DICT[SAMPLE] 
+        #     for SMALL in ["miRNA","piRNA"]
+        # ],# anndata files (with spatial info) - small RNA
+        # [f"{OUTDIR}/{SAMPLE}/miRge_bulk/{RECIPE}/annotation.report.html" 
+        #     for SAMPLE in R2_FQS.keys() 
+        #     for RECIPE in RECIPE_DICT[SAMPLE] 
+        # ], # miRge3.0 pseudobulk analysis
+
+        # Module 6 - anndata/scanpy
+        [f"{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.h5ad" 
+            for SAMPLE in R2_FQS.keys() 
+            for RECIPE in RECIPE_DICT[SAMPLE] 
+            for SOLO in ["Gene","GeneFull"]
+            for ALGO in ["UniqueAndMult-EM","matrix"]
+        ], # anndata files (with spatial info) - STAR        
+        # [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/raw/output.h5ad" 
+        #     for SAMPLE in R2_FQS.keys() 
+        #     for RECIPE in RECIPE_DICT[SAMPLE] 
+        #     for KB in ["kb"] # "kb_velo", "kb_nuc" 
+        # ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`        
+        # [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/counts_unfiltered/output.h5ad" 
+        #     for SAMPLE in R2_FQS.keys() 
+        #     for RECIPE in RECIPE_DICT[SAMPLE] 
+        #     for KB in ["kbpython"] # "kb_velo", "kb_nuc" 
+        # ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`
+        
         
 
 
