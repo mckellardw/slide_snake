@@ -81,7 +81,7 @@ rule R1_trimming:
                 echo "No trimming performed on {input.R1_FQ}..." {log.log}
                 """
             )
-
+#
 
 # TSO & homopolymer trimming
 #TODO: add "{ADAPTER};noindels" to adapter sequence trimming? - *Note- do not do this for the BB_ADAPTER
@@ -98,6 +98,7 @@ rule cutadapt:
         JSON = '{OUTDIR}/{SAMPLE}/cutadapt.json'
     params:
         # R1_LENGTH = 50,
+        ADAPTER_COUNT=4, # number of adapters that can be trimmed from each read
         QUALITY_MIN=20,
         MIN_R2_LENGTH = 12,
         OVERLAP = 5,
@@ -143,6 +144,7 @@ rule cutadapt:
                 --overlap {params.OVERLAP} \
                 --match-read-wildcards \
                 --nextseq-trim=20 \
+                --times {params.ADAPTER_COUNT} \
                 -A "{params.THREE_PRIME_R2_POLYA};max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
                 -A "{params.THREE_PRIME_R2_POLYT};max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
                 -A {params.THREE_PRIME_R2_TSO} \
@@ -163,7 +165,7 @@ rule cutadapt:
             1> {log.log}
             """
         )
-
+#
 
 # fastqc on R1 after linker removal & R2 trimming/filtering
 rule fastQC_postTrim:

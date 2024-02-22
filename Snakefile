@@ -1,14 +1,12 @@
-#########################################################################################
-# slide_snake
-#   Snakemake workflow to align and quantify spatial transriptomics datasets
-#########################################################################################
+# slide_snake 
+## Snakemake workflow to align and quantify spatial transriptomics datasets
 
 import pandas as pd
 import scipy.io
 import scipy.sparse
 
 ### Config #############################################################################
-configfile:'config/config.yaml'
+configfile:"config/config.yaml"
 
 RECIPE_SHEET = pd.read_csv(
     # config["RECIPE_SHEET"], 
@@ -18,22 +16,26 @@ RECIPE_SHEET = pd.read_csv(
 ) 
 
 ### Directories and locations ##########################################################
-TMPDIR = config['TMPDIR']
-OUTDIR = config['OUTDIR']
+TMPDIR = config["TMPDIR"]
+OUTDIR = config["OUTDIR"]
 
 ### Variables and references ###########################################################
 SAMPLE_SHEET = pd.read_csv(config["SAMPLE_SHEET_PATH"], na_filter=False)
 
-SAMPLES = list(SAMPLE_SHEET['sampleID'])
+SAMPLES = list(SAMPLE_SHEET["sampleID"])
 
-R1_FQS = dict(zip(SAMPLES, list(SAMPLE_SHEET['fastq_R1'])))
-R2_FQS = dict(zip(SAMPLES, list(SAMPLE_SHEET['fastq_R2'])))
+# short-read data
+R1_FQS = dict(zip(SAMPLES, list(SAMPLE_SHEET["fastq_R1"])))
+R1_FQS = {SAMP: READ.split() for SAMP, READ in R1_FQS.items() if READ}
+R2_FQS = dict(zip(SAMPLES, list(SAMPLE_SHEET["fastq_R2"])))
+R2_FQS = {SAMP: READ.split() for SAMP, READ in R2_FQS.items() if READ}
 
-ONT = dict(zip(SAMPLES, list(SAMPLE_SHEET['ONT']))) 
+# long-read data
+ONT = dict(zip(SAMPLES, list(SAMPLE_SHEET["ONT"]))) 
 ONT = {SAMP: READ.split() for SAMP, READ in ONT.items() if READ}
-# print(ONT)
+
 ### Executables ########################################################################
-EXEC = config['EXEC']
+EXEC = config["EXEC"]
 
 ### Pre-run setup ######################################################################
 # Build dictionaries of recipes & species to use for alignment
@@ -71,7 +73,6 @@ include: "rules/1a_mergefqs.smk"
 include: "rules/1b_trimQC.smk"
 include: "rules/1c_split_bb.smk"
 include: "rules/1d_fq2bam.smk"
-include: "rules/1e_ONT_preprocessing.smk"
 
 # rRNA Filtering 
 include: "rules/2a_rRNA_bwa.smk"
@@ -99,7 +100,13 @@ include: "rules/4c_kallisto_velo.smk"
 include: "rules/6a_scanpy_init.smk"
 # include: "rules/6b_mudata_init.smk"
 
-### target rule(s) ###
+# ONT module
+include: "rules/ont/1a_preprocessing.smk"
+include: "rules/ont/1b_trimQC.smk"
+include: "rules/ont/1c_minimap2.smk"
+
+
+### target rule(s) #####################################################################
 rule all:
     input:
         [f"{OUTDIR}/{SAMPLE}/ont/{FILE}" 
@@ -107,41 +114,46 @@ rule all:
             for RECIPE in RECIPE_DICT[SAMPLE]
             for FILE in ["merged_stranded.fq.gz","sorted.bam"]
         ], # ONT outputs
+        [f"{OUTDIR}/{SAMPLE}/fastqc/{TRIM}" 
+            for SAMPLE in ONT.keys() 
+            for RECIPE in RECIPE_DICT[SAMPLE]
+            for TRIM in ["ont_preAdapterScan"]
+        ], # ONT outputs
 
         [f"{OUTDIR}/{SAMPLE}/fastqc/{TRIM}_{READ}"
-            for SAMPLE in SAMPLES
+            for SAMPLE in R2_FQS.keys()
             for TRIM in ["preCutadapt","postCutadapt","twiceCutadapt","rRNA_bwa","rRNA_STAR"] 
             for READ in ["R1","R2"] 
         ],  # fastQC results
 
-        # [f"{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.h5ad" 
-        #     for SAMPLE in SAMPLES 
-        #     for RECIPE in RECIPE_DICT[SAMPLE] 
-        #     for SOLO in ["Gene","GeneFull"]
-        #     for ALGO in ["UniqueAndMult-EM","matrix"]
-        # ], # anndata files (with spatial info) - STAR
+        [f"{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.h5ad" 
+            for SAMPLE in R2_FQS.keys() 
+            for RECIPE in RECIPE_DICT[SAMPLE] 
+            for SOLO in ["Gene","GeneFull"]
+            for ALGO in ["UniqueAndMult-EM","matrix"]
+        ], # anndata files (with spatial info) - STAR
 
         # [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/raw/output.h5ad" 
-        #     for SAMPLE in SAMPLES 
+        #     for SAMPLE in R2_FQS.keys() 
         #     for RECIPE in RECIPE_DICT[SAMPLE] 
-        #     for KB in ["kb"] # 'kb_velo', 'kb_nuc' 
+        #     for KB in ["kb"] # "kb_velo", "kb_nuc" 
         # ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`
         
         # [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/counts_unfiltered/output.h5ad" 
-        #     for SAMPLE in SAMPLES 
+        #     for SAMPLE in R2_FQS.keys() 
         #     for RECIPE in RECIPE_DICT[SAMPLE] 
-        #     for KB in ["kbpython"] # 'kb_velo', 'kb_nuc' 
+        #     for KB in ["kbpython"] # "kb_velo", "kb_nuc" 
         # ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`
         
         # [f"{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx.gz" 
-        #     for SAMPLE in SAMPLES 
+        #     for SAMPLE in R2_FQS.keys() 
         #     for RECIPE in RECIPE_DICT[SAMPLE]
         # ], # STAR count mats
 
         # expand( #STAR count mats - rRNA
-        #     '{OUTDIR}/{SAMPLE}/rRNA/{ALIGNER}/raw/matrix.mtx.gz',
-        #     OUTDIR=config['OUTDIR'],
-        #     SAMPLE=SAMPLES,
+        #     "{OUTDIR}/{SAMPLE}/rRNA/{ALIGNER}/raw/matrix.mtx.gz",
+        #     OUTDIR=config["OUTDIR"],
+        #     SAMPLE=R2_FQS.keys(),
         #     ALIGNER=[
         #         "STARsolo/Solo.out/GeneFull"
         #         # "bwa" #TODO
@@ -149,71 +161,70 @@ rule all:
         # ),
         
         # [f"{OUTDIR}/{SAMPLE}/{SMALL}/{RECIPE}/raw/output.h5ad" 
-        #     for SAMPLE in SAMPLES 
+        #     for SAMPLE in R2_FQS.keys() 
         #     for RECIPE in RECIPE_DICT[SAMPLE] 
-        #     for SMALL in ['miRNA','piRNA']
+        #     for SMALL in ["miRNA","piRNA"]
         # ],# anndata files (with spatial info) - small RNA
 
         # [f"{OUTDIR}/{SAMPLE}/miRge_bulk/{RECIPE}/annotation.report.html" 
-        #     for SAMPLE in SAMPLES 
+        #     for SAMPLE in R2_FQS.keys() 
         #     for RECIPE in RECIPE_DICT[SAMPLE] 
         # ], # miRge3.0 pseudobulk analysis
 
         # [f"{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/{FILE}"
-        #     for SAMPLE in SAMPLES 
+        #     for SAMPLE in R2_FQS.keys() 
         #     for RECIPE in RECIPE_DICT[SAMPLE] 
-        #     for FILE in ["report.html","rnaseq_qc_result.csv"] 
+        #     for FILE in ["qualimapReport.html","rnaseq_qc_result.csv"] 
         # ], # alignment QC with qualimap | requires deduped input!    
         
         [f"{OUTDIR}/{SAMPLE}/qualimap/rRNA/{TOOL}/{FILE}"
-            for SAMPLE in SAMPLES 
+            for SAMPLE in R2_FQS.keys() 
             for TOOL in ["bwa"]#,"STARsolo"
-            for FILE in ["report.html","rnaseq_qc_results.csv"] 
+            for FILE in ["qualimapReport.html","rnaseq_qc_results.csv"] 
         ], # alignment QC with qualimap [rRNA alignments]      
 
-        # expand( # deduped and/or strand-split, umi_tools deduplicated .bam #TODO- REF=["STARsolo_rRNA", "STARsolo"])
-        #     '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out{STRAND}.bam.bai',
-        #     OUTDIR=config['OUTDIR'],
-        #     SAMPLE=SAMPLES,
+        # expand( # deduped and/or strand-split, umi_tools deduplicated .bam #TODO- REF=["STARsolo_rRNA", "STARsolo"]
+        #     "{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out{STRAND}.bam.bai",
+        #     OUTDIR=config["OUTDIR"],
+        #     SAMPLE=R2_FQS.keys(),
         #     STRAND=["", ".fwd", ".rev"]
         # ),
 
         [f"{OUTDIR}/{SAMPLE}/fastqc/unmapped/{RECIPE}" 
-            for SAMPLE in SAMPLES 
+            for SAMPLE in R2_FQS.keys() 
             for RECIPE in RECIPE_DICT[SAMPLE]
         ], #fastQC results for unmapped reads
 
-        # expand( # blastn results for unmapped R2 reads
-        #     '{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/blast/Unmapped.out.mate2_blastResults.txt',
-        #     OUTDIR=config['OUTDIR'],
-        #     SAMPLE=SAMPLES
-        # ), # Top BLAST results for unmapped reads
+        # [f"{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/blast/Unmapped.out.mate2_blastResults.txt",
+        #     SAMPLE=R2_FQS.keys()
+        #     for RECIPE in RECIPE_DICT[SAMPLE]
+        # ], # Top BLAST results for unmapped R2 reads
         
 
 
-        ## EXTRANEOUS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## EXTRANEOUS #######################################################################
         # expand( # count matrices for bowtie2 alignment to small RNA reference(s)
-        #     '{OUTDIR}/{SAMPLE}/{SMALL_RNA}/{TYPE}',
-        #     OUTDIR=config['OUTDIR'],
-        #     SAMPLE=SAMPLES,
-        #     SMALL_RNA=['piRNA','miRNA'],
+        #     "{OUTDIR}/{SAMPLE}/{SMALL_RNA}/{TYPE}",
+        #     OUTDIR=config["OUTDIR"],
+        #     SAMPLE=R2_FQS.keys(),
+        #     SMALL_RNA=["piRNA","miRNA"],
         #     TYPE=["counts.tsv.gz","raw/matrix.mtx.gz"]
         # ),
         # expand( #non-deduplicated .bam
-        #     '{OUTDIR}/{SAMPLE}/{REF}/Aligned.sortedByCoord.out.bam.bai',
-        #     OUTDIR=config['OUTDIR'],
-        #     SAMPLE=SAMPLES,
+        #     "{OUTDIR}/{SAMPLE}/{REF}/Aligned.sortedByCoord.out.bam.bai",
+        #     OUTDIR=config["OUTDIR"],
+        #     SAMPLE=R2_FQS.keys(),
         #     REF=["STARsolo_rRNA", "STARsolo"]
         # ),
         # expand( # kallisto/bustools count mats
-        #     '{OUTDIR}/{SAMPLE}/kb/raw/output.mtx.gz',
-        #     OUTDIR=config['OUTDIR'],
-        #     SAMPLE=SAMPLES
+        #     "{OUTDIR}/{SAMPLE}/kb/raw/output.mtx.gz",
+        #     OUTDIR=config["OUTDIR"],
+        #     SAMPLE=R2_FQS.keys()
         # ),
 
         # expand( # kallisto/bustools count mats
-        #     '{OUTDIR}/{SAMPLE}/kb_velo/{LAYER}/output.mtx.gz',
-        #     OUTDIR=config['OUTDIR'],
-        #     LAYER=['spliced','unspliced'],
-        #     SAMPLE=SAMPLES
+        #     "{OUTDIR}/{SAMPLE}/kb_velo/{LAYER}/output.mtx.gz",
+        #     OUTDIR=config["OUTDIR"],
+        #     LAYER=["spliced", "unspliced"],
+        #     SAMPLE=R2_FQS.keys()
         # ),
