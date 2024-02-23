@@ -4,7 +4,6 @@
 # Slurm garbage
 *slurm*
 
-
 # VScode garbage
 .vscode/*
 
@@ -20,3 +19,4 @@
 
 # Misc.
 .~lock.*
+sandbox/**
