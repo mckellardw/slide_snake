@@ -22,7 +22,8 @@ rule ont_align_minimap2:
             f"""
             {EXEC['MINIMAP2']} \
                 -ax splice \
-                -uf --MD \
+                -uf \
+                --MD \
                 -t {threads} \
                 --junc-bed {params.bed} \
                 --secondary=no \
