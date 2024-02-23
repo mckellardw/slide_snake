@@ -142,7 +142,7 @@ rule ont_readIDs_by_adapter_type:
         FQ  = "{OUTDIR}/{SAMPLE}/ont/merged_stranded.fq.gz"
     output:
         LST = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
-        DIR = directory("{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids"),
+        # DIR = directory("{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids"),
     threads: 
         config["CORES"]
     run:
@@ -150,33 +150,44 @@ rule ont_readIDs_by_adapter_type:
             f"""
             python scripts/py/write_adapterscan_read_id_lists.py \
                 --tsv_file_path {input.TSV} \
-                --output_directory {output.DIR}
+                --output_directory $(dirname {output.LST})
             """
         )
 
 #TODO
-# rule ont_split_fastq_by_adapter_type:
-#     input:
-#         FQ  = "{OUTDIR}/{SAMPLE}/ont/merged_stranded.fq.gz"
-#         LST = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
-#         DIR = directory("{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids"),
-#     output:
-#         FQS = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.fq.gz"
-#     threads: 
-#         config["CORES"]
-#     run:
-#         for ADAPTER in input.ADAPTER_TYPES: #TODO
-#             shell(
-#                 f"""
-#                 {EXEC['SEQTK']} subseq {input.FQ} {input.DIR}/{ADAPTER}.txt \
-#                 > {output.FQ.strip('.gz')}
-#                 """
-#             )
-#         shell(
-#             f"""
-#             {EXEC['PIGZ']} -p{threads} {output.FQ.strip('.gz')}
-#             """
-#         )
+rule ont_split_fastq_by_adapter_type:
+    input:
+        FQ  = "{OUTDIR}/{SAMPLE}/ont/merged_stranded.fq.gz",
+        LST = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
+        # DIR = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids",
+    output:
+        FQ  = temp("{OUTDIR}/{SAMPLE}/ont/merged_stranded.fq"),
+        SUBFQ = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.fq.gz"
+    threads: 
+        config["CORES"]
+    log:
+        log = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/subseq_full_len.log"
+    run:
+        # for ADAPTER in input.ADAPTER_TYPES: #TODO- broaden to other read types, bneyond full_len
+        shell(
+            f"""
+            mkdir -p $(dirname {output.FQ})
+            
+            zcat {input.FQ} > {output.FQ} 
+
+            {EXEC['SEQTK']} subseq \
+                {output.FQ} \
+                {input.LST} \
+            > {output.SUBFQ.strip('.gz')} \
+            2> {log.log}
+            """
+        )
+
+        shell(
+            f"""
+            {EXEC['PIGZ']} -p{threads} {output.SUBFQ.strip('.gz')}
+            """
+        )
 
 #TODO- rule to split fastqs into R1 + R2, then input to STARsolo
 #TODO other rules to salvage non-full_len reads
