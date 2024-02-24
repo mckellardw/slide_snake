@@ -90,7 +90,7 @@ rule ont_cutadapt:
         shell(
             f"""
             mkdir -p $(dirname  {output.R1_FQ})
-            
+
             {EXEC['CUTADAPT']} \
                 --minimum-length {R1_LENGTH}:{params.MIN_R2_LENGTH} \
                 --quality-cutoff {params.QUALITY_MIN} \
@@ -115,3 +115,5 @@ rule ont_cutadapt:
             1> {log.log}
             """
         )
+
+#TODO- internal adapter trimming for ONT/R1/slide-seq

@@ -3,8 +3,6 @@
 #############################################
 # Make output directory, align fastqs, and generate raw/filtered feature/cell-barcode matrices
 #   Info for STARsolo command line paramaters: https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md
-
-#TODO: add multiple recipe compatibility (iterate through the list of space-delimited chemistries listed in SAMPLE sheet)
 rule STARsolo_align:
     input:
         # R1_FQ_HardTrim = '{OUTDIR}/{SAMPLE}/tmp/{SAMPLE}_R1_HardTrim.fq.gz',

@@ -189,8 +189,7 @@ rule ont_subset_fastq_by_adapter_type:
             """
         )
 
-#TODO- rule to split fastqs into R1 + R2, then input to STARsolo
-
+#TODO- parallelize by chunking input fastq
 rule ont_split_fastq_to_R1_R2:
     input:
         FQ = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.fq.gz"
@@ -207,18 +206,17 @@ rule ont_split_fastq_to_R1_R2:
         # for ADAPTER in input.ADAPTER_TYPES: #TODO- broaden to other read types, bneyond full_len
         shell(
             f"""
-            python scripts/py/split_full_len_reads.py \
-                --fastq_file {input.FQ} \
-                --output_prefix {input.FQ.strip('.fq.gz')} \
+            python scripts/py/split_full_len_reads_parallelized.py \
+                --fq_in {input.FQ} \
                 --sequence {params.ADAPTER} \
-                --log {log.log}
-
-            {EXEC['PIGZ']} \
-                -p{threads} \
-                {output.R1_FQ.strip('.gz')} \
-                {output.R2_FQ.strip('.gz')}
+                --threads {threads} \
+             2> {log.log}
             """
         )
+            # {EXEC['PIGZ']} \
+            #     -p{threads} \
+            #     {output.R1_FQ.strip('.gz')} \
+            #     {output.R2_FQ.strip('.gz')}
 
 #TODO other rules to salvage non-full_len reads
 

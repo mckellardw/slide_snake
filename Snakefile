@@ -104,7 +104,8 @@ include: "rules/6a_scanpy_init.smk"
 include: "rules/ont/1a_preprocessing.smk"
 include: "rules/ont/1b_trimQC.smk"
 include: "rules/ont/1c_minimap2.smk"
-include: "rules/ont/1d_qualimap.smk"
+include: "rules/ont/1d_STAR.smk"
+include: "rules/ont/1e_qualimap.smk"
 
 
 ### target rule(s) #####################################################################
@@ -114,7 +115,7 @@ rule all:
         [f"{OUTDIR}/{SAMPLE}/ont/{FILE}" 
             for SAMPLE in ONT.keys() 
             for RECIPE in RECIPE_DICT[SAMPLE]
-            for FILE in ["merged_stranded.fq.gz","sorted.bam","adapter_scan_readids/full_len.txt"]
+            for FILE in ["merged_stranded.fq.gz","sorted.bam","adapter_scan_readids/full_len_R2.fq.gz"]
         ], # ONT outputs
         [f"{OUTDIR}/{SAMPLE}/fastqc/{TRIM}" 
             for SAMPLE in ONT.keys() 
