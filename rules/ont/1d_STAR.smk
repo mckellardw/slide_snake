@@ -1,25 +1,27 @@
+# STAR rules for ONT data
+
 
 rule ont_STARsolo_align:
     input:
         # R1_FQ = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len_R1.fq.gz",
         # R2_FQ = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len_R2.fq.gz",
-        R1_FQ = '{OUTDIR}/{SAMPLE}/ont/tmp/cut_R1.fq.gz',
-        R2_FQ = '{OUTDIR}/{SAMPLE}/ont/tmp/cut_R2.fq.gz',
+        R1_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/cut_R1.fq.gz",
+        R2_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/cut_R2.fq.gz",
         BB_WHITELIST = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
         BB_1 = "{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
         BB_2 = "{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
         BB_ADAPTER = "{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt"
     output:
-        BAM = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.bam", #TODO: add temp()
-        UNMAPPED1 = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Unmapped.out.mate1",
-        UNMAPPED2 = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Unmapped.out.mate2",
-        VEL_MAT = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/spliced.mtx",
-        VEL_BC = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/barcodes.tsv",
-        VEL_FEAT = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/features.tsv", 
-        GENEFULL_MAT = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx",
-        GENEFULL_MAT_EM = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx",
-        GENEFULL_BC = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv",
-        GENEFULL_FEAT = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/features.tsv"
+        BAM = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Aligned.sortedByCoord.out.bam", #TODO: add temp()
+        UNMAPPED1 = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Unmapped.out.mate1",
+        UNMAPPED2 = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Unmapped.out.mate2",
+        VEL_MAT = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/Velocyto/raw/spliced.mtx",
+        VEL_BC = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/Velocyto/raw/barcodes.tsv",
+        VEL_FEAT = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/Velocyto/raw/features.tsv", 
+        GENEFULL_MAT = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx",
+        GENEFULL_MAT_EM = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx",
+        GENEFULL_BC = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv",
+        GENEFULL_FEAT = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/GeneFull/raw/features.tsv"
     params:
         MEMLIMIT = config["MEMLIMIT"]
     threads:
@@ -45,7 +47,7 @@ rule ont_STARsolo_align:
         #param handling for different SlideSeq R1 strategies
         if "stomics" in recipe:
             whitelist = input.BB_WHITELIST
-        elif "noTrim" in recipe:
+        elif "noTrim" in recipe or "matchLinker" in recipe:
             whitelist = f"{input.BB_1} {input.BB_2}"
         elif "internalTrim" in recipe:
             whitelist = input.BB_WHITELIST
@@ -93,24 +95,24 @@ rule ont_STARsolo_align:
 # compress outputs from STAR (count matrices, cell barcodes, and gene lists)
 rule ont_compress_STAR_outs:
     input:
-        VEL_MAT = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/spliced.mtx",
-        VEL_BC = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/barcodes.tsv",
-        VEL_FEAT = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/features.tsv", 
-        GENEFULL_MAT = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx",
-        GENEFULL_MAT_EM = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx",
-        GENEFULL_BC = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv",
-        GENEFULL_FEAT = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/features.tsv"
+        VEL_MAT = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/Velocyto/raw/spliced.mtx",
+        VEL_BC = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/Velocyto/raw/barcodes.tsv",
+        VEL_FEAT = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/Velocyto/raw/features.tsv", 
+        GENEFULL_MAT = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx",
+        GENEFULL_MAT_EM = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx",
+        GENEFULL_BC = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv",
+        GENEFULL_FEAT = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/GeneFull/raw/features.tsv"
     output:
-        VEL_MAT = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/spliced.mtx.gz",
-        VEL_BC = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/barcodes.tsv.gz",
-        VEL_FEAT = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/features.tsv.gz",
-        GENEFULL_MAT = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx.gz",
-        GENEFULL_MAT_EM = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx.gz",
-        GENEFULL_BC = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv.gz",
-        GENEFULL_FEAT = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/features.tsv.gz"
+        VEL_MAT = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/Velocyto/raw/spliced.mtx.gz",
+        VEL_BC = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/Velocyto/raw/barcodes.tsv.gz",
+        VEL_FEAT = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/Velocyto/raw/features.tsv.gz",
+        GENEFULL_MAT = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx.gz",
+        GENEFULL_MAT_EM = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx.gz",
+        GENEFULL_BC = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv.gz",
+        GENEFULL_FEAT = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/GeneFull/raw/features.tsv.gz"
     params:
-        VELDIR = directory("{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Solo.out/Velocyto"),
-        GENEFULLDIR = directory("{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Solo.out/GeneFull")
+        VELDIR = directory("{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/Velocyto"),
+        GENEFULLDIR = directory("{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/GeneFull")
     threads:
         config["CORES"]
     run:
@@ -132,8 +134,8 @@ rule ont_compress_STAR_outs:
         shell(
             f"""
             {EXEC['PIGZ']} -p{threads} -f \
-                {OUTDIR}/{wildcards.SAMPLE}/ont/STARsolo/{recipe}/*/*/*/*.tsv \
-                {OUTDIR}/{wildcards.SAMPLE}/ont/STARsolo/{recipe}/*/*/*/*.mtx
+                {OUTDIR}/{wildcards.SAMPLE}/STARsolo/ont/{recipe}/*/*/*/*.tsv \
+                {OUTDIR}/{wildcards.SAMPLE}/STARsolo/ont/{recipe}/*/*/*/*.mtx
             """
         )
 #
@@ -141,9 +143,9 @@ rule ont_compress_STAR_outs:
 # Index .bam output by STAR
 rule ont_indexSortedBAM:
     input:
-        BAM = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.bam"
+        BAM = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Aligned.sortedByCoord.out.bam"
     output:
-        BAI = "{OUTDIR}/{SAMPLE}/ont/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.bam.bai"
+        BAI = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Aligned.sortedByCoord.out.bam.bai"
     threads:
         config["CORES"]
         # 1

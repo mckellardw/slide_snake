@@ -33,63 +33,105 @@ def get_split_ont_align_mem_gb(wildcards, threads):
 # Borrowed portions of this code from `sockeye` - https://github.com/nanoporetech/sockeye/tree/master
 rule merge_formats_ONT:
     output:
-        MERGED_FQ = temp("{OUTDIR}/{SAMPLE}/ont/merged.fq.gz")
+        MERGED_FQ = temp("{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz")
     params:
-        TMPDIR = "{OUTDIR}/{SAMPLE}/ont/tmp",
-        ONT_reads = lambda wildcards: ONT[wildcards.SAMPLE]
+        TMPDIR = "{OUTDIR}/{SAMPLE}/tmp/ont",
+        ONT_reads = lambda wildcards: ONT[wildcards.SAMPLE],
+        CHUNK_SIZE = 50
     log:
         log = "{OUTDIR}/{SAMPLE}/ont/merged.log"
     threads:
         config['CORES']
     run:
-        shell(f"rm -rf {params.TMPDIR}/*") # clear out tmp dir
-        if len(params.ONT_reads) == 1:
+        shell(f"mkdir -p {params.TMPDIR}")
+        # shell(f"rm -rf {params.TMPDIR}/*") # clear out tmp dir
+
+        if len(params.ONT_reads) == 1 and "*" not in params.ONT_reads[0]:
             F = params.ONT_reads[0]
             if ".fq.gz" in F or ".fastq.gz" in F:
                 shell(
                     f"""
-                    mkdir -p {params.TMPDIR}
                     cp {F} {output.MERGED_FQ}
                     """
                 )
-            elif ".sam" in F or "bam" in F:
+            elif ".sam" in F or ".bam" in F:
                 shell(
                     f"""
                     if [ -f {F} ]; then
-                        mkdir -p {params.TMPDIR}
-
                         {EXEC['SAMTOOLS']} fastq {F} \
-                        > {params.TMPDIR}/{F_base}.fq \
+                        > {output.MERGED_FQ.strip('.gz')} \
                         2> {log.log}
                     else
                         echo "File [ {F} ] does not exist." >> {log.log}
                     fi                    
+                    
+                    {EXEC['PIGZ']} -p{threads} {output.MERGED_FQ.strip('.gz')}
                     """
                 )
+        elif len(params.ONT_reads) == 1 and "*" in params.ONT_reads[0]:
+            import glob
+            
+            F_list = glob.glob(params.ONT_reads[0])
+            if len(F_list) > params.CHUNK_SIZE:
+                F_list_chunked = [
+                    " ".join(F_list[i:i + params.CHUNK_SIZE]) 
+                        for i in range(0, len(F_list),  params.CHUNK_SIZE)
+                ]
+            else:
+                F_list_chunked = " ".join(F_list)
+            
+            # F_base = os.path.basename(F).split('.')[0]
+            # F_base.replace("*","42")
+            # F_base = "tmp_star"
+            F_base = output.MERGED_FQ.strip('.gz')
+
+            for i, F in enumerate(F_list_chunked):
+                if ".fq.gz" in F or ".fastq.gz" in F:
+                    shell(
+                        f"""
+                        echo "Adding {F} to output fastq" >> {log.log}
+
+                        zcat {F} >> {F_base}
+                        """
+                    )
+                elif ".sam" in F or ".bam" in F:
+                    shell(
+                        f"""
+                        {EXEC['SAMTOOLS']} fastq {F} \
+                        >> {F_base} \
+                        2> {log.log}
+                        """
+                )
+                # end for loop
+
+            shell(
+                f"""
+                {EXEC['PIGZ']} -p{threads} {F_base}
+                """
+            )
+
         else:
+            F_base = output.MERGED_FQ.strip('.gz')
             for F in params.ONT_reads:
-                F_base = os.path.basename(F).split('.')[0]
                 if ".fq.gz" in F or ".fastq.gz" in F:
                     shell(
                         f"""
                         if [ -f {F} ]; then
-                            mkdir -p {params.TMPDIR}
                             echo "Adding {F} to output fastq" >> {log.log}
 
-                            zcat {F} > {params.TMPDIR}/{F_base}.fq
+                            zcat {F} >> {F_base}
                         else
                             echo "File [ {F} ] does not exist." >> {log.log}
                         fi
                         """
                     )
-                elif ".sam" in F or "bam" in F:
+                elif ".sam" in F or ".bam" in F:
                     shell(
                         f"""
                         if [ -f {F} ]; then
-                            mkdir -p {params.TMPDIR}
-
-                            {EXEC['SAMTOOLS']} fastq {F} > {params.TMPDIR}/{F_base}.fq \
-                            2> {log.log}
+                            {EXEC['SAMTOOLS']} fastq {F} \
+                            >> {F_base} \
+                            2>> {log.log}
                         else
                             echo "File [ {F} ] does not exist." >> {log.log}
                         fi                    
@@ -97,23 +139,22 @@ rule merge_formats_ONT:
                     )
                 # end loop
 
-        shell(
-            f"""
-            cat {params.TMPDIR}/*.fq > {output.MERGED_FQ.strip('.gz')}
-            {EXEC['PIGZ']} -p{threads} {output.MERGED_FQ.strip('.gz')}
-            """
-        )
+            shell(
+                f"""
+                {EXEC['PIGZ']} -p{threads} {F_base}
+                """
+            )
     #
 
 
 # borrowed from sockeye
 rule ont_call_adapter_scan:
     input:
-        FQ = "{OUTDIR}/{SAMPLE}/ont/merged.fq.gz"
+        FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz"
         # FOFN = "{OUTDIR}/{SAMPLE}/ont/chunk/fofn.txt",
     output:
         TSV = "{OUTDIR}/{SAMPLE}/ont/adapter_scan.tsv",
-        FQ  = "{OUTDIR}/{SAMPLE}/ont/merged_stranded.fq.gz"
+        FQ  = "{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq.gz"
     threads: 
         config["CORES"]
     params:
@@ -139,7 +180,7 @@ rule ont_call_adapter_scan:
 rule ont_readIDs_by_adapter_type:
     input:
         TSV = "{OUTDIR}/{SAMPLE}/ont/adapter_scan.tsv",
-        FQ  = "{OUTDIR}/{SAMPLE}/ont/merged_stranded.fq.gz"
+        FQ  = "{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq.gz"
     output:
         LST = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
         # DIR = directory("{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids"),
@@ -157,12 +198,12 @@ rule ont_readIDs_by_adapter_type:
 #TODO
 rule ont_subset_fastq_by_adapter_type:
     input:
-        FQ  = "{OUTDIR}/{SAMPLE}/ont/merged_stranded.fq.gz",
+        FQ  = "{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq.gz",
         LST = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
         # DIR = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids",
     output:
-        FQ  = temp("{OUTDIR}/{SAMPLE}/ont/merged_stranded.fq"),
-        SUBFQ = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.fq.gz"
+        FQ  = temp("{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq"),
+        SUBFQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len.fq.gz"
     threads: 
         config["CORES"]
     log:
@@ -192,10 +233,10 @@ rule ont_subset_fastq_by_adapter_type:
 #TODO- parallelize by chunking input fastq
 rule ont_split_fastq_to_R1_R2:
     input:
-        FQ = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.fq.gz"
+        FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len.fq.gz"
     output:
-        R1_FQ = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len_R1.fq.gz",
-        R2_FQ = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len_R2.fq.gz"
+        R1_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len_R1.fq.gz",
+        R2_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len_R2.fq.gz"
     params:
         ADAPTER = "T"*10
     threads: 
