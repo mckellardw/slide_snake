@@ -1,16 +1,16 @@
 
 rule ont_align_minimap2:
     input:
-        FQ = "{OUTDIR}/{SAMPLE}/ont/merged_stranded.fq.gz",
+        FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/cut_R2.fq.gz",
     output:
-        SAM_TMP=temp("{OUTDIR}/{SAMPLE}/ont/tmp.sam"),
+        SAM_TMP=temp("{OUTDIR}/{SAMPLE}/ont/minimap2/tmp.sam"),
     params:
         ref = config["REF_GENOME_FASTA"],
         chrom_sizes = config["REF_CHROM_SIZES"],
         bed = config["REF_GENES_BED"],
         flags = config["RESOURCES_MM2_FLAGS"],
     log:
-        log = "{OUTDIR}/{SAMPLE}/ont/minimap2.log"
+        log = "{OUTDIR}/{SAMPLE}/ont/minimap2/minimap2.log"
     threads: 
         config["CORES"]
     # resources:
@@ -39,11 +39,11 @@ rule ont_align_minimap2:
 
 rule ont_sort_index_output:
     input:
-        SAM="{OUTDIR}/{SAMPLE}/ont/tmp.sam"
+        SAM="{OUTDIR}/{SAMPLE}/ont/minimap2/tmp.sam"
     output:
         # BAM_UNSORT_TMP=temp("{OUTDIR}/{SAMPLE}/ont/tmp_unsort.sam"),
-        BAM="{OUTDIR}/{SAMPLE}/ont/sorted.bam",
-        BAI="{OUTDIR}/{SAMPLE}/ont/sorted.bam.bai",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/sorted.bam",
+        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/sorted.bam.bai",
     params:
         ref = config["REF_GENOME_FASTA"]
     # threads: 
@@ -65,11 +65,11 @@ rule ont_sort_index_output:
 
 rule ont_extract_barcodes:
     input:
-        BAM = "{OUTDIR}/{SAMPLE}/ont/sorted.bam",
+        BAM = "{OUTDIR}/{SAMPLE}/ont/minimap2/sorted.bam",
         BB_WHITELIST = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt"
     output:
-        BAM = "{OUTDIR}/{SAMPLE}/ont/sorted.bam", #temp()
-        TSV = "{OUTDIR}/{SAMPLE}/ont/bc_counts.tsv",
+        BAM = "{OUTDIR}/{SAMPLE}/ont/minimap2/sorted.bam", #temp()
+        TSV = "{OUTDIR}/{SAMPLE}/ont/minimap2/bc_counts.tsv",
     params:
         KIT = "3prime", #['3prime', '5prime', 'multiome']
         adapter1_suff_length = config["BARCODE_ADAPTER1_SUFF_LENGTH"],

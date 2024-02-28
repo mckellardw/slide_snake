@@ -1,29 +1,6 @@
 #############################################
 ## Read trimming & QC rules
 #############################################
-# fastqc before trimming
-rule ont_fastQC_preTrim:
-    input:
-        MERGED_FQ = '{OUTDIR}/{SAMPLE}/ont/merged.fq.gz'
-    output:
-        DIR = directory('{OUTDIR}/{SAMPLE}/fastqc/ont_preAdapterScan')
-    params:
-        adapters = config['FASTQC_ADAPTERS']
-    threads:
-        config['CORES']
-        # min([config['CORES'],8]) # 8 core max
-    run:
-        shell(
-            f"""
-            mkdir -p {output.DIR}
-
-            {EXEC['FASTQC']} \
-                --outdir {output.DIR} \
-                --threads {threads} \
-                -a {params.adapters} \
-                {input.MERGED_FQ}
-            """
-        )
 
 # https://github.com/yfukasawa/LongQC
 # rule ont_longQC_preTrim:
@@ -51,12 +28,12 @@ rule ont_fastQC_preTrim:
 
 rule ont_cutadapt:
     input:
-        R1_FQ = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len_R1.fq.gz",
-        # R1_FQ_Trimmed = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len_internalTrim_R1.fq.gz",
-        R2_FQ = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len_R2.fq.gz"
+        R1_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len_R1.fq.gz",
+        # R1_FQ_Trimmed = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len_internalTrim_R1.fq.gz",
+        R2_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len_R2.fq.gz"
     output:
-        R1_FQ = temp('{OUTDIR}/{SAMPLE}/ont/tmp/cut_R1.fq.gz'),
-        R2_FQ = temp('{OUTDIR}/{SAMPLE}/ont/tmp/cut_R2.fq.gz'),
+        R1_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/ont/cut_R1.fq.gz'),
+        R2_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/ont/cut_R2.fq.gz'),
         JSON = '{OUTDIR}/{SAMPLE}/ont/cutadapt.json'
     params:
         # R1_LENGTH = 50,
@@ -117,3 +94,4 @@ rule ont_cutadapt:
         )
 
 #TODO- internal adapter trimming for ONT/R1/slide-seq
+
