@@ -3,7 +3,7 @@
 ## qualimap on deduplicated/aligned reads
 rule qualimapQC_STAR:
     input:
-        SORTEDBAM = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.bam'
+        SORTEDBAM = '{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.out.bam'
     output:
         TXT = '{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/rnaseq_qc_results.txt',
         HTML = '{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/qualimapReport.html'

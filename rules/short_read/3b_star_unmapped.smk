@@ -5,11 +5,11 @@
 # Run fastqc on unmapped reads; switch names because of STAR weirdness
 rule fastqc_unmapped:
     input:
-        UNMAPPED1 = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Unmapped.out.mate1',
-        UNMAPPED2 = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Unmapped.out.mate2',
+        UNMAPPED1 = '{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate1',
+        UNMAPPED2 = '{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2',
     output:
-        UNMAPPED1_FQ = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Unmapped.out.mate1.fastq.gz',
-        UNMAPPED2_FQ = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Unmapped.out.mate2.fastq.gz',
+        UNMAPPED1_FQ = '{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate1.fastq.gz',
+        UNMAPPED2_FQ = '{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2.fastq.gz',
         FQC_DIR = directory('{OUTDIR}/{SAMPLE}/fastqc/unmapped/{RECIPE}')
     params:
         FASTQC_ADAPTERS = config['FASTQC_ADAPTERS']
@@ -37,7 +37,7 @@ rule fastqc_unmapped:
 ## TODO: change demux step to fastx-collapser
 rule blast_unmapped:
     input:
-        UNMAPPED2_FQ = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Unmapped.out.mate2.fastq.gz'
+        UNMAPPED2_FQ = '{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2.fastq.gz'
     output:
         BLAST_R2 = '{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/blast/Unmapped.out.mate2_blastResults.txt',
         TMP_FA = temp('{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/blast/Unmapped.out.mate2.fa'),
@@ -102,7 +102,7 @@ rule blast_unmapped:
 # rule unmapped_phix_bwa:
 #     input:
 #         PHIX_IDX = 'resources/phix/bwa.idx',
-#         UNMAPPED2_FQ = '{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Unmapped.out.mate2.fastq.gz'
+#         UNMAPPED2_FQ = '{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2.fastq.gz'
 #     output:
 #         BAM1 = temp('{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/aligned.bam'), #temp()?
 #         BAM2 = '{OUTDIR}/{SAMPLE}unmapped/{RECIPE}/aligned_sorted.bam', #temp()?
