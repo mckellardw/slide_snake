@@ -3,10 +3,10 @@
 
 rule ont_STARsolo_align:
     input:
-        # R1_FQ = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len_R1.fq.gz",
-        # R2_FQ = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len_R2.fq.gz",
-        R1_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/cut_R1.fq.gz",
-        R2_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/cut_R2.fq.gz",
+        R1_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len_R1.fq.gz",
+        R2_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len_R2.fq.gz",
+        # R1_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/cut_R1.fq.gz",
+        # R2_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/cut_R2.fq.gz",
         BB_WHITELIST = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
         BB_1 = "{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
         BB_2 = "{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
@@ -42,7 +42,8 @@ rule ont_STARsolo_align:
         soloCB = RECIPE_SHEET["STAR.soloCB"][recipe]
         soloCBmatchWLtype = RECIPE_SHEET["STAR.soloCBmatchWLtype"][recipe]
         soloAdapter = RECIPE_SHEET["STAR.soloAdapter"][recipe]
-        extraSTAR = RECIPE_SHEET["STAR.extra"][recipe]
+        # extraSTAR = RECIPE_SHEET["STAR.extra"][recipe]
+        extraSTAR = "--outFilterScoreMinOverLread 0 --outFilterMatchNminOverLread 0 --outFilterMismatchNmax 100 --seedSearchLmax 30 --seedPerReadNmax 100000 --seedPerWindowNmax 100 --alignTranscriptsPerReadNmax 100000 --alignTranscriptsPerWindowNmax 10000"
 
         #param handling for different SlideSeq R1 strategies
         if "stomics" in recipe:
@@ -63,11 +64,12 @@ rule ont_STARsolo_align:
         # Run STARsolo
         #TODO?: --twopassMode
         #WASP?
+        STAR_EXEC = "~/mambaforge/envs/slide_snake/bin/STARlong-avx2"
         shell(
             f"""
             mkdir -p $(dirname {output.BAM})
 
-            {EXEC['STAR']} \
+            {EXEC['STAR']}long-avx2 \
                 --runThreadN {threads} \
                 --outFileNamePrefix $(dirname {output.BAM})/ \
                 --outSAMtype BAM SortedByCoordinate \
@@ -90,7 +92,12 @@ rule ont_STARsolo_align:
                 --soloMultiMappers EM
             """
         )
-#
+# STAR/source/STARlong --genomeDir /path/to/genomeDir --genomeLoad LoadAndKeep --readFilesIn /path/to/reads.fastq 
+# --outFileNamePrefix /path/to/output --outSAMtype BAM SortedByCoordinate 
+# --outFilterScoreMinOverLread 0 --outFilterMatchNminOverLread 0 --outFilterMismatchNmax 100 --seedSearchLmax 30 
+# --seedPerReadNmax 100000 --seedPerWindowNmax 100 --alignTranscriptsPerReadNmax 100000 
+# --alignTranscriptsPerWindowNmax 10000
+
 
 # compress outputs from STAR (count matrices, cell barcodes, and gene lists)
 rule ont_compress_STAR_outs:

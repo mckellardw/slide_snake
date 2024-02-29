@@ -68,45 +68,50 @@ for i in range(0,SAMPLE_SHEET.shape[0]):
 
 
 ### include rules #######################################################################
-# fastq preprocessing & QC
-include: "rules/1a_mergefqs.smk"
-include: "rules/1b_trimQC.smk"
-include: "rules/1c_split_bb.smk"
-include: "rules/1d_fq2bam.smk"
+# Pre-flight module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+include: "rules/0a_split_bb.smk" #TODO
 
-# rRNA Filtering 
-include: "rules/2a_rRNA_bwa.smk"
-include: "rules/2b_rRNA_STAR.smk"
-include: "rules/2c_rRNA_qualimap.smk"
+# Short-read module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## fastq preprocessing & QC
+include: "rules/short_read/1a_mergefqs.smk"
+include: "rules/short_read/1b_trimQC.smk"
+include: "rules/short_read/1d_fq2bam.smk"
 
-# STAR alignment, QC, and post-processing - TODO update numbering
-include: "rules/3a_star_align.smk"
-include: "rules/3b_star_unmapped.smk"
-include: "rules/3c_star_dedup.smk"
-include: "rules/3d_star_qualimap.smk"
+## rRNA Filtering 
+include: "rules/short_read/2a_rRNA_bwa.smk"
+include: "rules/short_read/2b_rRNA_STAR.smk"
+include: "rules/short_read/2c_rRNA_qualimap.smk"
 
-# kallisto/bustools alignment
-include: "rules/4a_kallisto.smk"
-include: "rules/4a_kbpython.smk"
-include: "rules/4b_kallisto_pseudobam.smk"
-include: "rules/4c_kallisto_velo.smk"
+## STAR alignment, QC, and post-processing - TODO update numbering
+include: "rules/short_read/3a_star_align.smk"
+include: "rules/short_read/3b_star_unmapped.smk"
+include: "rules/short_read/3c_star_dedup.smk"
+include: "rules/short_read/3d_star_qualimap.smk"
 
-# small RNA stuff
-# include: "rules/5_mirge.smk"
-# include: "rules/5_piRNA_bowtie2.smk"
-# include: "rules/5_miRNA_bowtie2.smk"
+## kallisto/bustools alignment
+include: "rules/short_read/4a_kallisto.smk"
+include: "rules/short_read/4a_kbpython.smk"
+include: "rules/short_read/4b_kallisto_pseudobam.smk"
+include: "rules/short_read/4c_kallisto_velo.smk"
 
-# scanpy stuff
-include: "rules/6a_scanpy_init.smk"
-# include: "rules/6b_mudata_init.smk"
+## small RNA stuff
+# include: "rules/short_read/5_mirge.smk"
+# include: "rules/short_read/5_piRNA_bowtie2.smk"
+# include: "rules/short_read/5_miRNA_bowtie2.smk"
 
-# ONT module
+# ONT module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 include: "rules/ont/1a_preprocessing.smk"
 include: "rules/ont/1b_trimQC.smk"
 include: "rules/ont/1c_minimap2.smk"
 include: "rules/ont/1d_STAR.smk"
 include: "rules/ont/1e_qualimap.smk"
+include: "rules/ont/2_fastqc.smk"
+# include: "rules/ont/2_nanoplot.smk"
 
+# Final outputs module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## scanpy stuff
+include: "rules/6a_scanpy_init.smk"
+# include: "rules/6b_mudata_init.smk"
 
 ### target rule(s) #####################################################################
 rule all:
@@ -115,16 +120,35 @@ rule all:
         [f"{OUTDIR}/{SAMPLE}/ont/{FILE}" 
             for SAMPLE in ONT.keys() 
             for RECIPE in RECIPE_DICT[SAMPLE]
-            for FILE in ["merged_stranded.fq.gz","sorted.bam","adapter_scan_readids/full_len_R2.fq.gz"]
+            for FILE in [
+                    # "merged_stranded.fq.gz",
+                    "minimap2/sorted.bam",
+                    # "adapter_scan_readids/full_len_R2.fq.gz"
+                ]
         ], # ONT outputs
+        # [f"{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/{FILE}" 
+        #     for SAMPLE in ONT.keys() 
+        #     for RECIPE in RECIPE_DICT[SAMPLE]
+        #     for FILE in [
+        #             f"Aligned.sortedByCoord.out.bam"
+        #         ]
+        # ], # ONT outputs
         [f"{OUTDIR}/{SAMPLE}/fastqc/{TRIM}" 
             for SAMPLE in ONT.keys() 
             for RECIPE in RECIPE_DICT[SAMPLE]
-            for TRIM in ["ont_preAdapterScan"]
+            for READ in ["R1","R2"]
+            for TRIM in ["ont_preAdapterScan",f"ont_postCutadapt_{READ}"]
         ], # ONT fastqc
+        # [f"{OUTDIR}/{SAMPLE}/nanoplot/{TRIM}/summary.txt" 
+        #     for SAMPLE in ONT.keys() 
+        #     for RECIPE in RECIPE_DICT[SAMPLE]
+        #     for READ in ["R1","R2"]
+        #     for TRIM in ["ont_preAdapterScan",f"ont_postCutadapt_{READ}"]
+        # ], # ONT NanoPlot
         [f"{OUTDIR}/{SAMPLE}/qualimap/ont/{TOOL}/{FILE}"
             for SAMPLE in ONT.keys() 
-            for TOOL in ["minimap2"]#,"STARsolo"
+            for RECIPE in RECIPE_DICT[SAMPLE]
+            for TOOL in ["minimap2",f"STARsolo/{RECIPE}"]# 
             for FILE in ["qualimapReport.html","rnaseq_qc_results.csv"] 
         ], # alignment QC with qualimap      
 
@@ -154,7 +178,7 @@ rule all:
 
         # Module 3 - STAR alignment
         # expand( # deduped and/or strand-split, umi_tools deduplicated .bam #TODO- REF=["STARsolo_rRNA", "STARsolo"]
-        #     "{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Aligned.sortedByCoord.dedup.out{STRAND}.bam.bai",
+        #     "{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.dedup.out{STRAND}.bam.bai",
         #     OUTDIR=config["OUTDIR"],
         #     SAMPLE=R2_FQS.keys(),
         #     STRAND=["", ".fwd", ".rev"]
@@ -174,7 +198,7 @@ rule all:
         # ], # alignment QC with qualimap | requires deduped input!    
         
         # Module 4 - kallisto & bustools
-        # [f"{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx.gz" 
+        # [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx.gz" 
         #     for SAMPLE in R2_FQS.keys() 
         #     for RECIPE in RECIPE_DICT[SAMPLE]
         # ], # STAR count mats
@@ -191,7 +215,7 @@ rule all:
         # ], # miRge3.0 pseudobulk analysis
 
         # Module 6 - anndata/scanpy
-        [f"{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.h5ad" 
+        [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.h5ad" 
             for SAMPLE in R2_FQS.keys() 
             for RECIPE in RECIPE_DICT[SAMPLE] 
             for SOLO in ["Gene","GeneFull"]
