@@ -180,12 +180,12 @@ if __name__ == "__main__":
             """
         )
         
-        if os.path.isfile(args.fq_in.replace('.fq.gz','_R2.fq.gz')):
-            os.system(
-                f"""
-                rm {' '.join(chunked_fqs_in)} {' '.join(chunked_fqs_out_R1)} {' '.join(chunked_fqs_out_R2)}
-                """
-            )
+        # if os.path.isfile(args.fq_in.replace('.fq.gz','_R2.fq.gz')):
+        #     os.system(
+        #         f"""
+        #         rm {' '.join(chunked_fqs_in)} {' '.join(chunked_fqs_out_R1)} {' '.join(chunked_fqs_out_R2)}
+        #         """
+        #     )
     else:
         print(f"Value given for '--threads' was not understood. Try again.")
     # end if statement
