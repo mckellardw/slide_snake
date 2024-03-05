@@ -20,3 +20,20 @@
 # Misc.
 .~lock.*
 sandbox/**
+
+
+
+envs/**
+**.smk
+**/**.smk
+**.*sv
+**.yaml
+**.py
+**.md
+
+scripts/js/*
+scripts/rust/*
+scripts/k8-0.2.4/*
+scripts/py/*
+.gitignore
+config/config.yaml
