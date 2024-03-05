@@ -42,8 +42,8 @@ rule ont_STARsolo_align:
         soloCB = RECIPE_SHEET["STAR.soloCB"][recipe]
         soloCBmatchWLtype = RECIPE_SHEET["STAR.soloCBmatchWLtype"][recipe]
         soloAdapter = RECIPE_SHEET["STAR.soloAdapter"][recipe]
-        # extraSTAR = RECIPE_SHEET["STAR.extra"][recipe]
-        extraSTAR = "--outFilterScoreMinOverLread 0 --outFilterMatchNminOverLread 0 --outFilterMismatchNmax 100 --seedSearchLmax 30 --seedPerReadNmax 100000 --seedPerWindowNmax 100 --alignTranscriptsPerReadNmax 100000 --alignTranscriptsPerWindowNmax 10000"
+        extraSTAR = RECIPE_SHEET["STAR.extra"][recipe]
+        # extraSTAR = "--outFilterScoreMinOverLread 0 --outFilterMatchNminOverLread 0 --outFilterMismatchNmax 100 --seedSearchLmax 30 --seedPerReadNmax 100000 --seedPerWindowNmax 100 --alignTranscriptsPerReadNmax 100000 --alignTranscriptsPerWindowNmax 10000"
 
         #param handling for different SlideSeq R1 strategies
         if "stomics" in recipe:
@@ -64,7 +64,7 @@ rule ont_STARsolo_align:
         # Run STARsolo
         #TODO?: --twopassMode
         #WASP?
-        STAR_EXEC = "~/mambaforge/envs/slide_snake/bin/STARlong-avx2"
+        # STAR_EXEC = "~/mambaforge/envs/slide_snake/bin/STARlong-avx2"
         shell(
             f"""
             mkdir -p $(dirname {output.BAM})
