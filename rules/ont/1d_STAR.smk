@@ -1,10 +1,33 @@
 # STAR rules for ONT data
 
+rule ont_clipBeforeSTAR:
+    input:
+        FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len_{READ}.fq.gz",
+    output:
+        FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len_clipped_{READ}.fq.gz",
+    params:
+        MAX_LENGTH = 649 # 650 is the default length setting for STARlong
+    threads:
+        config["CORES"]
+    run:
+        shell(
+            f"""
+            zcat {input.FQ} | \
+            awk \
+                -v maxLength={params.MAX_LENGTH} \
+                -f scripts/awk/fq_clipToNBases.awk \
+            > {output.FQ.strip('.gz')}
+
+            {EXEC['PIGZ']} -p{threads} {output.FQ.strip('.gz')}
+            """
+        )
 
 rule ont_STARsolo_align:
     input:
-        R1_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len_R1.fq.gz",
-        R2_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len_R2.fq.gz",
+        # R1_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len_R1.fq.gz",
+        # R2_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len_R2.fq.gz",
+        R1_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len_clipped_R1.fq.gz",
+        R2_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len_clipped_R2.fq.gz",
         # R1_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/cut_R1.fq.gz",
         # R2_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/cut_R2.fq.gz",
         BB_WHITELIST = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt",

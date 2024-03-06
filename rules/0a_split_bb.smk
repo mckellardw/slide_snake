@@ -35,9 +35,9 @@ rule splitBBList:
                 touch {output.BB_2}
                 """
             )
+#
 
-
-# Insert the adapter sequence into the bead barcodes for easier barcode matching/alignment with STARsolo
+# For Seeker - Insert the adapter sequence into the bead barcodes for easier barcode matching/alignment with STARsolo
 rule insert_adapter_BB_list:
     input:
         BB_map = lambda wildcards: BB_DICT[wildcards.SAMPLE]
@@ -46,9 +46,21 @@ rule insert_adapter_BB_list:
     params:
         ADAPTER = config["R1_INTERNAL_ADAPTER"] # Curio R1 internal adapter
     run:
-        tmp_recipe = RECIPE_DICT[wildcards.SAMPLE]
+        # #load bb
+        # bb_df = pd.read_csv(input.BB_map, sep="\t", header=None).iloc[:,0]
 
-        if "adapterInsert" in tmp_recipe:            
+        # # split for 2 separate barcodes
+        # bb_1 = pd.DataFrame(bb[0:8] for bb in list(bb_df.values))
+        # bb_2 = pd.DataFrame(bb[8:14] for bb in list(bb_df.values))
+
+        # # Stitch bb_1, adapter, and bb_2
+        # bb_adapter = bb_1 + params.ADAPTER + bb_2
+
+        # # save bb files in {SAMPLE}/bb
+        # bb_adapter.to_csv(output.BB, sep="\t", header=False, index=False) 
+
+        tmp_recipe = "".join(RECIPE_DICT[wildcards.SAMPLE])
+        if "seeker" in tmp_recipe:
             #load bb
             bb_df = pd.read_csv(input.BB_map, sep="\t", header=None).iloc[:,0]
 

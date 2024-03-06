@@ -100,6 +100,7 @@ include: "rules/short_read/4c_kallisto_velo.smk"
 # include: "rules/short_read/5_miRNA_bowtie2.smk"
 
 # ONT module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+include: "rules/ont/0_utils.smk"
 include: "rules/ont/1a_preprocessing.smk"
 include: "rules/ont/1b_trimQC.smk"
 include: "rules/ont/1c_minimap2.smk"
@@ -122,7 +123,9 @@ rule all:
             for RECIPE in RECIPE_DICT[SAMPLE]
             for FILE in [
                     # "merged_stranded.fq.gz",
-                    "minimap2/sorted.bam",
+                    "minimap2/sorted_bc.bam",
+                    "minimap2/counts.tsv",
+                    "minimap2/umitools_counts.tsv.gz"
                     # "adapter_scan_readids/full_len_R2.fq.gz"
                 ]
         ], # ONT outputs
@@ -148,7 +151,7 @@ rule all:
         [f"{OUTDIR}/{SAMPLE}/qualimap/ont/{TOOL}/{FILE}"
             for SAMPLE in ONT.keys() 
             for RECIPE in RECIPE_DICT[SAMPLE]
-            for TOOL in ["minimap2",f"STARsolo/{RECIPE}"]# 
+            for TOOL in ["minimap2",]# f"STARsolo/{RECIPE}"
             for FILE in ["qualimapReport.html","rnaseq_qc_results.csv"] 
         ], # alignment QC with qualimap      
 
@@ -231,8 +234,6 @@ rule all:
         #     for RECIPE in RECIPE_DICT[SAMPLE] 
         #     for KB in ["kbpython"] # "kb_velo", "kb_nuc" 
         # ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`
-        
-        
 
 
 ## EXTRANEOUS #######################################################################
