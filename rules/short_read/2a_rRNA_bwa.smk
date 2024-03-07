@@ -2,7 +2,6 @@
 # VASAseq implementation - https://github.com/anna-alemany/VASAseq/blob/main/mapping/ribo-bwamem.sh
 rule bwa_rRNA_align:
     input:
-        # uBAM = temp('{OUTDIR}/{SAMPLE}/tmp/unaligned_barcoded.bam'),
         # R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz',
         R2_FQ = "{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
         BB_WHITELIST = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
@@ -16,22 +15,13 @@ rule bwa_rRNA_align:
         R2_FQ_BWA_FILTERED  = "{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq"
     params:
         MEMLIMIT = config['MEMLIMIT'],
-        MIN_ALIGNSCORE = 40
+        MIN_ALIGNSCORE = 40,
     log:
         log = "{OUTDIR}/{SAMPLE}/rRNA/bwa/bwa_mem.log"
     threads:
         config['CORES']
     run: 
-        # tmp_recipe = RECIPE_DICT[wildcards.SAMPLE]
         BWA_REF = rRNA_BWA_DICT[wildcards.SAMPLE] # use rRNA ref
-        # nBB = sum(1 for line in open(input.BB_WHITELIST)) # get number of bead barcodes for filtered count matrix, `--soloCellFilter`
-
-        # soloType = RECIPE_SHEET["STAR.soloType"][tmp_recipe]
-        # soloUMI = RECIPE_SHEET["STAR.soloUMI"][tmp_recipe]
-        # soloCB = RECIPE_SHEET["STAR.soloCB"][tmp_recipe]
-        # soloCBmatchWLtype = RECIPE_SHEET["STAR.soloCBmatchWLtype"][tmp_recipe]
-        # soloAdapter = RECIPE_SHEET["STAR.soloAdapter"][tmp_recipe]
-        # extraSTAR = RECIPE_SHEET["STAR.extra"][tmp_recipe]
 
         # Align to rRNA ref w/ `bwa mem` for cleaner/faster rRNA filtering 
         ##TODO incorporate VASAseq style "long"/short read handling with multiple align steps
@@ -63,27 +53,8 @@ rule bwa_rRNA_align:
             > {output.R2_FQ_BWA_FILTERED} 
             """
         )
-        
-                # -f 4
+#
 
-                # -2 \
-                # -0 /dev/null \
-        # {EXEC['BWA']} mem \
-        #     -t {threads} \
-        #     {STAR_REF}/*.fa \
-        #     {input.R1_FQ} {input.R2_FQ} \
-        # > {OUTDIR}/{wildcards.SAMPLE}/STARsolo_rRNA/Aligned.sortedByCoord.out.sam \
-        # | tee {log.log}
-
-        # {EXEC['SAMTOOLS']} sort \
-        #     -@ {threads} \
-        #     {OUTDIR}/{wildcards.SAMPLE}/STARsolo_rRNA/Aligned.sortedByCoord.out.sam \
-        # > {OUTDIR}/{wildcards.SAMPLE}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam
-
-        # {EXEC['SAMTOOLS']} fastq \
-        #     -f 4 -1 {output.UNMAPPED2} \
-        #     -2 {output.UNMAPPED1} \
-        #     -0 /dev/null {OUTDIR}/{wildcards.SAMPLE}/STARsolo_rRNA/Aligned.sortedByCoord.out.bam
 
 rule bwa_rRNA_index_alignment:
     input:
@@ -96,6 +67,7 @@ rule bwa_rRNA_index_alignment:
             {EXEC['SAMTOOLS']} index {input.BAM}
             """
         )
+#
 
 
 rule bwa_rRNA_filter_R1:
@@ -123,8 +95,7 @@ rule bwa_rRNA_filter_R1:
             > {output.R1_FQ_BWA_FILTERED.strip('.gz')}
             """
         )
-
-        # {EXEC['PIGZ']} -p{threads} {output.R1_FQ_BWA_FILTERED.strip('.gz')}
+#
 
 
 rule bwa_rRNA_compress_unmapped:
@@ -142,6 +113,7 @@ rule bwa_rRNA_compress_unmapped:
             {EXEC['PIGZ']} -p{threads} {input}
             """
         )
+#
 
 
 #  Run fastqc on unmapped reads;

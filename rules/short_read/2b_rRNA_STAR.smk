@@ -21,7 +21,6 @@ rule STAR_rRNA_align:
         config['CORES']
     run: 
         recipe = RECIPE_DICT[wildcards.SAMPLE][0] #TODO fix recipe handling here...
-        # recipe = wildcards.RECIPE 
         
         STAR_REF = rRNA_STAR_DICT[wildcards.SAMPLE] # use rRNA ref
         nBB = sum(1 for line in open(input.BB_WHITELIST)) # get number of bead barcodes for filtered count matrix, `--soloCellFilter`
@@ -73,6 +72,7 @@ rule STAR_rRNA_align:
                 --soloMultiMappers EM
             """
         )
+#
 
 # compress outputs from STAR (count matrices, cell barcodes, and gene lists)
 rule STAR_rRNA_compress_outs:
@@ -87,18 +87,26 @@ rule STAR_rRNA_compress_outs:
     run:
         recipe = RECIPE_DICT[wildcards.SAMPLE]
         if "noTrim" in recipe:
-            #["seeker_v3.1_noTrimMatchLinker","seeker_v3.1_noTrim_total"]:
+            #["seeker_noTrimMatchLinker","seeker_noTrim_total"]:
             shell(
                 f"""
-                cat {params.GENEDIR}/raw/barcodes.tsv | sed 's/_//' > {params.GENEDIR}/raw/barcodes_noUnderscore.tsv
-                cat {params.GENEDIR}/filtered/barcodes.tsv | sed 's/_//' > {params.GENEDIR}/filtered/barcodes_noUnderscore.tsv
+                cat {params.GENEDIR}/raw/barcodes.tsv \
+                | sed 's/_//' \
+                > {params.GENEDIR}/raw/barcodes_noUnderscore.tsv
+                
+                cat {params.GENEDIR}/filtered/barcodes.tsv \
+                | sed 's/_//' \
+                > {params.GENEDIR}/filtered/barcodes_noUnderscore.tsv
                 """
             )
 
         # compress
         shell(
             f"""
-            pigz -p{threads} {params.GENEDIR}/*/*.tsv {params.GENEDIR}/*/*.mtx 
+            {EXEC['PIGZ']} \
+                -p{threads} \
+                {params.GENEDIR}/*/*.tsv \
+                {params.GENEDIR}/*/*.mtx 
             """
         )
 
@@ -125,8 +133,7 @@ rule STAR_rRNA_rename_compress_unmapped:
         UNMAPPED2 = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Unmapped.out.mate2'
     output:
         FILTERED1_FQ = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz',
-        FILTERED2_FQ = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz'
-    params:
+        FILTERED2_FQ = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz',
     threads:
         config['CORES']
     run:
@@ -141,6 +148,7 @@ rule STAR_rRNA_rename_compress_unmapped:
                 {output.FILTERED1_FQ.replace('.gz','')}
             """
         )
+#
 
 
 #  Run fastqc on unmapped reads;

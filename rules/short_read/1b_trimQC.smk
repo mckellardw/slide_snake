@@ -55,9 +55,9 @@ rule R1_trimming:
                     -v S={params.CB2start} \
                     -v E={params.CB2end} \
                     -f scripts/awk/hardTrimFq.awk \
-                > {OUTDIR}/{wildcards.SAMPLE}/tmp/{wildcards.SAMPLE}_R1_Trimmed.fq
+                > {output.R1_FQ.strip('.gz')}
 
-                {EXEC['PIGZ']} -f -p{threads} {output.R1_FQ.removesuffix('.gz')}
+                {EXEC['PIGZ']} -f -p{threads} {output.R1_FQ.strip('.gz')}
 
                 echo "Hard trimming performed on {input.R1_FQ}" > {log.log}
                 """
@@ -69,8 +69,10 @@ rule R1_trimming:
                 python scripts/py/internal_adapter_trim_R1.py \
                     {params.INTERNAL_ADAPTER} \
                     {params.INTERNAL_TRIM_QC_LOG} \
-                    {threads} {params.TMPDIR} \
-                    {R1} {output.R1_FQ} \
+                    {threads} \
+                    {params.TMPDIR} \
+                    {R1} \
+                    {output.R1_FQ} \
                 | tee {log.log}
                 """
             )
