@@ -185,9 +185,6 @@ rule assign_barcodes:
     run:
         recipe = RECIPE_DICT[wildcards.SAMPLE]
         # recipe = wildcards.RECIPE
-
-        barcode_length = get_barcode_length(wildcards)
-        umi_length = get_umi_length(wildcards)
         
         #param handling for different SlideSeq R1 strategies
         if "stomics" in recipe:
@@ -200,6 +197,10 @@ rule assign_barcodes:
             whitelist = input.BB_ADAPTER
         else:
             whitelist = input.BB_WHITELIST
+            
+        # barcode_length = get_barcode_length(wildcards)
+        barcode_length = len(open(whitelist).readline())
+        umi_length = get_umi_length(wildcards)
 
         shell(
             f"""
@@ -218,11 +219,29 @@ rule assign_barcodes:
         )
 
 
+rule ont_index_bc_corrected_output:
+    input:
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/sorted_bc_corrected.bam"
+    output:
+        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/sorted_bc_corrected.bam.bai",
+    params:
+        ref = config["REF_GENOME_FASTA"]
+    threads:
+        1
+        # config["CORES"]
+    run:
+        shell(
+            f"""
+            {EXEC['SAMTOOLS']} index {input.BAM}
+            """
+        )
+#
+
 # Generate count matrix w/ umi-tools 
 rule ont_umitools_count:
     input:
-        BAM = "{OUTDIR}/{SAMPLE}/ont/minimap2/sorted_bc.bam",
-        BAI = "{OUTDIR}/{SAMPLE}/ont/minimap2/sorted_bc.bam.bai",
+        BAM = "{OUTDIR}/{SAMPLE}/ont/minimap2/sorted_bc_corrected.bam",
+        BAI = "{OUTDIR}/{SAMPLE}/ont/minimap2/sorted_bc_corrected.bam.bai",
     output:        
         COUNTS = '{OUTDIR}/{SAMPLE}/ont/minimap2/umitools_counts.tsv.gz'
     params:

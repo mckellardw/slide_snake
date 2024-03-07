@@ -123,7 +123,7 @@ rule cache_preQC_h5ad_piRNA:
     run:
         shell(
             f"""
-            python scripts/cache_mtx_to_h5ad.py \
+            python scripts/py/cache_mtx_to_h5ad.py \
                 --mat_in {input.MAT} \
                 --feat_in {input.GENES} \
                 --bc_in {input.BCS} \
@@ -132,4 +132,24 @@ rule cache_preQC_h5ad_piRNA:
                 --feat_col 0 \
                 --remove_zero_features
             """
+        )
+
+# initialize & cache the **raw** counts as an anndata file for easier loading later
+## Removes barcodes for which there are no molecules detected [`--remove_zero_features`]
+rule ont_cache_preQC_h5ad_minimap2:
+    input:
+        COUNTS = '{OUTDIR}/{SAMPLE}/ont/minimap2/umitools_counts.tsv.gz',
+        BB_map = lambda wildcards: BB_DICT[wildcards.SAMPLE]
+    output:
+        H5AD = "{OUTDIR}/{SAMPLE}/ont/minimap2/raw/output.h5ad"
+    threads:
+        1
+    run:
+        shell(
+            f"""
+            python scripts/py/cache_umitools_h5ad.py \
+                {input.COUNTS} \
+                {output.H5AD}
+            """
+                # --bb_map {input.BB_map}\ #TODO
         )
