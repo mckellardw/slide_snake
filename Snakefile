@@ -20,7 +20,10 @@ TMPDIR = config["TMPDIR"]
 OUTDIR = config["OUTDIR"]
 
 ### Variables and references ###########################################################
-SAMPLE_SHEET = pd.read_csv(config["SAMPLE_SHEET_PATH"], na_filter=False)
+SAMPLE_SHEET = pd.read_csv(
+    config["SAMPLE_SHEET_PATH"], 
+    na_filter=False
+)
 
 SAMPLES = list(SAMPLE_SHEET["sampleID"])
 
@@ -125,7 +128,8 @@ rule all:
                     # "merged_stranded.fq.gz",
                     "minimap2/sorted_bc.bam",
                     "minimap2/counts.tsv",
-                    "minimap2/umitools_counts.tsv.gz"
+                    "minimap2/umitools_counts.tsv.gz",
+                    "minimap2/raw/output.h5ad",
                     # "adapter_scan_readids/full_len_R2.fq.gz"
                 ]
         ], # ONT outputs
