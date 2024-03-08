@@ -1,4 +1,5 @@
 
+#TOOD - pipe to samtools and convert to bam...
 rule ont_align_minimap2:
     input:
         FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/cut_R2.fq.gz",
@@ -72,8 +73,8 @@ rule ont_extract_barcodes_from_R1:
         BB_2 = "{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
         BB_ADAPTER = "{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt"
     output:
-        BAM = "{OUTDIR}/{SAMPLE}/ont/minimap2/sorted_bc.bam", #temp()
-        TSV = "{OUTDIR}/{SAMPLE}/ont/minimap2/bc_counts.tsv",
+        BAM = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam", #temp()
+        TSV = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/bc_counts.tsv",
     params:
         KIT = "3prime", #['3prime', '5prime', 'multiome']
         adapter1_suff_length = config["BARCODE_ADAPTER1_SUFF_LENGTH"],
@@ -82,11 +83,13 @@ rule ont_extract_barcodes_from_R1:
         # umi_length = lambda w: get_umi_length(w),
     threads: 
         config["CORES"]
+    log:
+        log = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/extract_barcodes.log",
     # conda:
     #     "../envs/barcodes.yml"
     run:
-        recipe = RECIPE_DICT[wildcards.SAMPLE]
-        # recipe = wildcards.RECIPE
+        # recipe = RECIPE_DICT[wildcards.SAMPLE]
+        recipe = wildcards.RECIPE
         
         #param handling for different SlideSeq R1 strategies
         if "stomics" in recipe:
@@ -106,6 +109,9 @@ rule ont_extract_barcodes_from_R1:
 
         shell(
             f"""
+            echo "Barcode length: {barcode_length}" > {log.log}
+            echo "UMI length:     {umi_length}" >> {log.log}
+
             python scripts/py/extract_barcode.py \
                 -t {threads} \
                 --kit {params.KIT} \
@@ -115,16 +121,17 @@ rule ont_extract_barcodes_from_R1:
                 --umi_length {umi_length} \
                 --output_bam {output.BAM} \
                 --output_barcodes {output.TSV} \
-                {input.BAM} {whitelist}
+                {input.BAM} {whitelist} \
+            2>> {log.log}
             """
         )
 #
 
 rule ont_index_bc_output:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/sorted_bc.bam"
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam"
     output:
-        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/sorted_bc.bam.bai",
+        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.bai",
     params:
         ref = config["REF_GENOME_FASTA"]
     threads:
@@ -162,15 +169,15 @@ rule ont_index_bc_output:
 #TODO - need to fix the script so this can be parallelized
 rule assign_barcodes:
     input:
-        BAM = "{OUTDIR}/{SAMPLE}/ont/minimap2/sorted_bc.bam",
-        BAI = "{OUTDIR}/{SAMPLE}/ont/minimap2/sorted_bc.bam.bai",
+        BAM = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam",
+        BAI = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.bai",
         BB_WHITELIST = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
         BB_1 = "{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
         BB_2 = "{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
         BB_ADAPTER = "{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt",
     output:
-        BAM = "{OUTDIR}/{SAMPLE}/ont/minimap2/sorted_bc_corrected.bam",
-        COUNTS="{OUTDIR}/{SAMPLE}/ont/minimap2/counts.tsv",
+        BAM = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam",
+        COUNTS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/counts.tsv",
     params:
         max_ed=config["BARCODE_MAX_ED"],
         min_ed_diff=config["BARCODE_MIN_ED_DIFF"],
@@ -221,9 +228,9 @@ rule assign_barcodes:
 
 rule ont_index_bc_corrected_output:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/sorted_bc_corrected.bam"
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam"
     output:
-        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/sorted_bc_corrected.bam.bai",
+        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam.bai",
     params:
         ref = config["REF_GENOME_FASTA"]
     threads:
@@ -240,16 +247,16 @@ rule ont_index_bc_corrected_output:
 # Generate count matrix w/ umi-tools 
 rule ont_umitools_count:
     input:
-        BAM = "{OUTDIR}/{SAMPLE}/ont/minimap2/sorted_bc_corrected.bam",
-        BAI = "{OUTDIR}/{SAMPLE}/ont/minimap2/sorted_bc_corrected.bam.bai",
+        BAM = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam",
+        BAI = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam.bai",
     output:        
-        COUNTS = '{OUTDIR}/{SAMPLE}/ont/minimap2/umitools_counts.tsv.gz'
+        COUNTS = '{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/umitools_counts.tsv.gz'
     params:
         CELL_TAG="CB",
         GENE_TAG="GN",
         UMI_TAG="UB"
     log:
-        log = '{OUTDIR}/{SAMPLE}/ont/minimap2/count.log'
+        log = '{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/umitools_count.log'
     threads:
         1
     run:

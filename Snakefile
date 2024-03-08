@@ -126,10 +126,10 @@ rule all:
             for RECIPE in RECIPE_DICT[SAMPLE]
             for FILE in [
                     # "merged_stranded.fq.gz",
-                    "minimap2/sorted_bc.bam",
-                    "minimap2/counts.tsv",
-                    "minimap2/umitools_counts.tsv.gz",
-                    "minimap2/raw/output.h5ad",
+                    f"minimap2/{RECIPE}/sorted_bc.bam",
+                    f"minimap2/{RECIPE}/counts.tsv",
+                    f"minimap2/{RECIPE}/umitools_counts.tsv.gz",
+                    f"minimap2/{RECIPE}/raw/output.h5ad",
                     # "adapter_scan_readids/full_len_R2.fq.gz"
                 ]
         ], # ONT outputs
