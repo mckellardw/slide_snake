@@ -21,6 +21,13 @@ The goal of this project is to build a snakemake workflow for assessing differen
 | `vsearch`        | [v2.17.0_linux_x86_64](https://github.com/torognes/vsearch)                                    |
 | `BLAST`          |                                                                                                |
 
+Just for ONT analysis:
+| Software         | Version/Link                                                                                   |
+|------------------|------------------------------------------------------------------------------------------------|
+| `editdistance`   | [v#.#](TODO)                                             |
+| `parasail`       | [v#.#](https://pypi.org/project/parasail/)                         |
+| `TODO`           | [v#.#](TODO)                                                  |
+
 
 ### Install w/ `mamba`/`conda` [recommended]:
 ```
@@ -35,6 +42,12 @@ mamba create --name snakemake_only -c bioconda snakemake
 mamba activate snakemake_only
 mamba activate slide_snake
 ```  
+
+Additionally for ONT:
+```
+mamba install -c conda-forge editdistance
+mamba install -c bioconda parasail-python
+```
 
 ### Alternatively...
 All executables are called from the path specified in `config.yaml` (See `EXEC`). If you already have the dependencies installed, just change the path.

@@ -19,5 +19,9 @@
 
 # Misc.
 .~lock.*
+
+# slide_snake
 sandbox/**
+out/**
+tmp/**
 

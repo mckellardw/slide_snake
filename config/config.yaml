@@ -8,15 +8,16 @@
 ### See `example_sample_sheet.csv` for details
 # SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/visium/CS001-5.csv
 # SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/visium/vy3.csv
-SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/visium/vy3D.csv
+# SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/visium/vy3D.csv
+SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/seeker/SHVN_1_2-NYGC.csv
 
-# STARsolo parameters
-CORES: 16 # how many cores to give each process (snakemake automatically parallelizes process using "snakemake -j {numTotalCores}")
+# Resource parameters
+CORES: 16               # how many cores to give each process
 MEMLIMIT: 128000000000  # limit in bytes
 MEMLIMIT_MB: 128000     # limit in megabytes
 MEMLIMIT_GB: 128G       # mem limit for kallisto
 
-## Recipe details (whitelists, barcode/UMI design, etc.)
+# Recipe details (whitelists, barcode/UMI design, etc.)
 RECIPE_SHEET: resources/recipe_sheet.csv
 
 ########################################################################################################
@@ -25,7 +26,7 @@ RECIPE_SHEET: resources/recipe_sheet.csv
 # **Change these paths for where you want temporary (TMPDIR) and output (OUTDIR) files
 #TODO: add OUTDIR to sample sheet
 TMPDIR: ./tmp
-OUTDIR: /gpfs/commons/groups/innovation/dwm/ontxg/data/slide_out
+OUTDIR: ./out
 
 ########################################################################################################
 # Executables - file paths
@@ -82,6 +83,6 @@ RESOURCES_MM2_MAX_THREADS: 12
 RESOURCES_MM2_FLAGS: "-I 4G"
 
 BARCODE_ADAPTER1_SUFF_LENGTH: 10
-BARCODE_MIN_QUALITY: 15
-BARCODE_MAX_ED: 2
+BARCODE_MIN_QUALITY: 12
+BARCODE_MAX_ED: 4
 BARCODE_MIN_ED_DIFF: 2

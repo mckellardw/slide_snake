@@ -187,6 +187,8 @@ rule assign_barcodes:
     threads: 
         # config["CORES"] #TODO
         1
+    log:
+        log = '{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/assign_barcodes.log'
     # conda:
     #     "../envs/barcodes.yml"
     run:
@@ -211,6 +213,9 @@ rule assign_barcodes:
 
         shell(
             f"""
+            echo "Barcode length: {barcode_length}" > {log.log}
+            echo "UMI length:     {umi_length}" >> {log.log}
+
             python scripts/py/assign_barcodes_noChromSplit.py \
                 -t {threads} \
                 --output_bam {output.BAM} \
@@ -221,7 +226,8 @@ rule assign_barcodes:
                 --adapter1_suff_length {params.adapter1_suff_length} \
                 --barcode_length {barcode_length} \
                 --umi_length {umi_length} \
-                {input.BAM} {whitelist}
+                {input.BAM} {whitelist} \
+            2>> {log.log}
             """
         )
 
