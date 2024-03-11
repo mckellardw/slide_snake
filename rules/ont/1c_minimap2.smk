@@ -269,8 +269,8 @@ rule ont_assign_barcodes:
         umi_length = lambda w: get_umi_length(w),
         adapter1_suff_length=config["BARCODE_ADAPTER1_SUFF_LENGTH"],
     threads: 
-        # config["CORES"] #TODO
-        1
+        config["CORES"] #TODO
+        # 1
     log:
         log = '{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/assign_barcodes.log'
     # conda:

@@ -670,13 +670,67 @@ def get_bam_info(bam):
     bam.close()
     return n_aligns, chroms
 
+#DWM
+def split_bam_file(input_bam, num_files, n_reads=None, output_prefix=None):
+    """
+    Splits a BAM file into N files and returns the names of the split BAM files.
 
-def split_bam(BAM, OUTDIR):
-    from subprocess import run
+    Parameters:
+    - input_bam: Path to the input BAM file.
+    - num_files: Number of files to split the input BAM into.
+    - n_reads: Optional. Number of reads in the BAM file. If not provided, the function will count the reads.
+    - output_prefix: Optional. Prefix for the output BAM files. If not provided, the function will use the directory of the input BAM file.
 
-    run(
-        f"bash scripts/bash/bam_splitByChr.sh -b {BAM} -o {OUTDIR}"
-    )
+    Returns:
+    - A list of the names of the split BAM files.
+    """
+    # Determine the output directory and prefix
+    if output_prefix is None:
+        output_dir = os.path.dirname(input_bam)
+        output_prefix = os.path.join(output_dir, os.path.splitext(os.path.basename(input_bam))[0])
+    else:
+        output_dir = os.path.dirname(output_prefix)
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+    
+    # Open the input BAM file
+    with pysam.AlignmentFile(input_bam, "rb") as input_bam_file:
+        # If n_reads is not provided, count the reads
+        if n_reads is None:
+            n_reads = input_bam_file.count()
+        
+        # Calculate the number of reads per file
+        reads_per_file = math.ceil(n_reads / num_files)
+        
+        # Initialize counters and file handles
+        current_read_count = 0
+        current_file_number = 1
+        current_output_bam = None
+        split_files = [] # List to store the names of the split BAM files
+        
+        # Iterate over the reads in the input BAM file
+        for read in input_bam_file:
+            # If we've reached the desired number of reads for the current file,
+            # close the current output file and open a new one
+            if current_read_count >= reads_per_file:
+                if current_output_bam is not None:
+                    current_output_bam.close()
+                current_output_bam = pysam.AlignmentFile(f"{output_prefix}_{current_file_number}.bam", "wb", template=input_bam_file)
+                split_files.append(f"{output_prefix}_{current_file_number}.bam") # Add the current output file name to the list
+                current_file_number += 1
+                current_read_count = 0
+            
+            # Write the current read to the current output file
+            current_output_bam.write(read)
+            current_read_count += 1
+        
+        # Close the last output file
+        if current_output_bam is not None:
+            current_output_bam.close()
+            split_files.append(f"{output_prefix}_{current_file_number}.bam") # Add the last output file name to the list
+    
+    return split_files
+
 
 
 def main(args):
@@ -694,15 +748,15 @@ def main(args):
         logger.info(f"Assigning barcodes to reads in {args.bam}")
         func_args = []
         
+        split_bam_files = split_bam_file(
+            input_bam=args.bam, 
+            # output_prefix=, 
+            num_files=args.threads, # 1 bam per thread
+            n_reads=n_reads
+        )
 
-
-        #TODO - split bam by chrom (`bam_splitByChr.sh`)
-        #TODO - double-check names for new bams
-
-        chroms_sorted = dict(sorted(chroms.items(), key=lambda item: item[1]))
-        for chrom in chroms_sorted.keys():
-            current_bam = args.bam.replace(".bam", f"{chrom}.bam")
-            func_args.append((current_bam, args)) #chrom,
+        for bam in split_bam_files:
+            func_args.append((bam, args)) #chrom,
 
         results = launch_pool(process_bam_records, func_args, args.threads)
         chrom_bam_fns, barcode_counters = zip(*results)
@@ -710,7 +764,10 @@ def main(args):
         barcode_counter = sum(barcode_counters, collections.Counter())
 
         tmp_bam = tempfile.NamedTemporaryFile(
-            prefix="tmp.align.", suffix=".unsorted.bam", dir=args.tempdir, delete=False
+            prefix="tmp.align.", 
+            suffix=".unsorted.bam", 
+            dir=args.tempdir, 
+            delete=False
         )
         merge_parameters = ["-f", tmp_bam.name] + list(chrom_bam_fns)
         pysam.merge(*merge_parameters)
