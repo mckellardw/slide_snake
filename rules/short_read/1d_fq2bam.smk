@@ -7,7 +7,6 @@ rule fq2bam:
         uBAM = temp('{OUTDIR}/{SAMPLE}/tmp/unaligned.bam')
     threads:
         config['CORES']
-    params:
     run:
         shell(
             f"""

@@ -130,19 +130,18 @@ rule ont_call_adapter_scan:
         # batch_size = config["READ_STRUCTURE_BATCH_SIZE"],
         KIT = "3prime" #['3prime', '5prime', 'multiome']
         # kit=lambda w: sample_sheet.loc[w.run_id, "kit_name"]
-    # conda:
-    #     "../envs/stranding.yml"
-    run:
-        shell(
-            f"""
-            python scripts/py/adapter_scan_vsearch.py \
-                --kit {params.KIT} \
-                --output_fastq {output.FQ} \
-                --output_tsv {output.TSV} \
-                -t {threads} \
-                {input.FQ} 
-            """
-        )
+    conda:
+        "../envs/slsn_ont_prep.yml"
+    shell:
+        """
+        python scripts/py/adapter_scan_vsearch.py \
+            --kit {params.KIT} \
+            --output_fastq {output.FQ} \
+            --output_tsv {output.TSV} \
+            -t {threads} \
+            {input.FQ} 
+        """
+        
 # --batch_size {params.batch_size} \
 
 # Write lists of read IDs for each adapter type 

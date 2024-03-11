@@ -73,6 +73,7 @@ for i in range(0,SAMPLE_SHEET.shape[0]):
 ### include rules #######################################################################
 # Pre-flight module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 include: "rules/0a_split_bb.smk" #TODO
+include: "rules/0_utils.smk" 
 
 # Short-read module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## fastq preprocessing & QC
@@ -105,7 +106,7 @@ include: "rules/short_read/4c_kallisto_velo.smk"
 # ONT module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 include: "rules/ont/0_utils.smk"
 include: "rules/ont/1a_preprocessing.smk"
-include: "rules/ont/1b_trimQC.smk"
+include: "rules/ont/1b_cutadapt.smk"
 include: "rules/ont/1c_minimap2.smk"
 include: "rules/ont/1d_STAR.smk"
 include: "rules/ont/1e_qualimap.smk"
@@ -126,9 +127,10 @@ rule all:
             for RECIPE in RECIPE_DICT[SAMPLE]
             for FILE in [
                     # "merged_stranded.fq.gz",
+                    f"minimap2/{RECIPE}/sorted.bam",
                     f"minimap2/{RECIPE}/sorted_bc.bam",
-                    f"minimap2/{RECIPE}/counts.tsv",
-                    f"minimap2/{RECIPE}/umitools_counts.tsv.gz",
+                    # f"minimap2/{RECIPE}/counts.tsv",
+                    # f"minimap2/{RECIPE}/umitools_counts.tsv.gz",
                     f"minimap2/{RECIPE}/raw/output.h5ad",
                     # "adapter_scan_readids/full_len_R2.fq.gz"
                 ]
@@ -145,7 +147,7 @@ rule all:
             for RECIPE in RECIPE_DICT[SAMPLE]
             for READ in ["R1","R2"]
             for TRIM in ["ont_preAdapterScan",f"ont_postCutadapt_{READ}"]
-        ], # ONT fastqc
+        ], # ONT nanoplot
         # [f"{OUTDIR}/{SAMPLE}/nanoplot/{TRIM}/summary.txt" 
         #     for SAMPLE in ONT.keys() 
         #     for RECIPE in RECIPE_DICT[SAMPLE]

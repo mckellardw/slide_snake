@@ -61,6 +61,13 @@ def parse_args():
     )
 
     parser.add_argument(
+        "--adapter1_seq",
+        help="Read 1 adapter sequence which preceds the barcode",
+        default="CTACACGACGCTCTTCCGATCT", #TXG Read1 sequence
+        type=str,
+    )
+
+    parser.add_argument(
         "--min_barcode_qv",
         help="Minimum quality score in a barcode for it to be considered \
         a high-quality barcode to be used in whitelist creation [15].",
@@ -96,12 +103,12 @@ def parse_args():
         default=4,
     )
 
-    parser.add_argument(
-        "--barcode_length",
-        help="Cell barcode length [16]",
-        type=int,
-        default=16,
-    )
+    # parser.add_argument(
+    #     "--barcode_length",
+    #     help="Cell barcode length [16]",
+    #     type=int,
+    #     default=16,
+    # )
 
     parser.add_argument(
         "--umi_length",
@@ -179,18 +186,18 @@ def parse_args():
     args = parser.parse_args()
 
     # verify kit selection
-    if (args.kit != "3prime") and (args.kit != "5prime") and (args.kit != "multiome"):
-        raise Exception(
-            "Invalid kit name! Specify either 3prime, 5prime or \
-        multiome."
-        )
+    # if (args.kit != "3prime") and (args.kit != "5prime") and (args.kit != "multiome"):
+    #     raise Exception(
+    #         "Invalid kit name! Specify either 3prime, 5prime or \
+    #     multiome."
+    #     )
 
-    if (args.kit == "3prime") or (args.kit == "multiome"):
-        # Read1 adapter
-        args.adapter1_seq = "CTACACGACGCTCTTCCGATCT"
-    elif args.kit == "5prime":
-        # Read1 adapter
-        args.adapter1_seq = "CTACACGACGCTCTTCCGATCT"
+    # if (args.kit == "3prime") or (args.kit == "multiome"):
+    #     # Read1 adapter
+    #     args.adapter1_seq = "CTACACGACGCTCTTCCGATCT"
+    # elif args.kit == "5prime":
+    #     # Read1 adapter
+    #     args.adapter1_seq = "CTACACGACGCTCTTCCGATCT"
 
     # Create temp dir and add that to the args object
     p = pathlib.Path(args.output_bam)
@@ -307,7 +314,9 @@ def edit_distance(query, target):
 
 
 def parse_probe_alignment(p_alignment, adapter1_probe_seq, args):
-    """ """
+    """ 
+    #TODO
+    """
     # Find the position of the Ns in the alignment. These correspond
     # to the cell barcode + UMI sequences bound by the read1 and polyT
     idxs = list(find("N", p_alignment.traceback.ref))
@@ -387,7 +396,7 @@ def align_adapter(tup):
     # Use only the specified suffix length of adapter1
     adapter1_probe_seq = args.adapter1_seq[-args.adapter1_suff_length :]
 
-    if (args.kit == "3prime") or (args.kit == "multiome"):
+    if (args.kit == "3prime"):
         # Compile the actual probe sequence of <adapter1_suffix>NNN...NNN<TTTTT....>
         probe_seq = "{a1}{bc}{umi}{pT}".format(
             a1=adapter1_probe_seq,
@@ -560,5 +569,8 @@ def main(args):
 
 if __name__ == "__main__":
     args = parse_args()
+
+    # Find the barcode length from the whitelist instead of requiring the argument
+    args.barcode_length = len(open(args.superlist).readline())
 
     main(args)

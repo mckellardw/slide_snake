@@ -114,11 +114,16 @@ def parse_args():
         default=10,
     )
 
-    parser.add_argument(
-        "--barcode_length", help="Cell barcode length [16]", type=int, default=16
-    )
+    # parser.add_argument(
+    #     "--barcode_length", help="Cell barcode length [16]", type=int, default=16
+    # )
 
-    parser.add_argument("--umi_length", help="UMI length [12]", type=int, default=12)
+    parser.add_argument(
+        "--umi_length", 
+        help="UMI length [12]", 
+        type=int, 
+        default=12
+    )
 
     parser.add_argument(
         "-w",
@@ -129,17 +134,31 @@ def parse_args():
     )
 
     parser.add_argument(
-        "-o", "--gap_open", help="Gap open penalty [2]", type=int, default=2
+        "-o", "--gap_open", 
+        help="Gap open penalty [2]", 
+        type=int, 
+        default=2
     )
 
     parser.add_argument(
-        "-e", "--gap_extend", help="Gap extend penalty [4]", type=int, default=4
+        "-e", "--gap_extend", 
+        help="Gap extend penalty [4]", 
+        type=int, 
+        default=4
     )
 
-    parser.add_argument("-m", "--match", help="Match score [5]", type=int, default=5)
+    parser.add_argument(
+        "-m", "--match", 
+        help="Match score [5]", 
+        type=int, 
+        default=5
+    )
 
     parser.add_argument(
-        "-x", "--mismatch", help="Mismatch score [-1]", type=int, default=-1
+        "-x", "--mismatch", 
+        help="Mismatch score [-1]", 
+        type=int, 
+        default=-1
     )
 
     parser.add_argument(
@@ -151,7 +170,10 @@ def parse_args():
     )
 
     parser.add_argument(
-        "-s", "--t_to_n_match", help="Score for T<-->N match [1]", type=int, default=1
+        "-s", "--t_to_n_match", 
+        help="Score for T<-->N match [1]", 
+        type=int, 
+        default=1
     )
 
     parser.add_argument(
@@ -709,5 +731,9 @@ def main(args):
 
 if __name__ == "__main__":
     args = parse_args()
+
+    # Find the barcode length from the whitelist instead of requiring the argument
+    ## Not currently used in script?
+    args.barcode_length = len(open(args.whitelist).readline())
 
     main(args)

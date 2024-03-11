@@ -36,14 +36,14 @@ rule ont_cutadapt:
         R2_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/ont/cut_R2.fq.gz'),
         JSON = '{OUTDIR}/{SAMPLE}/ont/cutadapt.json'
     params:
-        # R1_LENGTH = 50,
+        ADAPTER = config["R1_INTERNAL_ADAPTER"], # Curio R1 internal adapter
+        R1 = config["R1_PRIMER"], # R1 PCR primer (Visium & Seeker)
         ADAPTER_COUNT=4, # number of adapters that can be trimmed from each read
         QUALITY_MIN=5, # Low Q score for ONT...
         MIN_R2_LENGTH = 12,
         OVERLAP = 5,
         HOMOPOLYMER_ERROR_RATE = 0.2, # default error rate is 0.1
         POLYA = "A"*100,
-        # THREE_PRIME_R2_POLYG = "G"*100,
         POLYT = "T"*100,
         THREE_PRIME_R2_TSO = "AAGCTGGTATCAACGCAGAGTGAATGGG", # SlideSeq TSO - remove any polyadenylated TSOs
         THREE_PRIME_R2_TXG_TSO = "AAGCAGTGGTATCAACGCAGAGTACATGGG", # 10x TSO - remove any polyadenylated TSOs
@@ -57,8 +57,12 @@ rule ont_cutadapt:
     log:
         log = '{OUTDIR}/{SAMPLE}/ont/cutadapt.log'
     run:
+        R1_LENGTHS = [
+            RECIPE_SHEET["R1.finalLength"][recipe] for recipe in RECIPE_DICT[wildcards.SAMPLE]
+        ]
         # R1_LENGTH = RECIPE_SHEET["R1.finalLength"][recipe]
-        R1_LENGTH=10 #TODO- fix this
+        # R1_LENGTH=10 #TODO- fix this
+        R1_LENGTH = max(R1_LENGTHS) + len(params.R1) # Add R1 primer length for ONT
 
         R1 = input.R1_FQ
         # R1 = input.R1_FQ_Trimmed
@@ -67,6 +71,8 @@ rule ont_cutadapt:
         shell(
             f"""
             mkdir -p $(dirname  {output.R1_FQ})
+
+            echo "Minimum R1 length: {R1_LENGTH}" > {log.log}
 
             {EXEC['CUTADAPT']} \
                 --minimum-length {R1_LENGTH}:{params.MIN_R2_LENGTH} \
@@ -89,9 +95,10 @@ rule ont_cutadapt:
                 --cores {threads} \
                 --json {output.JSON} \
                 {R1} {R2} \
-            1> {log.log}
+            1>> {log.log}
             """
         )
 
+                # -a "{params.POLYT};max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \ # 3' poly(T) trimming on R1?
 #TODO- internal adapter trimming for ONT/R1/slide-seq
 

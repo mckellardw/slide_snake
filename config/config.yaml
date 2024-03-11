@@ -25,8 +25,8 @@ RECIPE_SHEET: resources/recipe_sheet.csv
 ########################################################################################################
 # **Change these paths for where you want temporary (TMPDIR) and output (OUTDIR) files
 #TODO: add OUTDIR to sample sheet
-TMPDIR: ./tmp
-OUTDIR: ./out
+TMPDIR: tmp
+OUTDIR: out
 
 ########################################################################################################
 # Executables - file paths
@@ -63,6 +63,8 @@ MIRGE_LIB: resources/miRge3_Lib
 # Library details
 ########################################################################################################
 R1_INTERNAL_ADAPTER: "TCTTCAGCGTTCCCGAGA" # internal R1 adapter between slideseq barcodes
+R1_PRIMER: "CTACACGACGCTCTTCCGATCT" # R1 primer (used in VIsium & Seeker)
+
 piRNA_INDEX: '/path/to/genomes/pirbase/mmu/gold/bowtie2/index' # bowtie2 index of piRNAs; just mouse implemented now...
 MAX_SHORT_READ_LENGTH: 34 # max read length for reads to be aligned to short RNA references
 
