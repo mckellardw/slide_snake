@@ -482,7 +482,7 @@ def process_bam_records(tup):
     # Write temp file or straight to output file depending on use case
     if args.threads > 1:
         # Open temporary output BAM file for writing
-        suff = f".{chrom}.bam"
+        suff = os.path.basename(input_bam)
         chrom_bam = tempfile.NamedTemporaryFile(
             prefix="tmp.align.", 
             suffix=suff, 
@@ -671,7 +671,7 @@ def get_bam_info(bam):
     return n_aligns, chroms
 
 #DWM
-def split_bam_file(input_bam, num_files, n_reads=None, output_prefix=None):
+def split_bam_file(input_bam, num_files, n_reads=None, output_prefix=None, index=True):
     """
     Splits a BAM file into N files and returns the names of the split BAM files.
 
@@ -705,7 +705,11 @@ def split_bam_file(input_bam, num_files, n_reads=None, output_prefix=None):
         # Initialize counters and file handles
         current_read_count = 0
         current_file_number = 1
-        current_output_bam = None
+        current_output_bam = pysam.AlignmentFile(
+            f"{output_prefix}_{current_file_number}.bam", 
+            "wb", 
+            template=input_bam_file
+        )
         split_files = [] # List to store the names of the split BAM files
         
         # Iterate over the reads in the input BAM file
@@ -714,8 +718,12 @@ def split_bam_file(input_bam, num_files, n_reads=None, output_prefix=None):
             # close the current output file and open a new one
             if current_read_count >= reads_per_file:
                 if current_output_bam is not None:
-                    current_output_bam.close()
-                current_output_bam = pysam.AlignmentFile(f"{output_prefix}_{current_file_number}.bam", "wb", template=input_bam_file)
+                    current_output_bam.close()                
+                current_output_bam = pysam.AlignmentFile(
+                    f"{output_prefix}_{current_file_number}.bam", 
+                    "wb", 
+                    template=input_bam_file
+                )
                 split_files.append(f"{output_prefix}_{current_file_number}.bam") # Add the current output file name to the list
                 current_file_number += 1
                 current_read_count = 0
@@ -727,8 +735,12 @@ def split_bam_file(input_bam, num_files, n_reads=None, output_prefix=None):
         # Close the last output file
         if current_output_bam is not None:
             current_output_bam.close()
-            split_files.append(f"{output_prefix}_{current_file_number}.bam") # Add the last output file name to the list
+            # split_files.append(f"{output_prefix}_{current_file_number}.bam") # Add the last output file name to the list
     
+    if index:
+        for bam in split_files:
+            pysam.index(bam)
+
     return split_files
 
 
