@@ -10,16 +10,16 @@ rule merge_fastqs:
     threads:
         config['CORES']
     run:
-        if len(params.R1_FQ.split(" "))==1 & len(params.R2_FQ.split(" "))==1: # shell for single fastq input
-            shell(f"cp {params.R1_FQ} {output.MERGED_R1_FQ}")
-            shell(f"cp {params.R2_FQ} {output.MERGED_R2_FQ}")
+        if len(params.R1_FQ)==1 & len(params.R2_FQ)==1: # shell for single fastq input
+            shell(f"cp {params.R1_FQ[0]} {output.MERGED_R1_FQ}")
+            shell(f"cp {params.R2_FQ[0]} {output.MERGED_R2_FQ}")
         else: # multi-fastq input; concatenate inputs
-            print("Concatenating",len(params.R1_FQ.split(" ")), ".fastq's for", wildcards.SAMPLE)
+            print("Concatenating",len(params.R1_FQ), ".fastq's for", wildcards.SAMPLE)
             shell(
                 f"""
                 mkdir -p {params.TMP_DIR}
-                zcat {params.R1_FQ} > {params.TMP_DIR}/merged_R1.fq
-                zcat {params.R2_FQ} > {params.TMP_DIR}/merged_R2.fq
+                zcat {" ".join(params.R1_FQ)} > {params.TMP_DIR}/merged_R1.fq
+                zcat {" ".join(params.R2_FQ)} > {params.TMP_DIR}/merged_R2.fq
                 {EXEC['PIGZ']} -p {threads} {params.TMP_DIR}/*.fq
                 """
             )

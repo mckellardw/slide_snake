@@ -58,7 +58,7 @@ rule ont_cutadapt:
         log = '{OUTDIR}/{SAMPLE}/ont/cutadapt.log'
     run:
         R1_LENGTHS = [
-            RECIPE_SHEET["R1.finalLength"][recipe] for recipe in RECIPE_DICT[wildcards.SAMPLE]
+            RECIPE_SHEET["R1.finalLength"][recipe] for recipe in RECIPE_ONT_DICT[wildcards.SAMPLE]
         ]
         # R1_LENGTH = RECIPE_SHEET["R1.finalLength"][recipe]
         # R1_LENGTH=10 #TODO- fix this

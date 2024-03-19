@@ -54,7 +54,7 @@ rule ont_STARsolo_align:
     priority:
         42
     run:
-        # recipe = RECIPE_DICT[wildcards.SAMPLE]
+        # recipe = RECIPE_ONT_DICT[wildcards.SAMPLE]
         recipe = wildcards.RECIPE
         STAR_REF = REF_DICT[wildcards.SAMPLE] # Use rRNA reference
         nBB = sum(1 for line in open(input.BB_WHITELIST)) # get number of bead barcodes for filtered count matrix, `--soloCellFilter`

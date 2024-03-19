@@ -45,6 +45,7 @@ EXEC = config["EXEC"]
 ### Pre-run setup ######################################################################
 # Build dictionaries of recipes & species to use for alignment
 RECIPE_DICT = {}    # Dictionary of recipes to use for each sample
+RECIPE_ONT_DICT = {}    # Dictionary of recipes to use for each sample
 rRNA_STAR_DICT = {} # Dictionary of rRNA reference genomes to use w/ STAR
 rRNA_BWA_DICT = {}  # Dictionary of rRNA reference genomes to use w/ bwa
 REF_DICT = {}       # Dictionary of reference genomes to use
@@ -59,17 +60,25 @@ SPECIES_DICT = {}   # Dictionary of species listed for mirge3 analysis
 #TODO- add checks so only needed variables are pulled
 for i in range(0,SAMPLE_SHEET.shape[0]):
     tmp_sample = list(SAMPLE_SHEET["sampleID"])[i]
-    RECIPE_DICT[tmp_sample] = list(SAMPLE_SHEET["recipe"])[i].split()
+
     rRNA_STAR_DICT[tmp_sample] = list(SAMPLE_SHEET["STAR_rRNA_ref"])[i]
     rRNA_BWA_DICT[tmp_sample] = list(SAMPLE_SHEET["bwa_rRNA_ref"])[i]
     REF_DICT[tmp_sample] = list(SAMPLE_SHEET["STAR_ref"])[i]
     GTF_DICT[tmp_sample] = list(SAMPLE_SHEET["genes_gtf"])[i]
-    IDX_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_idx"])[i]
-    T2G_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_t2g"])[i]
-    # IDX_VELO_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_idx_velo"])[i]
-    # T2G_VELO_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_t2g_velo"])[i]
     BB_DICT[tmp_sample] = list(SAMPLE_SHEET["BB_map"])[i]
     SPECIES_DICT[tmp_sample] = list(SAMPLE_SHEET["species"])[i]
+
+    # short-read-specific dicts
+    if R1_FQS[tmp_sample] is not None:
+        RECIPE_DICT[tmp_sample] = list(SAMPLE_SHEET["recipe"])[i].split()
+        IDX_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_idx"])[i]
+        T2G_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_t2g"])[i]
+        # IDX_VELO_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_idx_velo"])[i]
+        # T2G_VELO_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_t2g_velo"])[i]
+
+    # ONT-specific dicts
+    if ONT[tmp_sample] is not None:
+        RECIPE_ONT_DICT[tmp_sample] = list(SAMPLE_SHEET["recipe"])[i].split()
 
 
 ### include rules #######################################################################
@@ -127,7 +136,7 @@ rule all:
         ### ONT targets ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         [f"{OUTDIR}/{SAMPLE}/ont/{FILE}" 
             for SAMPLE in ONT.keys() 
-            for RECIPE in RECIPE_DICT[SAMPLE]
+            for RECIPE in RECIPE_ONT_DICT[SAMPLE]
             for FILE in [
                     # "merged_stranded.fq.gz",
                     f"minimap2/{RECIPE}/sorted.bam",
@@ -160,13 +169,13 @@ rule all:
 
         # [f"{OUTDIR}/{SAMPLE}/nanoplot/{TRIM}/summary.txt" 
         #     for SAMPLE in ONT.keys() 
-        #     for RECIPE in RECIPE_DICT[SAMPLE]
+        #     for RECIPE in RECIPE_ONT_DICT[SAMPLE]
         #     for READ in ["R1","R2"]
         #     for TRIM in ["ont_preAdapterScan",f"ont_postCutadapt_{READ}"]
         # ], # ONT NanoPlot
         [f"{OUTDIR}/{SAMPLE}/qualimap/ont/{TOOL}/{RECIPE}/{FILE}"
             for SAMPLE in ONT.keys() 
-            for RECIPE in RECIPE_DICT[SAMPLE]
+            for RECIPE in RECIPE_ONT_DICT[SAMPLE]
             for TOOL in ["minimap2",]# f"STARsolo/{RECIPE}"
             for FILE in ["qualimapReport.html","rnaseq_qc_results.csv"] 
         ], # alignment QC with qualimap
