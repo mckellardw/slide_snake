@@ -3,50 +3,55 @@ rule ont_umitools_extract:
     input:
         R1_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/cut_R1.fq.gz",
         R2_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/cut_R2.fq.gz",
-        BB_WHITELIST =  "{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
-        BB_1 =          "{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
-        BB_2 =          "{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
-        BB_ADAPTER =    "{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt",
+        BB_WHITELIST = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
+        BB_1 = "{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
+        BB_2 = "{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
+        BB_ADAPTER = "{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt",
         BB_ADAPTER_R1 = "{OUTDIR}/{SAMPLE}/bb/whitelist_adapter_r1.txt",
     output:
         R1_FQ = "{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/umi_R1.fq.gz",
         R2_FQ = "{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/umi_R2.fq.gz",
     params:
-        BC_PATTERN="CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCNNNNNNN" #TODO
+        # BC_PATTERN="CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCNNNNNNN" #TODO
+        
     log:
         log = "{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/extract.log"
     threads: 
-        config["CORES"]
+        1
     run:
-        recipe = wildcards.RECIPE 
+        # Temporarily hardcoded for Seeker...
+        recipe = wildcards.RECIPE
+
+        BC_PATTERN='(?P<discard_1>CTACACGACGCTCTTCCGATCT)(?P<cell_1>.{8})(?P<discard_1>TCTTCAGCGTTCCCGAGA)(?P<cell_2>.{6})(?P<umi_1>.{7})'
 
         #param handling for different SlideSeq R1 strategies
-        if "stomics" in recipe:
-            whitelist = input.BB_WHITELIST
-        elif "noTrim" in recipe or "matchLinker" in recipe:
-            whitelist = f"{input.BB_1} {input.BB_2}"
-        elif "internalTrim" in recipe:
-            whitelist = input.BB_WHITELIST
-        elif "adapterInsert" in recipe:
-            whitelist = input.BB_ADAPTER_R1
-        else:
-            whitelist = input.BB_WHITELIST
+        # if "stomics" in recipe:
+        #     whitelist = input.BB_WHITELIST
+        # elif "noTrim" in recipe or "matchLinker" in recipe:
+        #     whitelist = f"{input.BB_1} {input.BB_2}"
+        # elif "internalTrim" in recipe:
+        #     whitelist = input.BB_WHITELIST
+        # elif "adapterInsert" in recipe:
+        #     whitelist = input.BB_ADAPTER_R1
+        # else:
+        #     whitelist = input.BB_WHITELIST
+
+        whitelist = input.BB_WHITELIST
 
         shell(
             f"""
-            bash scripts/bash/umitools_extract_ont.sh \
-                -r1 {input.R1_FQ} \
-                -r2 {input.R2_FQ} \
-                -o1 {output.R1_FQ} \
-                -o2 {output.R2_FQ} \
-                -p "{params.BC_PATTERN}" \
-                -w {whitelist} \
-                -l {log.log}
+            {EXEC['UMITOOLS']} extract \
+                --extract-method=string \
+                --bc-pattern={BC_PATTERN} \
+                --whitelist={whitelist} \
+                --stdin={input.R1_FQ} \
+                --read2-in={input.R2_FQ} \
+                --stdout={output.R1_FQ} \
+                --read2-out={output.R2_FQ} \
+                -L {log.log}
             """
         )
 #
-
-
 
 
 #TOOD - pipe to samtools and convert to bam...
@@ -70,6 +75,12 @@ rule ont_align_minimap2:
     # conda:
     #     "../envs/minimap2.yml"
     run:
+        if "total" in wildcards.RECIPE:
+            EXTRA_FLAGS = "-M --secondary=yes"
+        else:
+            EXTRA_FLAGS = "--secondary=no"
+
+
         shell(
             f"""
             mkdir -p $(dirname {output.SAM_TMP})
@@ -80,8 +91,7 @@ rule ont_align_minimap2:
                 --MD \
                 -t {threads} \
                 --junc-bed {params.bed} \
-                --secondary=no \
-                {params.flags} \
+                {params.flags} {EXTRA_FLAGS} \
                 {params.ref} \
                 {input.FQ} \
             2> {log.log} \
@@ -181,7 +191,7 @@ rule ont_sort_index_output:
             # --barcode_length {barcode_length} \
 #
 
-
+# Get UMI & CB from R1 fastq
 rule ont_extract_barcodes_from_R1:
     input:
         BAM = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam",
@@ -189,7 +199,7 @@ rule ont_extract_barcodes_from_R1:
         BAM = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam",
     params:
         BARCODE_TAG="CR", # uncorrected!
-        UMI_TAG="CY", # uncorrected!
+        UMI_TAG="UR", # uncorrected!
     threads: 
         1
     log:
@@ -225,27 +235,6 @@ rule ont_index_bc_output:
             """
         )
 #
-
-# rule cleanup_headers_1:
-#     input:
-#         BAM_BC_UNCORR_TMP,
-#     output:
-#         bam=temp(BAM_BC_UNCORR),
-#         bai=temp(BAM_BC_UNCORR_BAI),
-#     # conda:
-#     #     "../envs/{EXEC['SAMTOOLS']}.yml"
-#     run:
-#         shell(
-#             f"""
-#             {EXEC['SAMTOOLS']} reheader \
-#                 --no-PG \
-#                 -c 'grep -v ^@PG' \
-#                 {input} \
-#             > {output.bam}
-            
-#             {EXEC['SAMTOOLS']} index {output.bam}
-#             """
-#         )
 
 #TODO - need to fix the script so this can be parallelized
 #Note - run time increases with BC length
@@ -317,11 +306,9 @@ rule ont_assign_barcodes:
 
 rule ont_index_bc_corrected_output:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam"
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam",
     output:
         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam.bai",
-    params:
-        ref = config["REF_GENOME_FASTA"]
     threads:
         1
         # config["CORES"]
@@ -333,17 +320,115 @@ rule ont_index_bc_corrected_output:
         )
 #
 
+# rule ont_assign_genes:
+#     input:
+#         bed=CHROM_BED_BC,
+#         chrom_gtf=CHROM_GTF,
+#     output:
+#         GENES=CHROM_TSV_GENE_ASSIGNS,
+#     params:
+#         minQV=config["GENE_ASSIGNS_MINQV"],
+#     threads: 
+#     1
+#     conda:
+#         "../envs/assign_genes.yml"
+#     shell:
+#         f"""
+#         python {SCRIPT_DIR}/assign_genes.py \
+#             --output {output.GENES} \
+#             {input.bed} {input.chrom_gtf}
+#         """
+
+# rule ont_add_gene_tags_to_bam:
+#     input:
+#         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam",
+#         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam.bai",
+#         GENES=CHROM_TSV_GENE_ASSIGNS,
+#     output:
+#         bam=temp(CHROM_BAM_BC_GENE_TMP),
+#     conda:
+#         "../envs/umis.yml"
+#     shell:
+#         "touch {input.bai}; "
+#         "python {SCRIPT_DIR}/add_gene_tags.py "
+#         "--output {output.bam} "
+#         "{input.bam} {input.genes}"
+# #
+
+# featureCounts details:
+## -s 1 = stranded
+## -L = long-read mode
+## -f = feature-level labelling (as in, not 'gene'-level, but 'transcript' level)
+rule ont_featureCounts:
+    input:
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam",
+        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.bai",
+    output:
+        BAM=temp("{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.featureCounts.bam"),
+        FEAT="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/featureCounts.tsv",
+    # params:
+    #     GTF= lambda wildcards: GTF_DICT[wildcards.SAMPLE]
+    log:
+        log = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/featureCounts.log"
+    run:
+        GTF = GTF_DICT[wildcards.SAMPLE]
+        
+        # if "total" in wildcards.RECIPE:
+        #     EXTRA_FLAGS = "-M"
+        # else:
+        #     EXTRA_FLAGS = ""
+
+        shell(
+            f"""
+            {EXEC['FEATURECOUNTS']} \
+                -a {GTF} \
+                -o {output.FEAT} \
+                -L \
+                -s 1 \
+                -f \
+                -D 10000 \
+                -t 'transcript' \
+                -g 'transcript_id' \
+                -R BAM \
+                {input.BAM} \
+                2> {log.log}
+            """
+        )
+#
+
+rule ont_sort_index_featureCounts:
+    input:
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.featureCounts.bam",
+    output:
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_gn.bam",
+        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_gn.bam.bai",
+    # params:
+    #     ref = config["REF_GENOME_FASTA"]
+    run:
+        shell(
+            f"""
+            {EXEC['SAMTOOLS']} sort \
+                -O BAM \
+                -o {output.BAM} \
+                {input.BAM} 
+            
+            {EXEC['SAMTOOLS']} index {output.BAM}
+            """
+        )
+#
+
+
 # Generate count matrix w/ umi-tools 
 rule ont_umitools_count:
     input:
-        BAM = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam",
-        BAI = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam.bai",
+        BAM = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_gn.bam",
+        BAI = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_gn.bam.bai",
     output:        
-        COUNTS = '{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/umitools_counts.tsv.gz'
+        COUNTS = '{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/umitools_counts.tsv.gz'
     params:
-        CELL_TAG="CB",
-        GENE_TAG="GN",
-        UMI_TAG="UB"
+        CELL_TAG="CR",
+        GENE_TAG="XS", #GN
+        UMI_TAG="UR"
     log:
         log = '{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/umitools_count.log'
     threads:
@@ -363,3 +448,25 @@ rule ont_umitools_count:
                 -S {output.COUNTS} 
             """
         )
+#
+
+# rule cleanup_headers_1:
+#     input:
+#         BAM_BC_UNCORR_TMP,
+#     output:
+#         bam=temp(BAM_BC_UNCORR),
+#         bai=temp(BAM_BC_UNCORR_BAI),
+#     # conda:
+#     #     "../envs/{EXEC['SAMTOOLS']}.yml"
+#     run:
+#         shell(
+#             f"""
+#             {EXEC['SAMTOOLS']} reheader \
+#                 --no-PG \
+#                 -c 'grep -v ^@PG' \
+#                 {input} \
+#             > {output.bam}
+            
+#             {EXEC['SAMTOOLS']} index {output.bam}
+#             """
+#         )

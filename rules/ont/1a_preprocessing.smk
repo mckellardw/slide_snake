@@ -1,5 +1,6 @@
 
 # Borrowed portions of this code from `sockeye` - https://github.com/nanoporetech/sockeye/tree/master
+#TODO- rewrite as a python script...
 rule merge_formats_ONT:
     output:
         MERGED_FQ = temp("{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz")
@@ -130,8 +131,10 @@ rule ont_call_adapter_scan:
         # batch_size = config["READ_STRUCTURE_BATCH_SIZE"],
         KIT = "3prime" #['3prime', '5prime', 'multiome']
         # kit=lambda w: sample_sheet.loc[w.run_id, "kit_name"]
-    conda:
-        "../envs/slsn_ont_prep.yml"
+    # conda:
+    #     f"{workflow.basedir}/envs/slsn_ont_prep.yml"
+    # log:
+    #     log="{OUTDIR}/{SAMPLE}/ont/adapter_scan.log"
     shell:
         """
         python scripts/py/adapter_scan_vsearch.py \
@@ -163,7 +166,7 @@ rule ont_readIDs_by_adapter_type:
             """
         )
 
-#TODO
+#TODO- add more functionality for other read/adapter types to salvage imperfect reads
 rule ont_subset_fastq_by_adapter_type:
     input:
         FQ  = "{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq.gz",
@@ -177,7 +180,7 @@ rule ont_subset_fastq_by_adapter_type:
     log:
         log = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/subseq_full_len.log"
     run:
-        # for ADAPTER in input.ADAPTER_TYPES: #TODO- broaden to other read types, bneyond full_len
+        # for ADAPTER in input.ADAPTER_TYPES: 
         shell(
             f"""
             mkdir -p $(dirname {output.FQ})

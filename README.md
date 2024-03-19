@@ -30,6 +30,7 @@ Just for ONT analysis:
 
 
 ### Install w/ `mamba`/`conda` [recommended]:
+**Currently adding rule-specific conda environments, just hang tight**
 ```
 mamba create --name slide_snake -c bioconda cutadapt fastqc star=2.7.11a kallisto bustools samtools bamtools qualimap anndata scanpy vsearch blast umi_tools seqtk
 
@@ -65,7 +66,7 @@ All executables are called from the path specified in `config.yaml` (See `EXEC`)
 ## Runtime details
 ### Example run w/ `slurm`:
 ```
-snakemake --cluster-config config/slurm.yaml --cluster "sbatch -p {cluster.partition} -t {cluster.time} -N {cluster.nodes} --mem {cluster.mem} -o {cluster.output} --cpus-per-task={cluster.threads}" -j 16 -k -p --nt --cluster-cancel scancel --rerun-incomplete --latency-wait 30
+snakemake --cluster-config config/slurm.yaml --cluster "sbatch -p {cluster.partition} -t {cluster.time} -N {cluster.nodes} --mem {cluster.mem} -o {cluster.output} --cpus-per-task={cluster.threads}" -j 16 -k -p --nt --cluster-cancel scancel --rerun-incomplete --latency-wait 30 --use-conda
 ```
 
 ### Example run w/out `slurm`:

@@ -27,6 +27,9 @@ def parse_bam_and_add_tags(input_bam, output_bam, barcode_tag, umi_tag):
                 barcode_value = parts[-2]
                 umi_value = parts[-1]
                 
+                # Extract quality scores
+                # qual_scores = read.query_qualities
+                
                 read.set_tag(barcode_tag, barcode_value)
                 read.set_tag(umi_tag, umi_value)
             
@@ -49,13 +52,24 @@ def main():
     parser.add_argument(
         "-c", "--barcode_tag", 
         default="CR", 
-        help="The tag for the first string in the read ID. Default: CR"
+        help="The tag for the first string in the read ID [which should contain the cell barcode]. Default: CR"
     )
     parser.add_argument(
         "-y", "--umi_tag", 
         default="UR",
-        help="The tag for the second string in the read ID. Default: UR"
+        help="The tag for the second string in the read ID [which should contain the UMI]. Default: UR"
     )
+    #TODO:
+    # parser.add_argument(
+    #     "--barcode_qual_tag", 
+    #     default="CY", 
+    #     help="Read quality for the barcode. Default: CY"
+    # )
+    # parser.add_argument(
+    #     "--umi_qual_tag", 
+    #     default="UY",
+    #     help="Read quality for the UI. Default: UY"
+    # )
     
     args = parser.parse_args()
     

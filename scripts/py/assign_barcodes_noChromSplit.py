@@ -187,13 +187,12 @@ def parse_args():
     args = parser.parse_args()
 
     # verify kit selection
-    if (args.kit != "3prime") and (args.kit != "5prime") and (args.kit != "multiome"):
+    if (args.kit != "3prime") and (args.kit != "5prime"):
         raise Exception(
-            "Invalid kit name! Specify either 3prime, 5prime or \
-        multiome."
+            "Invalid kit name! Specify either '3prime' or '5prime'."
         )
 
-    if (args.kit == "3prime") or (args.kit == "multiome"):
+    if (args.kit == "3prime"):
         # Read1 adapter
         args.adapter1_seq = "CTACACGACGCTCTTCCGATCT"
         # TSO adapter
@@ -307,7 +306,7 @@ LOOKUP = []
 for q in range(100):
     LOOKUP.append(pow(10, -0.1 * q))
 
-
+# Don't need this if using umi_tools extract
 def compute_mean_qscore(scores):
     """
     Returns the phred score corresponding to the mean of the probabilities
@@ -326,7 +325,7 @@ def compute_mean_qscore(scores):
 
     return -10.0 * math.log10(mean_prob)
 
-
+# Don't need this if using umi_tools extract
 def find_feature_qscores(feature, p_alignment, prefix_seq, prefix_qv):
     """
     Using the parasail alignment results, find the qscores corresponding to the
@@ -357,7 +356,7 @@ def find_feature_qscores(feature, p_alignment, prefix_seq, prefix_qv):
 
     return feature_qv_ascii
 
-
+# Don't need this if using umi_tools extract
 def parse_probe_alignment(p_alignment, align, prefix_seq, prefix_qv):
     """
     Parse a parasail alignment alignment and add uncorrected UMI and UMI QV
@@ -392,7 +391,7 @@ def parse_probe_alignment(p_alignment, align, prefix_seq, prefix_qv):
 
     return align
 
-
+# Don't need this if using umi_tools extract
 def get_uncorrected_umi(align, args):
     """
     Aligns a probe sequence containing the adapter1+corrected_barcode+Ns+polyT to
@@ -413,7 +412,7 @@ def get_uncorrected_umi(align, args):
     # Use only the specified suffix length of adapter1
     adapter1_probe_seq = args.adapter1_seq[-args.adapter1_suff_length :]
 
-    if (args.kit == "3prime") or (args.kit == "multiome"):
+    if (args.kit == "3prime"):
         # Compile the actual query sequence of <adapter1_suffix><bc_corr>NNN...N<TTTTT....>
         probe_seq = "{r}{bc}{umi}{pT}".format(
             r=adapter1_probe_seq,
@@ -452,7 +451,7 @@ def get_uncorrected_umi(align, args):
 
     return align
 
-
+# Removed `chrom` input
 def process_bam_records(tup):
     """
     Process BAM records to assign each read a corrected cell barcode and an
@@ -468,12 +467,11 @@ def process_bam_records(tup):
     :rtype: str
     """
     input_bam = tup[0]
-    # chrom = tup[1]
-    # args = tup[2]
     args = tup[1]
 
-    # Load barcode whitelist and map kmers to indices in whitelist for faster
-    # barcode matching
+    verbose = False # for debugging
+
+    # Load barcode whitelist and map kmers to indices in whitelist for faster barcode matching
     whitelist, kmer_to_bc_index = load_whitelist(args.whitelist, args.k)
 
     # Open input BAM file
@@ -493,14 +491,18 @@ def process_bam_records(tup):
     else:
         bam_out_fn = args.output_bam
 
-    bam_out = pysam.AlignmentFile(args.output_bam, "wb", template=bam)
+    bam_out = pysam.AlignmentFile(
+        args.output_bam,
+        "wb", 
+        template=bam
+    )
 
     barcode_counter = collections.Counter()
 
     for align in bam.fetch(): #contig=chrom
-        # Make sure each alignment in this BAM has an uncorrected barcode and
-        # barcode QV
-        assert align.has_tag("CR") and align.has_tag("CY"), "CR or CY tags not found"
+        # Make sure each alignment in this BAM has an uncorrected barcode and barcode QV
+        #TODO add quality score extraction in barcode/UMI extraction step
+        assert align.has_tag("CR"), "CR tag not found" #and align.has_tag("CY")
 
         bc_uncorr = align.get_tag("CR")
 
@@ -508,6 +510,7 @@ def process_bam_records(tup):
         if len(bc_uncorr) >= args.k:
             # Decompose uncorrected barcode into N k-mers
             bc_uncorr_kmers = split_seq_into_kmers(bc_uncorr, args.k)
+
             # Filter the whitelist to only those with at least one of the k-mers
             # from the uncorrected barcode
             filt_whitelist = filter_whitelist_by_kmers(
@@ -522,6 +525,11 @@ def process_bam_records(tup):
                 bc_uncorr, 
                 filt_whitelist
             )
+            
+            if(verbose):
+                print(f"bc_match = {bc_match}")
+                print(f"bc_match_ed = {bc_match_ed}")
+                print(f"next_match_diff = {next_match_diff}")
 
             # Check barcode match edit distance and difference to runner-up edit distance
             condition1 = bc_match_ed <= args.max_ed
@@ -533,9 +541,10 @@ def process_bam_records(tup):
                     bc_match, 
                     value_type="Z"
                 )
-
+                
+                #TODO- don't need this line
                 # Add corrected barcode to probe sequence to fish out uncorrected UMI
-                align = get_uncorrected_umi(align, args)
+                # align = get_uncorrected_umi(align, args)
 
             # Only write BAM entry in output file if we've assigned a corrected
             # barcode and an uncorrected UMI
@@ -663,15 +672,17 @@ def get_bam_info(bam):
     """
     bam = pysam.AlignmentFile(bam, "rb")
     stats = bam.get_index_statistics()
-    n_aligns = int(sum([contig.mapped for contig in stats]))
+    n_aligns = int(sum([contig.mapped for contig in stats])) # number of aligned reads
+    n_unmapped = bam.nocoordinate # number of UNaligned reads
+    n_reads = n_aligns + n_unmapped # number of total reads
     chroms = dict(
         [(contig.contig, contig.mapped) for contig in stats if contig.mapped > 0]
     )
     bam.close()
-    return n_aligns, chroms
+    return n_reads, n_aligns, chroms
 
 #DWM
-def split_bam_file(input_bam, num_files, n_reads=None, output_prefix=None, index=True):
+def split_bam_file(input_bam, num_files, n_reads=None, output_dir=None, index=True):
     """
     Splits a BAM file into N files and returns the names of the split BAM files.
 
@@ -680,24 +691,24 @@ def split_bam_file(input_bam, num_files, n_reads=None, output_prefix=None, index
     - num_files: Number of files to split the input BAM into.
     - n_reads: Optional. Number of reads in the BAM file. If not provided, the function will count the reads.
     - output_prefix: Optional. Prefix for the output BAM files. If not provided, the function will use the directory of the input BAM file.
-
+    - indexL Boolean. Whether or not to index the split bam files. Default: True
+    
     Returns:
     - A list of the names of the split BAM files.
     """
-    # Determine the output directory and prefix
-    if output_prefix is None:
-        output_dir = os.path.dirname(input_bam)
-        output_prefix = os.path.join(output_dir, os.path.splitext(os.path.basename(input_bam))[0])
+    # Handle the output directory, make it if it doesn't exist
+    if output_dir is None:
+        output_dir = os.path.splitext(input_bam)[0]
     else:
-        output_dir = os.path.dirname(output_prefix)
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
+        output_dir = os.path.dirname(output_dir)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
     
     # Open the input BAM file
     with pysam.AlignmentFile(input_bam, "rb") as input_bam_file:
         # If n_reads is not provided, count the reads
         if n_reads is None:
-            n_reads = input_bam_file.count()
+            n_reads = input_bam_file.count() #this does not include unaligned
         
         # Calculate the number of reads per file
         reads_per_file = math.ceil(n_reads / num_files)
@@ -706,7 +717,7 @@ def split_bam_file(input_bam, num_files, n_reads=None, output_prefix=None, index
         current_read_count = 0
         current_file_number = 1
         current_output_bam = pysam.AlignmentFile(
-            f"{output_prefix}_{current_file_number}.bam", 
+            f"{output_dir}/{current_file_number:03d}.bam", 
             "wb", 
             template=input_bam_file
         )
@@ -715,16 +726,16 @@ def split_bam_file(input_bam, num_files, n_reads=None, output_prefix=None, index
         # Iterate over the reads in the input BAM file
         for read in input_bam_file:
             # If we've reached the desired number of reads for the current file,
-            # close the current output file and open a new one
+            #    close the current output file and open a new one
             if current_read_count >= reads_per_file:
                 if current_output_bam is not None:
                     current_output_bam.close()                
                 current_output_bam = pysam.AlignmentFile(
-                    f"{output_prefix}_{current_file_number}.bam", 
+                    f"{output_dir}/{current_file_number:03d}.bam", 
                     "wb", 
                     template=input_bam_file
                 )
-                split_files.append(f"{output_prefix}_{current_file_number}.bam") # Add the current output file name to the list
+                split_files.append(f"{output_dir}/{current_file_number:03d}.bam") # Add the current output file name to the list
                 current_file_number += 1
                 current_read_count = 0
             
@@ -735,30 +746,39 @@ def split_bam_file(input_bam, num_files, n_reads=None, output_prefix=None, index
         # Close the last output file
         if current_output_bam is not None:
             current_output_bam.close()
-            # split_files.append(f"{output_prefix}_{current_file_number}.bam") # Add the last output file name to the list
+            # split_files.append(f"{output_dir}/{current_file_number:03d}.bam") # Add the last output file name to the list
     
-    if index:
+    if index:        
+        logger.info("Indexing split BAMs...")
         for bam in split_files:
             pysam.index(bam)
 
     return split_files
 
 
-
 def main(args):
     init_logger(args)
-    # logger.info("Getting BAM statistics")
-    n_reads, chroms = get_bam_info(args.bam)
+    logger.info(f"Using {args.threads} thread(s)")
+    logger.info("Getting BAM statistics")
+    n_reads, n_aligns, chroms = get_bam_info(args.bam)
+    logger.info(f"    Found {n_reads} reads in {args.bam}")
+    logger.info(f"    Found {n_aligns} alignments in {args.bam}")
+    
+    logger.info(f"Assigning barcodes to reads in {args.bam}")
 
     if args.threads > 1:
         # Create temporary directory
         if os.path.exists(args.tempdir):
-            shutil.rmtree(args.tempdir, ignore_errors=True)
+            shutil.rmtree(
+                args.tempdir, 
+                ignore_errors=True
+            )
         os.mkdir(args.tempdir)
 
         # Process BAM alignments from each chrom separately
-        logger.info(f"Assigning barcodes to reads in {args.bam}")
         func_args = []
+
+        logger.info(f"    Splitting BAM into {args.threads} BAMs...")
         
         split_bam_files = split_bam_file(
             input_bam=args.bam, 
@@ -766,11 +786,19 @@ def main(args):
             num_files=args.threads, # 1 bam per thread
             n_reads=n_reads
         )
-
         for bam in split_bam_files:
             func_args.append((bam, args)) #chrom,
+            logger.info(f"    {bam}")
+        
+        logger.info(f"func_args for pool run:")
+        for farg in func_args:
+            logger.info(f"    {farg}")
 
-        results = launch_pool(process_bam_records, func_args, args.threads)
+        results = launch_pool(
+            func=process_bam_records, 
+            func_args=func_args, 
+            procs=args.threads
+        )
         chrom_bam_fns, barcode_counters = zip(*results)
 
         barcode_counter = sum(barcode_counters, collections.Counter())
@@ -787,15 +815,24 @@ def main(args):
         pysam.sort("-@", str(args.threads), "-o", args.output_bam, tmp_bam.name)
 
         logger.info("Cleaning up temporary files")
-        shutil.rmtree(args.tempdir, ignore_errors=True)
-
+        shutil.rmtree(
+            args.tempdir, 
+            ignore_errors=True
+        )
+        # shutil.rmtree( # remove split bams
+        #     os.path.dirname(split_bam_files[0]), 
+        #     ignore_errors=True
+        # )
     else:
         func_args = (args.bam, args) #chrom,
         chrom_bam_fn, barcode_counter = process_bam_records(func_args)
+        logger.info(f"Written to {chrom_bam_fn}")
 
     with open(args.output_counts, "w") as f:
         for bc, n in barcode_counter.most_common():
             f.write(f"{bc}\t{n}\n")
+    
+    logger.info("Done.")
 
 
 if __name__ == "__main__":

@@ -15,9 +15,11 @@ RECIPE_SHEET = pd.read_csv(
     index_col=0
 ) 
 
-### Directories and locations ##########################################################
+### Directory locations ################################################################
 TMPDIR = config["TMPDIR"]
 OUTDIR = config["OUTDIR"]
+
+### Conda environment locations ########################################################
 
 ### Variables and references ###########################################################
 SAMPLE_SHEET = pd.read_csv(
@@ -111,6 +113,7 @@ include: "rules/ont/1c_minimap2.smk"
 include: "rules/ont/1d_STAR.smk"
 include: "rules/ont/1e_qualimap.smk"
 include: "rules/ont/2_fastqc.smk"
+include: "rules/ont/2_nanoQC.smk"
 # include: "rules/ont/2_nanoplot.smk"
 
 # Final outputs module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -129,8 +132,9 @@ rule all:
                     # "merged_stranded.fq.gz",
                     f"minimap2/{RECIPE}/sorted.bam",
                     f"minimap2/{RECIPE}/sorted_bc.bam",
+                    f"minimap2/{RECIPE}/sorted_bc_gn.bam",
                     # f"minimap2/{RECIPE}/counts.tsv",
-                    # f"minimap2/{RECIPE}/umitools_counts.tsv.gz",
+                    # f"minimap2/{RECIPE}/raw/umitools_counts.tsv.gz",
                     f"minimap2/{RECIPE}/raw/output.h5ad",
                     # "adapter_scan_readids/full_len_R2.fq.gz"
                 ]
@@ -142,24 +146,30 @@ rule all:
         #             f"Aligned.sortedByCoord.out.bam"
         #         ]
         # ], # ONT outputs
-        [f"{OUTDIR}/{SAMPLE}/fastqc/{TRIM}" 
-            for SAMPLE in ONT.keys() 
-            for RECIPE in RECIPE_DICT[SAMPLE]
+        [f"{OUTDIR}/{SAMPLE}/fastqc/{TRIM}"
+            for SAMPLE in ONT.keys()
             for READ in ["R1","R2"]
             for TRIM in ["ont_preAdapterScan",f"ont_postCutadapt_{READ}"]
         ], # ONT nanoplot
+        [f"{OUTDIR}/{SAMPLE}/nanoqc/{TRIM}/{FILE}" 
+            for SAMPLE in ONT.keys()
+            for READ in ["R1","R2"]
+            for TRIM in ["ont_preAdapterScan",f"ont_postCutadapt_{READ}"]
+            for FILE in ["nanoQC.html"]
+        ], # read QC with nanoQC
+
         # [f"{OUTDIR}/{SAMPLE}/nanoplot/{TRIM}/summary.txt" 
         #     for SAMPLE in ONT.keys() 
         #     for RECIPE in RECIPE_DICT[SAMPLE]
         #     for READ in ["R1","R2"]
         #     for TRIM in ["ont_preAdapterScan",f"ont_postCutadapt_{READ}"]
         # ], # ONT NanoPlot
-        [f"{OUTDIR}/{SAMPLE}/qualimap/ont/{TOOL}/{FILE}"
+        [f"{OUTDIR}/{SAMPLE}/qualimap/ont/{TOOL}/{RECIPE}/{FILE}"
             for SAMPLE in ONT.keys() 
             for RECIPE in RECIPE_DICT[SAMPLE]
             for TOOL in ["minimap2",]# f"STARsolo/{RECIPE}"
             for FILE in ["qualimapReport.html","rnaseq_qc_results.csv"] 
-        ], # alignment QC with qualimap      
+        ], # alignment QC with qualimap
 
         ### short-read targets ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Module 1 - trimming & QC
@@ -230,16 +240,16 @@ rule all:
             for SOLO in ["Gene","GeneFull"]
             for ALGO in ["UniqueAndMult-EM","matrix"]
         ], # anndata files (with spatial info) - STAR        
-        # [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/raw/output.h5ad" 
-        #     for SAMPLE in R2_FQS.keys() 
-        #     for RECIPE in RECIPE_DICT[SAMPLE] 
-        #     for KB in ["kb"] # "kb_velo", "kb_nuc" 
-        # ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`        
-        # [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/counts_unfiltered/output.h5ad" 
-        #     for SAMPLE in R2_FQS.keys() 
-        #     for RECIPE in RECIPE_DICT[SAMPLE] 
-        #     for KB in ["kbpython"] # "kb_velo", "kb_nuc" 
-        # ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`
+        [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/raw/output.h5ad" 
+            for SAMPLE in R2_FQS.keys() 
+            for RECIPE in RECIPE_DICT[SAMPLE] 
+            for KB in ["kb"] # "kb_velo", "kb_nuc" 
+        ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`        
+        [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/counts_unfiltered/output.h5ad" 
+            for SAMPLE in R2_FQS.keys() 
+            for RECIPE in RECIPE_DICT[SAMPLE] 
+            for KB in ["kbpython"] # "kb_velo", "kb_nuc" 
+        ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`
 
 
 ## EXTRANEOUS #######################################################################
