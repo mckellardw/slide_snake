@@ -61,25 +61,25 @@ rule ont_cutadapt:
             RECIPE_SHEET["R1.finalLength"][recipe] for recipe in RECIPE_ONT_DICT[wildcards.SAMPLE]
         ]
         # R1_LENGTH = RECIPE_SHEET["R1.finalLength"][recipe]
-        # R1_LENGTH=10 #TODO- fix this
         R1_LENGTH = max(R1_LENGTHS) + len(params.R1) # Add R1 primer length for ONT
 
         R1 = input.R1_FQ
         # R1 = input.R1_FQ_Trimmed
         R2 = input.R2_FQ
 
+        #TODO - make some params recipe-specific
         shell(
             f"""
             mkdir -p $(dirname  {output.R1_FQ})
 
             echo "Minimum R1 length: {R1_LENGTH}" > {log.log}
+            echo "" >> {log.log}
 
             {EXEC['CUTADAPT']} \
                 --minimum-length {R1_LENGTH}:{params.MIN_R2_LENGTH} \
                 --quality-cutoff {params.QUALITY_MIN} \
                 --overlap {params.OVERLAP} \
                 --match-read-wildcards \
-                --nextseq-trim=20 \
                 --times {params.ADAPTER_COUNT} \
                 -A "{params.POLYA};max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
                 -A "{params.POLYT};max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \

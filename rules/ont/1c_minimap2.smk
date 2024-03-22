@@ -1,4 +1,4 @@
-
+# Get cell/spot/bead barcodes & UMIs
 rule ont_umitools_extract:
     input:
         R1_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/cut_R1.fq.gz",
@@ -12,8 +12,7 @@ rule ont_umitools_extract:
         R1_FQ = "{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/umi_R1.fq.gz",
         R2_FQ = "{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/umi_R2.fq.gz",
     params:
-        # BC_PATTERN="CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCNNNNNNN" #TODO
-        
+        # BC_PATTERN="CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCNNNNNNN" #TODO        
     log:
         log = "{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/extract.log"
     threads: 
@@ -22,35 +21,48 @@ rule ont_umitools_extract:
         # Temporarily hardcoded for Seeker...
         recipe = wildcards.RECIPE
 
-        BC_PATTERN='(?P<discard_1>CTACACGACGCTCTTCCGATCT)(?P<cell_1>.{8})(?P<discard_1>TCTTCAGCGTTCCCGAGA)(?P<cell_2>.{6})(?P<umi_1>.{7})'
+        # BC_PATTERN="(?P<discard_1>CTACACGACGCTCTTCCGATCT)"+ \
+        #     "(?P<cell_1>.{{8}})"+ \
+        #     "(?P<discard_2>TCTTCAGCGTTCCCGAGA)"+ \
+        #     "(?P<cell_2>.{{6}})"+ \
+        #     "(?P<umi_1>.{{7}})"
+        
+        # BC_PATTERN="(?P<discard_1>XXXXXXXXXXXXXXXXXXXXXXX)"+ \
+        #     "(?P<cell_1>.{{8}})"+ \
+        #     "(?P<discard_2>XXXXXXXXXXXXXXXXXX)"+ \
+        #     "(?P<cell_2>.{{6}})"+ \
+        #     "(?P<umi_1>.{{7}})"
 
-        #param handling for different SlideSeq R1 strategies
-        # if "stomics" in recipe:
-        #     whitelist = input.BB_WHITELIST
-        # elif "noTrim" in recipe or "matchLinker" in recipe:
-        #     whitelist = f"{input.BB_1} {input.BB_2}"
-        # elif "internalTrim" in recipe:
-        #     whitelist = input.BB_WHITELIST
-        # elif "adapterInsert" in recipe:
-        #     whitelist = input.BB_ADAPTER_R1
-        # else:
-        #     whitelist = input.BB_WHITELIST
-
-        whitelist = input.BB_WHITELIST
+        BC_PATTERN="C"*22 + \
+        "C"*8 + \
+        "C"*18 + \
+        "C"*6 + \
+        "N"*7
+        
+        whitelist = input.BB_ADAPTER_R1
+        EXTRACT_METHOD = "string" # "regex"
 
         shell(
             f"""
+            echo "Barcode pattern: '{BC_PATTERN}'" > {log.log}
+            echo "Extract method:  {EXTRACT_METHOD}" >> {log.log}
+            echo "whitelist:       {whitelist}" >> {log.log}
+            echo "" >> {log.log}
+
             {EXEC['UMITOOLS']} extract \
-                --extract-method=string \
-                --bc-pattern={BC_PATTERN} \
+                --extract-method={EXTRACT_METHOD} \
+                --bc-pattern='{BC_PATTERN}' \
                 --whitelist={whitelist} \
+                --error-correct-cell \
                 --stdin={input.R1_FQ} \
                 --read2-in={input.R2_FQ} \
                 --stdout={output.R1_FQ} \
                 --read2-out={output.R2_FQ} \
-                -L {log.log}
+                --log2stderr \
+            2>> {log.log}
             """
         )
+                # --error-correct-cell \
 #
 
 
@@ -153,7 +165,7 @@ rule ont_sort_index_output:
 #     # conda:
 #     #     "../envs/barcodes.yml"
 #     run:
-#         # recipe = RECIPE_DICT[wildcards.SAMPLE]
+#         # recipe = RECIPE_ONT_DICT[wildcards.SAMPLE]
 #         recipe = wildcards.RECIPE
         
 #         #param handling for different SlideSeq R1 strategies
