@@ -43,6 +43,7 @@ def find_and_split_reads(fq_in, sequence, log=None, max_errors=2):
              open(f"{output_prefix}_R2.fq", mode='w') as output_fastq2:
             for read in input_fastq:
                 # Perform pairwise alignment to find the sequence with allowed mismatches
+                #TODO- update this code
                 alignments = pairwise2.align.localms(
                     read.sequence, 
                     sequence,
@@ -106,7 +107,7 @@ if __name__ == "__main__":
     #                     help='The prefix for the output FASTQ files.')
     parser.add_argument('--log', 
                         type=str, 
-                        default="split_full_len.log",
+                        default="split.log",
                         help='The path to the output log file.')
     parser.add_argument('--threads', 
                         type=int, 

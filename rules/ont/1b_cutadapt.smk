@@ -28,9 +28,9 @@
 
 rule ont_cutadapt:
     input:
-        R1_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len_R1.fq.gz",
+        R1_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_R1.fq.gz",
         # R1_FQ_Trimmed = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len_internalTrim_R1.fq.gz",
-        R2_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len_R2.fq.gz"
+        R2_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_R2.fq.gz"
     output:
         R1_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/ont/cut_R1.fq.gz'),
         R2_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/ont/cut_R2.fq.gz'),

@@ -11,8 +11,8 @@ rule ont_umitools_extract:
     output:
         R1_FQ = "{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/umi_R1.fq.gz",
         R2_FQ = "{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/umi_R2.fq.gz",
-    params:
-        # BC_PATTERN="CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCNNNNNNN" #TODO        
+    # params:
+    #    BC_PATTERN="CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCNNNNNNN" #TODO        
     log:
         log = "{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/extract.log"
     threads: 
@@ -52,8 +52,6 @@ rule ont_umitools_extract:
             {EXEC['UMITOOLS']} extract \
                 --extract-method={EXTRACT_METHOD} \
                 --bc-pattern='{BC_PATTERN}' \
-                --whitelist={whitelist} \
-                --error-correct-cell \
                 --stdin={input.R1_FQ} \
                 --read2-in={input.R2_FQ} \
                 --stdout={output.R1_FQ} \
@@ -63,10 +61,11 @@ rule ont_umitools_extract:
             """
         )
                 # --error-correct-cell \
+                # --whitelist={whitelist} \
+                # --error-correct-cell \
 #
 
-
-#TOOD - pipe to samtools and convert to bam...
+# Align w/ minimap2
 ## minimap2 docs - https://lh3.github.io/minimap2/minimap2.html
 rule ont_align_minimap2:
     input:
@@ -74,6 +73,7 @@ rule ont_align_minimap2:
     output:
         SAM_TMP=temp("{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tmp.sam"),
     params:
+        EXTRA_FLAGS = lambda wildcards: RECIPE_SHEET["minimap2.extra"][wildcards.RECIPE],
         ref = config["REF_GENOME_FASTA"],
         chrom_sizes = config["REF_CHROM_SIZES"],
         bed = config["REF_GENES_BED"],
@@ -85,17 +85,14 @@ rule ont_align_minimap2:
     # resources:
     #     mem_gb=get_split_ont_align_mem_gb,
     # conda:
-    #     "../envs/minimap2.yml"
+    #     f"{workflow.basedir}/envs/minimap2.yml" #TODO
     run:
-        if "total" in wildcards.RECIPE:
-            EXTRA_FLAGS = "-M --secondary=yes"
-        else:
-            EXTRA_FLAGS = "--secondary=no"
-
-
         shell(
             f"""
             mkdir -p $(dirname {output.SAM_TMP})
+
+            echo "Extra flags: {params.EXTRA_FLAGS}" > {log.log} 
+            echo "" >> {log.log} 
 
             {EXEC['MINIMAP2']} \
                 -ax splice \
@@ -103,14 +100,18 @@ rule ont_align_minimap2:
                 --MD \
                 -t {threads} \
                 --junc-bed {params.bed} \
-                {params.flags} {EXTRA_FLAGS} \
+                {params.flags} {params.EXTRA_FLAGS} \
                 {params.ref} \
                 {input.FQ} \
-            2> {log.log} \
+            2>> {log.log} \
             > {output.SAM_TMP}
             """
         )
 #
+        # if "total" in wildcards.RECIPE:
+        #     EXTRA_FLAGS = "-M --secondary=yes"
+        # else:
+        #     EXTRA_FLAGS = "--secondary=no"
 
 
 rule ont_sort_index_output:
@@ -235,11 +236,8 @@ rule ont_index_bc_output:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam"
     output:
         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.bai",
-    params:
-        ref = config["REF_GENOME_FASTA"]
     threads:
         1
-        # config["CORES"]
     run:
         shell(
             f"""
@@ -250,7 +248,7 @@ rule ont_index_bc_output:
 
 #TODO - need to fix the script so this can be parallelized
 #Note - run time increases with BC length
-rule ont_assign_barcodes:
+rule ont_error_correct_barcodes:
     input:
         BAM = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam",
         BAI = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.bai",
@@ -314,7 +312,7 @@ rule ont_assign_barcodes:
         # umi_length = get_umi_length(wildcards)
         # echo "Barcode length: {barcode_length}" > {log.log}
         #     --barcode_length {barcode_length} \
-
+#
 
 rule ont_index_bc_corrected_output:
     input:
@@ -371,64 +369,172 @@ rule ont_index_bc_corrected_output:
 ## -s 1 = stranded
 ## -L = long-read mode
 ## -f = feature-level labelling (as in, not 'gene'-level, but 'transcript' level)
+# rule ont_featureCounts:
+#     input:
+#         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam",
+#         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.bai",
+#     output:
+#         BAM=temp("{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.featureCounts.bam"),
+#         FEAT="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/featureCounts.tsv",
+#     params:
+#         GTF = lambda wildcards: GTF_DICT[wildcards.SAMPLE],
+#         EXTRA_FLAGS = lambda wildcards: RECIPE_SHEET["featureCounts.extra"][wildcards.RECIPE],
+#         MIN_TEMPLATE_LENGTH = 10,
+#         MAX_TEMPLATE_LENGTH = 10000
+#     log:
+#         log = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/featureCounts.log"
+#     threads:
+#         1 # long reads can only run single-threaded
+#     # conda:
+#     run:
+#         shell(
+#             f"""
+#             {EXEC['FEATURECOUNTS']} \
+#                 -a {params.GTF} \
+#                 -o {output.FEAT} \
+#                 -L \
+#                 -s 1 \
+#                 -f \
+#                 -d {params.MIN_TEMPLATE_LENGTH} \
+#                 -D {params.MAX_TEMPLATE_LENGTH} \
+#                 -t 'transcript' \
+#                 -g 'transcript_id' \
+#                 -T {threads} \
+#                 --donotsort \
+#                 -R BAM {params.EXTRA_FLAGS} \
+#                 {input.BAM} \
+#             2> {log.log}
+#             """
+#         )
+
+
 rule ont_featureCounts:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.bai",
     output:
-        BAM=temp("{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.featureCounts.bam"),
+        TSV="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.featureCounts",
         FEAT="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/featureCounts.tsv",
-    # params:
-    #     GTF= lambda wildcards: GTF_DICT[wildcards.SAMPLE]
+    params:
+        GTF = lambda wildcards: GTF_DICT[wildcards.SAMPLE],
+        EXTRA_FLAGS = lambda wildcards: RECIPE_SHEET["featureCounts.extra"][wildcards.RECIPE],
+        MIN_TEMPLATE_LENGTH = 10,
+        MAX_TEMPLATE_LENGTH = 10000
     log:
         log = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/featureCounts.log"
+    threads:
+        1 # long reads can only run single-threaded
+    # conda:
     run:
-        GTF = GTF_DICT[wildcards.SAMPLE]
-        
-        # if "total" in wildcards.RECIPE:
-        #     EXTRA_FLAGS = "-M"
-        # else:
-        #     EXTRA_FLAGS = ""
-
         shell(
             f"""
             {EXEC['FEATURECOUNTS']} \
-                -a {GTF} \
+                -a {params.GTF} \
                 -o {output.FEAT} \
                 -L \
                 -s 1 \
                 -f \
-                -D 10000 \
+                -d {params.MIN_TEMPLATE_LENGTH} \
+                -D {params.MAX_TEMPLATE_LENGTH} \
                 -t 'transcript' \
                 -g 'transcript_id' \
-                -R BAM \
+                -T {threads} \
+                --donotsort \
+                -R CORE {params.EXTRA_FLAGS} \
                 {input.BAM} \
-                2> {log.log}
+            2> {log.log}
             """
         )
 #
+                # −−sortReadsByCoordinates \
 
-rule ont_sort_index_featureCounts:
+
+# rule salmon_quant:
+#     input:
+#         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam",
+#         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.bai",
+#         INDEX="{PATH_TO_SALMON_INDEX}"
+#     output:
+#         QUANT="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/quant.sf"
+#     params:
+#         LIBTYPE = "A", # Automatic library type detection
+#         VALIDATE_MAPPINGS = True, # Validate mappings
+#         GC_BIAS = True, # Correct GC bias
+#         NUM_GIBBS_SAMPLES = 20 # Number of Gibbs samples
+#     log:
+#         log = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/salmon_quant.log"
+#     threads:
+#         config["CORES"]
+#     conda:
+#          f"{workflow.basedir}/envs/salmon.yml"
+#     shell:
+#         """
+#         salmon quant -i {input.INDEX} -l {params.LIBTYPE} -p {threads} \
+#         --validateMappings {params.VALIDATE_MAPPINGS} --gcBias {params.GC_BIAS} \
+#         --numGibbsSamples {params.NUM_GIBBS_SAMPLES} -o {output.QUANT} \
+#         -1 {input.BAM} 2> {log.log}
+#         """
+
+#
+
+# rule ont_sort_index_featureCounts:
+#     input:
+#         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.featureCounts.bam",
+#     output:
+#         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_gn.bam",
+#         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_gn.bam.bai",
+#     run:
+#         shell(
+#             f"""
+#             {EXEC['SAMTOOLS']} sort \
+#                 -O BAM \
+#                 -o {output.BAM} \
+#                 {input.BAM}
+#             """
+#         )
+        
+#         shell(
+#             f"""    
+#             {EXEC['SAMTOOLS']} index {output.BAM}
+#             """
+#         )
+
+
+rule ont_add_featureCounts_to_bam:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.featureCounts.bam",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam",
+        # BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.bai",
+        TSV="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.featureCounts",
     output:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_gn.bam",
-        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_gn.bam.bai",
-    # params:
-    #     ref = config["REF_GENOME_FASTA"]
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_gn.bam",        
+    params:
+        TAG="GN",
     run:
         shell(
             f"""
-            {EXEC['SAMTOOLS']} sort \
-                -O BAM \
-                -o {output.BAM} \
-                {input.BAM} 
-            
-            {EXEC['SAMTOOLS']} index {output.BAM}
+            python scripts/py/tsv2tag.py \
+                {input.BAM} \
+                {input.TSV} \
+                {output.BAM} \
+                --tag {params.TAG}
             """
         )
 #
 
+rule ont_index_featureCounts_output:
+    input:
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_gn.bam",
+    output:
+        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_gn.bam.bai",
+    threads:
+        1
+    run:
+        shell(
+            f"""
+            {EXEC['SAMTOOLS']} index {input.BAM}
+            """
+        )
+#
 
 # Generate count matrix w/ umi-tools 
 rule ont_umitools_count:
@@ -439,7 +545,7 @@ rule ont_umitools_count:
         COUNTS = '{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/umitools_counts.tsv.gz'
     params:
         CELL_TAG="CR",
-        GENE_TAG="XS", #GN
+        GENE_TAG="GN", #GN XS
         UMI_TAG="UR"
     log:
         log = '{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/umitools_count.log'

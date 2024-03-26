@@ -153,7 +153,8 @@ rule ont_readIDs_by_adapter_type:
         TSV = "{OUTDIR}/{SAMPLE}/ont/adapter_scan.tsv",
         FQ  = "{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq.gz"
     output:
-        LST = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
+        FULL_LEN = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
+        SINGLE_ADAPTER1 = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
         # DIR = directory("{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids"),
     threads: 
         config["CORES"]
@@ -170,11 +171,14 @@ rule ont_readIDs_by_adapter_type:
 rule ont_subset_fastq_by_adapter_type:
     input:
         FQ  = "{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq.gz",
-        LST = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
+        FULL_LEN = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
+        SINGLE_ADAPTER1 = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
         # DIR = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids",
     output:
         FQ  = temp("{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq"),
-        SUBFQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len.fq.gz"
+        # FULL_LEN = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len.fq.gz",
+        # SINGLE_ADAPTER1 = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/single_adapter1.fq.gz",
+        FQ_ADAPTER = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter.fq.gz",
     threads: 
         config["CORES"]
     log:
@@ -183,37 +187,38 @@ rule ont_subset_fastq_by_adapter_type:
         # for ADAPTER in input.ADAPTER_TYPES: 
         shell(
             f"""
-            mkdir -p $(dirname {output.FQ})
-            
+            mkdir -p $(dirname {output.FQ})            
             zcat {input.FQ} > {output.FQ} 
 
             {EXEC['SEQTK']} subseq \
                 {output.FQ} \
-                {input.LST} \
-            > {output.SUBFQ.strip('.gz')} \
+                {input.FULL_LEN} \
+            > {output.FQ_ADAPTER.strip('.gz')} \
             2> {log.log}
-            """
-        )
-
-        shell(
-            f"""
-            {EXEC['PIGZ']} -p{threads} {output.SUBFQ.strip('.gz')}
+            
+            {EXEC['SEQTK']} subseq \
+                {output.FQ} \
+                {input.SINGLE_ADAPTER1} \
+            >> {output.FQ_ADAPTER.strip('.gz')} \
+            2>> {log.log}
+            
+            {EXEC['PIGZ']} -p{threads} {output.FQ_ADAPTER.strip('.gz')}
             """
         )
 
 #TODO- parallelize by chunking input fastq
 rule ont_split_fastq_to_R1_R2:
     input:
-        FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len.fq.gz"
+        FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter.fq.gz",
     output:
-        R1_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len_R1.fq.gz",
-        R2_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len_R2.fq.gz"
+        R1_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_R1.fq.gz",
+        R2_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_R2.fq.gz"
     params:
         ADAPTER = "T"*10
     threads: 
         config["CORES"]
     log:
-        log = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len_split.log"
+        log = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/read_split.log"
     run:
         # for ADAPTER in input.ADAPTER_TYPES: #TODO- broaden to other read types, bneyond full_len
         shell(
