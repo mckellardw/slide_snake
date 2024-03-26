@@ -23,10 +23,6 @@ rule STARsolo_align:
         BAM = '{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.out.bam', #TODO: add temp()
         UNMAPPED1 = '{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate1',
         UNMAPPED2 = '{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2',
-        # MATS = [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/{SOLO}/raw/{MAT}.mtx" for SAMPLE in SAMPLES for RECIPE in RECIPE_DICT[SAMPLE] for SOLO in ["Gene","GeneFull"] for MAT in ["matrix", "UniqueAndMult-EM"]],
-        # VELO_MATS = [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Velocyto/raw/{MAT}.mtx" for SAMPLE in SAMPLES for RECIPE in RECIPE_DICT[SAMPLE] for MAT in ["spliced","unspliced","ambiguous"]],
-        # BC = [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/{SOLO}/raw/barcodes.tsv" for SAMPLE in SAMPLES for RECIPE in RECIPE_DICT[SAMPLE] for SOLO in ["Velocyto","Gene","GeneFull"]],
-        # FEAT = [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/{SOLO}/raw/features.tsv" for SAMPLE in SAMPLES for RECIPE in RECIPE_DICT[SAMPLE] for SOLO in ["Velocyto","Gene","GeneFull"]]
         VEL_MAT = "{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Velocyto/raw/spliced.mtx",
         VEL_BC = "{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Velocyto/raw/barcodes.tsv",
         VEL_FEAT = "{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Velocyto/raw/features.tsv", 
@@ -37,7 +33,10 @@ rule STARsolo_align:
         GENEFULL_MAT = "{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx",
         GENEFULL_MAT_EM = "{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx",
         GENEFULL_BC = "{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv",
-        GENEFULL_FEAT = "{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/features.tsv"
+        GENEFULL_FEAT = "{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/features.tsv"# MATS = [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/{SOLO}/raw/{MAT}.mtx" for SAMPLE in SAMPLES for RECIPE in RECIPE_DICT[SAMPLE] for SOLO in ["Gene","GeneFull"] for MAT in ["matrix", "UniqueAndMult-EM"]],
+        # VELO_MATS = [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Velocyto/raw/{MAT}.mtx" for SAMPLE in SAMPLES for RECIPE in RECIPE_DICT[SAMPLE] for MAT in ["spliced","unspliced","ambiguous"]],
+        # BC = [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/{SOLO}/raw/barcodes.tsv" for SAMPLE in SAMPLES for RECIPE in RECIPE_DICT[SAMPLE] for SOLO in ["Velocyto","Gene","GeneFull"]],
+        # FEAT = [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/{SOLO}/raw/features.tsv" for SAMPLE in SAMPLES for RECIPE in RECIPE_DICT[SAMPLE] for SOLO in ["Velocyto","Gene","GeneFull"]]
     params:
         MEMLIMIT = config['MEMLIMIT']
     threads:
@@ -201,3 +200,48 @@ rule indexSortedBAM:
             {EXEC['SAMTOOLS']} index -@ {threads} {input.BAM}
             """
         )
+
+
+# rule multiqc_STAR:
+#     input:
+#         expand(
+#             "{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.out.bam", 
+#             SAMPLE=SAMPLES, RECIPE=RECIPES),
+#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate1", 
+#                SAMPLE=SAMPLES, RECIPE=RECIPES),
+#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2", 
+#                SAMPLE=SAMPLES, RECIPE=RECIPES),
+#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Velocyto/raw/spliced.mtx", 
+#                SAMPLE=SAMPLES, RECIPE=RECIPES),
+#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Velocyto/raw/barcodes.tsv", 
+#                SAMPLE=SAMPLES, RECIPE=RECIPES),
+#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Velocyto/raw/features.tsv", 
+#                SAMPLE=SAMPLES, RECIPE=RECIPES),
+#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Gene/raw/matrix.mtx", 
+#                SAMPLE=SAMPLES, RECIPE=RECIPES),
+#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Gene/raw/UniqueAndMult-EM.mtx", 
+#                SAMPLE=SAMPLES, RECIPE=RECIPES),
+#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Gene/raw/barcodes.tsv", 
+#                SAMPLE=SAMPLES, RECIPE=RECIPES),
+#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Gene/raw/features.tsv", 
+#                SAMPLE=SAMPLES, RECIPE=RECIPES),
+#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx", 
+#                SAMPLE=SAMPLES, RECIPE=RECIPES),
+#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx", 
+#                SAMPLE=SAMPLES, RECIPE=RECIPES),
+#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv", 
+#                SAMPLE=SAMPLES, RECIPE=RECIPES),
+#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/features.tsv", 
+#                SAMPLE=SAMPLES, RECIPE=RECIPES)
+#     output:
+#         REPORT = "{OUTDIR}/{SAMPLE}/STARsolo/short_read/multiqc_report.html"
+#     params:
+#         config['MEMLIMIT']
+#     threads:
+#         config['CORES']
+#     resources:
+#         mem_mb = config['MEMLIMIT_MB']
+#     shell:
+#         """
+#         multiqc . -o {output.REPORT}
+#         """

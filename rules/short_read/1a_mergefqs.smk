@@ -4,7 +4,7 @@ rule merge_fastqs:
         MERGED_R1_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/merged_R1.fq.gz'),
         MERGED_R2_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/merged_R2.fq.gz')
     params:
-        TMP_DIR = '{OUTDIR}/{SAMPLE}/tmp',
+        TMP_DIR = "{OUTDIR}/{SAMPLE}/tmp",
         R1_FQ = lambda wildcards: R1_FQS[wildcards.SAMPLE],
         R2_FQ = lambda wildcards: R2_FQS[wildcards.SAMPLE]
     threads:

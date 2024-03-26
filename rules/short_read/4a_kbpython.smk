@@ -23,30 +23,28 @@ rule kbpython_standard:
         GENES = '{OUTDIR}/{SAMPLE}/kbpython/{RECIPE}/counts_unfiltered/cells_x_genes.genes.txt',
         MAT   = '{OUTDIR}/{SAMPLE}/kbpython/{RECIPE}/counts_unfiltered/cells_x_genes.mtx'
     params:
+        KB_IDX = lambda wildcards: IDX_DICT[wildcards.SAMPLE],
+        KB_X = lambda wildcards: RECIPE_SHEET["kb.x"][wildcards.RECIPE],
+        KB_T2G = lambda wildcards: T2G_DICT[wildcards.SAMPLE],
     log:
-        log = '{OUTDIR}/{SAMPLE}/kbpython/{RECIPE}/kbpython_standard.log'
+        log = "{OUTDIR}/{SAMPLE}/kbpython/{RECIPE}/kbpython_standard.log"
     threads:
         config['CORES']
     resources:
         MEM_GB = config['MEMLIMIT_GB']
     priority:
         42
-    run:
-        # recipe = RECIPE_DICT[wildcards.SAMPLE]
-        recipe = wildcards.RECIPE
-        
-        KB_IDX = IDX_DICT[wildcards.SAMPLE]        
-        KB_X = RECIPE_SHEET["kb.x"][recipe]
-        KB_T2G = T2G_DICT[wildcards.SAMPLE]
-        
+    # conda:
+    #     ""
+    run:        
         # Select input reads based on alignment recipe
-        if "rRNA.STAR" in recipe: # Use trimmed & STAR-rRNA-filtered .fq's
+        if "rRNA.STAR" in wildcards.RECIPE: # Use trimmed & STAR-rRNA-filtered .fq's
             R1 = input.R1_FQ_STAR_FILTERED
             R2 = input.R2_FQ_STAR_FILTERED
-        elif "rRNA.bwa" in recipe: #TODO Use trimmed & bwa-rRNA-filtered .fq's
+        elif "rRNA.bwa" in wildcards.RECIPE: #TODO Use trimmed & bwa-rRNA-filtered .fq's
             R1 = input.R1_FQ_BWA_FILTERED
             R2 = input.R2_FQ_BWA_FILTERED
-        elif "rRNA" not in recipe: # just trimmed .fq's
+        elif "rRNA" not in wildcards.RECIPE: # just trimmed .fq's
             # R1 = input.R1_FQ
             # R2 = input.R2_FQ
             R1 = input.R1_FQ_TWICE_CUT
@@ -59,14 +57,14 @@ rule kbpython_standard:
             mkdir -p $(dirname {output.BUS})
 
             {EXEC['KB']}  count \
-                -i {KB_IDX} \
-                -g {KB_T2G} \
+                -i {params.KB_IDX} \
+                -g {params.KB_T2G} \
                 --kallisto {EXEC["KALLISTO"]} \
                 --bustools {EXEC["BUSTOOLS"]} \
                 -o $(dirname {output.BUS}) \
                 --strand forward \
                 -mm \
-                -x {KB_X} \
+                -x {params.KB_X} \
                 -w {input.BB} \
                 -t {threads} \
                 {R1} {R2} \

@@ -24,4 +24,4 @@
 sandbox/**
 out/**
 tmp/**
-
+scripts/*/not_used/*

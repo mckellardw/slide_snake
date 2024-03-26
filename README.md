@@ -6,7 +6,25 @@
 
 The goal of this project is to build a snakemake workflow for assessing different preprocessing, alignment, and quantification configurations, and digging into artifacts.  
 
-## **Dependencies**:
+
+### Install w/ `mamba`/`conda` [recommended]:
+```
+mamba create --name slide_snake --file=envs/slide_snake.yml
+mamba activate slide_snake
+```
+**Currently adding smaller, rule-specific conda environments to simplify builds**
+
+I had solve issues putting snakemake into the same conda environment- if you don't have snakemake installed locally, I would recommend making a second environment which just has snakemake in it, then loading that environment before `slide_snake`. Example (assuming you already built the above `slide_snake` env):
+```
+mamba create --name snakemake_only -c bioconda snakemake
+mamba activate snakemake_only
+mamba activate slide_snake
+```  
+
+### Alternatively...
+All executables are called from the path specified in `config.yaml` (See `EXEC`). If you already have the dependencies installed, just change the path.
+
+#### **Dependencies**:
 | Software         | Version/Link                                                                                   |
 |------------------|------------------------------------------------------------------------------------------------|
 | `cutadapt`       | [v3.4](https://cutadapt.readthedocs.io/en/stable/)                                             |
@@ -24,34 +42,9 @@ The goal of this project is to build a snakemake workflow for assessing differen
 Just for ONT analysis:
 | Software         | Version/Link                                                                                   |
 |------------------|------------------------------------------------------------------------------------------------|
-| `editdistance`   | [v#.#](TODO)                                             |
-| `parasail`       | [v#.#](https://pypi.org/project/parasail/)                         |
-| `TODO`           | [v#.#](TODO)                                                  |
-
-
-### Install w/ `mamba`/`conda` [recommended]:
-**Currently adding rule-specific conda environments, just hang tight**
-```
-mamba create --name slide_snake -c bioconda cutadapt fastqc star=2.7.11a kallisto bustools samtools bamtools qualimap anndata scanpy vsearch blast umi_tools seqtk
-
-mamba activate slide_snake
-```
-
-I had solve issues putting snakemake into the same conda environment- if you don't have snakemake installed locally, I would recommend making a second environment which just has snakemake in it, then loading that environment before `slide_snake`. Example (assuming you already built the above `slide_snake` env):
-```
-mamba create --name snakemake_only -c bioconda snakemake
-mamba activate snakemake_only
-mamba activate slide_snake
-```  
-
-Additionally for ONT:
-```
-mamba install -c conda-forge editdistance
-mamba install -c bioconda parasail-python
-```
-
-### Alternatively...
-All executables are called from the path specified in `config.yaml` (See `EXEC`). If you already have the dependencies installed, just change the path.
+| `   `   | [v#.#](TODO)                                                                                            |
+| `   `       | [v#.#](TODO)                                                                                        |
+| `TODO`           | [v#.#](TODO)                                                                                   |
 
 
 ## Quick start 
@@ -66,7 +59,7 @@ All executables are called from the path specified in `config.yaml` (See `EXEC`)
 ## Runtime details
 ### Example run w/ `slurm`:
 ```
-snakemake --cluster-config config/slurm.yaml --cluster "sbatch -p {cluster.partition} -t {cluster.time} -N {cluster.nodes} --mem {cluster.mem} -o {cluster.output} --cpus-per-task={cluster.threads}" -j 16 -k -p --nt --cluster-cancel scancel --rerun-incomplete --latency-wait 30 --use-conda
+snakemake --cluster-config config/slurm.yaml --cluster "sbatch -p {cluster.partition} -t {cluster.time} -N {cluster.nodes} --mem {cluster.mem} -o {cluster.output} --cpus-per-task={cluster.threads}" -j 16 -k -p --nt --cluster-cancel scancel --rerun-incomplete --use-conda  --conda-frontend mamba
 ```
 
 ### Example run w/out `slurm`:
@@ -76,5 +69,5 @@ snakemake -k -p -j 32
 
 ## **Helpful links:**
 - [Barcode download from Curio](https://curiobioscience.com/support/barcode/)
-- Extract DNB barcode whitelist with [ST_BarcodeMap](https://github.com/STOmics/ST_BarcodeMap) 
+- Extract DNB barcode whitelist for StereoSeq with [ST_BarcodeMap](https://github.com/STOmics/ST_BarcodeMap) 
   - Use the "mask format change" code mentioned in the `README`
