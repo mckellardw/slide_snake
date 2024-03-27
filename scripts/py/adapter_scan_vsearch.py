@@ -28,11 +28,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     # Positional mandatory arguments
-    parser.add_argument(
-        "fastq", 
-        help="FASTQ of ONT reads", 
-        type=str
-    )
+    parser.add_argument("fastq", help="FASTQ of ONT reads", type=str)
 
     # Optional arguments
     parser.add_argument(
@@ -52,10 +48,7 @@ def parse_args():
     )
 
     parser.add_argument(
-        "-t", "--threads", 
-        help="Threads to use [4]", 
-        type=int, 
-        default=4
+        "-t", "--threads", help="Threads to use [4]", type=int, default=4
     )
 
     parser.add_argument(
@@ -66,7 +59,7 @@ def parse_args():
         default=100000,
     )
 
-    #TODO- replace this w/ adpater sequence passing
+    # TODO- replace this w/ adpater sequence passing
     parser.add_argument(
         "-k",
         "--kit",
@@ -123,9 +116,9 @@ def parse_args():
 
     if (args.kit == "3prime") or (args.kit == "multiome"):
         # Read1 adapter
-        args.adapter1_seq = "CTACACGACGCTCTTCCGATCT" # R1 seq
+        args.adapter1_seq = "CTACACGACGCTCTTCCGATCT"  # R1 seq
         # TSO adapter
-        args.adapter2_seq = "ATGTACTCTGCGTTGATACCACTGCTT" # TSO
+        args.adapter2_seq = "ATGTACTCTGCGTTGATACCACTGCTT"  # TSO
     elif args.kit == "5prime":
         # Read1 adapter
         args.adapter1_seq = "CTACACGACGCTCTTCCGATCT"

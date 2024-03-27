@@ -7,18 +7,20 @@ import argparse
 # Usage:
 ## python long2mtx.py input.tsv.gz output_matrix.npz
 
+
 def save_npz_matrix(matrix, var_names, obs_names, output_dir):
     sp.save_npz(output_dir, matrix)
-    np.savez(output_dir.replace(".npz", "_metadata.npz"), var_names=var_names, obs_names=obs_names)
+    np.savez(
+        output_dir.replace(".npz", "_metadata.npz"),
+        var_names=var_names,
+        obs_names=obs_names,
+    )
+
 
 # Save mtx file & features/barcodes, in the naming convention of STARsolo
 def save_sparse_matrix(matrix, var_names, obs_names, output_dir):
     # Save the sparse matrix in Matrix Market (.mtx) format
-    mmwrite(
-        f"{output_dir}/matrix.mtx", 
-        matrix, 
-        field="real"
-    )
+    mmwrite(f"{output_dir}/matrix.mtx", matrix, field="real")
 
     # Save var_names (features) and obs_names (barcodes) as text files
     with open(f"{output_dir}/features.tsv", "w") as var_file:
@@ -28,30 +30,39 @@ def save_sparse_matrix(matrix, var_names, obs_names, output_dir):
         obs_file.write("\n".join(obs_names))
 
     # Gzip the .mtx file and associated .txt files
-    with open(f"{output_dir}/matrix.mtx", 'rb') as file_in, gzip.open(f"{output_dir}/matrix.mtx" + '.gz', 'wb') as file_out:
+    with open(f"{output_dir}/matrix.mtx", "rb") as file_in, gzip.open(
+        f"{output_dir}/matrix.mtx" + ".gz", "wb"
+    ) as file_out:
         file_out.writelines(file_in)
 
-    with open(f"{output_dir}/features.tsv", 'rb') as file_in, gzip.open(f"{output_dir}/features.tsv.gz", 'wb') as file_out:
+    with open(f"{output_dir}/features.tsv", "rb") as file_in, gzip.open(
+        f"{output_dir}/features.tsv.gz", "wb"
+    ) as file_out:
         file_out.writelines(file_in)
 
-    with open(f"{output_dir}/barcodes.tsv", 'rb') as file_in, gzip.open(f"{output_dir}/barcodes.tsv.gz", 'wb') as file_out:
+    with open(f"{output_dir}/barcodes.tsv", "rb") as file_in, gzip.open(
+        f"{output_dir}/barcodes.tsv.gz", "wb"
+    ) as file_out:
         file_out.writelines(file_in)
 
     # Remove the original uncompressed files
     import os
+
     os.remove(f"{output_dir}/matrix.mtx")
     os.remove(f"{output_dir}/features.tsv")
     os.remove(f"{output_dir}/barcodes.tsv")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Convert a tsv.gz file to a sparse matrix in mtx format.")
+    parser = argparse.ArgumentParser(
+        description="Convert a tsv.gz file to a sparse matrix in mtx format."
+    )
     parser.add_argument("tsv_gz_path", type=str, help="Path to the input tsv.gz file")
     parser.add_argument("output_dir", type=str, help="Path to the output directory")
     args = parser.parse_args()
 
     # Open the tsv.gz file
-    with gzip.open(args.tsv_gz_path, 'rt') as f:
+    with gzip.open(args.tsv_gz_path, "rt") as f:
         # Skip the first line
         next(f)
 
@@ -62,7 +73,7 @@ def main():
 
         # Process each line in the file
         for line in f:
-            var, obs, val = line.strip().split('\t')
+            var, obs, val = line.strip().split("\t")
             # print(f"var: {var}, obs: {obs}, val: {val}")
             if float(val) != 0:  # Only add non-zero entries to the sparse matrix
                 data_vars.append(var)
@@ -85,26 +96,21 @@ def main():
 
     # Initialize sparse matrix
     matrix = sp.csr_matrix(
-        (data, (data_obs, data_vars)), 
-        shape=(len(obs_names), len(var_names))
+        (data, (data_obs, data_vars)), shape=(len(obs_names), len(var_names))
     )
 
     # Save sparse matrix to npz file
     # save_npz_matrix(
-    #     matrix, 
+    #     matrix,
     #     var_names,
     #     obs_names,
     #     args.output_dir
     # )
 
-    save_sparse_matrix(
-        matrix, 
-        var_names, 
-        obs_names, 
-        args.output_dir
-    )
+    save_sparse_matrix(matrix, var_names, obs_names, args.output_dir)
 
     print("Sparse matrix saved to", args.output_dir)
+
 
 if __name__ == "__main__":
     main()

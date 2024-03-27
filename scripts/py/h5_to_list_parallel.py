@@ -3,14 +3,16 @@ import sys
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
 
+
 def seqDecode(seqInt, seqLen):
     # ATCG_BASES = ['A', 'C', 'T', 'G']
-    ATCG_BASES = ['T', 'G', 'A', 'C'] # use complement to decode
+    ATCG_BASES = ["T", "G", "A", "C"]  # use complement to decode
     seqs = ""
     for i in range(seqLen):
         tint = (seqInt >> (i * 2)) & 3
         seqs += ATCG_BASES[tint]
     return seqs
+
 
 def process_chunk(chunk, progress, seq_length, verbose):
     lines_per_update = 20000000
@@ -27,17 +29,24 @@ def process_chunk(chunk, progress, seq_length, verbose):
                 print(f"Processed {progress[0]} lines")
     return results
 
+
 def process_group(group, output_file, seq_length, n_threads, verbose):
     for key, value in group.items():
         if isinstance(value, h5py.Dataset):
             dataset_array = np.array(value)  # Convert the dataset to a NumPy array
             chunk_size = dataset_array.shape[0] // n_threads
-            chunks = [dataset_array[i:i + chunk_size] for i in range(0, dataset_array.shape[0], chunk_size)]
+            chunks = [
+                dataset_array[i : i + chunk_size]
+                for i in range(0, dataset_array.shape[0], chunk_size)
+            ]
             progress = [0]
             results = []
 
             with ThreadPoolExecutor(max_workers=n_threads) as executor:
-                futures = [executor.submit(process_chunk, chunk, progress, seq_length, verbose) for chunk in chunks]
+                futures = [
+                    executor.submit(process_chunk, chunk, progress, seq_length, verbose)
+                    for chunk in chunks
+                ]
                 for future in as_completed(futures):
                     results.extend(future.result())
 
@@ -48,13 +57,17 @@ def process_group(group, output_file, seq_length, n_threads, verbose):
         elif isinstance(value, h5py.Group):
             process_group(value, output_file, seq_length, n_threads, verbose)
 
+
 def main(input_file, output_file, seq_length=25, n_threads=16, verbose=False):
     with h5py.File(input_file, "r") as f:
         process_group(f, output_file, seq_length, n_threads, verbose)
 
+
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("Usage: python h5_to_list.py input_file output_file [seq_length] [n_threads] [--verbose]")
+        print(
+            "Usage: python h5_to_list.py input_file output_file [seq_length] [n_threads] [--verbose]"
+        )
         sys.exit(1)
 
     input_file = sys.argv[1]
