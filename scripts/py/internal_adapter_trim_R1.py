@@ -18,6 +18,7 @@ from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
 # from Bio.Blast import NCBIWWW
 from Bio import pairwise2
+from Bio import Align
 
 # params
 adapter_seq = sys.argv[1]  # Curio's R1 adapter
@@ -59,29 +60,41 @@ def trim_fq(fq_in, fq_out, gz):
     else:
         fq_iterator = FastqGeneralIterator(open(fq_in, "r"))
 
+    # Useful resource: https://www.bioinformaticscrashcourse.com/10.1_Alignment.html
+    # Curio data alignment parameters:
+    ## match score = 4, mismatch = -0.5
+    ## gap opening = -6, gap extension = -6
+    aligner = Align.PairwiseAligner()
+    aligner.mode = 'local' # Use 'local' for local alignment
+    aligner.match_score = 4 # Match score
+    aligner.mismatch_score = -0.5 # Mismatch score
+    aligner.gap_open = -6 # Gap opening penalty
+    aligner.gap_extend = -6 # Gap extension penalty
+
     for title, seq, qual in fq_iterator:
         read_count += 1
+        # Perform pairwise alignment to find the sequence with allowed mismatches
+        alignments = aligner.align(seq, adapter_seq)
 
-        # Useful resource: https://www.bioinformaticscrashcourse.com/10.1_Alignment.html
-        # Curio data alignment parameters:
-        ## match score = 4, mismatch = -0.5
-        ## gap opening = -6, gap extension = -6
-        alignment = pairwise2.align.localms(
-            seq,
-            adapter_seq,
-            4,
-            -0.5,
-            -6,
-            -6,  # Manually set these for Curio data
-            # score_only = True,
-            one_alignment_only=True,
-        )
+        # Get best alignment
+        alignment = alignments[0] if alignments else None
+
+        # alignment = pairwise2.align.localms(
+        #     seq,
+        #     adapter_seq,
+        #     4,
+        #     -0.5,
+        #     -6,
+        #     -6,  # Manually set these for Curio data
+        #     # score_only = True,
+        #     one_alignment_only=True,
+        # )
 
         # For troubleshooting:
-        # if alignment[0].score < 60 and alignment[0].score > 55:# and alignment[0].start > 9:
-        #     print(alignment[0])
-        #     print(pairwise2.format_alignment(*alignment[0]))
-        #     print(seq[0:8]+seq[alignment[0].end:])
+        # if alignments[0].score < 60 and alignments[0].score > 55:# and alignments[0].start > 9:
+        #     print(alignments[0])
+        #     print(pairwise2.format_alignment(*alignments[0]))
+        #     print(seq[0:8]+seq[alignments[0].end:])
 
         # Trim seq and qual
         start = alignment[0].start
@@ -132,7 +145,7 @@ if n_cores > 1:
         # """
         # Custom script to split .fq w/ sed in parallel
         f""" 
-        python scripts/py/splitNfqs.py {fq1_in} {n_cores} {n_cores} "False"
+        python scripts/py/splitNfqs.py {fq1_in} {n_cores} {n_cores}
         """
     )
 

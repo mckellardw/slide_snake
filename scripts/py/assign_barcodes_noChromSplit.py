@@ -11,12 +11,14 @@ import shutil
 import tempfile
 
 import editdistance as ed
-import parasail
+# import parasail
 import pysam
 from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
+# for debugging
+verbose = False
 
 def parse_args():
     # Create argument parser
@@ -187,59 +189,7 @@ def init_logger(args):
     logging.root.setLevel(logging_level)
     logging.root.handlers[0].addFilter(lambda x: "NumExpr" not in x.msg)
 
-
-def find(target, my_string):
-    """
-    Return indices corresponding to the positions of <target> in <my_string>.
-
-    :param target: character to search for in <my_string>
-    :type target: str
-    :param my_string: string to search for <target>
-    :type my_string: str
-    :return: generator returning indices corresponding to the position(s) of
-        <target> in <my_string>
-    :rtype: int
-    """
-    for i in range(len(my_string)):
-        if my_string[i] == target:
-            yield i
-
-
-def update_matrix(args):
-    """
-    Create new parasail scoring matrix. 'N' is used as wildcard character
-    for barcodes and has its own match parameter (0 per default).
-
-    :param args: object containing all supplied arguments
-    :type args: class argparse.Namespace
-    :return: custom parasail alignment matrix
-    :rtype: parasail.bindings_v2.Matrix
-    """
-    matrix = parasail.matrix_create("ACGTN", args.match, args.mismatch)
-
-    ############################
-    # SCORING MATRIX POSITIONS #
-    ############################
-    #     A   C   G   T   N
-    # A   0   1   2   3   4   5
-    # C   6   7   8   9   10  11
-    # G   12  13  14  15  16  17
-    # T   18  19  20  21  22  23
-    # N   24  25  26  27  28  29
-
-    # Update scoring matrix so that N matches A/C/G/N
-    # pointers = [4, 9, 14, 20, 21, 22, 24]
-    pointers = [4, 10, 16, 24, 25, 26]
-    for i in pointers:
-        matrix.pointer[0].matrix[i] = args.acg_to_n_match
-
-    # Update N to T matching score so that we start
-    # aligning dT sequence instead of Ns.
-    matrix.pointer[0].matrix[22] = args.t_to_n_match
-    matrix.pointer[0].matrix[27] = args.t_to_n_match
-    return matrix
-
-
+# TODO potentially could replace with [fast-edit-distance](https://github.com/youyupei/fast_edit_distance)
 def calc_ed_with_whitelist(bc_uncorr, whitelist):
     """
     Find minimum and runner-up barcode edit distance by iterating through the
@@ -267,161 +217,6 @@ def calc_ed_with_whitelist(bc_uncorr, whitelist):
     next_match_diff = next_bc_match_ed - bc_match_ed
 
     return bc_match, bc_match_ed, next_match_diff
-
-
-LOOKUP = []
-
-for q in range(100):
-    LOOKUP.append(pow(10, -0.1 * q))
-
-
-# Don't need this if using umi_tools extract
-def compute_mean_qscore(scores):
-    """
-    Returns the phred score corresponding to the mean of the probabilities
-    associated with the phred scores provided.
-
-    :param scores: Iterable of phred scores.
-    :returns: Phred score corresponding to the average error rate, as
-        estimated from the input phred scores.
-    """
-    if not scores:
-        return 0.0
-    sum_prob = 0.0
-    for val in scores:
-        sum_prob += LOOKUP[val]
-    mean_prob = sum_prob / len(scores)
-
-    return -10.0 * math.log10(mean_prob)
-
-
-# Don't need this if using umi_tools extract
-def find_feature_qscores(feature, p_alignment, prefix_seq, prefix_qv):
-    """
-    Using the parasail alignment results, find the qscores corresponding to the
-    feature (e.g. barcode or UMI) positions in the read.
-
-    :param feature: Feature sequence identified from the parasail alignment
-    :type feature: str
-    :param p_alignment: Parasail alignment object
-    :type p_alignment: class 'parasail.bindings_v2.Result'
-    :param prefix_seq: Nucleotide sequence from the first <args.window> bp of
-        the read
-    :type prefix_seq: str
-    :param prefix_qv: Qscores from the first <args.window> bp of the read
-    :type prefix_qv: np.array
-    :return: Array of phred scale qscores from the identified feature region
-    :rtype: np.array
-    """
-    # Strip feature alignment string of insertions (-)
-    feature_no_ins = feature.replace("-", "")
-
-    # Find where the stripped feature starts and ends in the larger prefis_seq
-    prefix_seq_feature_start = prefix_seq.find(feature_no_ins)
-    prefix_seq_feature_end = prefix_seq_feature_start + len(feature_no_ins)
-
-    # Use these start/end indices to locate the correspoding qscores in prefix_qv
-    feature_qv = prefix_qv[prefix_seq_feature_start:prefix_seq_feature_end]
-    feature_qv_ascii = "".join(map(lambda x: chr(x + 33), feature_qv))
-
-    return feature_qv_ascii
-
-
-# Don't need this if using umi_tools extract
-def parse_probe_alignment(p_alignment, align, prefix_seq, prefix_qv):
-    """
-    Parse a parasail alignment alignment and add uncorrected UMI and UMI QV
-    values as tags to the BAM alignment.
-
-    :param p_alignment: parasail alignment
-    :type p_alignment: class 'parasail.bindings_v2.Result'
-    :param align: pysam BAM alignment
-    :type align: class 'pysam.libcalignedsegment.AlignedSegment'
-    :return: pysam BAM alignment with the UR and UY tags added
-    :rtype: class 'pysam.libcalignedsegment.AlignedSegment'
-    """
-    # Find the position of the Ns in the parasail alignment. These correspond
-    # to the UMI sequences bound by the cell barcode and polyT
-    idxs = list(find("N", p_alignment.traceback.ref))
-    if len(idxs) > 0:
-        umi = p_alignment.traceback.query[min(idxs) : max(idxs) + 1]
-
-        qscores = find_feature_qscores(umi, p_alignment, prefix_seq, prefix_qv)
-
-        # print(p_alignment.traceback.ref)
-        # print(p_alignment.traceback.comp)
-        # print(p_alignment.traceback.query)
-        # print()
-
-        umi = umi.replace("-", "")
-
-        # Uncorrected UMI = UR:Z
-        align.set_tag("UR", umi, value_type="Z")
-        # UMI quality score = UY:Z
-        align.set_tag("UY", qscores, value_type="Z")
-
-    return align
-
-
-# Don't need this if using umi_tools extract
-def get_uncorrected_umi(align, args):
-    """
-    Aligns a probe sequence containing the adapter1+corrected_barcode+Ns+polyT to
-    the read. Bases aligning to the Ns in the probe sequence correspond to the
-    UMI positions. Extract those bases and consider those to be the uncorrected
-    UMI sequence.
-
-    :param align: pysam BAM alignment with the CB tag
-    :type align: class 'pysam.libcalignedsegment.AlignedSegment'
-    :param args: object containing all supplied arguments
-    :type args: class 'argparse.Namespace'
-    :return: pysam BAM alignment with the UR and UY tags added
-    :rtype: class 'pysam.libcalignedsegment.AlignedSegment'
-    """
-    prefix_seq = align.get_forward_sequence()[: args.window]
-    prefix_qv = align.get_forward_qualities()[: args.window]
-
-    # Use only the specified suffix length of adapter1
-    adapter1_probe_seq = args.adapter1_seq[-args.adapter1_suff_length :]
-
-    if args.kit == "3prime":
-        # Compile the actual query sequence of <adapter1_suffix><bc_corr>NNN...N<TTTTT....>
-        probe_seq = "{r}{bc}{umi}{pT}".format(
-            r=adapter1_probe_seq,
-            bc=align.get_tag("CB"),
-            umi="N" * args.umi_length,
-            pT="T" * args.polyT_length,
-        )
-    elif args.kit == "5prime":
-        # Compile the actual probe sequence of <adapter1_suffix>NNN...NNN<TTTCTTATATGGG>
-        probe_seq = "{a1}{bc}{umi}{tso}".format(
-            a1=adapter1_probe_seq,
-            bc=align.get_tag("CB"),
-            umi="N" * args.umi_length,
-            tso="TTTCTTATATGGG",
-        )
-    else:
-        raise Exception("Invalid kit name! Specify either 3prime or 5prime.")
-
-    matrix = update_matrix(args)
-    parasail_alg = parasail.sw_trace
-
-    p_alignment = parasail_alg(
-        s1=prefix_seq,
-        s2=probe_seq,
-        open=args.gap_open,
-        extend=args.gap_extend,
-        matrix=matrix,
-    )
-
-    # print(p_alignment.traceback.ref)
-    # print(p_alignment.traceback.comp)
-    # print(p_alignment.traceback.query)
-    # print()
-
-    align = parse_probe_alignment(p_alignment, align, prefix_seq, prefix_qv)
-
-    return align
 
 
 # Removed `chrom` input
@@ -461,7 +256,11 @@ def process_bam_records(tup):
     else:
         bam_out_fn = args.output_bam
 
-    bam_out = pysam.AlignmentFile(args.output_bam, "wb", template=bam)
+    bam_out = pysam.AlignmentFile(
+        args.output_bam, 
+        "wb", 
+        template=bam
+    )
 
     barcode_counter = collections.Counter()
 
@@ -500,10 +299,6 @@ def process_bam_records(tup):
             if condition1 and condition2:
                 # Add corrected cell barcode = CB:Z
                 align.set_tag("CB", bc_match, value_type="Z")
-
-                # TODO- don't need this line
-                # Add corrected barcode to probe sequence to fish out uncorrected UMI
-                # align = get_uncorrected_umi(align, args)
 
             # Only write BAM entry in output file if we've assigned a corrected
             # barcode and an uncorrected UMI

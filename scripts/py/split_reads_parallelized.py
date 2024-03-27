@@ -4,6 +4,7 @@ import os
 import gzip
 from Bio import pairwise2
 from Bio import Seq
+from Bio import Align
 
 # from Bio.Align import PairwiseAligner
 # from Bio.SubsMat import MatrixInfo as matlist
@@ -38,6 +39,13 @@ def find_and_split_reads(fq_in, sequence, log=None, max_errors=2):
 
     read_counter = 0
 
+    aligner = Align.PairwiseAligner()
+    aligner.mode = 'local' # Use 'local' for local alignment
+    aligner.match_score = 4 # Match score
+    aligner.mismatch_score = -0.5 # Mismatch score
+    aligner.gap_open = -6 # Gap opening penalty
+    aligner.gap_extend = -6 # Gap extension penalty
+
     # Open the FASTQ file
     with pysam.FastxFile(fq_in) as input_fastq:
         # Open the output FASTQ files
@@ -47,15 +55,16 @@ def find_and_split_reads(fq_in, sequence, log=None, max_errors=2):
             for read in input_fastq:
                 # Perform pairwise alignment to find the sequence with allowed mismatches
                 # TODO- update this code
-                alignments = pairwise2.align.localms(
-                    read.sequence,
-                    sequence,
-                    4,
-                    -0.5,
-                    -6,
-                    -6,  # TODO- optimize these...
-                    one_alignment_only=True,
-                )
+                alignments = aligner.align(read.sequence, sequence)
+                # alignments = pairwise2.align.localms(
+                #     read.sequence,
+                #     sequence,
+                #     4,
+                #     -0.5,
+                #     -6,
+                #     -6,  # TODO- optimize these...
+                #     one_alignment_only=True,
+                # )
 
                 # Calculate the error rate for the best alignment
                 best_alignment = alignments[0] if alignments else None
@@ -147,7 +156,7 @@ if __name__ == "__main__":
         os.system(
             # Custom script to split .fq w/ sed in parallel
             f""" 
-            python scripts/py/splitNfqs.py {args.fq_in} {args.threads} {args.threads} "False"
+            python scripts/py/splitNfqs.py {args.fq_in} {args.threads} {args.threads}
             """
         )
 

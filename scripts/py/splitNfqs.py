@@ -11,35 +11,27 @@
 # imports
 import sys
 import os
-import subprocess
+# import subprocess
 
 
 # Function to extract out a section of the fastq file
-def extractReads(fq_in, fq_out, start, stop, gzip_out):
+def extractReads(fq_in, fq_out, start, stop):
     os.system(
         f"""
         zcat {fq_in} | sed -n '{start},{stop}p' > {fq_out}
         """
     )
-    # if gzip_out:
-    #     os.system(
-    #         f"""
-    #         gzip --force {fq_out}
-    #         """
-    #     )
-
 
 # Count # of lines
 def countLines(filename):
     with os.popen("zcat " + filename + "| wc -l") as f:
         return int(f.read().split()[0])
 
-
 # Get arguments
 fq = sys.argv[1]  # Path to fq file
 n_chunks = int(sys.argv[2])  # Number of files to chunk the .fastq into
 n_cores = int(sys.argv[3])  # Number of cores to parallelize with
-gzip_out = bool(sys.argv[4])  # Whether (True) or not (False) to gzip output .fq's
+
 try:  # Optional: number of total lines in fastq file (n_reads*4)
     n_total_lines = int(sys.argv[5])
 except:
@@ -89,10 +81,10 @@ if n_cores > 1:  # Parallelize with `multiprocessing`
     import multiprocessing
 
     items = [
-        (fq, fq_out_list[i], starts[i], stops[i], gzip_out) for i in range(0, n_chunks)
+        (fq, fq_out_list[i], starts[i], stops[i]) for i in range(0, n_chunks)
     ]
     with multiprocessing.Pool(n_cores) as pool:
         multi_out = pool.starmap(extractReads, items)
 else:  # Single thread
     for i in list(range(0, n_chunks)):
-        extractReads(fq, fq_out_list[i], starts[i], stops[i], gzip_out)
+        extractReads(fq, fq_out_list[i], starts[i], stops[i])
