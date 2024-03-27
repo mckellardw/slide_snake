@@ -114,7 +114,6 @@ rule merge_formats_ONT:
                 {EXEC['PIGZ']} -p{threads} {F_base}
                 """
             )
-#
 
 
 # borrowed from sockeye
@@ -144,8 +143,8 @@ rule ont_call_adapter_scan:
             -t {threads} \
             {input.FQ} 
         """
-        
 # --batch_size {params.batch_size} \
+
 
 # Write lists of read IDs for each adapter type 
 rule ont_readIDs_by_adapter_type:
@@ -167,12 +166,30 @@ rule ont_readIDs_by_adapter_type:
             """
         )
 
+# merge lists of useable reads
+## FULL_LEN = R1 sequence & TSO sequence
+## SINGLE_ADAPTER1 = just R1 sequence - incompletely sequenced
+rule ont_merge_scan_lists:
+    input:
+        FULL_LEN = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
+        SINGLE_ADAPTER1 = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
+        # DIR = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids",
+    output:
+        LST = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/keep.txt",
+    threads: 
+        1
+    shell:
+        """
+        cat {input.FULL_LEN} {input.SINGLE_ADAPTER1} > {output.LST}
+        """
+
 #TODO- add more functionality for other read/adapter types to salvage imperfect reads
 rule ont_subset_fastq_by_adapter_type:
     input:
         FQ  = "{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq.gz",
-        FULL_LEN = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
-        SINGLE_ADAPTER1 = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
+        LST = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/keep.txt",
+        # FULL_LEN = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
+        # SINGLE_ADAPTER1 = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
         # DIR = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids",
     output:
         FQ  = temp("{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq"),
@@ -192,19 +209,18 @@ rule ont_subset_fastq_by_adapter_type:
 
             {EXEC['SEQTK']} subseq \
                 {output.FQ} \
-                {input.FULL_LEN} \
+                {input.LST} \
             > {output.FQ_ADAPTER.strip('.gz')} \
             2> {log.log}
-            
-            {EXEC['SEQTK']} subseq \
-                {output.FQ} \
-                {input.SINGLE_ADAPTER1} \
-            >> {output.FQ_ADAPTER.strip('.gz')} \
-            2>> {log.log}
-            
+                        
             {EXEC['PIGZ']} -p{threads} {output.FQ_ADAPTER.strip('.gz')}
             """
         )
+            # {EXEC['SEQTK']} subseq \
+            #     {output.FQ} \
+            #     {input.SINGLE_ADAPTER1} \
+            # >> {output.FQ_ADAPTER.strip('.gz')} \
+            # 2>> {log.log}
 
 #TODO- parallelize by chunking input fastq
 rule ont_split_fastq_to_R1_R2:
@@ -223,7 +239,7 @@ rule ont_split_fastq_to_R1_R2:
         # for ADAPTER in input.ADAPTER_TYPES: #TODO- broaden to other read types, bneyond full_len
         shell(
             f"""
-            python scripts/py/split_full_len_reads_parallelized.py \
+            python scripts/py/split_reads_parallelized.py \
                 --fq_in {input.FQ} \
                 --sequence {params.ADAPTER} \
                 --threads {threads} \
