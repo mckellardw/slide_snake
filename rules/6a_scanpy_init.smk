@@ -12,19 +12,20 @@ rule cache_preQC_h5ad_STAR:
         var_names = "gene_symbols" # scanpy.read_10x_mtx()
     threads:
         1
-    run:
-        shell(
-            f"""
-            python scripts/py/cache_mtx_to_h5ad.py \
-                --mat_in {input.MAT} \
-                --feat_in {input.GENES} \
-                --bc_in {input.BCS} \
-                --bb_map {input.BB_map}\
-                --ad_out {output.H5AD}\
-                --feat_col 1 \
-                --remove_zero_features
-            """
-        )
+    conda:
+        f"{workflow.basedir}/envs/slsn_scanpy.yml"
+    shell:
+        """
+        python scripts/py/cache_mtx_to_h5ad.py \
+            --mat_in {input.MAT} \
+            --feat_in {input.GENES} \
+            --bc_in {input.BCS} \
+            --bb_map {input.BB_map}\
+            --ad_out {output.H5AD}\
+            --feat_col 1 \
+            --remove_zero_features
+        """
+        
 
 # initialize & cache the **raw** counts as an anndata file for easier loading later
 ## Removes barcodes for which there are no molecules detected [`--remove_zero_features`]
@@ -40,19 +41,19 @@ rule cache_preQC_h5ad_kb:
     #     var_names = "gene_symbols" # scanpy.read_10x_mtx()
     threads:
         1
-    run:
-        shell(
-            f"""
-            python scripts/py/cache_mtx_to_h5ad.py \
-                --mat_in {input.MAT} \
-                --feat_in {input.GENES} \
-                --bc_in {input.BCS} \
-                --bb_map {input.BB_map}\
-                --ad_out {output.H5AD}\
-                --feat_col 0 \
-                --remove_zero_features
-            """
-        )
+    conda:
+        f"{workflow.basedir}/envs/slsn_scanpy.yml"
+    shell:
+        """
+        python scripts/py/cache_mtx_to_h5ad.py \
+            --mat_in {input.MAT} \
+            --feat_in {input.GENES} \
+            --bc_in {input.BCS} \
+            --bb_map {input.BB_map}\
+            --ad_out {output.H5AD}\
+            --feat_col 0 \
+            --remove_zero_features
+        """
 
 rule cache_preQC_h5ad_kbpython:
     input:
@@ -66,19 +67,19 @@ rule cache_preQC_h5ad_kbpython:
     #     var_names = "gene_symbols" # scanpy.read_10x_mtx()
     threads:
         1
-    run:
-        shell(
-            f"""
-            python scripts/py/cache_mtx_to_h5ad.py \
-                --mat_in {input.MAT} \
-                --feat_in {input.GENES} \
-                --bc_in {input.BCS} \
-                --bb_map {input.BB_map}\
-                --ad_out {output.H5AD}\
-                --feat_col 0 \
-                --remove_zero_features
-            """
-        )
+    conda:
+        f"{workflow.basedir}/envs/slsn_scanpy.yml"
+    shell:
+        """
+        python scripts/py/cache_mtx_to_h5ad.py \
+            --mat_in {input.MAT} \
+            --feat_in {input.GENES} \
+            --bc_in {input.BCS} \
+            --bb_map {input.BB_map}\
+            --ad_out {output.H5AD}\
+            --feat_col 0 \
+            --remove_zero_features
+        """
 
 # initialize & cache the **raw** counts as an anndata file for easier loading later
 ## Removes barcodes for which there are no molecules detected [`--remove_zero_features`]
@@ -92,21 +93,19 @@ rule cache_preQC_h5ad_miRNA:
         H5AD = "{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/raw/output.h5ad"
     threads:
         1
-    run:
-        shell(
-            f"""
-            python scripts/py/cache_mtx_to_h5ad.py \
-                --mat_in {input.MAT} \
-                --feat_in {input.GENES} \
-                --bc_in {input.BCS} \
-                --bb_map {input.BB_map}\
-                --ad_out {output.H5AD}\
-                --feat_col 0 \
-                --remove_zero_features
-            """
-        )
-
-
+    conda:
+        f"{workflow.basedir}/envs/slsn_scanpy.yml"
+    shell:
+        """
+        python scripts/py/cache_mtx_to_h5ad.py \
+            --mat_in {input.MAT} \
+            --feat_in {input.GENES} \
+            --bc_in {input.BCS} \
+            --bb_map {input.BB_map}\
+            --ad_out {output.H5AD}\
+            --feat_col 0 \
+            --remove_zero_features
+        """
 
 # initialize & cache the **raw** counts as an anndata file for easier loading later
 ## Removes barcodes for which there are no molecules detected [`--remove_zero_features`]
@@ -120,19 +119,19 @@ rule cache_preQC_h5ad_piRNA:
         H5AD = "{OUTDIR}/{SAMPLE}/piRNA/{RECIPE}/raw/output.h5ad"
     threads:
         1
-    run:
-        shell(
-            f"""
-            python scripts/py/cache_mtx_to_h5ad.py \
-                --mat_in {input.MAT} \
-                --feat_in {input.GENES} \
-                --bc_in {input.BCS} \
-                --bb_map {input.BB_map}\
-                --ad_out {output.H5AD}\
-                --feat_col 0 \
-                --remove_zero_features
-            """
-        )
+    conda:
+        f"{workflow.basedir}/envs/slsn_scanpy.yml"
+    shell:
+        """
+        python scripts/py/cache_mtx_to_h5ad.py \
+            --mat_in {input.MAT} \
+            --feat_in {input.GENES} \
+            --bc_in {input.BCS} \
+            --bb_map {input.BB_map}\
+            --ad_out {output.H5AD}\
+            --feat_col 0 \
+            --remove_zero_features
+        """
 
 # initialize & cache the **raw** counts as an anndata file for easier loading later
 ## Removes barcodes for which there are no molecules detected [`--remove_zero_features`]
@@ -144,12 +143,13 @@ rule ont_cache_preQC_h5ad_minimap2:
         H5AD = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/output.h5ad"
     threads:
         1
-    run:
-        shell(
-            f"""
-            python scripts/py/cache_umitools_h5ad.py \
-                {input.COUNTS} \
-                {output.H5AD}
-            """
-                # --bb_map {input.BB_map}\ #TODO
-        )
+    conda:
+        f"{workflow.basedir}/envs/slsn_scanpy.yml"
+    shell:
+        """
+        python scripts/py/cache_umitools_h5ad.py \
+            {input.COUNTS} \
+            {output.H5AD}
+        """
+        # --bb_map {input.BB_map}\ #TODO
+        
