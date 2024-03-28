@@ -11,6 +11,7 @@
 # imports
 import sys
 import os
+
 # import subprocess
 
 
@@ -22,10 +23,12 @@ def extractReads(fq_in, fq_out, start, stop):
         """
     )
 
+
 # Count # of lines
 def countLines(filename):
     with os.popen("zcat " + filename + "| wc -l") as f:
         return int(f.read().split()[0])
+
 
 # Get arguments
 fq = sys.argv[1]  # Path to fq file
@@ -80,9 +83,7 @@ elif "fastq" in fq:
 if n_cores > 1:  # Parallelize with `multiprocessing`
     import multiprocessing
 
-    items = [
-        (fq, fq_out_list[i], starts[i], stops[i]) for i in range(0, n_chunks)
-    ]
+    items = [(fq, fq_out_list[i], starts[i], stops[i]) for i in range(0, n_chunks)]
     with multiprocessing.Pool(n_cores) as pool:
         multi_out = pool.starmap(extractReads, items)
 else:  # Single thread

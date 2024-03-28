@@ -65,11 +65,11 @@ def trim_fq(fq_in, fq_out, gz):
     ## match score = 4, mismatch = -0.5
     ## gap opening = -6, gap extension = -6
     aligner = Align.PairwiseAligner()
-    aligner.mode = 'local' # Use 'local' for local alignment
-    aligner.match_score = 4 # Match score
-    aligner.mismatch_score = -0.5 # Mismatch score
-    aligner.gap_open = -6 # Gap opening penalty
-    aligner.gap_extend = -6 # Gap extension penalty
+    aligner.mode = "local"  # Use 'local' for local alignment
+    aligner.match_score = 4  # Match score
+    aligner.mismatch_score = -0.5  # Mismatch score
+    aligner.open_gap_score = -6  # Gap opening penalty
+    aligner.extend_gap_score = -6  # Gap extension penalty
 
     for title, seq, qual in fq_iterator:
         read_count += 1
@@ -97,13 +97,14 @@ def trim_fq(fq_in, fq_out, gz):
         #     print(seq[0:8]+seq[alignments[0].end:])
 
         # Trim seq and qual
-        start = alignment[0].start
+        start = alignment.aligned[0][0][0]
+        end = alignment.aligned[0][0][1]
 
         # Acount for reads with deletions in `BB_1`
         if start < 8:  # Deletion in BB_1
             offset = 8 - start
-            seq_out = "N" * offset + seq[start:8] + seq[alignment[0].end :]
-            qual_out = "!" * offset + qual[start:8] + qual[alignment[0].end :]
+            seq_out = "N" * offset + seq[start:8] + seq[end:]
+            qual_out = "!" * offset + qual[start:8] + qual[end:]
 
             del_count += 1
         else:
@@ -115,12 +116,12 @@ def trim_fq(fq_in, fq_out, gz):
             # qual_out = qual[start-8:start]+qual[alignment[0].end:]
 
             ## Trim the base closest to adapter
-            seq_out = seq[0:8] + seq[alignment[0].end :]
-            qual_out = qual[0:8] + qual[alignment[0].end :]
+            seq_out = seq[0:8] + seq[end:]
+            qual_out = qual[0:8] + qual[end:]
 
         # Broken read; erase R1 and add `NNNNNNNNNN` with qval=0 (!!!!!!!!!!)
         # Alignment score cuttoff was determined by spot-checking ~100 bead barcodes, based on predicted adapter location
-        if len(seq_out) < 22 or alignment[0].score < 58:
+        if len(seq_out) < 22 or alignment.score < 58:
             seq_out = "N" * 10
             qual_out = "!" * 10
             broken_count += 1

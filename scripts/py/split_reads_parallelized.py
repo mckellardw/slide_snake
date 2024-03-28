@@ -1,9 +1,10 @@
 import argparse
 import pysam
 import os
-import gzip
-from Bio import pairwise2
-from Bio import Seq
+
+# import gzip
+# from Bio import pairwise2
+# from Bio import Seq
 from Bio import Align
 
 # from Bio.Align import PairwiseAligner
@@ -20,16 +21,16 @@ def reverse_complement(seq):
     return seq.translate(tab)[::-1]
 
 
-def find_and_split_reads(fq_in, sequence, log=None, max_errors=2):
+def find_and_split_reads(fq_in, split_seq, log=None, max_errors=2):
     """
-    Finds an arbitrary sequence in the middle of reads from a FASTQ file, allowing for mismatches,
+    Finds a defined sequence [split_seq] in the middle of reads from a FASTQ file, allowing for mismatches,
     splits the reads at the identified sequence, and writes each split read into separate FASTQ files.
 
     Parameters
     ----------
     fq_in : str
         The path to the FASTQ file.
-    sequence : str
+    split_seq : str
         The sequence to search for in the reads.
     max_errors : float
         The maximum allowed error rate for the sequence matching.
@@ -40,11 +41,11 @@ def find_and_split_reads(fq_in, sequence, log=None, max_errors=2):
     read_counter = 0
 
     aligner = Align.PairwiseAligner()
-    aligner.mode = 'local' # Use 'local' for local alignment
-    aligner.match_score = 4 # Match score
-    aligner.mismatch_score = -0.5 # Mismatch score
-    aligner.gap_open = -6 # Gap opening penalty
-    aligner.gap_extend = -6 # Gap extension penalty
+    aligner.mode = "local"  # Use 'local' for local alignment
+    aligner.match_score = 4  # Match score
+    aligner.mismatch_score = -0.5  # Mismatch score
+    aligner.open_gap_score = -6  # Gap opening penalty
+    aligner.extend_gap_score = -6  # Gap extension penalty
 
     # Open the FASTQ file
     with pysam.FastxFile(fq_in) as input_fastq:
@@ -55,10 +56,10 @@ def find_and_split_reads(fq_in, sequence, log=None, max_errors=2):
             for read in input_fastq:
                 # Perform pairwise alignment to find the sequence with allowed mismatches
                 # TODO- update this code
-                alignments = aligner.align(read.sequence, sequence)
+                alignments = aligner.align(read.sequence, split_seq)
                 # alignments = pairwise2.align.localms(
                 #     read.sequence,
-                #     sequence,
+                #     split_seq,
                 #     4,
                 #     -0.5,
                 #     -6,
@@ -69,23 +70,27 @@ def find_and_split_reads(fq_in, sequence, log=None, max_errors=2):
                 # Calculate the error rate for the best alignment
                 best_alignment = alignments[0] if alignments else None
                 error_rate = (
-                    1 - (best_alignment.score / len(sequence))
+                    1 - (best_alignment.score / len(split_seq))
                     if best_alignment
                     else float("inf")
                 )
 
+                # print(best_alignment.aligned[0][0][0])
                 # Check if the error rate is within the allowed limit
                 if error_rate <= max_errors:
                     # Split the read into two at the identified sequence
-                    sequence_start = best_alignment[3]
-                    sequence_end = best_alignment[4]
+                    sequence_start = best_alignment.aligned[0][0][0]
+                    sequence_end = best_alignment.aligned[0][0][1]
 
                     # R1
                     part1_sequence = read.sequence[:sequence_start]
                     part1_quality = read.quality[:sequence_start]
+
                     # R2
-                    part2_sequence = read.sequence[sequence_end:]
-                    part2_quality = read.quality[sequence_end:]
+                    # part2_sequence = read.sequence[sequence_end:]
+                    # part2_quality = read.quality[sequence_end:]
+                    part2_sequence = read.sequence[sequence_start:]
+                    part2_quality = read.quality[sequence_start:]
 
                     # Write the split reads to the output FASTQ files
                     output_fastq1.write(
@@ -117,9 +122,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Splits reads in a FASTQ file at a specified sequence, allowing for mismatches."
     )
+
     parser.add_argument("--fq_in", type=str, help="The path to the FASTQ file.")
     parser.add_argument(
-        "--sequence", type=str, help="The sequence to search for in the reads."
+        "--split_seq", type=str, help="The sequence to search for in the reads."
     )
     # parser.add_argument('--output_prefix',
     #                     type=str,
@@ -142,7 +148,7 @@ if __name__ == "__main__":
     if args.threads == 1:
         find_and_split_reads(
             fq_in=args.fq_in,
-            sequence=args.sequence,
+            split_seq=args.split_seq,
             # output_prefix = args.output_prefix,
             log=args.log,
             max_errors=args.max_errors,
@@ -181,7 +187,7 @@ if __name__ == "__main__":
         items = [
             (
                 f"{args.fq_in.strip('.fq.gz')}_{str(n).zfill(3)}.fq",
-                args.sequence,
+                args.split_seq,
                 # args.output_prefix,
                 # args.log,
                 args.max_errors,

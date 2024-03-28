@@ -11,6 +11,7 @@ import shutil
 import tempfile
 
 import editdistance as ed
+
 # import parasail
 import pysam
 from tqdm import tqdm
@@ -18,7 +19,8 @@ from tqdm import tqdm
 logger = logging.getLogger(__name__)
 
 # for debugging
-verbose = False
+verbose = False #True
+
 
 def parse_args():
     # Create argument parser
@@ -189,6 +191,7 @@ def init_logger(args):
     logging.root.setLevel(logging_level)
     logging.root.handlers[0].addFilter(lambda x: "NumExpr" not in x.msg)
 
+
 # TODO potentially could replace with [fast-edit-distance](https://github.com/youyupei/fast_edit_distance)
 def calc_ed_with_whitelist(bc_uncorr, whitelist):
     """
@@ -235,7 +238,8 @@ def process_bam_records(tup):
     :rtype: str
     """
     input_bam = tup[0]
-    args = tup[1]
+    output_bam = tup[1]
+    args = tup[2]
 
     verbose = False  # for debugging
 
@@ -254,13 +258,9 @@ def process_bam_records(tup):
         )
         bam_out_fn = chrom_bam.name
     else:
-        bam_out_fn = args.output_bam
+        bam_out_fn = output_bam
 
-    bam_out = pysam.AlignmentFile(
-        args.output_bam, 
-        "wb", 
-        template=bam
-    )
+    bam_out = pysam.AlignmentFile(output_bam, "wb", template=bam)
 
     barcode_counter = collections.Counter()
 
@@ -288,10 +288,11 @@ def process_bam_records(tup):
                 bc_uncorr, filt_whitelist
             )
 
-            if verbose:
-                print(f"bc_match = {bc_match}")
-                print(f"bc_match_ed = {bc_match_ed}")
-                print(f"next_match_diff = {next_match_diff}")
+            # For debugging/optimizing:
+            # if verbose:
+            #     print(f"bc_match = {bc_match}")
+            #     print(f"bc_match_ed = {bc_match_ed}")
+            #     print(f"next_match_diff = {next_match_diff}")
 
             # Check barcode match edit distance and difference to runner-up edit distance
             condition1 = bc_match_ed <= args.max_ed
@@ -519,7 +520,7 @@ def main(args):
     logger.info(f"    Found {n_reads} reads in {args.bam}")
     logger.info(f"    Found {n_aligns} alignments in {args.bam}")
 
-    logger.info(f"Assigning barcodes to reads in {args.bam}")
+    logger.info(f"Correcting barcodes in {args.bam}")
 
     if args.threads > 1:
         # Create temporary directory
@@ -527,9 +528,7 @@ def main(args):
             shutil.rmtree(args.tempdir, ignore_errors=True)
         os.mkdir(args.tempdir)
 
-        # Process BAM alignments from each chrom separately
-        func_args = []
-
+        # Split bam and process across multiple threads
         logger.info(f"    Splitting BAM into {args.threads} BAMs...")
 
         split_bam_files = split_bam_file(
@@ -538,8 +537,10 @@ def main(args):
             num_files=args.threads,  # 1 bam per thread
             n_reads=n_reads,
         )
+
+        func_args = []
         for bam in split_bam_files:
-            func_args.append((bam, args))  # chrom,
+            func_args.append((bam, bam.replace(".bam", "_corrected.bam"), args))
             logger.info(f"    {bam}")
 
         logger.info(f"func_args for pool run:")
@@ -563,10 +564,9 @@ def main(args):
 
         logger.info("Cleaning up temporary files")
         shutil.rmtree(args.tempdir, ignore_errors=True)
-        # shutil.rmtree( # remove split bams
-        #     os.path.dirname(split_bam_files[0]),
-        #     ignore_errors=True
-        # )
+        shutil.rmtree(  # remove split bams
+            os.path.dirname(split_bam_files[0]), ignore_errors=True
+        )
     else:
         func_args = (args.bam, args)  # chrom,
         chrom_bam_fn, barcode_counter = process_bam_records(func_args)
