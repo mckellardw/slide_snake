@@ -233,6 +233,7 @@ rule ont_split_fastq_to_R1_R2:
         ADAPTER = "T"*10
     threads: 
         config["CORES"]
+        # 1
     log:
         log = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/read_split.log"
     run:
@@ -241,7 +242,7 @@ rule ont_split_fastq_to_R1_R2:
             f"""
             python scripts/py/split_reads_parallelized.py \
                 --fq_in {input.FQ} \
-                --sequence {params.ADAPTER} \
+                --split_seq {params.ADAPTER} \
                 --threads {threads} \
              2> {log.log}
             """

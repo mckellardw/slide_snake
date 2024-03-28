@@ -7,8 +7,7 @@ rule ont_qualimap_minimap2:
         TXT  = "{OUTDIR}/{SAMPLE}/qualimap/ont/minimap2/{RECIPE}/rnaseq_qc_results.txt",
         HTML = "{OUTDIR}/{SAMPLE}/qualimap/ont/minimap2/{RECIPE}/qualimapReport.html",
     params:
-        # GENES_GTF = lambda wildcards: GTF_DICT[wildcards.SAMPLE]
-        GENES_GTF = "/gpfs/commons/groups/innovation/dwm/ref_snake/out/mus_musculus/genome/raw/annotations.gtf"
+        GENES_GTF = lambda wildcards: GTF_DICT[wildcards.SAMPLE]
     threads:
         1
     resources:

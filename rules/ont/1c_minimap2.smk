@@ -20,6 +20,24 @@ rule ont_umitools_extract:
     run:
         # Temporarily hardcoded for Seeker...
         recipe = wildcards.RECIPE
+        
+        # param handling for different SlideSeq R1 strategies
+        ## SlideSeq/Seeker: R1="C"*22 | BC1="C"*8 | Linker="C"*18 | BC2="C"*6 | UMI="N"* 7
+        if "stomics" in recipe:
+            whitelist = input.BB_WHITELIST
+            BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
+        elif "noTrim" in recipe or "matchLinker" in recipe:
+            BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
+            whitelist = f"{input.BB_1} {input.BB_2}"
+        elif "internalTrim" in recipe:
+            BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
+            whitelist = input.BB_WHITELIST
+        elif "adapterInsert" in recipe:
+            whitelist = input.BB_ADAPTER_R1
+            BC_PATTERN = "C" * 8 + "C" * 18 + "C" * 6 + "N" * 7
+        else:
+            whitelist = input.BB_WHITELIST
+            BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
 
         # BC_PATTERN="(?P<discard_1>CTACACGACGCTCTTCCGATCT)"+ \
         #     "(?P<cell_1>.{{8}})"+ \
@@ -35,9 +53,9 @@ rule ont_umitools_extract:
 
         # "C"*22 + \
 
-        BC_PATTERN = "C" * 8 + "C" * 18 + "C" * 6 + "N" * 7
+        # BC_PATTERN = "C" * 8 + "C" * 18 + "C" * 6 + "N" * 7
 
-        whitelist = input.BB_ADAPTER
+        # whitelist = input.BB_ADAPTER
         EXTRACT_METHOD = "string"  # "regex"
 
         shell(
