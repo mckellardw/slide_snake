@@ -14,25 +14,24 @@ rule bwa_rRNA_align:
         # R1_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq',
         R2_FQ_BWA_FILTERED  = "{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq"
     params:
-        MEMLIMIT = config['MEMLIMIT'],
+        # MEMLIMIT = config['MEMLIMIT'],
+        BWA_REF = lambda w: rRNA_BWA_DICT[w.SAMPLE],
         MIN_ALIGNSCORE = 40,
     log:
         log = "{OUTDIR}/{SAMPLE}/rRNA/bwa/bwa_mem.log"
     threads:
         config['CORES']
-    run: 
-        BWA_REF = rRNA_BWA_DICT[wildcards.SAMPLE] # use rRNA ref
-
+    run:
         # Align to rRNA ref w/ `bwa mem` for cleaner/faster rRNA filtering 
         ##TODO incorporate VASAseq style "long"/short read handling with multiple align steps
         ##TODO- modify this so that it doesn't treat reads as paired-end
-        shell(
+        shell(            
             f"""
             mkdir -p $(dirname {output.BAM1})
 
             {EXEC['BWA']} mem \
                 -t {threads} \
-                {BWA_REF} \
+                {params.BWA_REF} \
                 {input.R2_FQ} \
             1> {output.BAM1} \
             2> {log.log} \
@@ -53,21 +52,19 @@ rule bwa_rRNA_align:
             > {output.R2_FQ_BWA_FILTERED} 
             """
         )
-#
 
 
 rule bwa_rRNA_index_alignment:
     input:
-        BAM = '{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam', 
+        BAM = "{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam", 
     output:
-        BAI = '{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam.bai',
+        BAI = "{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam.bai",
     run:
         shell(
             f"""
             {EXEC['SAMTOOLS']} index {input.BAM}
             """
         )
-#
 
 
 rule bwa_rRNA_filter_R1:
@@ -92,10 +89,9 @@ rule bwa_rRNA_filter_R1:
             zcat {input.R1_FQ} > {output.R1_FQ} 
             
             {EXEC['SEQTK']} subseq {output.R1_FQ} {output.UNMAPPED_LIST} \
-            > {output.R1_FQ_BWA_FILTERED.strip('.gz')}
+            > {output.R1_FQ_BWA_FILTERED}
             """
         )
-#
 
 
 rule bwa_rRNA_compress_unmapped:
@@ -113,7 +109,6 @@ rule bwa_rRNA_compress_unmapped:
             {EXEC['PIGZ']} -p{threads} {input}
             """
         )
-#
 
 
 #  Run fastqc on unmapped reads;

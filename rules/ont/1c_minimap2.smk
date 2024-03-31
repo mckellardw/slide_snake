@@ -12,7 +12,8 @@ rule ont_umitools_extract:
     output:
         R1_FQ="{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/umi_R1.fq.gz",
         R2_FQ="{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/umi_R2.fq.gz",
-    # params:
+    params:
+        WHITELIST=lambda w: get_whitelist(w),
     #    BC_PATTERN="CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCNNNNNNN" #TODO
     log:
         log="{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/extract.log",
@@ -24,19 +25,14 @@ rule ont_umitools_extract:
         # param handling for different SlideSeq R1 strategies
         ## SlideSeq/Seeker: R1="C"*22 | BC1="C"*8 | Linker="C"*18 | BC2="C"*6 | UMI="N"* 7
         if "stomics" in recipe:
-            whitelist = input.BB_WHITELIST
             BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
         elif "noTrim" in recipe or "matchLinker" in recipe:
             BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
-            whitelist = f"{input.BB_1} {input.BB_2}"
         elif "internalTrim" in recipe:
             BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
-            whitelist = input.BB_WHITELIST
         elif "adapterInsert" in recipe:
-            whitelist = input.BB_ADAPTER_R1
             BC_PATTERN = "C" * 8 + "C" * 18 + "C" * 6 + "N" * 7
         else:
-            whitelist = input.BB_WHITELIST
             BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
 
         # BC_PATTERN="(?P<discard_1>CTACACGACGCTCTTCCGATCT)"+ \
@@ -62,7 +58,6 @@ rule ont_umitools_extract:
             f"""
             echo "Barcode pattern: '{BC_PATTERN}'" > {log.log}
             echo "Extract method:  {EXTRACT_METHOD}" >> {log.log}
-            echo "whitelist:       {whitelist}" >> {log.log}
             echo "" >> {log.log}
 
             {EXEC['UMITOOLS']} extract \
@@ -79,9 +74,6 @@ rule ont_umitools_extract:
         # --error-correct-cell \
         # --whitelist={whitelist} \
         # --error-correct-cell \
-
-
-#
 
 
 # Align w/ minimap2
@@ -178,7 +170,7 @@ rule ont_sort_index_output:
 #         KIT = "3prime", #['3prime', '5prime']
 #         adapter1_suff_length = config["BARCODE_ADAPTER1_SUFF_LENGTH"],
 #         barcode_min_qv = config["BARCODE_MIN_QUALITY"],
-#         # whitelist = lambda w: get_whitelist(w.RECIPE, input),
+#         WHITELIST=lambda w: get_whitelist(w),
 #         # barcode_length = lambda w: get_barcode_length(w),
 #         umi_length = lambda w: get_umi_length(w),
 #     threads:
@@ -190,20 +182,6 @@ rule ont_sort_index_output:
 #     run:
 #         # recipe = RECIPE_ONT_DICT[wildcards.SAMPLE]
 #         recipe = wildcards.RECIPE
-
-#         #param handling for different SlideSeq R1 strategies
-#         if "stomics" in recipe:
-#             whitelist = input.BB_WHITELIST
-#         elif "noTrim" in recipe or "matchLinker" in recipe:
-#             whitelist = f"{input.BB_1} {input.BB_2}"
-#         elif "internalTrim" in recipe:
-#             whitelist = input.BB_WHITELIST
-#         elif "adapterInsert" in recipe:
-#             whitelist = input.BB_ADAPTER_R1
-#         else:
-#             whitelist = input.BB_WHITELIST
-
-
 #         shell(
 #             f"""
 #             echo "UMI length: {params.umi_length}" >> {log.log}
@@ -216,7 +194,7 @@ rule ont_sort_index_output:
 #                 --umi_length {params.umi_length} \
 #                 --output_bam {output.BAM} \
 #                 --output_barcodes {output.TSV} \
-#                 {input.BAM} {whitelist} \
+#                 {input.BAM} {params.WHITELIST} \
 #             2>> {log.log}
 #             """
 #         )
@@ -265,8 +243,7 @@ rule ont_index_bc_output:
         )
 
 
-# TODO - need to fix the script so this can be parallelized
-# Note - run time increases with BC length
+# Note - run time increases (substantially) with BC length
 rule ont_error_correct_barcodes:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam",
@@ -282,35 +259,22 @@ rule ont_error_correct_barcodes:
     params:
         max_ed=config["BARCODE_MAX_ED"],
         min_ed_diff=config["BARCODE_MIN_ED_DIFF"],
+        adapter1_suff_length=config["BARCODE_ADAPTER1_SUFF_LENGTH"],
         # kit=lambda w: sample_sheet.loc[w.run_id, "kit_name"],
         KIT="3prime",  #['3prime', '5prime', 'multiome']
         umi_length=lambda w: get_umi_length(w),
-        adapter1_suff_length=config["BARCODE_ADAPTER1_SUFF_LENGTH"],
-    threads: config["CORES"]  #TODO
+        WHITELIST=lambda w: get_whitelist(w)
+    threads: config["CORES"]
         # 1
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/assign_barcodes.log",
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/correct_barcodes.log",
     # conda:
     #     "../envs/barcodes.yml"
     run:
-        recipe = wildcards.RECIPE
-
-        # param handling for different SlideSeq R1 strategies
-        if "stomics" in recipe:
-            whitelist = input.BB_WHITELIST
-        elif "noTrim" in recipe or "matchLinker" in recipe:
-            whitelist = f"{input.BB_1} {input.BB_2}"
-        elif "internalTrim" in recipe:
-            whitelist = input.BB_WHITELIST
-        elif "adapterInsert" in recipe:
-            whitelist = input.BB_ADAPTER_R1
-        else:
-            whitelist = input.BB_WHITELIST
-
-
         shell(
             f"""
-            echo "UMI length: {params.umi_length}" >> {log.log}
+            echo "UMI length:        {params.umi_length}" > {log.log}
+            echo "Barcode whitelist: {params.WHITELIST}" >> {log.log}
 
             python scripts/py/assign_barcodes_noChromSplit.py \
                 -t {threads} \
@@ -321,7 +285,7 @@ rule ont_error_correct_barcodes:
                 --kit {params.KIT} \
                 --adapter1_suff_length {params.adapter1_suff_length} \
                 --umi_length {params.umi_length} \
-                {input.BAM} {whitelist} \
+                {input.BAM} {params.WHITELIST} \
             2>> {log.log}
             """
         )
@@ -546,9 +510,6 @@ rule ont_add_featureCounts_to_bam:
         )
 
 
-#
-
-
 rule ont_index_featureCounts_output:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_gn.bam",
@@ -563,9 +524,6 @@ rule ont_index_featureCounts_output:
         )
 
 
-#
-
-
 # Generate count matrix w/ umi-tools
 rule ont_umitools_count:
     input:
@@ -574,7 +532,7 @@ rule ont_umitools_count:
     output:
         COUNTS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/umitools_counts.tsv.gz",
     params:
-        CELL_TAG="CR",
+        CELL_TAG="CB", # uncorrected = CR
         GENE_TAG="GN",  #GN XS
         UMI_TAG="UR",
     log:
@@ -595,26 +553,3 @@ rule ont_umitools_count:
                 -S {output.COUNTS} 
             """
         )
-
-
-#
-
-# rule cleanup_headers_1:
-#     input:
-#         BAM_BC_UNCORR_TMP,
-#     output:
-#         bam=temp(BAM_BC_UNCORR),
-#         bai=temp(BAM_BC_UNCORR_BAI),
-#     # conda:
-#     #     "../envs/{EXEC['SAMTOOLS']}.yml"
-#     run:
-#         shell(
-#             f"""
-#             {EXEC['SAMTOOLS']} reheader \
-#                 --no-PG \
-#                 -c 'grep -v ^@PG' \
-#                 {input} \
-#             > {output.bam}
-#             {EXEC['SAMTOOLS']} index {output.bam}
-#             """
-#         )

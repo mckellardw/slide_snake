@@ -239,7 +239,8 @@ def process_bam_records(tup):
     """
     input_bam = tup[0]
     output_bam = tup[1]
-    args = tup[2]
+    threads = tup[2]
+    args = tup[3]
 
     verbose = False  # for debugging
 
@@ -250,7 +251,7 @@ def process_bam_records(tup):
     bam = pysam.AlignmentFile(input_bam, "rb")
 
     # Write temp file or straight to output file depending on use case
-    if args.threads > 1:
+    if threads > 1:
         # Open temporary output BAM file for writing
         suff = os.path.basename(input_bam)
         chrom_bam = tempfile.NamedTemporaryFile(
@@ -540,7 +541,9 @@ def main(args):
 
         func_args = []
         for bam in split_bam_files:
-            func_args.append((bam, bam.replace(".bam", "_corrected.bam"), args))
+            func_args.append(
+                (bam, bam.replace(".bam", "_corrected.bam"), 1, args)
+            )
             logger.info(f"    {bam}")
 
         logger.info(f"func_args for pool run:")

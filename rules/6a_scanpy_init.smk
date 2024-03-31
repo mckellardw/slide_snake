@@ -137,7 +137,7 @@ rule cache_preQC_h5ad_piRNA:
 ## Removes barcodes for which there are no molecules detected [`--remove_zero_features`]
 rule ont_cache_preQC_h5ad_minimap2:
     input:
-        COUNTS = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/umitools_counts.tsv.gz",
+        MAT = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/umitools_counts.tsv.gz",
         BB_map = lambda wildcards: BB_DICT[wildcards.SAMPLE] #TODO Adjust to match barcode handling schemas
     output:
         H5AD = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/output.h5ad"
@@ -147,9 +147,10 @@ rule ont_cache_preQC_h5ad_minimap2:
         f"{workflow.basedir}/envs/slsn_scanpy.yml"
     shell:
         """
-        python scripts/py/cache_umitools_h5ad.py \
-            {input.COUNTS} \
-            {output.H5AD}
+        python scripts/py/cache_umitools_to_h5ad.py \
+            --mat_in {input.MAT} \
+            --bb_map {input.BB_map}\
+            --ad_out {output.H5AD}\
+            --remove_zero_features
         """
-        # --bb_map {input.BB_map}\ #TODO
         

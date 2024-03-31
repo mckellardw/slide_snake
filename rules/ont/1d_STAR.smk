@@ -46,7 +46,8 @@ rule ont_STARsolo_align:
         GENEFULL_BC = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv",
         GENEFULL_FEAT = "{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Solo.out/GeneFull/raw/features.tsv"
     params:
-        MEMLIMIT = config["MEMLIMIT"]
+        MEMLIMIT = config["MEMLIMIT"],
+        WHITELIST=lambda w: get_whitelist(w),
     threads:
         config["CORES"]
     resources:
@@ -67,18 +68,6 @@ rule ont_STARsolo_align:
         soloAdapter = RECIPE_SHEET["STAR.soloAdapter"][recipe]
         extraSTAR = RECIPE_SHEET["STAR.extra"][recipe]
         # extraSTAR = "--outFilterScoreMinOverLread 0 --outFilterMatchNminOverLread 0 --outFilterMismatchNmax 100 --seedSearchLmax 30 --seedPerReadNmax 100000 --seedPerWindowNmax 100 --alignTranscriptsPerReadNmax 100000 --alignTranscriptsPerWindowNmax 10000"
-
-        #param handling for different SlideSeq R1 strategies
-        if "stomics" in recipe:
-            whitelist = input.BB_WHITELIST
-        elif "noTrim" in recipe or "matchLinker" in recipe:
-            whitelist = f"{input.BB_1} {input.BB_2}"
-        elif "internalTrim" in recipe:
-            whitelist = input.BB_WHITELIST
-        elif "adapterInsert" in recipe:
-            whitelist = input.BB_ADAPTER
-        else:
-            whitelist = input.BB_WHITELIST
 
         # Select input reads based on alignment recipe
         R1 = input.R1_FQ
@@ -105,7 +94,7 @@ rule ont_STARsolo_align:
                 --outReadsUnmapped Fastx \
                 --outSAMunmapped Within KeepPairs \
                 --soloType {soloType} {soloUMI} {soloCB} {soloAdapter} {extraSTAR} \
-                --soloCBwhitelist {whitelist} \
+                --soloCBwhitelist {params.WHITELIST} \
                 --soloCBmatchWLtype {soloCBmatchWLtype} \
                 --soloCellFilter TopCells {nBB} \
                 --soloUMIfiltering MultiGeneUMI CR \

@@ -2,45 +2,30 @@ import sys
 import gzip
 import pandas as pd
 import argparse
-from scanpy import read_mtx
+from scanpy import read_umi_tools
 from numpy import intersect1d
 
 # Example usage:
 ## python script.py \
-#   --mat_in input_matrix.mtx \
-#   --feat_in input_features.tsv \
-#   --bc_in input_barcodes.txt \
+#   --mat_in umitools_counts.tsv \
 #   --bb_map input_spatial_map.tsv \
 #   --ad_out output_anndata.h5ad \
-#   --feat_col 1 \
 #   --remove_zero_features
 
 
 def main(
-    mat_in, feat_in, bc_in, bb_map, ad_out, feat_col=1, remove_zero_features=False
+    mat_in, bb_map, ad_out, remove_zero_features=False
 ):
     # Count matrix
     if mat_in.endswith(".gz"):
-        adata = read_mtx(gzip.open(mat_in, "rt"))
+        adata = read_umi_tools(gzip.open(mat_in, "rt"))
     else:
-        adata = read_mtx(mat_in)
+        adata = read_umi_tools(mat_in)
 
     # Transpose for STAR inputs...
-    if "Solo.out" in mat_in:
-        print("transposing count matrix...")
-        adata = adata.transpose()
-
-    # Features
-    # adata.var_names = pd.read_csv(feat_in, sep="\t", header=None, usecols=[feat_col], squeeze=True).values    # pandas v1.#.#
-    adata.var_names = (
-        pd.read_csv(feat_in, sep="\t", header=None, usecols=[feat_col]).squeeze().values
-    )  # pandas v2.#.#
-
-    # Barcodes
-    # adata.obs_names = pd.read_csv(bc_in, sep="\t", header=None, squeeze=True).values    # pandas v1.#.#
-    adata.obs_names = pd.read_csv(bc_in, sep="\t", header=None)[
-        0
-    ].tolist()  # pandas v2.#.#
+    # if "Solo.out" in mat_in:
+    #     print("transposing count matrix...")
+    #     adata = adata.transpose()
 
     # Add spatial location
     spatial_data = pd.read_csv(
@@ -82,22 +67,10 @@ if __name__ == "__main__":
         "--mat_in", required=True, help="Input count matrix file (mtx format)"
     )
     parser.add_argument(
-        "--feat_in", required=True, help="Input feature file (tsv format)"
-    )
-    parser.add_argument(
-        "--bc_in", required=True, help="Input barcode file (txt format)"
-    )
-    parser.add_argument(
         "--bb_map", required=True, help="Input spatial map file (tsv format)"
     )
     parser.add_argument(
         "--ad_out", required=True, help="Output AnnData file (h5ad format)"
-    )
-    parser.add_argument(
-        "--feat_col",
-        type=int,
-        default=1,
-        help="Feature column index in the feature file (default: 1)",
     )
     parser.add_argument(
         "--remove_zero_features",
@@ -109,10 +82,7 @@ if __name__ == "__main__":
 
     main(
         args.mat_in,
-        args.feat_in,
-        args.bc_in,
         args.bb_map,
         args.ad_out,
-        args.feat_col,
         args.remove_zero_features,
     )
