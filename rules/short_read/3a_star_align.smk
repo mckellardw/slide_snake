@@ -38,11 +38,11 @@ rule STARsolo_align:
         # BC = [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/{SOLO}/raw/barcodes.tsv" for SAMPLE in SAMPLES for RECIPE in RECIPE_DICT[SAMPLE] for SOLO in ["Velocyto","Gene","GeneFull"]],
         # FEAT = [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/{SOLO}/raw/features.tsv" for SAMPLE in SAMPLES for RECIPE in RECIPE_DICT[SAMPLE] for SOLO in ["Velocyto","Gene","GeneFull"]]
     params:
-        MEMLIMIT = config['MEMLIMIT']
+        MEMLIMIT = config['MEMLIMIT'],
     threads:
-        config['CORES']
-    resources:
-        mem_mb = config['MEMLIMIT_MB']
+        config['CORES'],
+    # resources:
+    #     mem_mb = config['MEMLIMIT_MB'],
     priority:
         42
     run:
@@ -62,7 +62,7 @@ rule STARsolo_align:
         #param handling for different SlideSeq R1 strategies
         if "stomics" in recipe:
             whitelist = input.BB_WHITELIST
-        elif "noTrim" in recipe:
+        elif "matchLinker" in recipe:
             whitelist = f"{input.BB_1} {input.BB_2}"
         elif "internalTrim" in recipe:
             whitelist = input.BB_WHITELIST

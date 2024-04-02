@@ -20,10 +20,7 @@ def main(
     mat_in, feat_in, bc_in, bb_map, ad_out, feat_col=1, remove_zero_features=False
 ):
     # Count matrix
-    if mat_in.endswith(".gz"):
-        adata = read_mtx(gzip.open(mat_in, "rt"))
-    else:
-        adata = read_mtx(mat_in)
+    adata = read_mtx(mat_in)
 
     # Transpose for STAR inputs...
     if "Solo.out" in mat_in:

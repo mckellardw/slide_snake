@@ -162,7 +162,7 @@ rule ont_readIDs_by_adapter_type:
             f"""
             python scripts/py/write_adapterscan_read_id_lists.py \
                 --tsv_file_path {input.TSV} \
-                --output_directory $(dirname {output.LST})
+                --output_directory $(dirname {output.FULL_LEN})
             """
         )
 

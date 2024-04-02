@@ -17,10 +17,7 @@ def main(
     mat_in, bb_map, ad_out, remove_zero_features=False
 ):
     # Count matrix
-    if mat_in.endswith(".gz"):
-        adata = read_umi_tools(gzip.open(mat_in, "rt"))
-    else:
-        adata = read_umi_tools(mat_in)
+    adata = read_umi_tools(mat_in)
 
     # Transpose for STAR inputs...
     # if "Solo.out" in mat_in:

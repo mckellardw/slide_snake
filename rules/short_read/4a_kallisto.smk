@@ -73,7 +73,6 @@ rule bus2mat:
         BCS   = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.barcodes.txt',
         GENES = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.genes.txt',
         MAT   = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.mtx'
-    params:
     log:
         log = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/bustools_count.log'
     threads:
@@ -145,7 +144,6 @@ rule compress_kb_outs:
         BCS   = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.barcodes.txt.gz',
         GENES = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.genes.txt.gz',
         MAT   = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.mtx.gz'
-    params:
     threads:
         config['CORES']        
     run:

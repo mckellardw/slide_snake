@@ -546,9 +546,10 @@ def main(args):
             )
             logger.info(f"    {bam}")
 
-        logger.info(f"func_args for pool run:")
-        for farg in func_args:
-            logger.info(f"    {farg}")
+        # if verbose: # for debuging
+        #     logger.info(f"func_args for pool run:")
+        #     for farg in func_args:
+        #         logger.info(f"    {farg}")
 
         results = launch_pool(
             func=process_bam_records, func_args=func_args, procs=args.threads

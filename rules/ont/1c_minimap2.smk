@@ -26,6 +26,8 @@ rule ont_umitools_extract:
         ## SlideSeq/Seeker: R1="C"*22 | BC1="C"*8 | Linker="C"*18 | BC2="C"*6 | UMI="N"* 7
         if "stomics" in recipe:
             BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
+        if "visium" in recipe:
+            BC_PATTERN = "C" * 16 + "N" * 12
         elif "noTrim" in recipe or "matchLinker" in recipe:
             BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
         elif "internalTrim" in recipe:
@@ -276,7 +278,7 @@ rule ont_error_correct_barcodes:
             echo "UMI length:        {params.umi_length}" > {log.log}
             echo "Barcode whitelist: {params.WHITELIST}" >> {log.log}
 
-            python scripts/py/assign_barcodes_noChromSplit.py \
+            python scripts/py/barcodes_correct_parallelized.py \
                 -t {threads} \
                 --output_bam {output.BAM} \
                 --output_counts {output.COUNTS} \
@@ -551,5 +553,24 @@ rule ont_umitools_count:
                 --log={log.log} \
                 -I {input.BAM} \
                 -S {output.COUNTS} 
+            """
+        )
+
+rule ont_counts_to_sparse:
+    input:
+        COUNTS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/umitools_counts.tsv.gz",
+    output:
+        BCS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/barcodes.tsv.gz",
+        FEATS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/features.tsv.gz",
+        COUNTS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/matrix.mtx.gz",
+    params:
+        OUTDIR=config["OUTDIR"],
+    threads: 1
+    run:
+        output_dir = output.COUNTS.replace("/matrix.mtx.gz", "")
+        shell(
+            f"""
+            mkdir -p {output_dir}
+            python scripts/py/long2mtx.py {input.COUNTS} {output_dir}
             """
         )

@@ -2,19 +2,19 @@
 ## Unmapped read analyses
 #############################################
 
+
 # Run fastqc on unmapped reads; switch names because of STAR weirdness
 rule fastqc_unmapped:
     input:
-        UNMAPPED1 = '{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate1',
-        UNMAPPED2 = '{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2',
+        UNMAPPED1="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate1",
+        UNMAPPED2="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2",
     output:
-        UNMAPPED1_FQ = '{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate1.fastq.gz',
-        UNMAPPED2_FQ = '{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2.fastq.gz',
-        FQC_DIR = directory('{OUTDIR}/{SAMPLE}/fastqc/unmapped/{RECIPE}')
+        UNMAPPED1_FQ="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate1.fastq.gz",
+        UNMAPPED2_FQ="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2.fastq.gz",
+        FQC_DIR=directory("{OUTDIR}/{SAMPLE}/fastqc/unmapped/{RECIPE}"),
     params:
-        FASTQC_ADAPTERS = config['FASTQC_ADAPTERS']
-    threads:
-        config['CORES']
+        FASTQC_ADAPTERS=config["FASTQC_ADAPTERS"],
+    threads: config["CORES"]
     run:
         shell(
             f"""
@@ -33,23 +33,23 @@ rule fastqc_unmapped:
             """
         )
 
+
 # Only BLAST R2, which contains the insert (converts .fq to .fa, then removes the .fa file)
 ## TODO: change demux step to fastx-collapser
 rule blast_unmapped:
     input:
-        UNMAPPED2_FQ = '{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2.fastq.gz'
+        UNMAPPED2_FQ="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2.fastq.gz",
     output:
-        BLAST_R2 = '{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/blast/Unmapped.out.mate2_blastResults.txt',
-        TMP_FA = temp('{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/blast/Unmapped.out.mate2.fa'),
-        TOP_FA = '{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/blast/top_seqs.fa',
-    threads:
-        config['CORES']
+        BLAST_R2="{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/blast/Unmapped.out.mate2_blastResults.txt",
+        TMP_FA=temp("{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/blast/Unmapped.out.mate2.fa"),
+        TOP_FA="{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/blast/top_seqs.fa",
+    threads: config["CORES"]
     params:
-        BLASTDB = config['BLASTDB'],
-        TOPN = 10000,
-        OUTFMT = '6 qseqid sseqid stitle pident length mismatch gapopen qstart qend sstart send evalue bitscore'
+        BLASTDB=config["BLASTDB"],
+        TOPN=10000,
+        OUTFMT="6 qseqid sseqid stitle pident length mismatch gapopen qstart qend sstart send evalue bitscore",
     log:
-        log = '{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/blast/blast_unmapped.log'
+        log="{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/blast/blast_unmapped.log",
     run:
         shell(
             f"""
@@ -74,8 +74,10 @@ rule blast_unmapped:
                 -outfmt '{params.OUTFMT}' \
                 -max_target_seqs 5 \
                 -num_threads {threads}
-    		"""
+            """
         )
+
+
 # mv {OUTDIR}/{wildcards.SAMPLE}/Unmapped.out.mate2_blastResults.txt {OUTDIR}/{wildcards.SAMPLE}/Unmapped.out.mate2_blastResults.tsv
 
 # cat {input.UNMAPPED1_FQ} | awk '{{if(NR%4==1) {{printf(">%s\n",substr($0,2));}} else if(NR%4==2) print;}}' > {params.TMP_FA}
@@ -97,8 +99,8 @@ rule blast_unmapped:
 #             """
 #         )
 
-#TODO
-#temp rule - just checking phiX contamination
+# TODO
+# temp rule - just checking phiX contamination
 # rule unmapped_phix_bwa:
 #     input:
 #         PHIX_IDX = 'resources/phix/bwa.idx',
@@ -124,13 +126,12 @@ rule blast_unmapped:
 #                 {input.R2_FQ} \
 #             1> {output.BAM1} \
 #             2> {log.log} \
-            
+
 #             {EXEC['SAMTOOLS']} sort \
 #                 -@ {threads} \
 #                 -O BAM \
 #                 {output.BAM1} \
-#             > {output.BAM2} 
-            
+#             > {output.BAM2}
 #             {EXEC['SAMTOOLS']} fastq \
 #                 -f 4 \
 #                 {output.BAM2} \
