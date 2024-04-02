@@ -57,7 +57,6 @@ T2G_VELO_DICT = {}  # Dictionary of kallisto transcript-to-gene maps for RNA vel
 BB_DICT = {}        # Dictionary of bead barcode maps
 SPECIES_DICT = {}   # Dictionary of species listed for mirge3 analysis
 
-#TODO- add checks so only needed variables are pulled
 for i in range(0,SAMPLE_SHEET.shape[0]):
     tmp_sample = list(SAMPLE_SHEET["sampleID"])[i]
 
@@ -77,8 +76,9 @@ for i in range(0,SAMPLE_SHEET.shape[0]):
         # T2G_VELO_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_t2g_velo"])[i]
 
     # ONT-specific dicts
-    if ONT[tmp_sample] is not None:
-        RECIPE_ONT_DICT[tmp_sample] = list(SAMPLE_SHEET["recipe"])[i].split()
+    if tmp_sample in ONT.keys():
+        if len(ONT[tmp_sample]) > 0:
+            RECIPE_ONT_DICT[tmp_sample] = list(SAMPLE_SHEET["recipe_ONT"])[i].split()
 
 
 ### include rules #######################################################################
@@ -160,12 +160,12 @@ rule all:
             for READ in ["R1","R2"]
             for TRIM in ["ont_preAdapterScan",f"ont_postCutadapt_{READ}"]
         ], # ONT nanoplot
-        [f"{OUTDIR}/{SAMPLE}/nanoqc/{TRIM}/{FILE}" 
-            for SAMPLE in ONT.keys()
-            for READ in ["R1","R2"]
-            for TRIM in ["ont_preAdapterScan",f"ont_postCutadapt_{READ}"]
-            for FILE in ["nanoQC.html"]
-        ], # read QC with nanoQC
+        # [f"{OUTDIR}/{SAMPLE}/ont/nanoqc/{TRIM}/{FILE}" 
+        #     for SAMPLE in ONT.keys()
+        #     for READ in ["R1","R2"]
+        #     for TRIM in ["ont_preAdapterScan",f"ont_postCutadapt_{READ}"]
+        #     for FILE in ["nanoQC.html"]
+        # ], # read QC with nanoQC
 
         # [f"{OUTDIR}/{SAMPLE}/nanoplot/{TRIM}/summary.txt" 
         #     for SAMPLE in ONT.keys() 
@@ -211,6 +211,15 @@ rule all:
         #     SAMPLE=R2_FQS.keys(),
         #     STRAND=["", ".fwd", ".rev"]
         # ),
+        # [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx.gz" 
+        #     for SAMPLE in R2_FQS.keys() 
+        #     for RECIPE in RECIPE_DICT[SAMPLE]
+        # ], # STAR count mats             
+        # [f"{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/{FILE}"
+        #     for SAMPLE in R2_FQS.keys() 
+        #     for RECIPE in RECIPE_DICT[SAMPLE] 
+        #     for FILE in ["qualimapReport.html","rnaseq_qc_result.csv"] 
+        # ], # alignment QC with qualimap | requires deduped input!
         [f"{OUTDIR}/{SAMPLE}/fastqc/unmapped/{RECIPE}" 
             for SAMPLE in R2_FQS.keys() 
             for RECIPE in RECIPE_DICT[SAMPLE]
@@ -218,18 +227,9 @@ rule all:
         # [f"{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/blast/Unmapped.out.mate2_blastResults.txt",
         #     SAMPLE=R2_FQS.keys()
         #     for RECIPE in RECIPE_DICT[SAMPLE]
-        # ], # Top BLAST results for unmapped R2 reads        
-        # [f"{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/{FILE}"
-        #     for SAMPLE in R2_FQS.keys() 
-        #     for RECIPE in RECIPE_DICT[SAMPLE] 
-        #     for FILE in ["qualimapReport.html","rnaseq_qc_result.csv"] 
-        # ], # alignment QC with qualimap | requires deduped input!    
+        # ], # Top BLAST results for unmapped R2 reads   
         
         # Module 4 - kallisto & bustools
-        # [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx.gz" 
-        #     for SAMPLE in R2_FQS.keys() 
-        #     for RECIPE in RECIPE_DICT[SAMPLE]
-        # ], # STAR count mats
 
         # Module 5 - small RNA
         # [f"{OUTDIR}/{SAMPLE}/{SMALL}/{RECIPE}/raw/output.h5ad" 
@@ -249,16 +249,16 @@ rule all:
             for SOLO in ["Gene","GeneFull"]
             for ALGO in ["UniqueAndMult-EM","matrix"]
         ], # anndata files (with spatial info) - STAR        
-        [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/raw/output.h5ad" 
-            for SAMPLE in R2_FQS.keys() 
-            for RECIPE in RECIPE_DICT[SAMPLE] 
-            for KB in ["kb"] # "kb_velo", "kb_nuc" 
-        ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`        
-        [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/counts_unfiltered/output.h5ad" 
-            for SAMPLE in R2_FQS.keys() 
-            for RECIPE in RECIPE_DICT[SAMPLE] 
-            for KB in ["kbpython"] # "kb_velo", "kb_nuc" 
-        ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`
+        # [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/raw/output.h5ad" 
+        #     for SAMPLE in R2_FQS.keys() 
+        #     for RECIPE in RECIPE_DICT[SAMPLE] 
+        #     for KB in ["kb"] # "kb_velo", "kb_nuc" 
+        # ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`        
+        # [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/counts_unfiltered/output.h5ad" 
+        #     for SAMPLE in R2_FQS.keys() 
+        #     for RECIPE in RECIPE_DICT[SAMPLE] 
+        #     for KB in ["kbpython"] # "kb_velo", "kb_nuc" 
+        # ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`
 
 
 ## EXTRANEOUS #######################################################################

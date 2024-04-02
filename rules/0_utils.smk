@@ -1,16 +1,19 @@
 # whitelist param handling for different recipes
 def get_whitelist(w):
-    if "stomics" in w.RECIPE:
+    try:
+        if "stomics" in w.RECIPE:
+            whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bb/whitelist.txt"
+        elif "noTrim" in w.RECIPE or "matchLinker" in w.RECIPE:
+            whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bb/whitelist_1.txt {w.OUTDIR}/{w.SAMPLE}/bb/whitelist_2.txt"
+        elif "internalTrim" in w.RECIPE:
+            whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bb/whitelist.txt"
+        elif "adapterInsert" in w.RECIPE:
+            whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bb/whitelist_adapter.txt"
+        else:
+            whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bb/whitelist.txt"
+    except:
         whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bb/whitelist.txt"
-    elif "noTrim" in w.RECIPE or "matchLinker" in w.RECIPE:
-        whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bb/whitelist_1.txt {w.OUTDIR}/{w.SAMPLE}/bb/whitelist_2.txt"
-    elif "internalTrim" in w.RECIPE:
-        whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bb/whitelist.txt"
-    elif "adapterInsert" in w.RECIPE:
-        whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bb/whitelist_adapter.txt"
-    else:
-        whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bb/whitelist.txt"
-    
+
     # return whitelist path(s)
     return(whitelist)
 

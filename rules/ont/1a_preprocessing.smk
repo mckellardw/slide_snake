@@ -7,7 +7,7 @@ rule merge_formats_ONT:
     params:
         TMPDIR = "{OUTDIR}/{SAMPLE}/tmp/ont",
         ONT_reads = lambda wildcards: ONT[wildcards.SAMPLE],
-        CHUNK_SIZE = 50
+        CHUNK_SIZE = 50,
     log:
         log = "{OUTDIR}/{SAMPLE}/ont/merged.log"
     threads:
@@ -15,13 +15,16 @@ rule merge_formats_ONT:
     run:
         shell(f"mkdir -p {params.TMPDIR}")
         # shell(f"rm -rf {params.TMPDIR}/*") # clear out tmp dir
+        shell(f"echo 'Read files:' > {log.log}")
+        for f in params.ONT_reads:
+            shell(f"echo '   {f}' >> {log.log}")
 
         if len(params.ONT_reads) == 1 and "*" not in params.ONT_reads[0]:
             F = params.ONT_reads[0]
             if ".fq.gz" in F or ".fastq.gz" in F:
                 shell(
                     f"""
-                    cp {F} {output.MERGED_FQ}
+                    cp {F} {output.MERGED_FQ} 2>> {log.log}
                     """
                 )
             elif ".sam" in F or ".bam" in F:
@@ -30,32 +33,36 @@ rule merge_formats_ONT:
                     if [ -f {F} ]; then
                         {EXEC['SAMTOOLS']} fastq {F} \
                         > {output.MERGED_FQ.strip('.gz')} \
-                        2> {log.log}
+                        2>> {log.log}
                     else
                         echo "File [ {F} ] does not exist." >> {log.log}
                     fi                    
                     
-                    {EXEC['PIGZ']} -p{threads} {output.MERGED_FQ.strip('.gz')}
+                    {EXEC['PIGZ']} -p{threads} {output.MERGED_FQ.strip('.gz')} 2>> {log.log}
                     """
                 )
         elif len(params.ONT_reads) == 1 and "*" in params.ONT_reads[0]:
             import glob
             
             F_list = glob.glob(params.ONT_reads[0])
-            if len(F_list) > params.CHUNK_SIZE:
-                F_list_chunked = [
-                    " ".join(F_list[i:i + params.CHUNK_SIZE]) 
-                        for i in range(0, len(F_list),  params.CHUNK_SIZE)
-                ]
-            else:
-                F_list_chunked = " ".join(F_list)
+
+            shell(f"echo 'Regex-ed file list:' >> {log.log}")
+            for f in F_list:
+                shell(f"echo '   {f}' >> {log.log}")
+
+            #TODO- fix this so bam files can be passed individually
+            # if len(F_list) > params.CHUNK_SIZE:
+            #     shell(f"echo 'Chunking regex-ed file list...' >> {log.log}")
+            #     F_list_chunked = [
+            #         " ".join(F_list[i:i + params.CHUNK_SIZE]) 
+            #             for i in range(0, len(F_list),  params.CHUNK_SIZE)
+            #     ]
+            # else:
+            #     F_list_chunked = " ".join(F_list)
             
-            # F_base = os.path.basename(F).split('.')[0]
-            # F_base.replace("*","42")
-            # F_base = "tmp_star"
             F_base = output.MERGED_FQ.strip('.gz')
 
-            for i, F in enumerate(F_list_chunked):
+            for i, F in enumerate(F_list): #F_list_chunked
                 if ".fq.gz" in F or ".fastq.gz" in F:
                     shell(
                         f"""
@@ -69,7 +76,7 @@ rule merge_formats_ONT:
                         f"""
                         {EXEC['SAMTOOLS']} fastq {F} \
                         >> {F_base} \
-                        2> {log.log}
+                        2>> {log.log}
                         """
                 )
                 # end for loop
@@ -111,7 +118,7 @@ rule merge_formats_ONT:
 
             shell(
                 f"""
-                {EXEC['PIGZ']} -p{threads} {F_base}
+                {EXEC['PIGZ']} -p{threads} {F_base}  2>> {log.log}
                 """
             )
 
