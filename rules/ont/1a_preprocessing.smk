@@ -1,17 +1,15 @@
-
 # Borrowed portions of this code from `sockeye` - https://github.com/nanoporetech/sockeye/tree/master
-#TODO- rewrite as a python script...
+# TODO- rewrite as a python script...
 rule merge_formats_ONT:
     output:
-        MERGED_FQ = temp("{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz")
+        MERGED_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz"),
     params:
-        TMPDIR = "{OUTDIR}/{SAMPLE}/tmp/ont",
-        ONT_reads = lambda wildcards: ONT[wildcards.SAMPLE],
-        CHUNK_SIZE = 50,
+        TMPDIR="{OUTDIR}/{SAMPLE}/tmp/ont",
+        ONT_reads=lambda wildcards: ONT[wildcards.SAMPLE],
+        CHUNK_SIZE=50,
     log:
-        log = "{OUTDIR}/{SAMPLE}/ont/merged.log"
-    threads:
-        config['CORES']
+        log="{OUTDIR}/{SAMPLE}/ont/merged.log",
+    threads: config["CORES"]
     run:
         shell(f"mkdir -p {params.TMPDIR}")
         # shell(f"rm -rf {params.TMPDIR}/*") # clear out tmp dir
@@ -43,26 +41,26 @@ rule merge_formats_ONT:
                 )
         elif len(params.ONT_reads) == 1 and "*" in params.ONT_reads[0]:
             import glob
-            
+
             F_list = glob.glob(params.ONT_reads[0])
 
             shell(f"echo 'Regex-ed file list:' >> {log.log}")
             for f in F_list:
                 shell(f"echo '   {f}' >> {log.log}")
 
-            #TODO- fix this so bam files can be passed individually
-            # if len(F_list) > params.CHUNK_SIZE:
-            #     shell(f"echo 'Chunking regex-ed file list...' >> {log.log}")
-            #     F_list_chunked = [
-            #         " ".join(F_list[i:i + params.CHUNK_SIZE]) 
-            #             for i in range(0, len(F_list),  params.CHUNK_SIZE)
-            #     ]
-            # else:
-            #     F_list_chunked = " ".join(F_list)
-            
-            F_base = output.MERGED_FQ.strip('.gz')
+                # TODO- fix this so bam files can be passed individually
+                # if len(F_list) > params.CHUNK_SIZE:
+                #     shell(f"echo 'Chunking regex-ed file list...' >> {log.log}")
+                #     F_list_chunked = [
+                #         " ".join(F_list[i:i + params.CHUNK_SIZE])
+                #             for i in range(0, len(F_list),  params.CHUNK_SIZE)
+                #     ]
+                # else:
+                #     F_list_chunked = " ".join(F_list)
 
-            for i, F in enumerate(F_list): #F_list_chunked
+            F_base = output.MERGED_FQ.strip(".gz")
+
+            for i, F in enumerate(F_list):  # F_list_chunked
                 if ".fq.gz" in F or ".fastq.gz" in F:
                     shell(
                         f"""
@@ -78,8 +76,8 @@ rule merge_formats_ONT:
                         >> {F_base} \
                         2>> {log.log}
                         """
-                )
-                # end for loop
+                    )
+                    # end for loop
 
             shell(
                 f"""
@@ -88,7 +86,7 @@ rule merge_formats_ONT:
             )
 
         else:
-            F_base = output.MERGED_FQ.strip('.gz')
+            F_base = output.MERGED_FQ.strip(".gz")
             for F in params.ONT_reads:
                 if ".fq.gz" in F or ".fastq.gz" in F:
                     shell(
@@ -114,7 +112,7 @@ rule merge_formats_ONT:
                         fi                    
                         """
                     )
-                # end loop
+                    # end loop
 
             shell(
                 f"""
@@ -126,16 +124,15 @@ rule merge_formats_ONT:
 # borrowed from sockeye
 rule ont_call_adapter_scan:
     input:
-        FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz"
+        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz",
         # FOFN = "{OUTDIR}/{SAMPLE}/ont/chunk/fofn.txt",
     output:
-        TSV = "{OUTDIR}/{SAMPLE}/ont/adapter_scan.tsv",
-        FQ  = "{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq.gz"
-    threads: 
-        config["CORES"]
+        TSV="{OUTDIR}/{SAMPLE}/ont/adapter_scan.tsv",
+        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq.gz",
+    threads: config["CORES"]
     params:
         # batch_size = config["READ_STRUCTURE_BATCH_SIZE"],
-        KIT = "3prime" #['3prime', '5prime', 'multiome']
+        KIT="3prime",  #['3prime', '5prime', 'multiome']
         # kit=lambda w: sample_sheet.loc[w.run_id, "kit_name"]
     # conda:
     #     f"{workflow.basedir}/envs/slsn_ont_prep.yml"
@@ -150,20 +147,21 @@ rule ont_call_adapter_scan:
             -t {threads} \
             {input.FQ} 
         """
+
+
 # --batch_size {params.batch_size} \
 
 
-# Write lists of read IDs for each adapter type 
+# Write lists of read IDs for each adapter type
 rule ont_readIDs_by_adapter_type:
     input:
-        TSV = "{OUTDIR}/{SAMPLE}/ont/adapter_scan.tsv",
-        FQ  = "{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq.gz"
+        TSV="{OUTDIR}/{SAMPLE}/ont/adapter_scan.tsv",
+        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq.gz",
     output:
-        FULL_LEN = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
-        SINGLE_ADAPTER1 = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
+        FULL_LEN="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
+        SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
         # DIR = directory("{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids"),
-    threads: 
-        config["CORES"]
+    threads: config["CORES"]
     run:
         shell(
             f"""
@@ -173,42 +171,42 @@ rule ont_readIDs_by_adapter_type:
             """
         )
 
+
 # merge lists of useable reads
 ## FULL_LEN = R1 sequence & TSO sequence
 ## SINGLE_ADAPTER1 = just R1 sequence - incompletely sequenced
 rule ont_merge_scan_lists:
     input:
-        FULL_LEN = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
-        SINGLE_ADAPTER1 = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
+        FULL_LEN="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
+        SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
         # DIR = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids",
     output:
-        LST = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/keep.txt",
-    threads: 
-        1
+        LST="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/keep.txt",
+    threads: 1
     shell:
         """
         cat {input.FULL_LEN} {input.SINGLE_ADAPTER1} > {output.LST}
         """
 
-#TODO- add more functionality for other read/adapter types to salvage imperfect reads
+
+# TODO- add more functionality for other read/adapter types to salvage imperfect reads
 rule ont_subset_fastq_by_adapter_type:
     input:
-        FQ  = "{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq.gz",
-        LST = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/keep.txt",
+        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq.gz",
+        LST="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/keep.txt",
         # FULL_LEN = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
         # SINGLE_ADAPTER1 = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
         # DIR = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids",
     output:
-        FQ  = temp("{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq"),
+        FQ=temp("{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq"),
         # FULL_LEN = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len.fq.gz",
         # SINGLE_ADAPTER1 = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/single_adapter1.fq.gz",
-        FQ_ADAPTER = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter.fq.gz",
-    threads: 
-        config["CORES"]
+        FQ_ADAPTER="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter.fq.gz",
+    threads: config["CORES"]
     log:
-        log = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/subseq_full_len.log"
+        log="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/subseq_full_len.log",
     run:
-        # for ADAPTER in input.ADAPTER_TYPES: 
+        # for ADAPTER in input.ADAPTER_TYPES:
         shell(
             f"""
             mkdir -p $(dirname {output.FQ})            
@@ -223,26 +221,27 @@ rule ont_subset_fastq_by_adapter_type:
             {EXEC['PIGZ']} -p{threads} {output.FQ_ADAPTER.strip('.gz')}
             """
         )
-            # {EXEC['SEQTK']} subseq \
-            #     {output.FQ} \
-            #     {input.SINGLE_ADAPTER1} \
-            # >> {output.FQ_ADAPTER.strip('.gz')} \
-            # 2>> {log.log}
+        # {EXEC['SEQTK']} subseq \
+        #     {output.FQ} \
+        #     {input.SINGLE_ADAPTER1} \
+        # >> {output.FQ_ADAPTER.strip('.gz')} \
+        # 2>> {log.log}
 
-#TODO- parallelize by chunking input fastq
+
+
+# TODO- parallelize by chunking input fastq
 rule ont_split_fastq_to_R1_R2:
     input:
-        FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter.fq.gz",
+        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter.fq.gz",
     output:
-        R1_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_R1.fq.gz",
-        R2_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_R2.fq.gz"
+        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_R1.fq.gz",
+        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_R2.fq.gz",
     params:
-        ADAPTER = "T"*10
-    threads: 
-        config["CORES"]
-        # 1
+        ADAPTER="T" * 10,
+    threads: config["CORES"]
+    # 1
     log:
-        log = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/read_split.log"
+        log="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/read_split.log",
     run:
         # for ADAPTER in input.ADAPTER_TYPES: #TODO- broaden to other read types, bneyond full_len
         shell(
@@ -254,12 +253,14 @@ rule ont_split_fastq_to_R1_R2:
              2> {log.log}
             """
         )
-            # {EXEC['PIGZ']} \
-            #     -p{threads} \
-            #     {output.R1_FQ.strip('.gz')} \
-            #     {output.R2_FQ.strip('.gz')}
+        # {EXEC['PIGZ']} \
+        #     -p{threads} \
+        #     {output.R1_FQ.strip('.gz')} \
+        #     {output.R2_FQ.strip('.gz')}
 
-#TODO other rules to salvage non-full_len reads
+
+
+# TODO other rules to salvage non-full_len reads
 
 # rule call_paftools:
 #     input:
@@ -278,11 +279,8 @@ rule ont_split_fastq_to_R1_R2:
 #         )
 
 
-
-
-
 ### TODO ################################################################################################
-#TODO: Chunk fastqs for speed up
+# TODO: Chunk fastqs for speed up
 # checkpoint chunk_fastqs_ONT:
 #     input:
 #         MERGED_FQ = "{OUTDIR}/{SAMPLE}/ont/merged.fq.gz"#temp()
@@ -291,7 +289,7 @@ rule ont_split_fastq_to_R1_R2:
 #         DIR = directory("{OUTDIR}/{SAMPLE}/ont/chunk")
 #     params:
 #         N_CHUNKS = 16
-#     threads: 
+#     threads:
 #         config["CORES"]
 #     # conda:
 #     #     "../envs/stranding.yml"
@@ -303,7 +301,7 @@ rule ont_split_fastq_to_R1_R2:
 #             find -L {input.dir} -type f -name '*' > {output.FOFN}
 #             """
 #         )
-        
+
 #         shell(
 #             f"""
 #             python scripts/py/chunk_fastqs.py \
@@ -313,7 +311,7 @@ rule ont_split_fastq_to_R1_R2:
 #             """
 #         )
 
-#TODO - add with chunking
+# TODO - add with chunking
 # def gather_tsv_files_from_run(wildcards):
 #     # throw and Exception if checkpoint is pending
 #     checkpoint_dir = checkpoints.call_cat_fastq.get(**wildcards).output[0]
@@ -348,8 +346,6 @@ rule ont_split_fastq_to_R1_R2:
 #             os.path.join(checkpoint_dir, "{batch_id}.fastq")
 #         ).batch_id,
 #     )
-
-
 # rule combine_stranded_fastqs:
 #     input:
 #         fastq_files = gather_fastq_files_from_run,
@@ -357,7 +353,6 @@ rule ont_split_fastq_to_R1_R2:
 #         STRANDED_FQ,
 #     run:
 #         import shutil
-
 #         with open(output[0], "wb") as f_out:
 #             for chunked_fastq in input.fastq_files:
 #                 with open(chunked_fastq, "rb") as f_:

@@ -2,7 +2,7 @@
 rule ont_umitools_extract:
     input:
         # R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_R1.fq.gz",
-        R1_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/cut_trim_R1.fq.gz",
+        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_trim_R1.fq.gz",
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_R2.fq.gz",
         BB_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
         BB_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
@@ -21,7 +21,7 @@ rule ont_umitools_extract:
     run:
         # Temporarily hardcoded for Seeker...
         recipe = wildcards.RECIPE
-        
+
         # param handling for different SlideSeq R1 strategies
         ## SlideSeq/Seeker: R1="C"*22 | BC1="C"*8 | Linker="C"*18 | BC2="C"*6 | UMI="N"* 7
         if "stomics" in recipe:
@@ -37,23 +37,23 @@ rule ont_umitools_extract:
         else:
             BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
 
-        # BC_PATTERN="(?P<discard_1>CTACACGACGCTCTTCCGATCT)"+ \
-        #     "(?P<cell_1>.{{8}})"+ \
-        #     "(?P<discard_2>TCTTCAGCGTTCCCGAGA)"+ \
-        #     "(?P<cell_2>.{{6}})"+ \
-        #     "(?P<umi_1>.{{7}})"
+            # BC_PATTERN="(?P<discard_1>CTACACGACGCTCTTCCGATCT)"+ \
+            #     "(?P<cell_1>.{{8}})"+ \
+            #     "(?P<discard_2>TCTTCAGCGTTCCCGAGA)"+ \
+            #     "(?P<cell_2>.{{6}})"+ \
+            #     "(?P<umi_1>.{{7}})"
 
-        # BC_PATTERN="(?P<discard_1>XXXXXXXXXXXXXXXXXXXXXXX)"+ \
-        #     "(?P<cell_1>.{{8}})"+ \
-        #     "(?P<discard_2>XXXXXXXXXXXXXXXXXX)"+ \
-        #     "(?P<cell_2>.{{6}})"+ \
-        #     "(?P<umi_1>.{{7}})"
+            # BC_PATTERN="(?P<discard_1>XXXXXXXXXXXXXXXXXXXXXXX)"+ \
+            #     "(?P<cell_1>.{{8}})"+ \
+            #     "(?P<discard_2>XXXXXXXXXXXXXXXXXX)"+ \
+            #     "(?P<cell_2>.{{6}})"+ \
+            #     "(?P<umi_1>.{{7}})"
 
-        # "C"*22 + \
+            # "C"*22 + \
 
-        # BC_PATTERN = "C" * 8 + "C" * 18 + "C" * 6 + "N" * 7
+            # BC_PATTERN = "C" * 8 + "C" * 18 + "C" * 6 + "N" * 7
 
-        # whitelist = input.BB_ADAPTER
+            # whitelist = input.BB_ADAPTER
         EXTRACT_METHOD = "string"  # "regex"
 
         shell(
@@ -76,6 +76,7 @@ rule ont_umitools_extract:
         # --error-correct-cell \
         # --whitelist={whitelist} \
         # --error-correct-cell \
+
 
 
 # Align w/ minimap2
@@ -265,9 +266,9 @@ rule ont_error_correct_barcodes:
         # kit=lambda w: sample_sheet.loc[w.run_id, "kit_name"],
         KIT="3prime",  #['3prime', '5prime', 'multiome']
         umi_length=lambda w: get_umi_length(w),
-        WHITELIST=lambda w: get_whitelist(w)
+        WHITELIST=lambda w: get_whitelist(w),
     threads: config["CORES"]
-        # 1
+    # 1
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/correct_barcodes.log",
     # conda:
@@ -298,6 +299,7 @@ rule ont_error_correct_barcodes:
         #     --barcode_length {barcode_length} \
 
 
+
 #
 
 
@@ -307,7 +309,7 @@ rule ont_index_bc_corrected_output:
     output:
         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam.bai",
     threads: 1
-        # config["CORES"]
+    # config["CORES"]
     run:
         shell(
             f"""
@@ -534,7 +536,7 @@ rule ont_umitools_count:
     output:
         COUNTS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/umitools_counts.tsv.gz",
     params:
-        CELL_TAG="CB", # uncorrected = CR
+        CELL_TAG="CB",  # uncorrected = CR
         GENE_TAG="GN",  #GN XS
         UMI_TAG="UR",
     log:
@@ -555,6 +557,7 @@ rule ont_umitools_count:
                 -S {output.COUNTS} 
             """
         )
+
 
 rule ont_counts_to_sparse:
     input:

@@ -3,10 +3,10 @@
 
 # Summary of Workflow:
 
-# 1) bowtie2_prep_bam: Filter and preprocess the STAR-aligned BAM file to remove 
+# 1) bowtie2_prep_bam: Filter and preprocess the STAR-aligned BAM file to remove
 #       reads longer than miRNAs, and clear alignment information while keeping tags.
 
-# 2) bowtie2_miRNA: Align the preprocessed BAM file to the miRNA reference using 
+# 2) bowtie2_miRNA: Align the preprocessed BAM file to the miRNA reference using
 #       bowtie2, and save the aligned BAM file.
 
 # 3) umitools_sortAlignedBAM_miRNA: Sort the aligned BAM file using samtools.
@@ -15,7 +15,7 @@
 
 # 5) umitools_indexSortedDedupBAM_miRNA: Index the deduplicated BAM file using samtools.
 
-# 6) bowtie2_miRNA_counts: Tag the deduplicated BAM file with chromosome/miRNA information 
+# 6) bowtie2_miRNA_counts: Tag the deduplicated BAM file with chromosome/miRNA information
 #       and generate a count matrix using umi-tools.
 
 
@@ -23,6 +23,7 @@
 # pirbase download link - http://bigdata.ibp.ac.cn/piRBase/download.php
 #       *Note* - using gold standard miRNA refs ()
 ####################################################
+
 
 # Use STAR-barcoded .bam file & filter:
 #   - Don't filter by length, as the longest hairpin miRNA (in mouse) is 147nt
@@ -32,17 +33,16 @@
 #   - Clip the 3' end of the read, to remove non-templated additions
 rule bowtie2_prep_bam_miRNA:
     input:
-        BAM = '{OUTDIR}/{SAMPLE}/STARsolo/Aligned.sortedByCoord.dedup.out.bam'
+        BAM="{OUTDIR}/{SAMPLE}/STARsolo/Aligned.sortedByCoord.dedup.out.bam",
     output:
-        BAM = temp('{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/tmp.bam')
+        BAM=temp("{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/tmp.bam"),
     params:
-        MEMLIMIT = config['MEMLIMIT'],
-        MAX_SHORT_READ_LENGTH = config['MAX_SHORT_READ_LENGTH'],
-        TRIM_N = 4,
-        TRIM_OPTION = "end" # option: start, end, both
-    threads:
-        config['CORES']
-        # 1
+        MEMLIMIT=config["MEMLIMIT"],
+        MAX_SHORT_READ_LENGTH=config["MAX_SHORT_READ_LENGTH"],
+        TRIM_N=4,
+        TRIM_OPTION="end",  # option: start, end, both
+    threads: config["CORES"]
+    # 1
     run:
         shell(
             f"""
@@ -60,30 +60,29 @@ rule bowtie2_prep_bam_miRNA:
             > {output.BAM}
             """
         )
-        
-        
-# Run bowtie2 on miRNA reference from pirbase in end-to-end/sensitive mode 
+
+
+# Run bowtie2 on miRNA reference from pirbase in end-to-end/sensitive mode
 #   https://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#end-to-end-alignment-versus-local-alignment
 #   change to `--sensitive-local` for other applications
 # To generate: `bowtie2-build mmu.gold.fa.gz ./index > build.log`
 rule bowtie2_align_mature_miRNA:
     input:
-        BAM = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/tmp.bam'
+        BAM="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/tmp.bam",
         # R1_FQ_FILTERED = '{OUTDIR}/{SAMPLE}/tmp/{SAMPLE}_R1_final_filtered_short.fq.gz',
         # R2_FQ_FILTERED = '{OUTDIR}/{SAMPLE}/tmp/{SAMPLE}_R2_final_filtered_short.fq.gz'        
     output:
-        TMP_ALIGNED_BAM = temp('{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/tmp.aligned.bam'),
-        MATURE_BAM = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/mature.aligned.bam',
-        UNALIGNED_BAM = temp('{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/unaligned.bam')
+        TMP_ALIGNED_BAM=temp("{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/tmp.aligned.bam"),
+        MATURE_BAM="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/mature.aligned.bam",
+        UNALIGNED_BAM=temp("{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/unaligned.bam"),
     params:
-        OUTDIR = config['OUTDIR'],
-        MEMLIMIT = config['MEMLIMIT'],
-        REF = config['miRNA_MATURE_INDEX']
+        OUTDIR=config["OUTDIR"],
+        MEMLIMIT=config["MEMLIMIT"],
+        REF=config["miRNA_MATURE_INDEX"],
     log:
-        log = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/bowtie2_mature.log'    
-    threads:
-        # 1
-        config['CORES']
+        log="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/bowtie2_mature.log",
+    # 1
+    threads: config["CORES"]
     run:
         # Align to mature miR reference
         shell(
@@ -98,7 +97,7 @@ rule bowtie2_align_mature_miRNA:
             > {output.TMP_ALIGNED_BAM}
             """
         )
-            # --very-sensitive-local \
+        # --very-sensitive-local \
 
         # Filter to save aligned reads (mature miRs)
         shell(
@@ -122,21 +121,21 @@ rule bowtie2_align_mature_miRNA:
             """
         )
 
+
 # Align to hairpin miR reference, toss unaligned
 rule bowtie2_align_hairpin_miRNA:
     input:
-        BAM = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/unaligned.bam'      
+        BAM="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/unaligned.bam",
     output:
-        BAM = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/hairpin.aligned.bam'
+        BAM="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/hairpin.aligned.bam",
     params:
-        OUTDIR = config['OUTDIR'],
-        MEMLIMIT = config['MEMLIMIT'],
-        REF = config['miRNA_HAIRPIN_INDEX']
+        OUTDIR=config["OUTDIR"],
+        MEMLIMIT=config["MEMLIMIT"],
+        REF=config["miRNA_HAIRPIN_INDEX"],
     log:
-        log = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/bowtie2_hairpin.log'    
-    threads:
-        # 1
-        config['CORES']
+        log="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/bowtie2_hairpin.log",
+    # 1
+    threads: config["CORES"]
     run:
         shell(
             f"""
@@ -151,22 +150,23 @@ rule bowtie2_align_hairpin_miRNA:
             > {output.BAM}
             """
         )
-            # --very-sensitive-local \
+        # --very-sensitive-local \
+
+
 
 # Merge hairpin & mature alignment records
 rule merge_aligned_bams_miRNA:
     input:
-        MATURE_BAM = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/mature.aligned.bam',
-        HAIRPIN_BAM = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/hairpin.aligned.bam'
+        MATURE_BAM="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/mature.aligned.bam",
+        HAIRPIN_BAM="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/hairpin.aligned.bam",
     output:
-        BAM = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.bam'
+        BAM="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.bam",
     params:
-        OUTDIR = config['OUTDIR'],
-        MEMLIMIT = config['MEMLIMIT'],
-        REF = config['miRNA_HAIRPIN_INDEX']
-    threads:
-        1
-        # config['CORES']
+        OUTDIR=config["OUTDIR"],
+        MEMLIMIT=config["MEMLIMIT"],
+        REF=config["miRNA_HAIRPIN_INDEX"],
+    threads: 1
+    # config['CORES']
     run:
         shell(
             f"""
@@ -178,11 +178,10 @@ rule merge_aligned_bams_miRNA:
 # Index the deduplicated .bam file
 rule sortAlignedBAM_miRNA:
     input:
-        BAM = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.bam'
+        BAM="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.bam",
     output:
-        BAM = temp('{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.sorted.bam')
-    threads:
-        config['CORES']
+        BAM=temp("{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.sorted.bam"),
+    threads: config["CORES"]
     run:
         shell(
             f"""
@@ -195,13 +194,12 @@ rule sortAlignedBAM_miRNA:
 # Tag bam w/ chromosome/miRNA it aligned to (saved in "GN" tag, like STARsolo)
 rule tagSortedBam_miRNA:
     input:
-        BAM = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.sorted.bam'
+        BAM="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.sorted.bam",
     output:
-        BAM = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.sorted.tagged.bam' #TODO: add temp() in favor of just keeping the deduped bam?
+        BAM="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.sorted.tagged.bam",  #TODO: add temp() in favor of just keeping the deduped bam?
     params:
-        OUTDIR = config['OUTDIR']
-    threads:
-        2
+        OUTDIR=config["OUTDIR"],
+    threads: 2
     run:
         shell(
             f"""
@@ -216,11 +214,10 @@ rule tagSortedBam_miRNA:
 # Index the sorted & deduplicated .bam file
 rule indexSortedTaggedBAM_miRNA:
     input:
-        BAM = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.sorted.tagged.bam'
+        BAM="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.sorted.tagged.bam",
     output:
-        BAI = temp('{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.sorted.tagged.bam.bai')
-    threads:
-        config['CORES']
+        BAI=temp("{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.sorted.tagged.bam.bai"),
+    threads: config["CORES"]
     run:
         shell(
             f"""
@@ -228,19 +225,19 @@ rule indexSortedTaggedBAM_miRNA:
             """
         )
 
+
 # Generate count matrix w/ umi-tools for miRNAs
 rule umitools_count_miRNA:
     input:
-        BAM = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.sorted.tagged.bam',
-        BAI = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.sorted.tagged.bam.bai'
-    output:        
-        COUNTS = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/counts.tsv.gz'
+        BAM="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.sorted.tagged.bam",
+        BAI="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.sorted.tagged.bam.bai",
+    output:
+        COUNTS="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/counts.tsv.gz",
     params:
-        OUTDIR = config['OUTDIR']
+        OUTDIR=config["OUTDIR"],
     log:
-        log = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/count.log'
-    threads:
-        1
+        log="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/count.log",
+    threads: 1
     run:
         shell(
             f"""
@@ -256,41 +253,41 @@ rule umitools_count_miRNA:
                 -S {output.COUNTS}
             """
         )
-            # --wide-format-cell-counts \
+        # --wide-format-cell-counts \
+
+
 
 # Convert the long-format counts into a format that people can actually use
 rule counts_to_sparse_miRNA:
     input:
-        COUNTS = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/counts.tsv.gz'
+        COUNTS="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/counts.tsv.gz",
     output:
-        BCS = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/raw/barcodes.tsv.gz',
-        FEATS = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/raw/features.tsv.gz',
-        COUNTS = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/raw/matrix.mtx.gz'
+        BCS="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/raw/barcodes.tsv.gz",
+        FEATS="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/raw/features.tsv.gz",
+        COUNTS="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/raw/matrix.mtx.gz",
     params:
-        OUTDIR = config['OUTDIR']
-    threads:
-        1
+        OUTDIR=config["OUTDIR"],
+    threads: 1
     run:
-        output_dir = output.COUNTS.replace('/matrix.mtx.gz','')
+        output_dir = output.COUNTS.replace("/matrix.mtx.gz", "")
         shell(
             f"""
             mkdir -p {output_dir}
             python scripts/py/long2mtx.py {input.COUNTS} {output_dir}
-            """   
+            """
         )
 
 
 # Dedup the .bam (do NOT split across chromosomes, b/c of custom reference)
 rule umitools_dedupSortedBAM_miRNA:
     input:
-        BB_WHITELIST = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
-        BAM = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.sorted.tagged.bam'
+        BB_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
+        BAM="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.sorted.tagged.bam",
     output:
-        BAM = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.sorted.tagged.dedup.bam'
-    threads:
-        config['CORES']
+        BAM="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.sorted.tagged.dedup.bam",
+    threads: config["CORES"]
     log:
-        log = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/dedup.log'
+        log="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/dedup.log",
     run:
         tmp_recipe = RECIPE_DICT[wildcards.SAMPLE]
 
@@ -312,11 +309,10 @@ rule umitools_dedupSortedBAM_miRNA:
 # Index the sorted & deduplicated .bam file
 rule indexSortedTaggedDedupBAM_miRNA:
     input:
-        BAM = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.sorted.tagged.dedup.bam'
+        BAM="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.sorted.tagged.dedup.bam",
     output:
-        BAI = '{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.sorted.tagged.dedup.bam.bai'
-    threads:
-        config['CORES']
+        BAI="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/aligned.sorted.tagged.dedup.bam.bai",
+    threads: config["CORES"]
     run:
         shell(
             f"""
