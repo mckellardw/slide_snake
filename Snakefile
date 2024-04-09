@@ -43,6 +43,7 @@ ONT = {SAMP: READ.split() for SAMP, READ in ONT.items() if READ}
 EXEC = config["EXEC"]
 
 ### Pre-run setup ######################################################################
+#TODO- move to utils
 # Build dictionaries of recipes & species to use for alignment
 RECIPE_DICT = {}    # Dictionary of recipes to use for each sample
 RECIPE_ONT_DICT = {}    # Dictionary of recipes to use for each sample
@@ -83,7 +84,7 @@ for i in range(0,SAMPLE_SHEET.shape[0]):
 
 ### include rules #######################################################################
 # Pre-flight module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-include: "rules/0a_split_bb.smk" #TODO
+include: "rules/0a_barcode_maps.smk" 
 include: "rules/0_utils.smk" 
 
 # Short-read module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
