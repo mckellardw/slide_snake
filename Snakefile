@@ -19,8 +19,6 @@ RECIPE_SHEET = pd.read_csv(
 TMPDIR = config["TMPDIR"]
 OUTDIR = config["OUTDIR"]
 
-### Conda environment locations ########################################################
-
 ### Variables and references ###########################################################
 SAMPLE_SHEET = pd.read_csv(
     config["SAMPLE_SHEET_PATH"], 
@@ -116,12 +114,12 @@ include: "rules/short_read/4c_kallisto_velo.smk"
 # include: "rules/short_read/5_miRNA_bowtie2.smk"
 
 # ONT module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-include: "rules/ont/0_utils.smk"
 include: "rules/ont/1a_preprocessing.smk"
 include: "rules/ont/1b_cutadapt.smk"
 include: "rules/ont/1c_minimap2.smk"
 include: "rules/ont/1d_STAR.smk"
 include: "rules/ont/1e_qualimap.smk"
+include: "rules/ont/2_custom_read_qc.smk"
 include: "rules/ont/2_fastqc.smk"
 include: "rules/ont/2_nanoQC.smk"
 # include: "rules/ont/2_nanoplot.smk"
@@ -156,11 +154,18 @@ rule all:
         #             f"Aligned.sortedByCoord.out.bam"
         #         ]
         # ], # ONT outputs
+
         [f"{OUTDIR}/{SAMPLE}/fastqc/{TRIM}"
             for SAMPLE in ONT.keys()
             for READ in ["R1","R2"]
-            for TRIM in ["ont_preAdapterScan",f"ont_postCutadapt_{READ}"]
-        ], # ONT nanoplot
+            for TRIM in ["ont_preAdapterScan",f"ont_preCutadapt_{READ}",f"ont_postCutadapt_{READ}"]
+        ], # ONT fastqc
+        [f"{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc.{FILE}"
+            for SAMPLE in ONT.keys()
+            for READ in ["R1","R2"]
+            for TRIM in ["1_preCutadapt","2_postCutadapt"]
+            for FILE in ["tsv", "png"]
+        ], # ONT readqc
         # [f"{OUTDIR}/{SAMPLE}/ont/nanoqc/{TRIM}/{FILE}" 
         #     for SAMPLE in ONT.keys()
         #     for READ in ["R1","R2"]
