@@ -1,17 +1,16 @@
 # fastqc before trimming
 rule ont_nanoQC:
     input:
-        MERGED_FQ = '{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz'
+        MERGED_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz",
     output:
-        HTML = "{OUTDIR}/{SAMPLE}/nanoqc/ont_preAdapterScan/nanoQC.html"
+        HTML="{OUTDIR}/{SAMPLE}/ont/nanoqc/ont_preAdapterScan/nanoQC.html",
     params:
-        MIN_LENGTH = 8,
-        NANOQC = EXEC['NANOQC']
-    threads:
-        # config['CORES']
-        1
+        MIN_LENGTH=8,
+        NANOQC=EXEC["NANOQC"],
+    # config['CORES']
+    threads: 1
     log:
-        log = "{OUTDIR}/{SAMPLE}/nanoqc/ont_preAdapterScan/NanoQC.log"
+        log="{OUTDIR}/{SAMPLE}/ont/nanoqc/ont_preAdapterScan/NanoQC.log",
     conda:
         f"{workflow.basedir}/envs/nanoQC.yml"
     shell:
@@ -21,21 +20,24 @@ rule ont_nanoQC:
         {params.NANOQC} \
             --outdir $(dirname {output.HTML}) \
             --minlen {params.MIN_LENGTH} \
-            {input.MERGED_FQ}
+            {input.MERGED_FQ} \
+        2>> {log.log}
         """
+
 
 # nanoqc after cutadapt trimming
 rule ont_nanoQC_postCutadapt:
     input:
-        FQ = '{OUTDIR}/{SAMPLE}/tmp/ont/cut_{READ}.fq.gz'
+        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_{READ}.fq.gz",
     output:
-        HTML = "{OUTDIR}/{SAMPLE}/nanoqc/ont_postCutadapt_{READ}/nanoQC.html"
+        HTML="{OUTDIR}/{SAMPLE}/ont/nanoqc/ont_postCutadapt_{READ}/nanoQC.html",
     params:
-        MIN_LENGTH = 8,
-        NANOQC = EXEC['NANOQC']
-    threads:
-        config['CORES']
-        # min([config['CORES'],8]) # 8 core max
+        MIN_LENGTH=8,
+        NANOQC=EXEC["NANOQC"],
+    threads: config["CORES"]
+    # min([config['CORES'],8]) # 8 core max
+    log:
+        log="{OUTDIR}/{SAMPLE}/ont/nanoqc/ont_postCutadapt_{READ}/NanoQC.log",
     conda:
         f"{workflow.basedir}/envs/nanoQC.yml"
     shell:
@@ -45,5 +47,6 @@ rule ont_nanoQC_postCutadapt:
         {params.NANOQC} \
             --outdir $(dirname {output.HTML}) \
             --minlen {params.MIN_LENGTH} \
-            {input.FQ}
+            {input.FQ} \
+        2>> {log.log}
         """

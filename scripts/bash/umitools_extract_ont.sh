@@ -106,4 +106,4 @@ umi_tools extract \
     --read2-in=${R2_FQ_IN} \
     --stdout=${R1_FQ_OUT} \
     --read2-out=${R2_FQ_OUT} \
-    --log=${LOG}
+    -L ${LOG}
