@@ -10,7 +10,7 @@ rule splitBBList:
         BB_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
         BB_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
     run:
-        recipes = RECIPE_DICT[wildcards.SAMPLE]
+        recipes = get_recipe(wildcards, mode="ONT")
 
         # get whitelist from map file
         shell(f"cut -f1 {input.BB_map} > {output.BB}")
@@ -40,9 +40,6 @@ rule splitBBList:
             )
 
 
-#
-
-
 # For Seeker - Insert the adapter sequence into the bead barcodes for easier barcode matching/alignment with STARsolo
 rule insert_adapter_BB_list:
     input:
@@ -57,7 +54,9 @@ rule insert_adapter_BB_list:
         ADAPTER=config["R1_INTERNAL_ADAPTER"],  # Curio R1 internal adapter
         R1=config["R1_PRIMER"],  # R1 PCR primer (Visium & Seeker)
     run:
-        recipes = "".join(RECIPE_DICT[wildcards.SAMPLE])
+        recipes = "".join(
+            [get_recipe(wildcards, mode="ONT"), get_recipe(wildcards, mode="illumina")]
+        )
 
         if "seeker" in recipes:
             # load bb

@@ -330,13 +330,10 @@ rule ont_split_fastq_to_R1_R2:
 #     run:
 #         import os
 #         import pandas as pd
-
 #         dfs = [pd.read_csv(fn, sep="\t") for fn in input.tsv_files]
 #         df = pd.concat(dfs, axis=0)
 #         df.to_csv(output[0], sep="\t", index=False)
 #         [os.remove(fn) for fn in input]
-
-
 # def gather_fastq_files_from_run(wildcards):
 #     checkpoint_dir = checkpoints.call_cat_fastq.get(**wildcards).output[0]
 #     return expand(

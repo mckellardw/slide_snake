@@ -45,6 +45,7 @@ rule ont_fastQC_preCutadapt:
             """
         )
 
+
 # fastqc after cutadapt trimming
 rule ont_fastQC_postCutadapt:
     input:

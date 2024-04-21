@@ -265,7 +265,8 @@ rule ont_error_correct_barcodes:
         adapter1_suff_length=config["BARCODE_ADAPTER1_SUFF_LENGTH"],
         # kit=lambda w: sample_sheet.loc[w.run_id, "kit_name"],
         KIT="3prime",  #['3prime', '5prime', 'multiome']
-        umi_length=lambda w: get_umi_length(w),
+        # UMI_LENGTH=lambda w: get_umi_length(w),
+        UMI_LENGTH=lambda w: get_recipe_info(w.RECIPE, "UMI.length"),
         WHITELIST=lambda w: get_whitelist(w),
     threads: config["CORES"]
     # 1
@@ -298,9 +299,6 @@ rule ont_error_correct_barcodes:
         # echo "Barcode length: {barcode_length}" > {log.log}
         #     --barcode_length {barcode_length} \
 
-
-
-#
 
 
 rule ont_index_bc_corrected_output:

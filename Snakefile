@@ -67,7 +67,7 @@ for i in range(0,SAMPLE_SHEET.shape[0]):
     SPECIES_DICT[tmp_sample] = list(SAMPLE_SHEET["species"])[i]
 
     # short-read-specific dicts
-    if R1_FQS[tmp_sample] is not None:
+    if tmp_sample in R2_FQS.keys():
         RECIPE_DICT[tmp_sample] = list(SAMPLE_SHEET["recipe"])[i].split()
         IDX_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_idx"])[i]
         T2G_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_t2g"])[i]

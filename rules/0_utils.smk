@@ -43,14 +43,14 @@ def get_fqs(w):
     return [R1, R2]
 
 
-
 def get_STAR_ref(w):
     try:
         star_ref = REF_DICT[w.SAMPLE]
     except:
         star_ref = "No reference given! Check your sample sheet!"
-    
+
     return star_ref
+
 
 def get_STAR_extra_params(w):
     keys = [
@@ -75,17 +75,24 @@ def get_STAR_extra_params(w):
     return star_info
 
 
-# Build full path for one or more files; return delimited string for multiple files
-def build_abs_path(files, abs_path, sep=" "):
-    if isinstance(files, str):
-        file_abs_path = f"{abs_path}/{files}"
-    elif isinstance(whitelist, list):
-        file_abs_path = sep.join([f"{abs_path}/{f}" for f in files])
+def get_recipe(w, mode="ONT"):
+    if mode == "ONT":
+        try:
+            return RECIPE_ONT_DICT[w.SAMPLE]
+        except:
+            print("No ONT recipe given! Check your sample sheet!")
+            return ""
+    elif mode == "illumina":
+        try:
+            return RECIPE_DICT[w.SAMPLE]
+        except:
+            print("No ONT recipe given! Check your sample sheet!")
+            return ""
 
 
 # Pull info from recipe sheet
 def get_recipe_info(recipe, info_col):
-    return RECIPE_SHEET[recipe, info_col]
+    return RECIPE_SHEET[info_col][recipe]
 
 
 # Convert a megabyte value (str) to bytes [int]
@@ -95,8 +102,15 @@ def megabytes2bytes(mb):
     return bytes_out
 
 
-### helper functions ########################################################################
-# Borrowed/modified from sockeye - https://github.com/nanoporetech/sockeye
+# Build full path for one or more files; return delimited string for multiple files
+def build_abs_path(files, abs_path, sep=" "):
+    if isinstance(files, str):
+        file_abs_path = f"{abs_path}/{files}"
+    elif isinstance(whitelist, list):
+        file_abs_path = sep.join([f"{abs_path}/{f}" for f in files])
+
+
+###### TO BE DEPRECATED
 def get_barcode_length(w):
     """
     Get barcode length based on the recipe(s) passed.

@@ -63,7 +63,7 @@ rule ont_cutadapt:
             for recipe in RECIPE_ONT_DICT[wildcards.SAMPLE]
         ]
         # R1_LENGTH = RECIPE_SHEET["R1.finalLength"][recipe]
-        R1_LENGTH = max(R1_LENGTHS)  # + len(params.R1) # Add R1 primer length for ONT
+        R1_LENGTH = min(R1_LENGTHS)  # + len(params.R1) # Add R1 primer length for ONT
 
         R1 = input.R1_FQ
         # R1 = input.R1_FQ_Trimmed
@@ -78,14 +78,13 @@ rule ont_cutadapt:
             echo "" >> {log.log}
 
             {EXEC['CUTADAPT']} \
-                --minimum-length {R1_LENGTH}:{params.MIN_R2_LENGTH} \
+                --minimum-length {R1_LENGTH}: \
                 --error-rate {params.HETEROPOLYMER_ERROR_RATE} \
                 --overlap {params.OVERLAP} \
                 --match-read-wildcards \
                 --times {params.ADAPTER_COUNT} \
-                -g READ1={params.R1} \
-                -A POLYA_3p="{params.POLYA};max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
-                -A POLYT_3p="{params.POLYT};max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
+                -g READ1=X{params.R1} \
+                -A POLYA_3p="{params.POLYA}X;max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
                 -B TSO={params.TSO} \
                 -B TXG_TSO={params.TXG_TSO} \
                 -B SEEKER_LINKER={params.SEEKER_BB_LINKER} \
@@ -98,6 +97,9 @@ rule ont_cutadapt:
             1>> {log.log}
             """
         )
+        # --minimum-length {R1_LENGTH}:{params.MIN_R2_LENGTH} \
+        # --maximum-length {2*R1_LENGTH}: \
+        # -A POLYT_3p="{params.POLYT};max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
 
         # -G {params.FIVE_PRIME_R2_SEEKER_BB_ADAPTER} \
         # -B {params.rcTSO} \

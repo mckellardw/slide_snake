@@ -3,9 +3,9 @@ rule ont_readQC_preCutadapt:
     input:
         FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_{READ}.fq.gz",
     output:
-        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/1_preCutadapt/{READ}_qc.tsv", #TODO compress this?
+        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/1_preCutadapt/{READ}_qc.tsv",  #TODO compress this?
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/readqc/1_preCutadapt/{READ}_qc.log"
+        log="{OUTDIR}/{SAMPLE}/ont/readqc/1_preCutadapt/{READ}_qc.log",
     threads: config["CORES"]
     shell:
         """
@@ -24,7 +24,7 @@ rule ont_readQC_postCutadapt:
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/readqc/2_postCutadapt/{READ}_qc.tsv",
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/readqc/2_postCutadapt/{READ}_qc.log"
+        log="{OUTDIR}/{SAMPLE}/ont/readqc/2_postCutadapt/{READ}_qc.log",
     threads: config["CORES"]
     shell:
         """
@@ -35,12 +35,13 @@ rule ont_readQC_postCutadapt:
         2>&1 | tee {log.log}
         """
 
+
 rule ont_readQC_summaryplot:
     input:
         TSV="{OUTDIR}/{SAMPLE}/ont/readqc/{CUT}/{READ}_qc.tsv",
     output:
         IMG="{OUTDIR}/{SAMPLE}/ont/readqc/{CUT}/{READ}_qc.png",
-    threads: 1    
+    threads: 1
     conda:
         f"{workflow.basedir}/envs/ggplot2.yml"
     shell:
