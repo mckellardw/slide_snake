@@ -110,8 +110,6 @@ include: "rules/short_read/4c_kallisto_velo.smk"
 
 ## small RNA stuff
 # include: "rules/short_read/5_mirge.smk"
-# include: "rules/short_read/5_piRNA_bowtie2.smk"
-# include: "rules/short_read/5_miRNA_bowtie2.smk"
 
 # ONT module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 include: "rules/ont/1a_preprocessing.smk"
@@ -121,13 +119,10 @@ include: "rules/ont/1d_STAR.smk"
 include: "rules/ont/1e_qualimap.smk"
 include: "rules/ont/2_custom_read_qc.smk"
 include: "rules/ont/2_fastqc.smk"
-include: "rules/ont/2_nanoQC.smk"
-# include: "rules/ont/2_nanoplot.smk"
 
 # Final outputs module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## scanpy stuff
 include: "rules/6a_scanpy_init.smk"
-# include: "rules/6b_mudata_init.smk"
 
 ### target rule(s) #####################################################################
 rule all:
@@ -166,19 +161,7 @@ rule all:
             for TRIM in ["1_preCutadapt","2_postCutadapt"]
             for FILE in ["tsv", "png"]
         ], # ONT readqc
-        # [f"{OUTDIR}/{SAMPLE}/ont/nanoqc/{TRIM}/{FILE}" 
-        #     for SAMPLE in ONT.keys()
-        #     for READ in ["R1","R2"]
-        #     for TRIM in ["ont_preAdapterScan",f"ont_postCutadapt_{READ}"]
-        #     for FILE in ["nanoQC.html"]
-        # ], # read QC with nanoQC
-
-        # [f"{OUTDIR}/{SAMPLE}/nanoplot/{TRIM}/summary.txt" 
-        #     for SAMPLE in ONT.keys() 
-        #     for RECIPE in RECIPE_ONT_DICT[SAMPLE]
-        #     for READ in ["R1","R2"]
-        #     for TRIM in ["ont_preAdapterScan",f"ont_postCutadapt_{READ}"]
-        # ], # ONT NanoPlot
+        
         [f"{OUTDIR}/{SAMPLE}/qualimap/ont/{TOOL}/{RECIPE}/{FILE}"
             for SAMPLE in ONT.keys() 
             for RECIPE in RECIPE_ONT_DICT[SAMPLE]
@@ -236,13 +219,14 @@ rule all:
         # ], # Top BLAST results for unmapped R2 reads   
         
         # Module 4 - kallisto & bustools
+        # expand( # kallisto/bustools count mats
+        #     "{OUTDIR}/{SAMPLE}/kb_velo/{LAYER}/output.mtx.gz",
+        #     OUTDIR=config["OUTDIR"],
+        #     LAYER=["spliced", "unspliced"],
+        #     SAMPLE=R2_FQS.keys()
+        # ),
 
         # Module 5 - small RNA
-        # [f"{OUTDIR}/{SAMPLE}/{SMALL}/{RECIPE}/raw/output.h5ad" 
-        #     for SAMPLE in R2_FQS.keys() 
-        #     for RECIPE in RECIPE_DICT[SAMPLE] 
-        #     for SMALL in ["miRNA","piRNA"]
-        # ],# anndata files (with spatial info) - small RNA
         # [f"{OUTDIR}/{SAMPLE}/miRge_bulk/{RECIPE}/annotation.report.html" 
         #     for SAMPLE in R2_FQS.keys() 
         #     for RECIPE in RECIPE_DICT[SAMPLE] 
@@ -265,31 +249,3 @@ rule all:
         #     for RECIPE in RECIPE_DICT[SAMPLE] 
         #     for KB in ["kbpython"] # "kb_velo", "kb_nuc" 
         # ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`
-
-
-## EXTRANEOUS #######################################################################
-        # expand( # count matrices for bowtie2 alignment to small RNA reference(s)
-        #     "{OUTDIR}/{SAMPLE}/{SMALL_RNA}/{TYPE}",
-        #     OUTDIR=config["OUTDIR"],
-        #     SAMPLE=R2_FQS.keys(),
-        #     SMALL_RNA=["piRNA","miRNA"],
-        #     TYPE=["counts.tsv.gz","raw/matrix.mtx.gz"]
-        # ),
-        # expand( #non-deduplicated .bam
-        #     "{OUTDIR}/{SAMPLE}/{REF}/Aligned.sortedByCoord.out.bam.bai",
-        #     OUTDIR=config["OUTDIR"],
-        #     SAMPLE=R2_FQS.keys(),
-        #     REF=["STARsolo_rRNA", "STARsolo"]
-        # ),
-        # expand( # kallisto/bustools count mats
-        #     "{OUTDIR}/{SAMPLE}/kb/raw/output.mtx.gz",
-        #     OUTDIR=config["OUTDIR"],
-        #     SAMPLE=R2_FQS.keys()
-        # ),
-
-        # expand( # kallisto/bustools count mats
-        #     "{OUTDIR}/{SAMPLE}/kb_velo/{LAYER}/output.mtx.gz",
-        #     OUTDIR=config["OUTDIR"],
-        #     LAYER=["spliced", "unspliced"],
-        #     SAMPLE=R2_FQS.keys()
-        # ),
