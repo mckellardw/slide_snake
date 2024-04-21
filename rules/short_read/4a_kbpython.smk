@@ -54,22 +54,22 @@ rule kbpython_standard:
 
         shell(
             f"""
-                                    mkdir -p $(dirname {output.BUS})
+                                            mkdir -p $(dirname {output.BUS})
 
-                                    {EXEC['KB']}  count \
-                                        -i {params.KB_IDX} \
-                                        -g {params.KB_T2G} \
-                                        --kallisto {EXEC["KALLISTO"]} \
-                                        --bustools {EXEC["BUSTOOLS"]} \
-                                        -o $(dirname {output.BUS}) \
-                                        --strand forward \
-                                        -mm \
-                                        -x {params.KB_X} \
-                                        -w {input.BB} \
-                                        -t {threads} \
-                                        {R1} {R2} \
-                                    2> {log.log}
-                                    """
+                                            {EXEC['KB']}  count \
+                                                -i {params.KB_IDX} \
+                                                -g {params.KB_T2G} \
+                                                --kallisto {EXEC["KALLISTO"]} \
+                                                --bustools {EXEC["BUSTOOLS"]} \
+                                                -o $(dirname {output.BUS}) \
+                                                --strand forward \
+                                                -mm \
+                                                -x {params.KB_X} \
+                                                -w {input.BB} \
+                                                -t {threads} \
+                                                {R1} {R2} \
+                                            2> {log.log}
+                                            """
         )
         # -m {resources.MEM_GB} \
         # --report \

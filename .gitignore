@@ -8,17 +8,21 @@
 .vscode/*
 
 # Big data files
-**.fastq
-**.fq
-**.fastq.gz
-**.fq.gz
-**.bw
-**.bam
-**.fa
-**.fa.gz
+# **.fastq
+# **.fq
+# **.fastq.gz
+# **.fq.gz
+# **.bw
+# **.bam
+# **.fa
+# **.fa.gz
 
 # Misc.
 .~lock.*
+
+# R/jupyter session files
+.RData
+.Rhistory
 
 # slide_snake
 sandbox/**

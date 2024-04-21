@@ -9,11 +9,13 @@
 # SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/visium/CS001-5.csv
 # SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/visium/vy3.csv
 # SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/visium/vy3D.csv
-SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/seeker/SHVN_1_2-NYGC.csv
+# SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/seeker/SHVN_1_2-NYGC.csv
+# SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/STRS_SHVN-NYGC.csv
+SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/microST/E073.csv
 
 # Resource parameters
-CORES: 16               # how many cores to give each process
-MEMLIMIT: 128000000000  # limit in bytes
+CORES: 24               # how many cores to give each process
+MEMLIMIT: 256000000000  # limit in bytes; used for STAR
 MEMLIMIT_MB: 128000     # limit in megabytes
 MEMLIMIT_GB: 128G       # mem limit for kallisto
 
@@ -78,9 +80,9 @@ READ_STRUCTURE_BATCH_SIZE: 40000
 READ_STRUCTURE_FLAGS: ""
 
 MM2_REF: "/gpfs/commons/groups/innovation/dwm/ref_snake/out/mus_musculus/genome/minimap2"
-REF_GENOME_FASTA: "/gpfs/commons/groups/innovation/dwm/ref_snake/out/mus_musculus/genome/raw/genome.fa"
-REF_CHROM_SIZES: "/gpfs/commons/groups/innovation/dwm/ref_snake/out/mus_musculus/genome/raw/chrom_sizes.tsv"
-REF_GENES_BED: "/gpfs/commons/groups/innovation/dwm/ref_snake/out/mus_musculus/genome/raw/annotations.bed"
+REF_GENOME_FASTA: "/gpfs/commons/groups/innovation/dwm/ref_snake/out/mus_musculus/raw/genome.fa"
+REF_CHROM_SIZES: "/gpfs/commons/groups/innovation/dwm/ref_snake/out/mus_musculus/raw/chrom_sizes.tsv"
+REF_GENES_BED: "/gpfs/commons/groups/innovation/dwm/ref_snake/out/mus_musculus/raw/annotations.bed"
 
 RESOURCES_MM2_MEM_GB: 6
 RESOURCES_MM2_MAX_THREADS: 12
@@ -88,5 +90,5 @@ RESOURCES_MM2_FLAGS: "-I 4G"
 
 BARCODE_ADAPTER1_SUFF_LENGTH: 10
 # BARCODE_MIN_QUALITY: 12
-BARCODE_MAX_ED: 6
+BARCODE_MAX_ED: 3
 BARCODE_MIN_ED_DIFF: 1
