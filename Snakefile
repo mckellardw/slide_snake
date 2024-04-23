@@ -116,8 +116,8 @@ include: "rules/ont/1a_preprocessing.smk"
 include: "rules/ont/1b_cutadapt.smk"
 include: "rules/ont/1c_minimap2.smk"
 include: "rules/ont/1d_STAR.smk"
-include: "rules/ont/1e_qualimap.smk"
-include: "rules/ont/2_custom_read_qc.smk"
+include: "rules/ont/2_qualimap.smk"
+include: "rules/ont/2_read_qc.smk"
 include: "rules/ont/2_fastqc.smk"
 
 # Final outputs module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -132,14 +132,10 @@ rule all:
             for SAMPLE in ONT.keys() 
             for RECIPE in RECIPE_ONT_DICT[SAMPLE]
             for FILE in [
-                    # "merged_stranded.fq.gz",
                     f"minimap2/{RECIPE}/sorted.bam",
                     f"minimap2/{RECIPE}/sorted_bc.bam",
                     f"minimap2/{RECIPE}/sorted_bc_gn.bam",
-                    # f"minimap2/{RECIPE}/counts.tsv",
-                    # f"minimap2/{RECIPE}/raw/umitools_counts.tsv.gz",
                     f"minimap2/{RECIPE}/raw/output.h5ad",
-                    # "adapter_scan_readids/full_len_R2.fq.gz"
                 ]
         ], # ONT outputs
         # [f"{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/{FILE}" 

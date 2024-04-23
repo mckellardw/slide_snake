@@ -133,11 +133,10 @@ rule ont_call_adapter_scan:
     params:
         # batch_size = config["READ_STRUCTURE_BATCH_SIZE"],
         KIT="3prime",  #['3prime', '5prime', 'multiome']
-        # kit=lambda w: sample_sheet.loc[w.run_id, "kit_name"]
     # conda:
     #     f"{workflow.basedir}/envs/slsn_ont_prep.yml"
-    # log:
-    #     log="{OUTDIR}/{SAMPLE}/ont/adapter_scan.log"
+    log:
+        log="{OUTDIR}/{SAMPLE}/ont/adapter_scan.log",
     shell:
         """
         python scripts/py/adapter_scan_vsearch.py \
@@ -145,11 +144,9 @@ rule ont_call_adapter_scan:
             --output_fastq {output.FQ} \
             --output_tsv {output.TSV} \
             -t {threads} \
-            {input.FQ} 
+            {input.FQ} \
+        2>&1 | tee {log.log}
         """
-
-
-# --batch_size {params.batch_size} \
 
 
 # Write lists of read IDs for each adapter type
@@ -160,7 +157,6 @@ rule ont_readIDs_by_adapter_type:
     output:
         FULL_LEN="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
         SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
-        # DIR = directory("{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids"),
     threads: config["CORES"]
     run:
         shell(
@@ -179,7 +175,6 @@ rule ont_merge_scan_lists:
     input:
         FULL_LEN="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
         SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
-        # DIR = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids",
     output:
         LST="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/keep.txt",
     threads: 1
@@ -196,7 +191,6 @@ rule ont_subset_fastq_by_adapter_type:
         LST="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/keep.txt",
         # FULL_LEN = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
         # SINGLE_ADAPTER1 = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
-        # DIR = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids",
     output:
         FQ=temp("{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq"),
         # FULL_LEN = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len.fq.gz",
@@ -221,12 +215,6 @@ rule ont_subset_fastq_by_adapter_type:
             {EXEC['PIGZ']} -p{threads} {output.FQ_ADAPTER.strip('.gz')}
             """
         )
-        # {EXEC['SEQTK']} subseq \
-        #     {output.FQ} \
-        #     {input.SINGLE_ADAPTER1} \
-        # >> {output.FQ_ADAPTER.strip('.gz')} \
-        # 2>> {log.log}
-
 
 
 # TODO- parallelize by chunking input fastq
@@ -253,105 +241,3 @@ rule ont_split_fastq_to_R1_R2:
              2> {log.log}
             """
         )
-        # {EXEC['PIGZ']} \
-        #     -p{threads} \
-        #     {output.R1_FQ.strip('.gz')} \
-        #     {output.R2_FQ.strip('.gz')}
-
-
-
-# TODO other rules to salvage non-full_len reads
-
-# rule call_paftools:
-#     input:
-#         gtf=str(REF_GENES_GTF),
-#     output:
-#         bed=REF_GENES_BED,
-#     # conda:
-#     #     "../envs/minimap2.yml"
-#     run:
-#         shell(
-#             f"""
-#             {EXEC['K8']} scripts/js/paftools.js gff2bed \
-#                 -j {input.gtf} \
-#                 > {output.bed}
-#             """
-#         )
-
-
-### TODO ################################################################################################
-# TODO: Chunk fastqs for speed up
-# checkpoint chunk_fastqs_ONT:
-#     input:
-#         MERGED_FQ = "{OUTDIR}/{SAMPLE}/ont/merged.fq.gz"#temp()
-#     output:
-#         FOFN = "{OUTDIR}/{SAMPLE}/ont/chunk/fofn.txt",
-#         DIR = directory("{OUTDIR}/{SAMPLE}/ont/chunk")
-#     params:
-#         N_CHUNKS = 16
-#     threads:
-#         config["CORES"]
-#     # conda:
-#     #     "../envs/stranding.yml"
-#     run:
-#         shell(
-#             f"""
-#             mkdir -p {output.DIR}
-
-#             find -L {input.dir} -type f -name '*' > {output.FOFN}
-#             """
-#         )
-
-#         shell(
-#             f"""
-#             python scripts/py/chunk_fastqs.py \
-#                 --threads {threads} \
-#                 --output_dir {output.DIR} \
-#                 {input}
-#             """
-#         )
-
-# TODO - add with chunking
-# def gather_tsv_files_from_run(wildcards):
-#     # throw and Exception if checkpoint is pending
-#     checkpoint_dir = checkpoints.call_cat_fastq.get(**wildcards).output[0]
-#     return expand(
-#         READ_CONFIG_CHUNKED,
-#         run_id=wildcards.run_id,
-#         batch_id=glob_wildcards(
-#             os.path.join(checkpoint_dir, "{batch_id}.fastq")
-#         ).batch_id,
-#     )
-# rule combine_adapter_tables:
-#     input:
-#         tsv_files=gather_tsv_files_from_run,
-#     output:
-#         READ_CONFIG,
-#     run:
-#         import os
-#         import pandas as pd
-#         dfs = [pd.read_csv(fn, sep="\t") for fn in input.tsv_files]
-#         df = pd.concat(dfs, axis=0)
-#         df.to_csv(output[0], sep="\t", index=False)
-#         [os.remove(fn) for fn in input]
-# def gather_fastq_files_from_run(wildcards):
-#     checkpoint_dir = checkpoints.call_cat_fastq.get(**wildcards).output[0]
-#     return expand(
-#         STRANDED_FQ_CHUNKED,
-#         run_id=wildcards.run_id,
-#         batch_id=glob_wildcards(
-#             os.path.join(checkpoint_dir, "{batch_id}.fastq")
-#         ).batch_id,
-#     )
-# rule combine_stranded_fastqs:
-#     input:
-#         fastq_files = gather_fastq_files_from_run,
-#     output:
-#         STRANDED_FQ,
-#     run:
-#         import shutil
-#         with open(output[0], "wb") as f_out:
-#             for chunked_fastq in input.fastq_files:
-#                 with open(chunked_fastq, "rb") as f_:
-#                     shutil.copyfileobj(f_, f_out)
-#         [os.remove(fn) for fn in input]
