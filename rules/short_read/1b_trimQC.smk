@@ -32,7 +32,7 @@ rule cutadapt:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/merged_R1.fq.gz",
         # R1_FQ_HardTrim = '{OUTDIR}/{SAMPLE}/tmp/merged_R1_HardTrim.fq.gz',
         # R1_FQ_InternalTrim = '{OUTDIR}/{SAMPLE}/tmp/merged_R1_InternalTrim.fq.gz',
-        R1_FQ_Trimmed="{OUTDIR}/{SAMPLE}/tmp/merged_trimmed_R1.fq.gz",
+        R1_FQ_Trimmed="{OUTDIR}/{SAMPLE}/tmp/merged_R1.fq.gz",
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/merged_R2.fq.gz",
     output:
         FINAL_R1_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz"),

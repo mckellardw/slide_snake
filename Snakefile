@@ -89,7 +89,6 @@ include: "rules/0_utils.smk"
 ## fastq preprocessing & QC
 include: "rules/short_read/1a_mergefqs.smk"
 include: "rules/short_read/1b_trimQC.smk"
-include: "rules/short_read/1d_fq2bam.smk"
 
 ## rRNA Filtering 
 include: "rules/short_read/2a_rRNA_bwa.smk"

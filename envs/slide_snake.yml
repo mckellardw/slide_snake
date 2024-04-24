@@ -426,4 +426,3 @@ dependencies:
       - webencodings==0.5.1
       - wrapt==1.15.0
       - yte==1.5.1
-prefix: /nfs/home/dmckellar/mambaforge/envs/slide_snake
