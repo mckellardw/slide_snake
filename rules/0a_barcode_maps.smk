@@ -2,7 +2,7 @@
 
 
 # Split the bead barcodes and save whitelists
-rule splitBBList:
+rule write_barcode_list_variants:
     input:
         BB_map=lambda wildcards: BB_DICT[wildcards.SAMPLE],
     output:
@@ -10,8 +10,8 @@ rule splitBBList:
         BB_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
         BB_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
     run:
-        recipes = get_recipe(wildcards, mode="ONT")
-
+        recipes = get_recipe(wildcards, mode="list")
+        
         # get whitelist from map file
         shell(f"cut -f1 {input.BB_map} > {output.BB}")
 
@@ -41,7 +41,7 @@ rule splitBBList:
 
 
 # For Seeker - Insert the adapter sequence into the bead barcodes for easier barcode matching/alignment with STARsolo
-rule insert_adapter_BB_list:
+rule insert_adapter_into_list:
     input:
         BB_MAP=lambda wildcards: BB_DICT[wildcards.SAMPLE],
     output:
@@ -54,9 +54,7 @@ rule insert_adapter_BB_list:
         ADAPTER=config["R1_INTERNAL_ADAPTER"],  # Curio R1 internal adapter
         R1=config["R1_PRIMER"],  # R1 PCR primer (Visium & Seeker)
     run:
-        recipes = "".join(
-            [get_recipe(wildcards, mode="ONT"), get_recipe(wildcards, mode="illumina")]
-        )
+        recipes = get_recipe(wildcards, mode="string")
 
         if "seeker" in recipes:
             # load bb

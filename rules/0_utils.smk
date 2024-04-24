@@ -86,7 +86,22 @@ def get_recipe(w, mode="ONT"):
         try:
             return RECIPE_DICT[w.SAMPLE]
         except:
-            print("No ONT recipe given! Check your sample sheet!")
+            print("No ILMN recipe given! Check your sample sheet!")
+            return ""
+    else:
+        out = []
+        if w.SAMPLE in RECIPE_ONT_DICT:
+            out.extend(RECIPE_ONT_DICT[w.SAMPLE])
+        elif w.SAMPLE in RECIPE_DICT:
+            out.extend(RECIPE_DICT[w.SAMPLE])
+
+        if len(out) > 0:
+            if mode == "list":
+                return out
+            else:
+                return " ".join(out)
+        else:
+            print(f"No recipe found for {w.SAMPLE}! Check your sample sheet!")
             return ""
 
 
