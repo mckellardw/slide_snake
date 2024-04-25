@@ -1,14 +1,13 @@
 # fastqc before trimming
 rule ont_fastQC_preTrim:
     input:
-        MERGED_FQ = '{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz'
+        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz",
     output:
-        DIR = directory('{OUTDIR}/{SAMPLE}/fastqc/ont_preAdapterScan')
+        DIR=directory("{OUTDIR}/{SAMPLE}/fastqc/ont_preAdapterScan"),
     params:
-        adapters = config['FASTQC_ADAPTERS']
-    threads:
-        config['CORES']
-        # min([config['CORES'],8]) # 8 core max
+        adapters=config["FASTQC_ADAPTERS"],
+    threads: config["CORES"]
+    # min([config['CORES'],8]) # 8 core max
     run:
         shell(
             f"""
@@ -18,21 +17,45 @@ rule ont_fastQC_preTrim:
                 --outdir {output.DIR} \
                 --threads {threads} \
                 -a {params.adapters} \
-                {input.MERGED_FQ}
+                {input.FQ}
             """
         )
+
+
+# fastqc after cutadapt trimming
+rule ont_fastQC_preCutadapt:
+    input:
+        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_{READ}.fq.gz",
+    output:
+        DIR=directory("{OUTDIR}/{SAMPLE}/fastqc/ont_preCutadapt_{READ}"),
+    params:
+        adapters=config["FASTQC_ADAPTERS"],
+    threads: config["CORES"]
+    # min([config['CORES'],8]) # 8 core max
+    run:
+        shell(
+            f"""
+            mkdir -p {output.DIR}
+
+            {EXEC['FASTQC']} \
+                --outdir {output.DIR} \
+                --threads {threads} \
+                -a {params.adapters} \
+                {input.FQ}
+            """
+        )
+
 
 # fastqc after cutadapt trimming
 rule ont_fastQC_postCutadapt:
     input:
-        MERGED_FQ = '{OUTDIR}/{SAMPLE}/tmp/ont/cut_{READ}.fq.gz'
+        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_{READ}.fq.gz",
     output:
-        DIR = directory('{OUTDIR}/{SAMPLE}/fastqc/ont_postCutadapt_{READ}')
+        DIR=directory("{OUTDIR}/{SAMPLE}/fastqc/ont_postCutadapt_{READ}"),
     params:
-        adapters = config['FASTQC_ADAPTERS']
-    threads:
-        config['CORES']
-        # min([config['CORES'],8]) # 8 core max
+        adapters=config["FASTQC_ADAPTERS"],
+    threads: config["CORES"]
+    # min([config['CORES'],8]) # 8 core max
     run:
         shell(
             f"""
@@ -42,6 +65,6 @@ rule ont_fastQC_postCutadapt:
                 --outdir {output.DIR} \
                 --threads {threads} \
                 -a {params.adapters} \
-                {input.MERGED_FQ}
+                {input.FQ}
             """
         )

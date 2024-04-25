@@ -1,5 +1,7 @@
-import sys
-import gzip
+# Save an anndata object from market matrix input. Also adds spatial coordinates to the object
+
+# import sys
+# import gzip
 import pandas as pd
 import argparse
 from scanpy import read_mtx
@@ -43,6 +45,8 @@ def main(
     spatial_data = pd.read_csv(
         bb_map, sep="\t", header=None, names=["barcode", "x", "y"]
     )
+
+    print(f"Found {spatial_data.shape[0]} cell barcodes in whitelist/map.")
 
     # Set the cell barcode as index
     spatial_data.set_index("barcode", inplace=True)

@@ -1,18 +1,18 @@
 # QC on STAR outputs
 
+
 ## qualimap on deduplicated/aligned reads
 rule qualimapQC_STAR:
     input:
-        SORTEDBAM = '{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.out.bam'
+        SORTEDBAM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.out.bam",
     output:
-        TXT = '{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/rnaseq_qc_results.txt',
-        HTML = '{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/qualimapReport.html'
+        TXT="{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/rnaseq_qc_results.txt",
+        HTML="{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/qualimapReport.html",
     params:
-        GENES_GTF = lambda wildcards: GTF_DICT[wildcards.SAMPLE]
-    threads:
-        1
+        GENES_GTF=lambda wildcards: GTF_DICT[wildcards.SAMPLE],
+    threads: 1
     resources:
-        mem = "32G"
+        mem="32G",
     run:
         shell(
             f"""
@@ -26,19 +26,19 @@ rule qualimapQC_STAR:
                 --java-mem-size={resources.mem} \
                 -outdir $(dirname {output.TXT}) \
                 -outformat html
-            """ 
+            """
         )
         # cd {output.qualimapDir}
         # -nt {threads} \
 
 
+
 rule qualimap_summary2csv_STAR:
     input:
-        TXT = '{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/rnaseq_qc_results.txt'
+        TXT="{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/rnaseq_qc_results.txt",
     output:
-        CSV = '{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/rnaseq_qc_result.csv'
-    threads:
-        1
+        CSV="{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/rnaseq_qc_result.csv",
+    threads: 1
     run:
         shell(
             f"""

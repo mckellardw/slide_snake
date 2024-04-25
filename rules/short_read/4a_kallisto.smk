@@ -3,45 +3,43 @@
 #############################################
 rule kallisto_align:
     input:
-        R1_FQ = '{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz',
-        R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz',
-        R1_FQ_TWICE_CUT = '{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz',
-        R2_FQ_TWICE_CUT = '{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz',
-        R1_FQ_STAR_FILTERED = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz',
-        R2_FQ_STAR_FILTERED = '{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz',
-        R1_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz',
-        R2_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz',
-        BB = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt"
+        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz",
+        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz",
+        R1_FQ_TWICE_CUT="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
+        R2_FQ_TWICE_CUT="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
+        R1_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz",
+        R2_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz",
+        R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz",
+        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz",
+        BB="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
     output:
-        BUS = temp('{OUTDIR}/{SAMPLE}/kb/{RECIPE}/output.bus'),
-        BUS_CORRECTED = temp('{OUTDIR}/{SAMPLE}/kb/{RECIPE}/output.corrected.bus'),
-        TRANSCRIPTS = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/transcripts.txt',
-        ECMAP = temp('{OUTDIR}/{SAMPLE}/kb/{RECIPE}/matrix.ec')
+        BUS=temp("{OUTDIR}/{SAMPLE}/kb/{RECIPE}/output.bus"),
+        BUS_CORRECTED=temp("{OUTDIR}/{SAMPLE}/kb/{RECIPE}/output.corrected.bus"),
+        TRANSCRIPTS="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/transcripts.txt",
+        ECMAP=temp("{OUTDIR}/{SAMPLE}/kb/{RECIPE}/matrix.ec"),
     params:
-        MEMLIMIT = config['MEMLIMIT_GB']
+        MEMLIMIT=config["MEMLIMIT_GB"],
     log:
-        log = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/kallisto_align.log'
-    threads:
-        config['CORES']
+        log="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/kallisto_align.log",
+    threads: config["CORES"]
     resources:
-        mem_mb = config['MEMLIMIT_MB']
-    priority:
-        42
+        mem_mb=config["MEMLIMIT_MB"],
+    priority: 42
     run:
         # recipe = RECIPE_DICT[wildcards.SAMPLE]
         recipe = wildcards.RECIPE
-        
-        KB_IDX = IDX_DICT[wildcards.SAMPLE]        
+
+        KB_IDX = IDX_DICT[wildcards.SAMPLE]
         KB_X = RECIPE_SHEET["kb.x"][recipe]
-        
+
         # Select input reads based on alignment recipe
-        if "rRNA.STAR" in recipe: # Use trimmed & STAR-rRNA-filtered .fq's
+        if "rRNA.STAR" in recipe:  # Use trimmed & STAR-rRNA-filtered .fq's
             R1 = input.R1_FQ_STAR_FILTERED
             R2 = input.R2_FQ_STAR_FILTERED
-        elif "rRNA.bwa" in recipe: #TODO Use trimmed & bwa-rRNA-filtered .fq's
+        elif "rRNA.bwa" in recipe:  # TODO Use trimmed & bwa-rRNA-filtered .fq's
             R1 = input.R1_FQ_BWA_FILTERED
             R2 = input.R2_FQ_BWA_FILTERED
-        elif "rRNA" not in recipe: # just trimmed .fq's
+        elif "rRNA" not in recipe:  # just trimmed .fq's
             # R1 = input.R1_FQ
             # R2 = input.R2_FQ
             R1 = input.R1_FQ_TWICE_CUT
@@ -64,19 +62,19 @@ rule kallisto_align:
             """
         )
 
+
 rule bus2mat:
     input:
-        BUS         = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/output.corrected.bus',
-        TRANSCRIPTS = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/transcripts.txt',
-        ECMAP       = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/matrix.ec'
+        BUS="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/output.corrected.bus",
+        TRANSCRIPTS="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/transcripts.txt",
+        ECMAP="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/matrix.ec",
     output:
-        BCS   = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.barcodes.txt',
-        GENES = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.genes.txt',
-        MAT   = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.mtx'
+        BCS="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.barcodes.txt",
+        GENES="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.genes.txt",
+        MAT="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.mtx",
     log:
-        log = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/bustools_count.log'
-    threads:
-        1
+        log="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/bustools_count.log",
+    threads: 1
     run:
         KB_T2G = T2G_DICT[wildcards.SAMPLE]
 
@@ -97,7 +95,8 @@ rule bus2mat:
             """
         )
 
-#TODO- use `--downsample` to generate count mats with different downsampling rates
+
+# TODO- use `--downsample` to generate count mats with different downsampling rates
 # rule kb_rarefaction:
 #     input:
 #         BUS         = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/output.corrected.bus',
@@ -134,18 +133,18 @@ rule bus2mat:
 #             """
 #         )
 
+
 # gzip the count matrix, etc.
 rule compress_kb_outs:
     input:
-        BCS   = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.barcodes.txt',
-        GENES = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.genes.txt',
-        MAT   = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.mtx'
+        BCS="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.barcodes.txt",
+        GENES="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.genes.txt",
+        MAT="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.mtx",
     output:
-        BCS   = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.barcodes.txt.gz',
-        GENES = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.genes.txt.gz',
-        MAT   = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.mtx.gz'
-    threads:
-        config['CORES']        
+        BCS="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.barcodes.txt.gz",
+        GENES="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.genes.txt.gz",
+        MAT="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.mtx.gz",
+    threads: config["CORES"]
     run:
         shell(
             f"""

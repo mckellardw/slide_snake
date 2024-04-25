@@ -19,8 +19,6 @@ RECIPE_SHEET = pd.read_csv(
 TMPDIR = config["TMPDIR"]
 OUTDIR = config["OUTDIR"]
 
-### Conda environment locations ########################################################
-
 ### Variables and references ###########################################################
 SAMPLE_SHEET = pd.read_csv(
     config["SAMPLE_SHEET_PATH"], 
@@ -39,6 +37,7 @@ R2_FQS = {SAMP: READ.split() for SAMP, READ in R2_FQS.items() if READ}
 EXEC = config["EXEC"]
 
 ### Pre-run setup ######################################################################
+#TODO- move to utils
 # Build dictionaries of recipes & species to use for alignment
 RECIPE_DICT = {}    # Dictionary of recipes to use for each sample
 rRNA_STAR_DICT = {} # Dictionary of rRNA reference genomes to use w/ STAR
@@ -63,7 +62,7 @@ for i in range(0,SAMPLE_SHEET.shape[0]):
     SPECIES_DICT[tmp_sample] = list(SAMPLE_SHEET["species"])[i]
 
     # short-read-specific dicts
-    if R1_FQS[tmp_sample] is not None:
+    if tmp_sample in R2_FQS.keys():
         RECIPE_DICT[tmp_sample] = list(SAMPLE_SHEET["recipe"])[i].split()
         IDX_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_idx"])[i]
         T2G_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_t2g"])[i]
@@ -72,14 +71,13 @@ for i in range(0,SAMPLE_SHEET.shape[0]):
 
 ### include rules #######################################################################
 # Pre-flight module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-include: "rules/0a_split_bb.smk" #TODO
+include: "rules/0a_barcode_maps.smk" 
 include: "rules/0_utils.smk" 
 
 # Short-read module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## fastq preprocessing & QC
 include: "rules/short_read/1a_mergefqs.smk"
 include: "rules/short_read/1b_trimQC.smk"
-include: "rules/short_read/1d_fq2bam.smk"
 
 
 ## rRNA Filtering 
@@ -106,7 +104,6 @@ include: "rules/short_read/4c_kallisto_velo.smk"
 # Final outputs module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## scanpy stuff
 include: "rules/6a_scanpy_init.smk"
-# include: "rules/6b_mudata_init.smk"
 
 ### target rule(s) #####################################################################
 rule all:
@@ -162,13 +159,14 @@ rule all:
         # ], # Top BLAST results for unmapped R2 reads   
         
         # Module 4 - kallisto & bustools
+        # expand( # kallisto/bustools count mats
+        #     "{OUTDIR}/{SAMPLE}/kb_velo/{LAYER}/output.mtx.gz",
+        #     OUTDIR=config["OUTDIR"],
+        #     LAYER=["spliced", "unspliced"],
+        #     SAMPLE=R2_FQS.keys()
+        # ),
 
         # Module 5 - small RNA
-        # [f"{OUTDIR}/{SAMPLE}/{SMALL}/{RECIPE}/raw/output.h5ad" 
-        #     for SAMPLE in R2_FQS.keys() 
-        #     for RECIPE in RECIPE_DICT[SAMPLE] 
-        #     for SMALL in ["miRNA","piRNA"]
-        # ],# anndata files (with spatial info) - small RNA
         # [f"{OUTDIR}/{SAMPLE}/miRge_bulk/{RECIPE}/annotation.report.html" 
         #     for SAMPLE in R2_FQS.keys() 
         #     for RECIPE in RECIPE_DICT[SAMPLE] 
@@ -191,31 +189,3 @@ rule all:
         #     for RECIPE in RECIPE_DICT[SAMPLE] 
         #     for KB in ["kbpython"] # "kb_velo", "kb_nuc" 
         # ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`
-
-
-## EXTRANEOUS #######################################################################
-        # expand( # count matrices for bowtie2 alignment to small RNA reference(s)
-        #     "{OUTDIR}/{SAMPLE}/{SMALL_RNA}/{TYPE}",
-        #     OUTDIR=config["OUTDIR"],
-        #     SAMPLE=R2_FQS.keys(),
-        #     SMALL_RNA=["piRNA","miRNA"],
-        #     TYPE=["counts.tsv.gz","raw/matrix.mtx.gz"]
-        # ),
-        # expand( #non-deduplicated .bam
-        #     "{OUTDIR}/{SAMPLE}/{REF}/Aligned.sortedByCoord.out.bam.bai",
-        #     OUTDIR=config["OUTDIR"],
-        #     SAMPLE=R2_FQS.keys(),
-        #     REF=["STARsolo_rRNA", "STARsolo"]
-        # ),
-        # expand( # kallisto/bustools count mats
-        #     "{OUTDIR}/{SAMPLE}/kb/raw/output.mtx.gz",
-        #     OUTDIR=config["OUTDIR"],
-        #     SAMPLE=R2_FQS.keys()
-        # ),
-
-        # expand( # kallisto/bustools count mats
-        #     "{OUTDIR}/{SAMPLE}/kb_velo/{LAYER}/output.mtx.gz",
-        #     OUTDIR=config["OUTDIR"],
-        #     LAYER=["spliced", "unspliced"],
-        #     SAMPLE=R2_FQS.keys()
-        # ),

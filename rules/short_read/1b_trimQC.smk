@@ -10,7 +10,7 @@ rule fastQC_preTrim:
     params:
         adapters=config["FASTQC_ADAPTERS"],
     threads: config["CORES"]
-        # min([config['CORES'],8]) # 8 core max
+    # min([config['CORES'],8]) # 8 core max
     run:
         shell(
             f"""
@@ -25,68 +25,6 @@ rule fastQC_preTrim:
         )
 
 
-# Trimming for R1 to handle Curio adapter issues. See README for recipe details (#TODO)
-rule R1_trimming:
-    input:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/merged_R1.fq.gz",
-    output:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/merged_trimmed_R1.fq.gz",  #temp()
-    params:
-        CB1end=8,  #TODO- move to config? or recipe_sheet?
-        CB2start=27,
-        CB2end=42,
-        INTERNAL_TRIM_QC_LOG="{OUTDIR}/{SAMPLE}/internal_trim_qc.txt",
-        TMPDIR="{OUTDIR}/{SAMPLE}/tmp/seqkit",
-        INTERNAL_ADAPTER=config["R1_INTERNAL_ADAPTER"],  # Curio R1 internal adapter
-    threads: config["CORES"]
-    log:
-        log="{OUTDIR}/{SAMPLE}/R1_trimming.log",
-    run:
-        recipe = RECIPE_DICT[wildcards.SAMPLE]
-        R1_LENGTH = RECIPE_SHEET["R1.finalLength"][recipe]
-
-        # param handling for different alignment strategies
-        if "hardTrim" in recipe:
-            shell(  # "Hard" trimming, to remove the adapter based on hard-coded base positions
-                f"""
-                zcat {input.R1_FQ} \
-                | awk -v s={params.CB1end} \
-                    -v S={params.CB2start} \
-                    -v E={params.CB2end} \
-                    -f scripts/awk/hardTrimFq.awk \
-                > {output.R1_FQ.strip('.gz')}
-
-                {EXEC['PIGZ']} -f -p{threads} {output.R1_FQ.strip('.gz')}
-
-                echo "Hard trimming performed on {input.R1_FQ}" > {log.log}
-                """
-            )
-        elif "internalTrim" in recipe:
-            # TODO- rewrite/speed up internal trimming!
-            shell(  # Internal trimming to cut out the SlideSeq adapter sequence
-                f"""
-                python scripts/py/internal_adapter_trim_R1.py \
-                    {params.INTERNAL_ADAPTER} \
-                    {params.INTERNAL_TRIM_QC_LOG} \
-                    {threads} \
-                    {params.TMPDIR} \
-                    {R1} \
-                    {output.R1_FQ} \
-                | tee {log.log}
-                """
-            )
-        else:
-            shell(  # Rename R1_FQ if no trimming needed
-                f"""
-                cp {input.R1_FQ} {output.R1_FQ} 
-                echo "No trimming performed on {input.R1_FQ}..." {log.log}
-                """
-            )
-
-
-#
-
-
 # TSO & homopolymer trimming
 # TODO: add "{ADAPTER};noindels" to adapter sequence trimming? - *Note- do not do this for the BB_ADAPTER
 rule cutadapt:
@@ -94,7 +32,7 @@ rule cutadapt:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/merged_R1.fq.gz",
         # R1_FQ_HardTrim = '{OUTDIR}/{SAMPLE}/tmp/merged_R1_HardTrim.fq.gz',
         # R1_FQ_InternalTrim = '{OUTDIR}/{SAMPLE}/tmp/merged_R1_InternalTrim.fq.gz',
-        R1_FQ_Trimmed="{OUTDIR}/{SAMPLE}/tmp/merged_trimmed_R1.fq.gz",
+        R1_FQ_Trimmed="{OUTDIR}/{SAMPLE}/tmp/merged_R1.fq.gz",
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/merged_R2.fq.gz",
     output:
         FINAL_R1_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz"),
@@ -172,9 +110,6 @@ rule cutadapt:
         )
 
 
-#
-
-
 # fastqc on R1 after linker removal & R2 trimming/filtering
 rule fastQC_postTrim:
     input:
@@ -183,7 +118,7 @@ rule fastQC_postTrim:
         fastqcDir=directory("{OUTDIR}/{SAMPLE}/fastqc/postCutadapt_{READ}"),
         # fastqcReport = ''
     threads: config["CORES"]
-        # min([config['CORES'],8]) # 8 core max
+    # min([config['CORES'],8]) # 8 core max
     params:
         adapters=config["FASTQC_ADAPTERS"],
     run:
@@ -198,9 +133,6 @@ rule fastQC_postTrim:
                 {input.FINAL_FQ}
             """
         )
-
-
-##########################################
 
 
 rule cutadapt2:
@@ -281,7 +213,7 @@ rule fastQC_twiceTrim:
         fastqcDir=directory("{OUTDIR}/{SAMPLE}/fastqc/twiceCutadapt_{READ}"),
         # fastqcReport = ''
     threads: config["CORES"]
-        # min([config['CORES'],8]) # 8 core max
+    # min([config['CORES'],8]) # 8 core max
     params:
         adapters=config["FASTQC_ADAPTERS"],
     run:
@@ -296,3 +228,64 @@ rule fastQC_twiceTrim:
                 {input.FINAL_FQ}
             """
         )
+
+
+# Trimming for R1 to handle Curio adapter issues. See README for recipe details
+##TODO- keep trimmed and untrimmed reads for multiple recipes...
+rule R1_trimming:
+    input:
+        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
+    output:
+        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_trimmed_R1.fq.gz",  #temp()
+    params:
+        CB1end=8,  #TODO- move to config? or recipe_sheet?
+        CB2start=27,
+        CB2end=42,
+        INTERNAL_TRIM_QC_LOG="{OUTDIR}/{SAMPLE}/internal_trim_qc.txt",
+        TMPDIR="{OUTDIR}/{SAMPLE}/tmp/seqkit",
+        INTERNAL_ADAPTER=config["R1_INTERNAL_ADAPTER"],  # Curio R1 internal adapter
+    threads: config["CORES"]
+    log:
+        log="{OUTDIR}/{SAMPLE}/R1_trimming.log",
+    run:
+        recipe = RECIPE_DICT[wildcards.SAMPLE]
+        R1_LENGTH = RECIPE_SHEET["R1.finalLength"][recipe]
+
+        # param handling for different alignment strategies
+        if "hardTrim" in recipe:
+            shell(  # "Hard" trimming, to remove the adapter based on hard-coded base positions
+                f"""
+                zcat {input.R1_FQ} \
+                | awk -v s={params.CB1end} \
+                    -v S={params.CB2start} \
+                    -v E={params.CB2end} \
+                    -f scripts/awk/hardTrimFq.awk \
+                > {output.R1_FQ.strip('.gz')}
+
+                {EXEC['PIGZ']} -f -p{threads} {output.R1_FQ.strip('.gz')}
+
+                echo "Hard trimming performed on {input.R1_FQ}" > {log.log}
+                """
+            )
+        elif "internalTrim" in recipe:
+            # TODO- rewrite/speed up internal trimming!
+            shell(  # Internal trimming to cut out the SlideSeq adapter sequence
+                f"""
+                python scripts/py/internal_adapter_trim_R1.py \
+                    {params.INTERNAL_ADAPTER} \
+                    {params.INTERNAL_TRIM_QC_LOG} \
+                    {threads} \
+                    {params.TMPDIR} \
+                    {R1} \
+                    {output.R1_FQ} \
+                | tee {log.log}
+                """
+            )
+        else:
+            shell(  # Rename R1_FQ if no trimming needed
+                # cp {input.R1_FQ} {output.R1_FQ}
+                f"""
+                touch {output.R1_FQ} 
+                echo "No trimming performed on {input.R1_FQ}..." {log.log}
+                """
+            )

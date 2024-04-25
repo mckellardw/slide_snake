@@ -1,0 +1,53 @@
+name: salmon
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - _libgcc_mutex=0.1
+  - _openmp_mutex=4.5
+  - boost=1.84.0
+  - bzip2=1.0.8
+  - ca-certificates=2024.2.2
+  - icu=73.2
+  - ld_impl_linux-64=2.40
+  - libblas=3.9.0
+  - libboost=1.84.0
+  - libboost-devel=1.84.0
+  - libboost-headers=1.84.0
+  - libboost-python=1.84.0
+  - libboost-python-devel=1.84.0
+  - libcblas=3.9.0
+  - libexpat=2.6.2
+  - libffi=3.4.2
+  - libgcc-ng=13.2.0
+  - libgfortran-ng=13.2.0
+  - libgfortran5=13.2.0
+  - libgomp=13.2.0
+  - libhwloc=2.9.3
+  - libiconv=1.17
+  - liblapack=3.9.0
+  - libnsl=2.0.1
+  - libopenblas=0.3.26
+  - libsqlite=3.45.2
+  - libstdcxx-ng=13.2.0
+  - libuuid=2.38.1
+  - libxcrypt=4.4.36
+  - libxml2=2.12.6
+  - libzlib=1.2.13
+  - ncurses=6.4.20240210
+  - numpy=1.26.4
+  - openssl=3.2.1
+  - pip=24.0
+  - python=3.12.2
+  - python_abi=3.12
+  - readline=8.2
+  - salmon=0.6.0
+  - setuptools=69.2.0
+  - tbb=2021.11.0
+  - tk=8.6.13
+  - tzdata=2024a
+  - wheel=0.43.0
+  - xz=5.2.6
+  - zstd=1.5.5
+prefix: /nfs/home/dmckellar/mambaforge/envs/salmon

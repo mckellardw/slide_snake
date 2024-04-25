@@ -95,10 +95,8 @@ rule blast_unmapped:
 #     run:
 #         shell(
 #             f"""
-
 #             """
 #         )
-
 # TODO
 # temp rule - just checking phiX contamination
 # rule unmapped_phix_bwa:
@@ -119,14 +117,12 @@ rule blast_unmapped:
 #         shell(
 #             f"""
 #             mkdir -p $(dirname {output.BAM1})
-
 #             {EXEC['BWA']} mem \
 #                 -t {threads} \
 #                 {BWA_REF} \
 #                 {input.R2_FQ} \
 #             1> {output.BAM1} \
 #             2> {log.log} \
-
 #             {EXEC['SAMTOOLS']} sort \
 #                 -@ {threads} \
 #                 -O BAM \
