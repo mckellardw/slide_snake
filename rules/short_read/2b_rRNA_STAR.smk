@@ -52,7 +52,7 @@ rule STAR_rRNA_align:
                 --outReadsUnmapped Fastx \
                 --outSAMunmapped Within KeepPairs \
                 --soloType {soloType} {soloUMI} {soloCB} {soloAdapter} {extraSTAR} \
-                --soloCBwhitelist {params.WHITELIST} \
+                --soloCBwhitelist {input.BB_1} {input.BB_2} \
                 --soloCBmatchWLtype {soloCBmatchWLtype} \
                 --soloCellFilter TopCells {nBB} \
                 --soloUMIfiltering MultiGeneUMI CR \

@@ -62,7 +62,7 @@ rule STARsolo_align:
         #param handling for different SlideSeq R1 strategies
         if "stomics" in recipe:
             whitelist = input.BB_WHITELIST
-        elif "matchLinker" in recipe:
+        elif "matchLinker" or 'decoderseq' in recipe:
             whitelist = f"{input.BB_1} {input.BB_2}"
         elif "internalTrim" in recipe:
             whitelist = input.BB_WHITELIST
@@ -91,7 +91,7 @@ rule STARsolo_align:
         #WASP?
         shell(
             f"""
-            mkdir -p $(dirname {output.BAM})
+                        mkdir -p $(dirname {output.BAM})
 
             {EXEC['STAR']} \
                 --runThreadN {threads} \
