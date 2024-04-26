@@ -43,6 +43,42 @@ def get_fqs(w):
     return [R1, R2]
 
 
+# TODO move these values to recipe_sheet
+def get_ont_barcode_pattern(w):
+    ## SlideSeq/Seeker: R1="C"*22 | BC1="C"*8 | Linker="C"*18 | BC2="C"*6 | UMI="N"* 7
+    try:
+        if "stomics" in w.RECIPE:
+            BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
+        elif "noTrim" in w.RECIPE or "matchLinker" in w.RECIPE:
+            BC_PATTERN = "C" * 16 + "N" * 12
+        elif "seeker" in w.RECIPE and "noTrim" in w.RECIPE or "matchLinker" in w.RECIPE:
+            BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
+        elif "seeker" in w.RECIPE and "internalTrim" in w.RECIPE:
+            BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
+        elif "seeker" in w.RECIPE and "adapterInsert" in w.RECIPE:
+            BC_PATTERN = "C" * 8 + "C" * 18 + "C" * 6 + "N" * 7
+        else:
+            BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
+    except:
+        BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
+
+    # return barcode pattern
+    return BC_PATTERN
+
+
+# BC_PATTERN="(?P<discard_1>CTACACGACGCTCTTCCGATCT)"+ \
+#     "(?P<cell_1>.{{8}})"+ \
+#     "(?P<discard_2>TCTTCAGCGTTCCCGAGA)"+ \
+#     "(?P<cell_2>.{{6}})"+ \
+#     "(?P<umi_1>.{{7}})"
+
+# BC_PATTERN="(?P<discard_1>XXXXXXXXXXXXXXXXXXXXXXX)"+ \
+#     "(?P<cell_1>.{{8}})"+ \
+#     "(?P<discard_2>XXXXXXXXXXXXXXXXXX)"+ \
+#     "(?P<cell_2>.{{6}})"+ \
+#     "(?P<umi_1>.{{7}})"
+
+
 def get_STAR_ref(w):
     try:
         star_ref = REF_DICT[w.SAMPLE]
@@ -125,7 +161,7 @@ def build_abs_path(files, abs_path, sep=" "):
         file_abs_path = sep.join([f"{abs_path}/{f}" for f in files])
 
 
-###### TO BE DEPRECATED
+########## TO BE DEPRECATED ########################################################
 def get_barcode_length(w):
     """
     Get barcode length based on the recipe(s) passed.

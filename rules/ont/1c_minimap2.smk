@@ -14,48 +14,13 @@ rule ont_umitools_extract:
         R2_FQ="{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/umi_R2.fq.gz",
     params:
         WHITELIST=lambda w: get_whitelist(w),
-    #    BC_PATTERN="CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCNNNNNNN" #TODO
+        BC_PATTERN=lambda w: get_ont_barcode_pattern(w),
+        # BC_PATTERN="CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCNNNNNNN" #TODO
+        EXTRACT_METHOD="string",
     log:
         log="{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/extract.log",
     threads: 1
     run:
-        # Temporarily hardcoded for Seeker...
-        recipe = wildcards.RECIPE
-
-        # param handling for different SlideSeq R1 strategies
-        ## SlideSeq/Seeker: R1="C"*22 | BC1="C"*8 | Linker="C"*18 | BC2="C"*6 | UMI="N"* 7
-        if "stomics" in recipe:
-            BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
-        if "visium" in recipe:
-            BC_PATTERN = "C" * 16 + "N" * 12
-        elif "noTrim" in recipe or "matchLinker" in recipe:
-            BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
-        elif "internalTrim" in recipe:
-            BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
-        elif "adapterInsert" in recipe:
-            BC_PATTERN = "C" * 8 + "C" * 18 + "C" * 6 + "N" * 7
-        else:
-            BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
-
-            # BC_PATTERN="(?P<discard_1>CTACACGACGCTCTTCCGATCT)"+ \
-            #     "(?P<cell_1>.{{8}})"+ \
-            #     "(?P<discard_2>TCTTCAGCGTTCCCGAGA)"+ \
-            #     "(?P<cell_2>.{{6}})"+ \
-            #     "(?P<umi_1>.{{7}})"
-
-            # BC_PATTERN="(?P<discard_1>XXXXXXXXXXXXXXXXXXXXXXX)"+ \
-            #     "(?P<cell_1>.{{8}})"+ \
-            #     "(?P<discard_2>XXXXXXXXXXXXXXXXXX)"+ \
-            #     "(?P<cell_2>.{{6}})"+ \
-            #     "(?P<umi_1>.{{7}})"
-
-            # "C"*22 + \
-
-            # BC_PATTERN = "C" * 8 + "C" * 18 + "C" * 6 + "N" * 7
-
-            # whitelist = input.BB_ADAPTER
-        EXTRACT_METHOD = "string"  # "regex"
-
         shell(
             f"""
             echo "Barcode pattern: '{BC_PATTERN}'" > {log.log}
@@ -63,8 +28,8 @@ rule ont_umitools_extract:
             echo "" >> {log.log}
 
             {EXEC['UMITOOLS']} extract \
-                --extract-method={EXTRACT_METHOD} \
-                --bc-pattern='{BC_PATTERN}' \
+                --extract-method={params.EXTRACT_METHOD} \
+                --bc-pattern='{params.BC_PATTERN}' \
                 --stdin={input.R1_FQ} \
                 --read2-in={input.R2_FQ} \
                 --stdout={output.R1_FQ} \
