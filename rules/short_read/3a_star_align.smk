@@ -50,6 +50,9 @@ rule STARsolo_align:
         MEMLIMIT=megabytes2bytes(config["MEMLIMIT_MB"]),
     priority: 42
     run:
+        recipe = str(
+            RECIPE_DICT[wildcards.SAMPLE][0]
+        )  # TODO- fix multi-R1 trimming handling
         # recipe = RECIPE_DICT[wildcards.SAMPLE]
         # recipe = wildcards.RECIPE
         # STAR_REF = REF_DICT[wildcards.SAMPLE]
@@ -123,8 +126,8 @@ rule STARsolo_align:
                 --outSAMunmapped Within KeepPairs \
                 --soloType {params.STAR_PARAMS["STAR.soloType"]} {params.STAR_PARAMS["STAR.soloUMI"]} {params.STAR_PARAMS["STAR.soloCB"]} {params.STAR_PARAMS["STAR.soloAdapter"]} {params.STAR_PARAMS["STAR.extra"]} \
                 --soloCBmatchWLtype {params.STAR_PARAMS["STAR.soloCBmatchWLtype"]} \
-                --soloCBwhitelist {params.WHITELIST} \
-                --soloCellFilter TopCells $(wc -l {params.WHITELIST}) \
+                --soloCBwhitelist {whitelist} \
+                --soloCellFilter TopCells $(wc -l {whitelist}) \
                 --soloUMIfiltering MultiGeneUMI CR \
                 --soloUMIdedup 1MM_CR \
                 --soloBarcodeReadLength 0 \

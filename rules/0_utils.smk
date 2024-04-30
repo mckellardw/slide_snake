@@ -90,11 +90,12 @@ def get_recipe(w, mode="ONT"):
             return ""
     else:
         out = []
-        if w.SAMPLE in RECIPE_ONT_DICT:
-            out.extend(RECIPE_ONT_DICT[w.SAMPLE])
-        elif w.SAMPLE in RECIPE_DICT:
-            out.extend(RECIPE_DICT[w.SAMPLE])
-
+        if "RECIPE_ONT_DICT" in globals():
+            if w.SAMPLE in RECIPE_ONT_DICT:
+                out.extend(RECIPE_ONT_DICT[w.SAMPLE])
+        elif "RECIPE_DICT" in globals():
+            if w.SAMPLE in RECIPE_DICT:
+                out.extend(RECIPE_DICT[w.SAMPLE])
         if len(out) > 0:
             if mode == "list":
                 return out

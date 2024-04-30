@@ -9,8 +9,7 @@ import scipy.sparse
 configfile:"config/config.yaml"
 
 RECIPE_SHEET = pd.read_csv(
-    # config["RECIPE_SHEET"], 
-    "resources/recipe_sheet.csv",
+    config["RECIPE_SHEET"], 
     na_filter=False,
     index_col=0
 ) 
@@ -53,14 +52,12 @@ SPECIES_DICT = {}   # Dictionary of species listed for mirge3 analysis
 
 for i in range(0,SAMPLE_SHEET.shape[0]):
     tmp_sample = list(SAMPLE_SHEET["sampleID"])[i]
-
     rRNA_STAR_DICT[tmp_sample] = list(SAMPLE_SHEET["STAR_rRNA_ref"])[i]
     rRNA_BWA_DICT[tmp_sample] = list(SAMPLE_SHEET["bwa_rRNA_ref"])[i]
     REF_DICT[tmp_sample] = list(SAMPLE_SHEET["STAR_ref"])[i]
     GTF_DICT[tmp_sample] = list(SAMPLE_SHEET["genes_gtf"])[i]
     BB_DICT[tmp_sample] = list(SAMPLE_SHEET["BB_map"])[i]
     SPECIES_DICT[tmp_sample] = list(SAMPLE_SHEET["species"])[i]
-
     # short-read-specific dicts
     if tmp_sample in R2_FQS.keys():
         RECIPE_DICT[tmp_sample] = list(SAMPLE_SHEET["recipe"])[i].split()
@@ -68,7 +65,6 @@ for i in range(0,SAMPLE_SHEET.shape[0]):
         T2G_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_t2g"])[i]
         # IDX_VELO_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_idx_velo"])[i]
         # T2G_VELO_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_t2g_velo"])[i]
-
 ### include rules #######################################################################
 # Pre-flight module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 include: "rules/0a_barcode_maps.smk" 
