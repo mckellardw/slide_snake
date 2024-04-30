@@ -7,6 +7,7 @@ rule umitools_dedupBAM:
         BB_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
         BB_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
         BB_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
+        BB_3="{OUTDIR}/{SAMPLE}/bb/whitelist_underscore.txt",
         BAM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.out.bam",
     output:
         BAM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.dedup.out.bam",
@@ -20,13 +21,13 @@ rule umitools_dedupBAM:
             f"""
             bash scripts/bash/split_dedup.sh \
                 {input.BAM} \
-                {input.BB_WHITELIST} \
+                {input.BB_3} \
                 {threads} \
                 {output.BAM} \
-                $(dirname {output.BAM})/tmp/dedup \
+                $(dirname {output.BAM})/tmp/dedup  \
             | tee {log.log}
             """
-        )
+            )
 
 
 # Index the deduplicated .bam file

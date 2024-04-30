@@ -109,7 +109,9 @@ date
 #   -S ${TMPDIR}/dedup_{}'
 
 #TODO: add log and output-stats for each chromosome (need to chop up file names)
-while read BAM; do
+
+while read BAM
+do
   samtools index -@ ${CORE} ${BAM}
 
   umi_tools dedup \
@@ -130,13 +132,14 @@ echo
 # merge, sort, and index dedup'ed .bams
 echo "Merging, sorting, and indexing deduplicated .bam files..." 
 date 
+TEMP_LIST=($(ls $TMPDIR/*REF_*.bam))
 
 samtools merge \
--f \
--o ${TMPDIR}/dedup_merge.bam \
--@ ${CORE} \
---write-index \
-${TMPDIR}/dedup_*REF_*.bam
+  -f \
+  -@ ${CORE} \
+  --write-index \
+  ${TMPDIR}/dedup_merge.bam \
+  $TEMP_LIST
 
 samtools sort ${TMPDIR}/dedup_merge.bam > ${OUTBAM}
 samtools index -@ ${CORE} ${OUTBAM} && rm -r ${TMPDIR}

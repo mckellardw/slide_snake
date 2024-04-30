@@ -9,6 +9,7 @@ rule write_barcode_list_variants:
         BB="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
         BB_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
         BB_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
+        BB_3="{OUTDIR}/{SAMPLE}/bb/whitelist_underscore.txt",
     run:
         recipes = get_recipe(wildcards, mode="list")
         
@@ -16,14 +17,14 @@ rule write_barcode_list_variants:
         shell(f"cut -f1 {input.BB_map} > {output.BB}")
 
         # split into multiple lists for Seeker
-        if any(["seeker" in recipe for recipe in recipes]):
+        if any(["seeker" in recipe for recipe in recipes]) or any(["decoder" in recipe for recipe in recipes]):
             # load bb
             bb_df = pd.read_csv(input.BB_map, sep="\t", header=None).iloc[:, 0]
 
             # split for 2 separate barcodes
-            bb_1 = pd.DataFrame(bb[0:8] for bb in list(bb_df.values))
-            bb_2 = pd.DataFrame(bb[8:14] for bb in list(bb_df.values))
-
+            bb_1 = pd.DataFrame(bb[:8] for bb in list(bb_df.values))
+            bb_2 = pd.DataFrame(bb[8:] for bb in list(bb_df.values))
+            bb_3 = pd.DataFrame(bb[:8]+"_"+bb[8:] for bb in list(bb_df.values))
             # save bb files in {SAMPLE}/bb
             bb_1.to_csv(
                 output.BB_1, sep="\t", header=False, index=False
@@ -31,11 +32,15 @@ rule write_barcode_list_variants:
             bb_2.to_csv(
                 output.BB_2, sep="\t", header=False, index=False
             )  # Bead Barcode #2
+            bb_3.to_csv(
+                output.BB_3, sep="\t", header=False, index=False
+            )  # Bead Barcode With Underscore for alignment
         else:
             shell(
                 f"""
                 touch {output.BB_1}
                 touch {output.BB_2}
+                touch {output.BB_3}
                 """
             )
 
