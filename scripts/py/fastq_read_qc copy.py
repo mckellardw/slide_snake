@@ -30,16 +30,17 @@ def calculate_metrics(fastq_file, individual=True):
                     gc_percent = round(gc_count * 100 / len(seq), 2)
                     homopolymer_lengths = [len(list(g)) for k, g in groupby(seq)]
                     longest_homopolymer = max(homopolymer_lengths)
-                    homopolymer_base = seq[homopolymer_lengths.index(longest_homopolymer)]
-                else:                    
+                    homopolymer_base = seq[
+                        homopolymer_lengths.index(longest_homopolymer)
+                    ]
+                else:
                     first_base = None
                     last_base = None
                     gc_percent = None
                     homopolymer_lengths = None
                     longest_homopolymer = None
                     homopolymer_base = None
-                
-                
+
                 metrics.append(
                     {
                         # "Read_ID": read_ids[-1],
@@ -58,19 +59,19 @@ def calculate_metrics(fastq_file, individual=True):
 
 def write_tsv(metrics, tsv_file):
     with open(tsv_file, "w") as f:
-        f.write(
-            "\t".join(metrics[0].keys())+"\n"
-        )
+        f.write("\t".join(metrics[0].keys()) + "\n")
         for metric in metrics:
-            line="\t".join([str(val) for val in metric.values()])
-            f.write(line+"\n")
+            line = "\t".join([str(val) for val in metric.values()])
+            f.write(line + "\n")
 
 
 def process_reads(fastq_file, tsv_file):
     print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Processing reads...")
     metrics = calculate_metrics(fastq_file)
     print(f"Processed {len(metrics)} reads...")
-    print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Writing metrics to file...")
+    print(
+        f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Writing metrics to file..."
+    )
     write_tsv(metrics, tsv_file)
 
 
@@ -81,6 +82,7 @@ def process_reads(fastq_file, tsv_file):
 
 #     with ThreadPoolExecutor(max_workers=threads) as executor:
 #         executor.submit(process_reads, fastq_file, tsv_file)
+
 
 def main(fastq_file, tsv_file, threads):
     output_dir = os.path.dirname(tsv_file)
@@ -96,20 +98,13 @@ def main(fastq_file, tsv_file, threads):
     #     process_reads(fastq_file, tsv_file)
     process_reads(fastq_file, tsv_file)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Parse FASTQ file and write metrics to TSV."
     )
-    parser.add_argument(
-        "fastq_file", 
-        type=str, 
-        help="Path to the input FASTQ file."
-    )
-    parser.add_argument(
-        "tsv_file", 
-        type=str, 
-        help="Path to the output TSV file."
-    )
+    parser.add_argument("fastq_file", type=str, help="Path to the input FASTQ file.")
+    parser.add_argument("tsv_file", type=str, help="Path to the output TSV file.")
     parser.add_argument(
         "--threads",
         type=int,

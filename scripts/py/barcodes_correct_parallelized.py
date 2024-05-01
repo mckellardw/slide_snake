@@ -19,7 +19,7 @@ from tqdm import tqdm
 logger = logging.getLogger(__name__)
 
 # for debugging
-verbose = False #True
+verbose = False  # True
 
 
 def parse_args():
@@ -541,9 +541,7 @@ def main(args):
 
         func_args = []
         for bam in split_bam_files:
-            func_args.append(
-                (bam, bam.replace(".bam", "_corrected.bam"), 1, args)
-            )
+            func_args.append((bam, bam.replace(".bam", "_corrected.bam"), 1, args))
             logger.info(f"    {bam}")
 
         # if verbose: # for debuging

@@ -1,4 +1,4 @@
-# Toy data
+# Toy data for Seeker/SlideSeq_v2
 
 ## `Heart_Control` - Seeker/heart
 - [GEO link](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE161318)

@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import time
 
+
 def calculate_metrics(fastq_file, chunk_size=10000):
     is_compressed = fastq_file.endswith(".gz")
     metrics = []
@@ -14,9 +15,9 @@ def calculate_metrics(fastq_file, chunk_size=10000):
 
     with gzip.open(fastq_file, "rt") if is_compressed else open(fastq_file, "r") as f:
         for i, line in enumerate(f):
-            if i % 4 == 0: # ID line
+            if i % 4 == 0:  # ID line
                 read_id = line.strip()
-            elif i % 4 == 1: # Sequence line
+            elif i % 4 == 1:  # Sequence line
                 seq = line.strip()
                 if len(seq) > 0:
                     first_base = seq[0]
@@ -25,15 +26,17 @@ def calculate_metrics(fastq_file, chunk_size=10000):
                     gc_percent = round(gc_count * 100 / len(seq), 2)
                     homopolymer_lengths = [len(list(g)) for k, g in groupby(seq)]
                     longest_homopolymer = max(homopolymer_lengths)
-                    homopolymer_base = seq[homopolymer_lengths.index(longest_homopolymer)]
-                else:                    
+                    homopolymer_base = seq[
+                        homopolymer_lengths.index(longest_homopolymer)
+                    ]
+                else:
                     first_base = None
                     last_base = None
                     gc_percent = None
                     homopolymer_lengths = None
                     longest_homopolymer = None
                     homopolymer_base = None
-                
+
                 metrics.append(
                     {
                         "Read_ID": read_id,
@@ -50,7 +53,7 @@ def calculate_metrics(fastq_file, chunk_size=10000):
                 yield metrics
                 metrics = []
 
-        if metrics: 
+        if metrics:
             yield metrics
 
 
@@ -58,23 +61,29 @@ def write_tsv(metrics, tsv_file):
     # Check if the file is empty to determine if we need to write the header
     file_is_empty = not os.path.exists(tsv_file) or os.stat(tsv_file).st_size == 0
 
-    with open(tsv_file, "a") as f: # Open in append mode
+    with open(tsv_file, "a") as f:  # Open in append mode
         if file_is_empty:
-            f.write("\t".join(metrics[0].keys()) + "\n") # Write header only if file is empty
+            f.write(
+                "\t".join(metrics[0].keys()) + "\n"
+            )  # Write header only if file is empty
         for metric in metrics:
             line = "\t".join([str(val) for val in metric.values()])
             f.write(line + "\n")
+
 
 def process_reads(fastq_file, tsv_file, chunk_size=10000):
     print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Processing reads...")
     for metrics_chunk in calculate_metrics(fastq_file, chunk_size):
         print(f"Processed {len(metrics_chunk)} reads...")
-        print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Writing metrics to file...")
+        print(
+            f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Writing metrics to file..."
+        )
 
         # Force overwrite...
         if os.path.exists(tsv_file):
             os.remove(tsv_file)
         write_tsv(metrics_chunk, tsv_file)
+
 
 def main(fastq_file, tsv_file, threads):
     output_dir = os.path.dirname(tsv_file)
@@ -83,20 +92,13 @@ def main(fastq_file, tsv_file, threads):
 
     process_reads(fastq_file, tsv_file)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Parse FASTQ file and write metrics to TSV."
     )
-    parser.add_argument(
-        "fastq_file", 
-        type=str, 
-        help="Path to the input FASTQ file."
-    )
-    parser.add_argument(
-        "tsv_file", 
-        type=str, 
-        help="Path to the output TSV file."
-    )
+    parser.add_argument("fastq_file", type=str, help="Path to the input FASTQ file.")
+    parser.add_argument("tsv_file", type=str, help="Path to the output TSV file.")
     parser.add_argument(
         "--threads",
         type=int,

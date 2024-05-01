@@ -13,9 +13,7 @@ from numpy import intersect1d
 #   --remove_zero_features
 
 
-def main(
-    mat_in, bb_map, ad_out, remove_zero_features=False
-):
+def main(mat_in, bb_map, ad_out, remove_zero_features=False):
     # Count matrix
     adata = read_umi_tools(mat_in)
 

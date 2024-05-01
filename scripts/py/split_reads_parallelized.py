@@ -39,7 +39,7 @@ def find_and_split_reads(fq_in, split_seq, log=None, max_errors=2, min_read_leng
     output_prefix = fq_in.strip(".fq.gz")
 
     read_counter = 0
-    too_short_counter = 0 # filtered b/c too short counter
+    too_short_counter = 0  # filtered b/c too short counter
 
     aligner = Align.PairwiseAligner()
     aligner.mode = "local"  # Use 'local' for local alignment
@@ -84,7 +84,10 @@ def find_and_split_reads(fq_in, split_seq, log=None, max_errors=2, min_read_leng
                     part2_sequence = read.sequence[sequence_start:]
                     part2_quality = read.quality[sequence_start:]
 
-                    if len(part1_sequence) > min_read_length and len(part1_sequence) > min_read_length:
+                    if (
+                        len(part1_sequence) > min_read_length
+                        and len(part1_sequence) > min_read_length
+                    ):
                         # Write the split reads to the outpu    t FASTQ files
                         output_fastq1.write(
                             # pysam.FastxRecord(name=read.name + "_R1", sequence=part1_sequence, quality=part1_quality)
@@ -105,14 +108,14 @@ def find_and_split_reads(fq_in, split_seq, log=None, max_errors=2, min_read_leng
         with open(log, mode="w") as output_log:
             output_log.write(
                 f"{read_counter} reads written to {output_prefix}_R1.fq and {output_prefix}_R2.fq.\n"
-            )            
+            )
             output_log.write(
                 f"{too_short_counter} reads removed (shorter than {min_read_length} bases).\n"
             )
     else:
         print(
             f"{read_counter} reads written to {output_prefix}_R1.fq and {output_prefix}_R2.fq.\n"
-        )        
+        )
         print(
             f"{too_short_counter} reads removed (shorter than {min_read_length} bases).\n"
         )
@@ -123,9 +126,7 @@ if __name__ == "__main__":
         description="Splits reads in a FASTQ file at a specified sequence, allowing for mismatches."
     )
 
-    parser.add_argument(
-        "--fq_in", type=str, help="The path to the FASTQ file."
-    )
+    parser.add_argument("--fq_in", type=str, help="The path to the FASTQ file.")
     parser.add_argument(
         "--split_seq", type=str, help="The sequence to search for in the reads."
     )
@@ -210,7 +211,7 @@ if __name__ == "__main__":
             """
         )
 
-        if os.path.isfile(args.fq_in.replace('.fq.gz','_R2.fq.gz')):
+        if os.path.isfile(args.fq_in.replace(".fq.gz", "_R2.fq.gz")):
             os.system(
                 f"""
                 rm {' '.join(chunked_fqs_in)} {' '.join(chunked_fqs_out_R1)} {' '.join(chunked_fqs_out_R2)}

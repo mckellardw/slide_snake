@@ -1,4 +1,4 @@
-# Toy data
+# Toy data for Visium/STRS
 
 ## vy3C - STRS/SkM
 - [GEO link](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE161318)
