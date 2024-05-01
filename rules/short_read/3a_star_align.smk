@@ -50,6 +50,9 @@ rule STARsolo_align:
         MEMLIMIT=megabytes2bytes(config["MEMLIMIT_MB"]),
     priority: 42
     run:
+        recipe = str(
+            RECIPE_DICT[wildcards.SAMPLE][0]
+        )  # TODO- fix multi-R1 trimming handling
         # recipe = RECIPE_DICT[wildcards.SAMPLE]
         # recipe = wildcards.RECIPE
         # STAR_REF = REF_DICT[wildcards.SAMPLE]
@@ -64,6 +67,25 @@ rule STARsolo_align:
         # soloCBmatchWLtype = RECIPE_SHEET["STAR.soloCBmatchWLtype"][recipe]
         # soloAdapter = RECIPE_SHEET["STAR.soloAdapter"][recipe]
         # extraSTAR = RECIPE_SHEET["STAR.extra"][recipe]
+        #TODO: add try catches
+        soloType = RECIPE_SHEET["STAR.soloType"][recipe]
+        soloUMI = RECIPE_SHEET["STAR.soloUMI"][recipe]
+        soloCB = RECIPE_SHEET["STAR.soloCB"][recipe]
+        soloCBmatchWLtype = RECIPE_SHEET["STAR.soloCBmatchWLtype"][recipe]
+        soloAdapter = RECIPE_SHEET["STAR.soloAdapter"][recipe]
+        extraSTAR = RECIPE_SHEET["STAR.extra"][recipe]
+
+        #param handling for different SlideSeq R1 strategies
+        if "stomics" in recipe:
+            whitelist = input.BB_WHITELIST
+        elif "matchLinker" or 'decoderseq' in recipe:
+            whitelist = f"{input.BB_1} {input.BB_2}"
+        elif "internalTrim" in recipe:
+            whitelist = input.BB_WHITELIST
+        elif "adapterInsert" in recipe:
+            whitelist = input.BB_ADAPTER
+        else:
+            whitelist = input.BB_WHITELIST
 
         # Select input reads based on alignment recipe
         # if "rRNA.STAR" in recipe:  # Use trimmed & STAR-rRNA-filtered .fq's
@@ -88,7 +110,7 @@ rule STARsolo_align:
         # WASP?
         shell(
             f"""
-            mkdir -p $(dirname {output.BAM})
+                        mkdir -p $(dirname {output.BAM})
 
             {EXEC['STAR']} \
                 --runThreadN {threads} \
@@ -104,8 +126,8 @@ rule STARsolo_align:
                 --outSAMunmapped Within KeepPairs \
                 --soloType {params.STAR_PARAMS["STAR.soloType"]} {params.STAR_PARAMS["STAR.soloUMI"]} {params.STAR_PARAMS["STAR.soloCB"]} {params.STAR_PARAMS["STAR.soloAdapter"]} {params.STAR_PARAMS["STAR.extra"]} \
                 --soloCBmatchWLtype {params.STAR_PARAMS["STAR.soloCBmatchWLtype"]} \
-                --soloCBwhitelist {params.WHITELIST} \
-                --soloCellFilter TopCells $(wc -l {params.WHITELIST}) \
+                --soloCBwhitelist {whitelist} \
+                --soloCellFilter TopCells $(wc -l {whitelist}) \
                 --soloUMIfiltering MultiGeneUMI CR \
                 --soloUMIdedup 1MM_CR \
                 --soloBarcodeReadLength 0 \

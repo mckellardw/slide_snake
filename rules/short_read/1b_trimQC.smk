@@ -66,7 +66,7 @@ rule cutadapt:
         recipe = str(
             RECIPE_DICT[wildcards.SAMPLE][0]
         )  # TODO- fix multi-R1 trimming handling
-
+        
         R1_LENGTH = RECIPE_SHEET["R1.finalLength"][recipe]
 
         # TODO- fix multi-R1 trimming handling
