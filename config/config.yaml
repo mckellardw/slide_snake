@@ -11,7 +11,8 @@
 # SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/visium/vy3D.csv
 # SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/seeker/SHVN_1_2-NYGC.csv
 # SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/STRS_SHVN-NYGC.csv
-SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/microST/E073.csv
+# SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/microST/E073.csv
+SAMPLE_SHEET_PATH: data/test_sample_sheet.csv
 
 # Resource parameters
 CORES: 24               # how many cores to give each process
