@@ -1,6 +1,6 @@
 # `slide_snake`
 ![slide_snake](images/slide_snake_logo.png)
-## Flexible processing for spatial transcriptomics data  
+## Flexible processing for spatial transcriptomics data
 
 # [**UNDER CONSTRUCTION**]
 
@@ -20,31 +20,6 @@ mamba create --name snakemake_only -c bioconda snakemake
 mamba activate snakemake_only
 mamba activate slide_snake
 ```  
-
-### Alternatively...
-All executables are called from the path specified in `config.yaml` (See `EXEC`). If you already have the dependencies installed, just change the path.
-
-#### **Dependencies**:
-| Software         | Version/Link                                                                                   |
-|------------------|------------------------------------------------------------------------------------------------|
-| `cutadapt`       | [v3.4](https://cutadapt.readthedocs.io/en/stable/)                                             |
-| `fastqc`         | [v0.11.8](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)                          |
-| `STAR`           | [v2.7.10a](https://github.com/alexdobin/STAR)                                                  |
-| `kallisto`       | [v](https://pachterlab.github.io/kallisto/)                                                    |
-| `kb-python`      |  #TODO                                                                                         |
-| `samtools`       | [v1.17](http://www.htslib.org/)                                                                |
-| `qualimap`       | [v2.2.2a](http://qualimap.conesalab.org/)                                                      |
-| `AnnData`        | [v0.9.1](https://anndata.readthedocs.io/en/latest/)                                            |
-| `scanpy`         | [v1.7.2](https://scanpy.readthedocs.io/en/stable/)                                             |
-| `vsearch`        | [v2.17.0_linux_x86_64](https://github.com/torognes/vsearch)                                    |
-| `BLAST`          |                                                                                                |
-
-Just for ONT analysis:
-| Software         | Version/Link                                                                                   |
-|------------------|------------------------------------------------------------------------------------------------|
-| `   `   | [v#.#](TODO)                                                                                            |
-| `   `       | [v#.#](TODO)                                                                                        |
-| `TODO`           | [v#.#](TODO)                                                                                   |
 
 
 ## Quick start 
