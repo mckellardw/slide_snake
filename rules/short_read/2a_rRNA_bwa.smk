@@ -1,13 +1,15 @@
 # Filter out rRNA reads w/ bwa alignment
 # VASAseq implementation - https://github.com/anna-alemany/VASAseq/blob/main/mapping/ribo-bwamem.sh
+        # Align to rRNA ref w/ `bwa mem` for cleaner/faster rRNA filtering 
+        ##TODO incorporate VASAseq style "long"/short read handling with multiple align steps
+        ##TODO- modify this so that it doesn't treat reads as paired-end
 rule bwa_rRNA_align:
     input:
-        # R2_FQ = '{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz',
         R2_FQ = "{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
-        BB_WHITELIST = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
-        BB_1 = "{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
-        BB_2 = "{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
-        BB_ADAPTER = "{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt"
+        BC_WHITELIST = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
+        BC_1 = "{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
+        BC_2 = "{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
+        BC_ADAPTER = "{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt"
     output:
         BAM1 = temp("{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned.bam"),
         BAM2 = "{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam", 
@@ -22,9 +24,6 @@ rule bwa_rRNA_align:
     threads:
         config['CORES']
     run:
-        # Align to rRNA ref w/ `bwa mem` for cleaner/faster rRNA filtering 
-        ##TODO incorporate VASAseq style "long"/short read handling with multiple align steps
-        ##TODO- modify this so that it doesn't treat reads as paired-end
         shell(            
             f"""
             mkdir -p $(dirname {output.BAM1})
@@ -54,17 +53,17 @@ rule bwa_rRNA_align:
         )
 
 
-rule bwa_rRNA_index_alignment:
-    input:
-        BAM = "{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam", 
-    output:
-        BAI = "{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam.bai",
-    run:
-        shell(
-            f"""
-            {EXEC['SAMTOOLS']} index {input.BAM}
-            """
-        )
+# rule bwa_rRNA_index_alignment:
+#     input:
+#         BAM = "{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam", 
+#     output:
+#         BAI = "{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam.bai",
+#     run:
+#         shell(
+#             f"""
+#             {EXEC['SAMTOOLS']} index {input.BAM}
+#             """
+#         )
 
 
 rule bwa_rRNA_filter_R1:

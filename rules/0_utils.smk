@@ -1,3 +1,23 @@
+#### Utility rules ############################2
+
+# Index .bam file
+rule index_BAM:
+    input:
+        BAM="{BAM}",
+    output:
+        BAI="{BAM}.bai",
+    wildcard_constraints:
+        BAM=".*\.(bam)$"
+    threads: config["CORES"]
+    run:
+        shell(
+            f"""
+            {EXEC['SAMTOOLS']} index -@ {threads} {input.BAM}
+            """
+        )
+
+
+#### Util functions ###########################
 # whitelist param handling for different recipes
 def get_whitelist(w):
     try:

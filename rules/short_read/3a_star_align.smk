@@ -15,12 +15,12 @@ rule STARsolo_align:
         R2_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz",
         R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz",
         R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz",
-        BB_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
-        BB_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
-        BB_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
-        BB_ADAPTER="{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt",
+        BC_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
+        BC_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
+        BC_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
+        BC_ADAPTER="{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt",
+        BC_US="{OUTDIR}/{SAMPLE}/bb/whitelist_underscore.txt",
     output:
-        # BAM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.out.bam", 
         BAM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.out.bam",  #TODO: add temp()
         UNMAPPED1="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate1",
         UNMAPPED2="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2",
@@ -35,10 +35,6 @@ rule STARsolo_align:
         GENEFULL_MAT_EM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx",
         GENEFULL_BC="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv",
         GENEFULL_FEAT="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/features.tsv",
-        # MATS = [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/{SOLO}/raw/{MAT}.mtx" for SAMPLE in SAMPLES for RECIPE in RECIPE_DICT[SAMPLE] for SOLO in ["Gene","GeneFull"] for MAT in ["matrix", "UniqueAndMult-EM"]],
-        # VELO_MATS = [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Velocyto/raw/{MAT}.mtx" for SAMPLE in SAMPLES for RECIPE in RECIPE_DICT[SAMPLE] for MAT in ["spliced","unspliced","ambiguous"]],
-        # BC = [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/{SOLO}/raw/barcodes.tsv" for SAMPLE in SAMPLES for RECIPE in RECIPE_DICT[SAMPLE] for SOLO in ["Velocyto","Gene","GeneFull"]],
-        # FEAT = [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/{SOLO}/raw/features.tsv" for SAMPLE in SAMPLES for RECIPE in RECIPE_DICT[SAMPLE] for SOLO in ["Velocyto","Gene","GeneFull"]]
     params:
         MEMLIMIT=config["MEMLIMIT"],  #TODO- move this to resources for slurm
         WHITELIST=lambda w: get_whitelist(w),
@@ -53,64 +49,12 @@ rule STARsolo_align:
         recipe = str(
             RECIPE_DICT[wildcards.SAMPLE][0]
         )  # TODO- fix multi-R1 trimming handling
-        # recipe = RECIPE_DICT[wildcards.SAMPLE]
-        # recipe = wildcards.RECIPE
-        # STAR_REF = REF_DICT[wildcards.SAMPLE]
-        # nBB = sum(
-        #     1 for line in open(input.BB_WHITELIST)
-        # )  # get number of bead barcodes for filtered count matrix, `--soloCellFilter`
-
-        # TODO: move to util function
-        # soloType = RECIPE_SHEET["STAR.soloType"][recipe]
-        # soloUMI = RECIPE_SHEET["STAR.soloUMI"][recipe]
-        # soloCB = RECIPE_SHEET["STAR.soloCB"][recipe]
-        # soloCBmatchWLtype = RECIPE_SHEET["STAR.soloCBmatchWLtype"][recipe]
-        # soloAdapter = RECIPE_SHEET["STAR.soloAdapter"][recipe]
-        # extraSTAR = RECIPE_SHEET["STAR.extra"][recipe]
-        #TODO: add try catches
-        soloType = RECIPE_SHEET["STAR.soloType"][recipe]
-        soloUMI = RECIPE_SHEET["STAR.soloUMI"][recipe]
-        soloCB = RECIPE_SHEET["STAR.soloCB"][recipe]
-        soloCBmatchWLtype = RECIPE_SHEET["STAR.soloCBmatchWLtype"][recipe]
-        soloAdapter = RECIPE_SHEET["STAR.soloAdapter"][recipe]
-        extraSTAR = RECIPE_SHEET["STAR.extra"][recipe]
-
-        #param handling for different SlideSeq R1 strategies
-        if "stomics" in recipe:
-            whitelist = input.BB_WHITELIST
-        elif "matchLinker" or 'decoderseq' in recipe:
-            whitelist = f"{input.BB_1} {input.BB_2}"
-        elif "internalTrim" in recipe:
-            whitelist = input.BB_WHITELIST
-        elif "adapterInsert" in recipe:
-            whitelist = input.BB_ADAPTER
-        else:
-            whitelist = input.BB_WHITELIST
-
-        # Select input reads based on alignment recipe
-        # if "rRNA.STAR" in recipe:  # Use trimmed & STAR-rRNA-filtered .fq's
-        #     R1 = input.R1_FQ_STAR_FILTERED
-        #     R2 = input.R2_FQ_STAR_FILTERED
-        # elif "rRNA.bwa" in recipe:  # TODO Use trimmed & bwa-rRNA-filtered .fq's
-        #     R1 = input.R1_FQ_BWA_FILTERED
-        #     R2 = input.R2_FQ_BWA_FILTERED
-        # elif "rRNA" not in recipe:  # just trimmed .fq's
-        #     # R1 = input.R1_FQ
-        #     # R2 = input.R2_FQ
-        #     R1 = input.R1_FQ_TWICE_CUT
-        #     R2 = input.R2_FQ_TWICE_CUT
-        # else:
-        #     print("I just don't know what to do with myself...")
-
-        # if "internalTrim" in recipe or "hardTrim" in recipe:
-        #     R1 = input.R1_FQ_TWICE_CUT_TRIMMED
-
         # Run STARsolo
         # TODO?: --twopassMode
         # WASP?
         shell(
             f"""
-                        mkdir -p $(dirname {output.BAM})
+            mkdir -p $(dirname {output.BAM})
 
             {EXEC['STAR']} \
                 --runThreadN {threads} \
@@ -236,19 +180,19 @@ rule compress_STAR_outs:
 
 
 # Index .bam output by STAR
-rule indexSortedBAM:
-    input:
-        BAM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.out.bam",
-    output:
-        BAI="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.out.bam.bai",
-    threads: config["CORES"]
-    # 1
-    run:
-        shell(
-            f"""
-            {EXEC['SAMTOOLS']} index -@ {threads} {input.BAM}
-            """
-        )
+# rule indexSortedBAM:
+#     input:
+#         BAM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.out.bam",
+#     output:
+#         BAI="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.out.bam.bai",
+#     threads: config["CORES"]
+#     # 1
+#     run:
+#         shell(
+#             f"""
+#             {EXEC['SAMTOOLS']} index -@ {threads} {input.BAM}
+#             """
+#         )
 
 
 # rule multiqc_STAR:

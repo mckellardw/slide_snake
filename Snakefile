@@ -147,11 +147,12 @@ rule all:
         #         ]
         # ], # ONT outputs
 
-        [f"{OUTDIR}/{SAMPLE}/fastqc/{TRIM}"
-            for SAMPLE in ONT.keys()
-            for READ in ["R1","R2"]
-            for TRIM in ["ont_preAdapterScan",f"ont_preCutadapt_{READ}",f"ont_postCutadapt_{READ}"]
-        ], # ONT fastqc
+        # [f"{OUTDIR}/{SAMPLE}/fastqc/{TRIM}"
+        #     for SAMPLE in ONT.keys()
+        #     for READ in ["R1","R2"]
+        #     for TRIM in ["ont_preAdapterScan",f"ont_preCutadapt_{READ}",f"ont_postCutadapt_{READ}"]
+        # ], # ONT fastqc - not really useful...
+
         [f"{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc.{FILE}"
             for SAMPLE in ONT.keys()
             for READ in ["R1","R2"]
@@ -190,26 +191,26 @@ rule all:
         #     ]
         # ),        
 
-        # Module 3 - STAR alignment
-        # deduped and/or strand-split, umi_tools deduplicated .bam #TODO- REF=["STARsolo_rRNA", "STARsolo"]
-        [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.dedup.out.bam"
+        # Module 3 - STAR alignment        
+        [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.dedup.out{STRAND}.bam.bai",
             for SAMPLE in R2_FQS.keys() 
-            for RECIPE in RECIPE_DICT[SAMPLE]
-        
-       ],
-        [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.out.bam"
-            for SAMPLE in R2_FQS.keys() 
-            for RECIPE in RECIPE_DICT[SAMPLE]
-        
-       ],
+            for RECIPE in RECIPE_DICT[SAMPLE] 
+            for STRAND in ["", ".fwd", ".rev"]
+        ], # deduped and/or strand-split, umi_tools deduplicated .bam #TODO- REF=["STARsolo_rRNA", "STARsolo"]
         [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx.gz" 
-             for SAMPLE in R2_FQS.keys() 
-             for RECIPE in RECIPE_DICT[SAMPLE]
-         ], # STAR count mats             
+            for SAMPLE in R2_FQS.keys() 
+            for RECIPE in RECIPE_DICT[SAMPLE]
+        ], # STAR count mats             
+        [f"{OUTDIR}/{SAMPLE}/qualimap/{RECIPE}/{FILE}"
+            for SAMPLE in R2_FQS.keys() 
+            for RECIPE in RECIPE_DICT[SAMPLE] 
+            for FILE in ["qualimapReport.html","rnaseq_qc_result.csv"] 
+        ], # alignment QC with qualimap | requires deduped input!      
         [f"{OUTDIR}/{SAMPLE}/fastqc/unmapped/{RECIPE}" 
             for SAMPLE in R2_FQS.keys() 
             for RECIPE in RECIPE_DICT[SAMPLE]
         ],
+        
          #fastQC results for unmapped reads
         # [f"{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/blast/Unmapped.out.mate2_blastResults.txt",
         #     SAMPLE=R2_FQS.keys()

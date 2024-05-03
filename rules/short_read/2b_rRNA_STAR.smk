@@ -5,10 +5,11 @@ rule STAR_rRNA_align:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
-        BB_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
-        BB_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
-        BB_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
-        BB_ADAPTER="{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt",
+        BC_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
+        BC_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
+        BC_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
+        BC_ADAPTER="{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt",
+        BC_US="{OUTDIR}/{SAMPLE}/bb/whitelist_underscore.txt",
     output:
         BAM="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam",  #TODO: add temp()
         UNMAPPED1="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Unmapped.out.mate1",
@@ -18,23 +19,10 @@ rule STAR_rRNA_align:
     params:
         MEMLIMIT=config["MEMLIMIT"],
         WHITELIST=lambda w: get_whitelist(w),
+        STAR_REF=lambda w: get_STAR_ref(w),
+        STAR_PARAMS=lambda w: get_STAR_extra_params(w),
     threads: config["CORES"]
     run:
-        recipe = RECIPE_DICT[wildcards.SAMPLE][0]  # TODO fix recipe handling here...
-
-        STAR_REF = rRNA_STAR_DICT[wildcards.SAMPLE]  # use rRNA ref
-        nBB = sum(
-            1 for line in open(input.BB_WHITELIST)
-        )  # get number of bead barcodes for filtered count matrix, `--soloCellFilter`
-
-        # TODO: add try catches
-        soloType = RECIPE_SHEET["STAR.soloType"][recipe]
-        soloUMI = RECIPE_SHEET["STAR.soloUMI"][recipe]
-        soloCB = RECIPE_SHEET["STAR.soloCB"][recipe]
-        soloCBmatchWLtype = RECIPE_SHEET["STAR.soloCBmatchWLtype"][recipe]
-        soloAdapter = RECIPE_SHEET["STAR.soloAdapter"][recipe]
-        extraSTAR = RECIPE_SHEET["STAR.extra"][recipe]
-
         shell(
             f"""
             mkdir -p $(dirname {output.BAM})
@@ -45,16 +33,17 @@ rule STAR_rRNA_align:
                 --outSAMtype BAM SortedByCoordinate \
                 --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
                 --readFilesCommand zcat \
-                --genomeDir {STAR_REF} \
+                --genomeDir {params.STAR_REF} \
                 --limitBAMsortRAM={params.MEMLIMIT} \
                 --readFilesIn {input.R2_FQ} {input.R1_FQ} \
                 --clipAdapterType CellRanger4 \
                 --outReadsUnmapped Fastx \
-                --outSAMunmapped Within KeepPairs \
-                --soloType {soloType} {soloUMI} {soloCB} {soloAdapter} {extraSTAR} \
-                --soloCBwhitelist {input.BB_1} {input.BB_2} \
-                --soloCBmatchWLtype {soloCBmatchWLtype} \
-                --soloCellFilter TopCells {nBB} \
+                --outSAMunmapped Within KeepPairs \                
+                --soloType {params.STAR_PARAMS["STAR.soloType"]} {params.STAR_PARAMS["STAR.soloUMI"]} {params.STAR_PARAMS["STAR.soloCB"]} {params.STAR_PARAMS["STAR.soloAdapter"]} {params.STAR_PARAMS["STAR.extra"]} \
+                --soloCBwhitelist {params.WHITELIST} \
+                --soloCellFilter TopCells $(wc -l {params.WHITELIST}) \
+                --soloCBmatchWLtype {params.STAR_PARAMS["STAR.soloCBmatchWLtype"]} \
+                --soloCellFilter TopCells $(wc -l {whitelist}) \
                 --soloUMIfiltering MultiGeneUMI CR \
                 --soloUMIdedup 1MM_CR \
                 --soloBarcodeReadLength 0 \
@@ -62,9 +51,6 @@ rule STAR_rRNA_align:
                 --soloMultiMappers EM
             """
         )
-
-
-#
 
 
 # compress outputs from STAR (count matrices, cell barcodes, and gene lists)
@@ -104,18 +90,18 @@ rule STAR_rRNA_compress_outs:
 
 
 # Index the .bam file produced by STAR
-rule STAR_rRNA_indexSortedBAM:
-    input:
-        SORTEDBAM="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam",
-    output:
-        BAI="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam.bai",
-    threads: config["CORES"]
-    run:
-        shell(
-            f"""
-            {EXEC['SAMTOOLS']} index -@ {threads} {input.SORTEDBAM}
-            """
-        )
+# rule STAR_rRNA_indexSortedBAM:
+#     input:
+#         SORTEDBAM="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam",
+#     output:
+#         BAI="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam.bai",
+#     threads: config["CORES"]
+#     run:
+#         shell(
+#             f"""
+#             {EXEC['SAMTOOLS']} index -@ {threads} {input.SORTEDBAM}
+#             """
+#         )
 
 
 # Switch names because of STAR weirdness

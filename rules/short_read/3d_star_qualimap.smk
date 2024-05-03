@@ -1,6 +1,4 @@
 # QC on STAR outputs
-
-
 ## qualimap on deduplicated/aligned reads
 rule qualimapQC_STAR:
     input:
@@ -28,10 +26,6 @@ rule qualimapQC_STAR:
                 -outformat html
             """
         )
-        # cd {output.qualimapDir}
-        # -nt {threads} \
-
-
 
 rule qualimap_summary2csv_STAR:
     input:
