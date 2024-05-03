@@ -1,5 +1,4 @@
-# SlideSeq-specific rules for handling the error-prone R1
-
+# Rules for formatting barcode lists/maps for different chemistries
 
 # Split the bead barcodes and save whitelists
 rule write_barcode_list_variants:
@@ -24,9 +23,11 @@ rule write_barcode_list_variants:
             bb_df = pd.read_csv(input.BB_map, sep="\t", header=None).iloc[:, 0]
 
             # split for 2 separate barcodes
+            #TODO- refactor to take info from recipe_sheet on barcode positions/lengths
             bb_1 = pd.DataFrame(bb[:8] for bb in list(bb_df.values))
             bb_2 = pd.DataFrame(bb[8:] for bb in list(bb_df.values))
             bb_3 = pd.DataFrame(bb[:8] + "_" + bb[8:] for bb in list(bb_df.values))
+
             # save bb files in {SAMPLE}/bb
             bb_1.to_csv(
                 output.BB_1, sep="\t", header=False, index=False

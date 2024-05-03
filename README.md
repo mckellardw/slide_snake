@@ -39,7 +39,7 @@ snakemake --cluster-config config/slurm.yaml --cluster "sbatch -p {cluster.parti
 
 ### Example run w/out `slurm`:
 ```
-snakemake -k -p -j 32 
+snakemake -k -p --use-conda --conda-frontend mamba -j 32 
 ```
 
 ## **Helpful links:**
