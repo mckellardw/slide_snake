@@ -93,7 +93,9 @@ dependencies:
   - r-fansi=1.0.6
   - r-farver=2.1.1
   - r-future=1.33.2
+  - r-hexbin
   - r-getopt=1.20.4
+  - r-ggforce
   - r-ggplot2=3.5.0
   - r-globals=0.16.3
   - r-glue=1.7.0
