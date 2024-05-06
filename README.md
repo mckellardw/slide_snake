@@ -1,8 +1,7 @@
 # `slide_snake`
+# [***UNDER CONSTRUCTION***]
 ![slide_snake](images/slide_snake_logo.png)
 ## Flexible processing for spatial transcriptomics data
-
-# [**UNDER CONSTRUCTION**]
 
 The goal of this project is to build a snakemake workflow for assessing different preprocessing, alignment, and quantification configurations, and digging into artifacts.  
 
@@ -21,7 +20,6 @@ mamba activate snakemake_only
 mamba activate slide_snake
 ```  
 
-
 ## Quick start 
 - Please see `documentation/*.md` for detailed info on custom recipes, pipeline details, etc.
 - How to set up a run:
@@ -39,7 +37,7 @@ snakemake --cluster-config config/slurm.yaml --cluster "sbatch -p {cluster.parti
 
 ### Example run w/out `slurm`:
 ```
-snakemake -k -p --use-conda --conda-frontend mamba -j 32 
+snakemake -k -p --use-conda --conda-frontend mamba -j 54
 ```
 
 ## **Helpful links:**

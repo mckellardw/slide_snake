@@ -3,7 +3,7 @@
 ##  source: https://github.com/pachterlab/kb_python
 ##  info: https://www.kallistobus.tools/  [currently very out of date]
 #############################################
-rule kbpython_standard:
+rule kbpython_velo:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz",
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz",
@@ -23,13 +23,12 @@ rule kbpython_standard:
         GENES="{OUTDIR}/{SAMPLE}/kbpython/{RECIPE}/counts_unfiltered/cells_x_genes.genes.txt",
         MAT="{OUTDIR}/{SAMPLE}/kbpython/{RECIPE}/counts_unfiltered/cells_x_genes.mtx",
     params:
-        KB_IDX=lambda wildcards: IDX_DICT[wildcards.SAMPLE],
         KB_X=lambda wildcards: RECIPE_SHEET["kb.x"][wildcards.RECIPE],
+        KB_IDX=lambda wildcards: IDX_VELO_DICT[wildcards.SAMPLE],
         KB_T2G=lambda wildcards: T2G_DICT[wildcards.SAMPLE],
         FQS=lambda w: get_fqs(w),
-        KB=EXEC["KB"],
         KALLISTO=EXEC["KALLISTO"],
-        BUSTOOLS=EXEC["BUSTOOLS"],
+        KB=EXEC["KB"],
     log:
         log="{OUTDIR}/{SAMPLE}/kbpython/{RECIPE}/kbpython_standard.log",
     threads: config["CORES"]
@@ -50,13 +49,16 @@ rule kbpython_standard:
             -o $(dirname {output.BUS}) \
             --strand forward \
             -mm \
-            --workflow standard \
+            --workflow nac \
             -x {params.KB_X} \
             -w {input.BC} \
             -t {threads} \
             {params.FQS[0]} {params.FQS[1]} \
         2> {log.log}
         """
+        # -m {resources.MEM_GB} \
+        # --report \
+
 
 # # gzip the count matrix, etc.
 rule compress_kbpython_outs:

@@ -11,7 +11,7 @@ rule kallisto_align:
         R2_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz",
         R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz",
         R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz",
-        BB="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
+        BC="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
     output:
         BUS=temp("{OUTDIR}/{SAMPLE}/kb/{RECIPE}/output.bus"),
         BUS_CORRECTED=temp("{OUTDIR}/{SAMPLE}/kb/{RECIPE}/output.corrected.bus"),
@@ -19,6 +19,7 @@ rule kallisto_align:
         ECMAP=temp("{OUTDIR}/{SAMPLE}/kb/{RECIPE}/matrix.ec"),
     params:
         MEMLIMIT=config["MEMLIMIT_GB"],
+        FQS=lambda w: get_fqs(w),
     log:
         log="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/kallisto_align.log",
     threads: config["CORES"]
@@ -26,39 +27,24 @@ rule kallisto_align:
         mem_mb=config["MEMLIMIT_MB"],
     priority: 42
     run:
-        # recipe = RECIPE_DICT[wildcards.SAMPLE]
         recipe = wildcards.RECIPE
 
         KB_IDX = IDX_DICT[wildcards.SAMPLE]
         KB_X = RECIPE_SHEET["kb.x"][recipe]
 
-        # Select input reads based on alignment recipe
-        if "rRNA.STAR" in recipe:  # Use trimmed & STAR-rRNA-filtered .fq's
-            R1 = input.R1_FQ_STAR_FILTERED
-            R2 = input.R2_FQ_STAR_FILTERED
-        elif "rRNA.bwa" in recipe:  # TODO Use trimmed & bwa-rRNA-filtered .fq's
-            R1 = input.R1_FQ_BWA_FILTERED
-            R2 = input.R2_FQ_BWA_FILTERED
-        elif "rRNA" not in recipe:  # just trimmed .fq's
-            # R1 = input.R1_FQ
-            # R2 = input.R2_FQ
-            R1 = input.R1_FQ_TWICE_CUT
-            R2 = input.R2_FQ_TWICE_CUT
-        else:
-            print("I just don't know what to do with myself...")
 
         shell(
             f"""
             bash scripts/bash/kb.sh \
                 --outdir $(dirname {output.BUS}) \
                 --kb_idx {KB_IDX} \
-                --whitelist {input.BB} \
+                --whitelist {input.BC} \
                 --chemistry {KB_X} \
                 --log {log.log} \
                 --threads {threads} \
                 --memlimit {params.MEMLIMIT} \
-                --r1fq {R1} \
-                --r2fq {R2}
+                --r1fq {params.FQS[0]} \
+                --r2fq {params.FQS[1]}
             """
         )
 
@@ -94,44 +80,6 @@ rule bus2mat:
             2> {log.log}
             """
         )
-
-
-# TODO- use `--downsample` to generate count mats with different downsampling rates
-# rule kb_rarefaction:
-#     input:
-#         BUS         = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/output.corrected.bus',
-#         TRANSCRIPTS = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/transcripts.txt',
-#         ECMAP       = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/matrix.ec'
-#     output:
-#         BCS   = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.barcodes.txt',
-#         GENES = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.genes.txt',
-#         MAT   = '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.mtx'
-#     params:
-#         DOWN_RATES = [0.1, 0.2, 0.5, 0.75]
-#     log:
-#         '{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/rarefaction.log'
-#     threads:
-#         1
-#     run:
-#         KB_T2G = T2G_DICT[wildcards.SAMPLE]
-
-#         shell(
-#             f"""
-#             mkdir -p {params.MATDIR}
-
-#             {EXEC['BUSTOOLS']} count \
-#                 --output $(dirname {output.MAT}) \
-#                 --genemap {KB_T2G} \
-#                 --ecmap {input.ECMAP} \
-#                 --txnames {input.TRANSCRIPTS} \
-#                 --genecounts \
-#                 --umi-gene \
-#                 --em \
-#                 --downsample {DOWN_RATE}
-#                 {input.BUS} \
-#             2> {log}
-#             """
-#         )
 
 
 # gzip the count matrix, etc.
