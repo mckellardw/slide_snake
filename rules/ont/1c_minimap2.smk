@@ -23,8 +23,8 @@ rule ont_umitools_extract:
     run:
         shell(
             f"""
-            echo "Barcode pattern: '{BC_PATTERN}'" > {log.log}
-            echo "Extract method:  {EXTRACT_METHOD}" >> {log.log}
+            echo "Barcode pattern: '{params.BC_PATTERN}'" > {log.log}
+            echo "Extract method:  {params.EXTRACT_METHOD}" >> {log.log}
             echo "" >> {log.log}
 
             {EXEC['UMITOOLS']} extract \
@@ -100,7 +100,7 @@ rule ont_sort_index_output:
     output:
         # BAM_UNSORT_TMP=temp("{OUTDIR}/{SAMPLE}/ont/tmp_unsort.sam"),
         BAM=temp("{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam"),
-        BAI=temp("{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam.bai"),
+        # BAI=temp("{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam.bai"),
     params:
         ref=config["REF_GENOME_FASTA"],
     # threads:
@@ -114,12 +114,11 @@ rule ont_sort_index_output:
                 -o {output.BAM} \
                 {input.SAM} 
             
-            {EXEC['SAMTOOLS']} index {output.BAM}
             """
         )
+            # {EXEC['SAMTOOLS']} index {output.BAM}
 
 
-#
 
 # Old ONT code - barcode is left in the read during alignment which seems dumb?
 # rule ont_extract_barcodes_from_R1:
@@ -197,18 +196,18 @@ rule ont_extract_barcodes_from_R1:
         )
 
 
-rule ont_index_bc_output:
-    input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam",
-    output:
-        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.bai",
-    threads: 1
-    run:
-        shell(
-            f"""
-            {EXEC['SAMTOOLS']} index {input.BAM}
-            """
-        )
+# rule ont_index_bc_output:
+#     input:
+#         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam",
+#     output:
+#         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.bai",
+#     threads: 1
+#     run:
+#         shell(
+#             f"""
+#             {EXEC['SAMTOOLS']} index {input.BAM}
+#             """
+#         )
 
 
 # Note - run time increases (substantially) with BC length
@@ -266,22 +265,20 @@ rule ont_error_correct_barcodes:
 
 
 
-rule ont_index_bc_corrected_output:
-    input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam",
-    output:
-        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam.bai",
-    threads: 1
-    # config["CORES"]
-    run:
-        shell(
-            f"""
-            {EXEC['SAMTOOLS']} index {input.BAM}
-            """
-        )
+# rule ont_index_bc_corrected_output:
+#     input:
+#         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam",
+#     output:
+#         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam.bai",
+#     threads: 1
+#     # config["CORES"]
+#     run:
+#         shell(
+#             f"""
+#             {EXEC['SAMTOOLS']} index {input.BAM}
+#             """
+#         )
 
-
-#
 
 # rule ont_assign_genes:
 #     input:
@@ -459,7 +456,7 @@ rule ont_featureCounts:
 rule ont_add_featureCounts_to_bam:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam",
-        # BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.bai",
+        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam.bai",
         TSV="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam.featureCounts",
     output:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_gn.bam",
@@ -477,18 +474,18 @@ rule ont_add_featureCounts_to_bam:
         )
 
 
-rule ont_index_featureCounts_output:
-    input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_gn.bam",
-    output:
-        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_gn.bam.bai",
-    threads: 1
-    run:
-        shell(
-            f"""
-            {EXEC['SAMTOOLS']} index {input.BAM}
-            """
-        )
+# rule ont_index_featureCounts_output:
+#     input:
+#         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_gn.bam",
+#     output:
+#         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_gn.bam.bai",
+#     threads: 1
+#     run:
+#         shell(
+#             f"""
+#             {EXEC['SAMTOOLS']} index {input.BAM}
+#             """
+#         )
 
 
 # Generate count matrix w/ umi-tools

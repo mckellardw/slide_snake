@@ -6,8 +6,8 @@ rule index_BAM:
         BAM="{BAM}",
     output:
         BAI="{BAM}.bai",
-    wildcard_constraints:
-        BAM=".*\.(bam)$"
+    # wildcard_constraints:
+    #     BAM=".*\.(bam)$"
     threads: config["CORES"]
     run:
         shell(
@@ -68,8 +68,8 @@ def get_ont_barcode_pattern(w):
     ## SlideSeq/Seeker: R1="C"*22 | BC1="C"*8 | Linker="C"*18 | BC2="C"*6 | UMI="N"* 7
     try:
         if "stomics" in w.RECIPE:
-            BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
-        elif "noTrim" in w.RECIPE or "matchLinker" in w.RECIPE:
+            BC_PATTERN = "C" * 25 + "N" * 10
+        elif "visium" in w.RECIPE:
             BC_PATTERN = "C" * 16 + "N" * 12
         elif "seeker" in w.RECIPE and "noTrim" in w.RECIPE or "matchLinker" in w.RECIPE:
             BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
@@ -78,9 +78,9 @@ def get_ont_barcode_pattern(w):
         elif "seeker" in w.RECIPE and "adapterInsert" in w.RECIPE:
             BC_PATTERN = "C" * 8 + "C" * 18 + "C" * 6 + "N" * 7
         else:
-            BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
+            BC_PATTERN = "C" * 16 + "N" * 12
     except:
-        BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
+            BC_PATTERN = "C" * 16 + "N" * 12
 
     # return barcode pattern
     return BC_PATTERN
@@ -99,34 +99,52 @@ def get_ont_barcode_pattern(w):
 #     "(?P<umi_1>.{{7}})"
 
 
-def get_STAR_ref(w):
+def get_STAR_ref(w, mode="genome"):
     try:
-        star_ref = REF_DICT[w.SAMPLE]
+        if mode == "genome":
+            star_ref = REF_DICT[w.SAMPLE]
+        elif mode == "rRNA":
+            star_ref = rRNA_STAR_DICT[w.SAMPLE]
     except:
         star_ref = "No reference given! Check your sample sheet!"
 
     return star_ref
 
-
+#TODO- add STAR_rRNA functinoality (no w.RECIPE accessibility)
 def get_STAR_extra_params(w):
-    keys = [
-        "STAR.soloType",
-        "STAR.soloUMI",
-        "STAR.soloCB",
-        "STAR.soloCBmatchWLtype",
-        "STAR.soloAdapter",
-        "STAR.extra",
-    ]
-    star_info = {}
+    star_info = {        
+        "STAR.soloType":"",
+        "STAR.soloUMI":"",
+        "STAR.soloCB":"",
+        "STAR.soloCBmatchWLtype":"",
+        "STAR.soloAdapter":"",
+        "STAR.extra":"--outFilterMultimapNmax 50 --outFilterMismatchNoverLmax 0.05  --outFilterMatchNmin 12  --outFilterScoreMinOverLread 0  --outFilterMatchNminOverLread 0",
+    }
 
     # Iterate over each key
-    for key in keys:
+    for key in star_info.keys():
         try:
-            value = RECIPE_SHEET[key][w.RECIPE]
-            star_info[key] = value
-        except Exception:
-            # Ignore param if not specified
-            star_info[key] = ""
+            star_info[key] = RECIPE_SHEET[key][w.RECIPE]
+        except:
+            # values for rRNA/default?
+            recipe = get_recipe(w,mode="concatenate")
+
+            if "stomics" in recipe:
+                star_info[key] = RECIPE_SHEET[key]["stomics_total"]
+            elif "visium" in recipe:
+                star_info[key] = RECIPE_SHEET[key]["visium_total"]
+            elif "seeker" in recipe and "noTrim" in recipe or "matchLinker" in recipe:
+                star_info[key] = RECIPE_SHEET[key]["seeker_matchLinker_total"]
+            elif "seeker" in recipe and "internalTrim" in recipe:
+                star_info[key] = RECIPE_SHEET[key]["seeker_internalTrim_total"]
+            elif "seeker" in recipe and "adapterInsert" in recipe:
+                star_info[key] = RECIPE_SHEET[key]["seeker_adapterInsert_total"]
+            elif "seeker" in recipe:
+                star_info[key] = RECIPE_SHEET[key]["seeker_total"]
+            else:
+                star_info[key] = RECIPE_SHEET[key]["visium_total"]
+        # except Exception:
+        #     pass
 
     return star_info
 

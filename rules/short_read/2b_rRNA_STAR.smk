@@ -19,7 +19,7 @@ rule STAR_rRNA_align:
     params:
         MEMLIMIT=config["MEMLIMIT"],
         WHITELIST=lambda w: get_whitelist(w),
-        STAR_REF=lambda w: get_STAR_ref(w),
+        STAR_REF=lambda w: get_STAR_ref(w, mode="rRNA"),
         STAR_PARAMS=lambda w: get_STAR_extra_params(w),
     threads: config["CORES"]
     run:
@@ -43,7 +43,7 @@ rule STAR_rRNA_align:
                 --soloCBwhitelist {params.WHITELIST} \
                 --soloCellFilter TopCells $(wc -l {params.WHITELIST}) \
                 --soloCBmatchWLtype {params.STAR_PARAMS["STAR.soloCBmatchWLtype"]} \
-                --soloCellFilter TopCells $(wc -l {whitelist}) \
+                --soloCellFilter TopCells $(wc -l {params.WHITELIST}) \
                 --soloUMIfiltering MultiGeneUMI CR \
                 --soloUMIdedup 1MM_CR \
                 --soloBarcodeReadLength 0 \
@@ -52,6 +52,52 @@ rule STAR_rRNA_align:
             """
         )
 
+
+# rule STAR_rRNA_align_simpleCellCalling:
+#     input:
+#         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
+#         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
+#         BC_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
+#         BC_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
+#         BC_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
+#         BC_ADAPTER="{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt",
+#         BC_US="{OUTDIR}/{SAMPLE}/bb/whitelist_underscore.txt",
+#     output:
+#         BAM="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam",  
+#         UNMAPPED1="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Unmapped.out.mate1",
+#         UNMAPPED2="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Unmapped.out.mate2",
+#     params:
+#         MEMLIMIT=config["MEMLIMIT"],
+#         STAR_REF=lambda w: get_STAR_ref(w, mode="rRNA"),
+#         STAR_PARAMS=lambda w: get_STAR_extra_params(w),
+#     threads: config["CORES"]
+#     run:
+#         shell(
+#             f"""
+#             mkdir -p $(dirname {output.BAM})
+
+#             {EXEC['STAR']} \
+#                 --runThreadN {threads} \
+#                 --outFileNamePrefix $(dirname {output.BAM})/ \
+#                 --outSAMtype BAM SortedByCoordinate \
+#                 --readFilesCommand zcat \
+#                 --genomeDir {params.STAR_REF} \
+#                 --limitBAMsortRAM={params.MEMLIMIT} \
+#                 --readFilesIn {input.R2_FQ} {input.R1_FQ} \
+#                 --outReadsUnmapped Fastx \
+#                 --outSAMunmapped Within KeepPairs \                
+#                 --soloType {params.STAR_PARAMS["STAR.soloType"]} {params.STAR_PARAMS["STAR.soloUMI"]} {params.STAR_PARAMS["STAR.soloCB"]} {params.STAR_PARAMS["STAR.soloAdapter"]} {params.STAR_PARAMS["STAR.extra"]} \
+#                 --soloCBwhitelist {params.WHITELIST} \
+#                 --soloCellFilter TopCells $(wc -l {params.WHITELIST}) \
+#                 --soloCBmatchWLtype {params.STAR_PARAMS["STAR.soloCBmatchWLtype"]} \
+#                 --soloCellFilter TopCells $(wc -l {params.WHITELIST}) \
+#                 --soloUMIfiltering MultiGeneUMI CR \
+#                 --soloUMIdedup 1MM_CR \
+#                 --soloBarcodeReadLength 0 \
+#                 --soloFeatures GeneFull \
+#                 --soloMultiMappers EM
+#             """
+#         )
 
 # compress outputs from STAR (count matrices, cell barcodes, and gene lists)
 rule STAR_rRNA_compress_outs:
