@@ -42,8 +42,8 @@ EXEC = config["EXEC"]
 ### Pre-run setup ######################################################################
 #TODO- move to utils
 # Build dictionaries of recipes & species to use for alignment
-RECIPE_DICT = {}        # Dictionary of recipes to use for each sample
-RECIPE_ONT_DICT = {}    # Dictionary of recipes to use for each sample
+RECIPE_DICT = {}        # Dictionary of lists; recipes to use for each sample (short_read module)
+RECIPE_ONT_DICT = {}    # Dictionary of lists; recipes to use for each sample (ONT module)
 rRNA_STAR_DICT = {}     # Dictionary of rRNA reference genomes to use w/ STAR
 rRNA_BWA_DICT = {}      # Dictionary of rRNA reference genomes to use w/ bwa
 REF_DICT = {}           # Dictionary of reference genomes to use
@@ -85,7 +85,8 @@ include: "rules/0_utils.smk"
 # Short-read module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## fastq preprocessing & QC
 include: "rules/short_read/1a_mergefqs.smk"
-include: "rules/short_read/1b_trimQC.smk"
+include: "rules/short_read/1b_trimming.smk"
+include: "rules/short_read/1c_fastqc.smk"
 
 ## rRNA Filtering 
 include: "rules/short_read/2a_rRNA_bwa.smk"
@@ -110,7 +111,7 @@ include: "rules/short_read/4c_kallisto_velo.smk"
 # ONT module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## preprocessing
 include: "rules/ont/1a_preprocessing.smk"
-include: "rules/ont/1b_cutadapt.smk"
+include: "rules/ont/1b_trimming.smk"
 
 ## alignment
 include: "rules/ont/1c_minimap2.smk"

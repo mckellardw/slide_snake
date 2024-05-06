@@ -6,15 +6,16 @@
 rule STARsolo_align:
     input:
         # R1_FQ_HardTrim = '{OUTDIR}/{SAMPLE}/tmp/{SAMPLE}_R1_HardTrim.fq.gz',
-        R1_FQ_TWICE_CUT_TRIMMED="{OUTDIR}/{SAMPLE}/tmp/twiceCut_trimmed_R1.fq.gz",
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz",
-        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz",
-        R1_FQ_TWICE_CUT="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
-        R2_FQ_TWICE_CUT="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
-        R1_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz",
-        R2_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz",
-        R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz",
-        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz",
+        # R1_FQ_TWICE_CUT_TRIMMED="{OUTDIR}/{SAMPLE}/tmp/twiceCut_trimmed_R1.fq.gz",
+        # R1_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz",
+        # R2_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz",
+        # R1_FQ_TWICE_CUT="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
+        # R2_FQ_TWICE_CUT="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
+        # R1_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz",
+        # R2_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz",
+        # R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz",
+        # R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz",
+        FQS=lambda w: get_fqs(w, return_type="list"),
         BC_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
         BC_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
         BC_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
@@ -37,8 +38,9 @@ rule STARsolo_align:
         GENEFULL_FEAT="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/features.tsv",
     params:
         MEMLIMIT=config["MEMLIMIT"],  #TODO- move this to resources for slurm
+        # FQS=lambda w: get_fqs(w),
+        # RECIPE = lambda w: get_recipes(w, option="ILMN"),
         WHITELIST=lambda w: get_whitelist(w),
-        FQS=lambda w: get_fqs(w),
         STAR_REF=lambda w: get_STAR_ref(w),
         STAR_PARAMS=lambda w: get_STAR_extra_params(w),
     threads: config["CORES"],
@@ -46,9 +48,6 @@ rule STARsolo_align:
         MEMLIMIT=megabytes2bytes(config["MEMLIMIT_MB"]),
     priority: 42
     run:
-        recipe = str(
-            RECIPE_DICT[wildcards.SAMPLE][0]
-        )  # TODO- fix multi-R1 trimming handling
         # Run STARsolo
         # TODO?: --twopassMode
         # WASP?
@@ -64,7 +63,7 @@ rule STARsolo_align:
                 --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
                 --readFilesCommand zcat \
                 --genomeDir {params.STAR_REF} \
-                --readFilesIn {params.FQS[1]} {params.FQS[0]} \
+                --readFilesIn {input.FQS[1]} {input.FQS[0]} \
                 --clipAdapterType CellRanger4 \
                 --outReadsUnmapped Fastx \
                 --outSAMunmapped Within KeepPairs \

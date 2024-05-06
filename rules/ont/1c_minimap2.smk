@@ -1,9 +1,11 @@
 # Get cell/spot/bead barcodes & UMIs
 rule ont_umitools_extract:
     input:
-        # R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_R1.fq.gz",
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_trim_R1.fq.gz",
-        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_R2.fq.gz",
+        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_R1.fq.gz",
+        R1_FQ_HardTrim="{OUTDIR}/{SAMPLE}/tmp/ont/cut_hardTrim_R1.fq.gz",
+        R1_FQ_InternalTrim="{OUTDIR}/{SAMPLE}/tmp/ont/cut_internalTrim_R1.fq.gz",
+        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_R2.fq.gz",        
+        FQS=lambda w: get_fqs(w, return_type="list"),
         BB_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
         BB_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
         BB_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
@@ -15,7 +17,6 @@ rule ont_umitools_extract:
     params:
         WHITELIST=lambda w: get_whitelist(w),
         BC_PATTERN=lambda w: get_ont_barcode_pattern(w),
-        # BC_PATTERN="CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCNNNNNNN" #TODO
         EXTRACT_METHOD="string",
     log:
         log="{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/extract.log",
@@ -85,8 +86,6 @@ rule ont_align_minimap2_genome:
             > {output.SAM_TMP}
             """
         )
-
-
 #
 # if "total" in wildcards.RECIPE:
 #     EXTRA_FLAGS = "-M --secondary=yes"
@@ -120,57 +119,6 @@ rule ont_sort_index_output:
 
 
 
-# Old ONT code - barcode is left in the read during alignment which seems dumb?
-# rule ont_extract_barcodes_from_R1:
-#     input:
-#         # FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/cut_R1.fq.gz",
-#         BAM = "{OUTDIR}/{SAMPLE}/ont/minimap2/sorted.bam",
-#         BB_WHITELIST = "{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
-#         BB_1 = "{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
-#         BB_2 = "{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
-#         BB_ADAPTER = "{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt",
-#         BB_ADAPTER_R1 = "{OUTDIR}/{SAMPLE}/bb/whitelist_adapter_r1.txt",
-#     output:
-#         BAM = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam", #temp()
-#         TSV = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/bc_counts.tsv",
-#     params:
-#         KIT = "3prime", #['3prime', '5prime']
-#         adapter1_suff_length = config["BARCODE_ADAPTER1_SUFF_LENGTH"],
-#         barcode_min_qv = config["BARCODE_MIN_QUALITY"],
-#         WHITELIST=lambda w: get_whitelist(w),
-#         # barcode_length = lambda w: get_barcode_length(w),
-#         umi_length = lambda w: get_umi_length(w),
-#     threads:
-#         config["CORES"]
-#     log:
-#         log = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/extract_barcodes.log",
-#     # conda:
-#     #     "../envs/barcodes.yml"
-#     run:
-#         # recipe = RECIPE_ONT_DICT[wildcards.SAMPLE]
-#         recipe = wildcards.RECIPE
-#         shell(
-#             f"""
-#             echo "UMI length: {params.umi_length}" >> {log.log}
-
-#             python scripts/py/extract_barcode.py \
-#                 -t {threads} \
-#                 --kit {params.KIT} \
-#                 --adapter1_suff_length {params.adapter1_suff_length} \
-#                 --min_barcode_qv {params.barcode_min_qv} \
-#                 --umi_length {params.umi_length} \
-#                 --output_bam {output.BAM} \
-#                 --output_barcodes {output.TSV} \
-#                 {input.BAM} {params.WHITELIST} \
-#             2>> {log.log}
-#             """
-#         )
-# barcode_length = get_barcode_length(wildcards)
-# barcode_length = len(open(whitelist).readline())
-# echo "Barcode length: {barcode_length}" > {log.log}
-# --barcode_length {barcode_length} \
-
-
 # Get UMI & CB from R1 fastq
 rule ont_extract_barcodes_from_R1:
     input:
@@ -195,21 +143,6 @@ rule ont_extract_barcodes_from_R1:
             """
         )
 
-
-# rule ont_index_bc_output:
-#     input:
-#         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam",
-#     output:
-#         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.bai",
-#     threads: 1
-#     run:
-#         shell(
-#             f"""
-#             {EXEC['SAMTOOLS']} index {input.BAM}
-#             """
-#         )
-
-
 # Note - run time increases (substantially) with BC length
 rule ont_error_correct_barcodes:
     input:
@@ -230,7 +163,7 @@ rule ont_error_correct_barcodes:
         # kit=lambda w: sample_sheet.loc[w.run_id, "kit_name"],
         KIT="3prime",  #['3prime', '5prime', 'multiome']
         # UMI_LENGTH=lambda w: get_umi_length(w),
-        UMI_LENGTH=lambda w: get_recipe_info(w.RECIPE, "UMI.length"),
+        UMI_LENGTH=lambda w: get_recipe_info(w, info_col="UMI.length"),
         WHITELIST=lambda w: get_whitelist(w),
     threads: config["CORES"]
     # 1
@@ -241,7 +174,7 @@ rule ont_error_correct_barcodes:
     run:
         shell(
             f"""
-            echo "UMI length:        {params.umi_length}" > {log.log}
+            echo "UMI length:        {params.UMI_LENGTH}" > {log.log}
             echo "Barcode whitelist: {params.WHITELIST}" >> {log.log}
 
             python scripts/py/barcodes_correct_parallelized.py \
@@ -252,7 +185,7 @@ rule ont_error_correct_barcodes:
                 --min_ed_diff {params.min_ed_diff} \
                 --kit {params.KIT} \
                 --adapter1_suff_length {params.adapter1_suff_length} \
-                --umi_length {params.umi_length} \
+                --umi_length {params.UMI_LENGTH} \
                 {input.BAM} {params.WHITELIST} \
             2>> {log.log}
             """
@@ -263,99 +196,6 @@ rule ont_error_correct_barcodes:
         # echo "Barcode length: {barcode_length}" > {log.log}
         #     --barcode_length {barcode_length} \
 
-
-
-# rule ont_index_bc_corrected_output:
-#     input:
-#         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam",
-#     output:
-#         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam.bai",
-#     threads: 1
-#     # config["CORES"]
-#     run:
-#         shell(
-#             f"""
-#             {EXEC['SAMTOOLS']} index {input.BAM}
-#             """
-#         )
-
-
-# rule ont_assign_genes:
-#     input:
-#         bed=CHROM_BED_BC,
-#         chrom_gtf=CHROM_GTF,
-#     output:
-#         GENES=CHROM_TSV_GENE_ASSIGNS,
-#     params:
-#         minQV=config["GENE_ASSIGNS_MINQV"],
-#     threads:
-#     1
-#     conda:
-#         "../envs/assign_genes.yml"
-#     shell:
-#         f"""
-#         python {SCRIPT_DIR}/assign_genes.py \
-#             --output {output.GENES} \
-#             {input.bed} {input.chrom_gtf}
-#         """
-
-# rule ont_add_gene_tags_to_bam:
-#     input:
-#         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam",
-#         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam.bai",
-#         GENES=CHROM_TSV_GENE_ASSIGNS,
-#     output:
-#         bam=temp(CHROM_BAM_BC_GENE_TMP),
-#     conda:
-#         "../envs/umis.yml"
-#     shell:
-#         "touch {input.bai}; "
-#         "python {SCRIPT_DIR}/add_gene_tags.py "
-#         "--output {output.bam} "
-#         "{input.bam} {input.genes}"
-# #
-
-# featureCounts details:
-## -s 1 = stranded
-## -L = long-read mode
-## -f = feature-level labelling (as in, not 'gene'-level, but 'transcript' level)
-# rule ont_featureCounts:
-#     input:
-#         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam",
-#         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.bai",
-#     output:
-#         BAM=temp("{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.featureCounts.bam"),
-#         FEAT="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/featureCounts.tsv",
-#     params:
-#         GTF = lambda wildcards: GTF_DICT[wildcards.SAMPLE],
-#         EXTRA_FLAGS = lambda wildcards: RECIPE_SHEET["featureCounts.extra"][wildcards.RECIPE],
-#         MIN_TEMPLATE_LENGTH = 10,
-#         MAX_TEMPLATE_LENGTH = 10000
-#     log:
-#         log = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/featureCounts.log"
-#     threads:
-#         1 # long reads can only run single-threaded
-#     # conda:
-#     run:
-#         shell(
-#             f"""
-#             {EXEC['FEATURECOUNTS']} \
-#                 -a {params.GTF} \
-#                 -o {output.FEAT} \
-#                 -L \
-#                 -s 1 \
-#                 -f \
-#                 -d {params.MIN_TEMPLATE_LENGTH} \
-#                 -D {params.MAX_TEMPLATE_LENGTH} \
-#                 -t 'transcript' \
-#                 -g 'transcript_id' \
-#                 -T {threads} \
-#                 --donotsort \
-#                 -R BAM {params.EXTRA_FLAGS} \
-#                 {input.BAM} \
-#             2> {log.log}
-#             """
-#         )
 
 
 rule ont_featureCounts:
@@ -395,8 +235,6 @@ rule ont_featureCounts:
             2> {log.log}
             """
         )
-
-
 #
 # --donotsort \
 # −−sortReadsByCoordinates \
@@ -428,30 +266,6 @@ rule ont_featureCounts:
 #         -1 {input.BAM} 2> {log.log}
 #         """
 
-#
-
-# rule ont_sort_index_featureCounts:
-#     input:
-#         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.featureCounts.bam",
-#     output:
-#         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_gn.bam",
-#         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_gn.bam.bai",
-#     run:
-#         shell(
-#             f"""
-#             {EXEC['SAMTOOLS']} sort \
-#                 -O BAM \
-#                 -o {output.BAM} \
-#                 {input.BAM}
-#             """
-#         )
-
-#         shell(
-#             f"""
-#             {EXEC['SAMTOOLS']} index {output.BAM}
-#             """
-#         )
-
 
 rule ont_add_featureCounts_to_bam:
     input:
@@ -473,19 +287,6 @@ rule ont_add_featureCounts_to_bam:
             """
         )
 
-
-# rule ont_index_featureCounts_output:
-#     input:
-#         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_gn.bam",
-#     output:
-#         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_gn.bam.bai",
-#     threads: 1
-#     run:
-#         shell(
-#             f"""
-#             {EXEC['SAMTOOLS']} index {input.BAM}
-#             """
-#         )
 
 
 # Generate count matrix w/ umi-tools
