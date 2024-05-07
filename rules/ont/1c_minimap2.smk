@@ -1,10 +1,6 @@
 # Get cell/spot/bead barcodes & UMIs
 rule ont_umitools_extract:
     input:
-        # R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_R1.fq.gz",
-        # R1_FQ_HardTrim="{OUTDIR}/{SAMPLE}/tmp/ont/cut_hardTrim_R1.fq.gz",
-        # R1_FQ_InternalTrim="{OUTDIR}/{SAMPLE}/tmp/ont/cut_internalTrim_R1.fq.gz",
-        # R2_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_R2.fq.gz",        
         FQS=lambda w: get_fqs(w, return_type="list", mode="ONT"),
         BB_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
         BB_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
@@ -22,23 +18,24 @@ rule ont_umitools_extract:
         log="{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/extract.log",
     threads: 1
     run:
-        shell(
-            f"""
-            echo "Barcode pattern: '{params.BC_PATTERN}'" > {log.log}
-            echo "Extract method:  {params.EXTRACT_METHOD}" >> {log.log}
-            echo "" >> {log.log}
+        if "N" in params:
+            shell(
+                f"""
+                echo "Barcode pattern: '{params.BC_PATTERN}'" > {log.log}
+                echo "Extract method:  {params.EXTRACT_METHOD}" >> {log.log}
+                echo "" >> {log.log}
 
-            {EXEC['UMITOOLS']} extract \
-                --extract-method={params.EXTRACT_METHOD} \
-                --bc-pattern='{params.BC_PATTERN}' \
-                --stdin={input.FQS[0]} \
-                --read2-in={input.FQS[1]} \
-                --stdout={output.R1_FQ} \
-                --read2-out={output.R2_FQ} \
-                --log2stderr \
-            2>> {log.log}
-            """
-        )
+                {EXEC['UMITOOLS']} extract \
+                    --extract-method={params.EXTRACT_METHOD} \
+                    --bc-pattern='{params.BC_PATTERN}' \
+                    --stdin={input.FQS[0]} \
+                    --read2-in={input.FQS[1]} \
+                    --stdout={output.R1_FQ} \
+                    --read2-out={output.R2_FQ} \
+                    --log2stderr \
+                2>> {log.log}
+                """
+            )
         # --error-correct-cell \
         # --whitelist={whitelist} \
         # --error-correct-cell \

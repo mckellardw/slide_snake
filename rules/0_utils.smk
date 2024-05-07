@@ -221,18 +221,22 @@ def get_recipes(w, mode=["ONT","ILMN","list"]):
             print(f"No ILMN recipe given for sample '{w.SAMPLE}'! Check your sample sheet!")
             return ""
     else:
-        out = []
+        all_recipes = []
         if "RECIPE_ONT_DICT" in globals():
             if w.SAMPLE in RECIPE_ONT_DICT:
-                out.extend(RECIPE_ONT_DICT[w.SAMPLE])
-        elif "RECIPE_DICT" in globals():
+                all_recipes.extend(RECIPE_ONT_DICT[w.SAMPLE])
+        if "RECIPE_DICT" in globals():
             if w.SAMPLE in RECIPE_DICT:
-                out.extend(RECIPE_DICT[w.SAMPLE])
-        if len(out) > 0:
+                all_recipes.extend(RECIPE_DICT[w.SAMPLE])
+        print("elseesese")
+        all_recipes = unlist(all_recipes)
+
+        if len(all_recipes) > 0:
             if "list" in mode:
-                return out
+                return all_recipes
             else:
-                return " ".join(out)
+                print(42424242)
+                return " ".join(all_recipes)
         else:
             print(f"No recipe found for {w.SAMPLE}! Check your sample sheet!")
             return ""
@@ -263,6 +267,14 @@ def build_abs_path(files, abs_path, sep=" "):
     elif isinstance(whitelist, list):
         file_abs_path = sep.join([f"{abs_path}/{f}" for f in files])
 
+def unlist(lst):
+    result = []
+    for item in lst:
+        if isinstance(item, list):
+            result.extend(unlist(item))
+        else:
+            result.append(item)
+    return result
 
 ########## TO BE DEPRECATED ########################################################
 def get_barcode_length(w):

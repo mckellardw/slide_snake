@@ -2,6 +2,7 @@
 ## Read trimming rules
 #############################################
 
+
 # TSO & homopolymer trimming
 # TODO: add "{ADAPTER};noindels" to adapter sequence trimming? - *Note- do not do this for the BB_ADAPTER
 rule cutadapt:
@@ -13,8 +14,8 @@ rule cutadapt:
         R2_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz"),
         JSON="{OUTDIR}/{SAMPLE}/misc_logs/cutadapt.json",
     params:
-        RECIPE = lambda w: get_recipes(w, mode="ILMN"),
-        R1_LENGTH = lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN"),
+        RECIPE=lambda w: get_recipes(w, mode="ILMN"),
+        R1_LENGTH=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN"),
         # R1_LENGTH = 50,
         QUALITY_MIN=20,
         MIN_R2_LENGTH=12,
@@ -37,7 +38,7 @@ rule cutadapt:
     log:
         log="{OUTDIR}/{SAMPLE}/misc_logs/cutadapt_round2.log",
     run:
-        R1_LENGTH = min(params.R1_LENGTHS) 
+        R1_LENGTH = min(params.R1_LENGTHS)
 
         shell(
             f"""
@@ -63,6 +64,7 @@ rule cutadapt:
             1> {log.log}
             """
         )
+
 
 rule cutadapt2:
     input:
@@ -73,8 +75,8 @@ rule cutadapt2:
         FINAL_R2_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz"),
         JSON="{OUTDIR}/{SAMPLE}/misc_logs/cutadapt2.json",
     params:
-        RECIPE = lambda w: get_recipes(w, mode="ILMN"),
-        R1_LENGTH = lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN"),
+        RECIPE=lambda w: get_recipes(w, mode="ILMN"),
+        R1_LENGTH=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN"),
         # R1_LENGTH = 50,
         QUALITY_MIN=20,
         MIN_R2_LENGTH=12,
@@ -97,7 +99,7 @@ rule cutadapt2:
     log:
         log="{OUTDIR}/{SAMPLE}/misc_logs/cutadapt_round2.log",
     run:
-        R1_LENGTH = min(params.R1_LENGTHS) 
+        R1_LENGTH = min(params.R1_LENGTHS)
 
         shell(
             f"""
@@ -123,7 +125,6 @@ rule cutadapt2:
             1> {log.log}
             """
         )
-
 
 
 # Trimming for R1 to handle Curio adapter issues. See README for recipe details
@@ -139,14 +140,13 @@ rule R1_hardTrimming:
         CB2end=42,
         INTERNAL_TRIM_QC_LOG="{OUTDIR}/{SAMPLE}/internal_trim_qc.txt",
         TMPDIR="{OUTDIR}/{SAMPLE}/tmp/seqkit",
-        INTERNAL_ADAPTER=config["R1_INTERNAL_ADAPTER"],  # Curio R1 internal adapter
-        RECIPE = lambda w: get_recipes(w, mode="ILMN"),
-        R1_LENGTH = lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN")
+        RECIPE=lambda w: get_recipes(w, mode="ILMN"),
+        R1_LENGTH=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN"),
     threads: config["CORES"]
     log:
         log="{OUTDIR}/{SAMPLE}/misc_logs/R1_hardTrimming.log",
     run:
-        shell(  
+        shell(
             f"""
             zcat {input.R1_FQ} \
             | awk -v s={params.CB1end} \
@@ -161,6 +161,7 @@ rule R1_hardTrimming:
             """
         )
 
+
 ## Internal trimming to cut out adapter sequences
 ###TODO- rewrite/speed up internal trimming!
 rule R1_internalTrimming:
@@ -174,9 +175,9 @@ rule R1_internalTrimming:
         CB2start=27,
         CB2end=42,
         TMPDIR="{OUTDIR}/{SAMPLE}/tmp/seqkit",
-        INTERNAL_ADAPTER=config["R1_INTERNAL_ADAPTER"],  # Curio R1 internal adapter
-        RECIPE = lambda w: get_recipes(w, mode="ILMN"),
-        R1_LENGTH = lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN")
+        ADAPTER=lambda w: get_recipe_info(w, "internal.adapter"),
+        RECIPE=lambda w: get_recipes(w, mode="ILMN"),
+        R1_LENGTH=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN"),
     threads: config["CORES"]
     log:
         log="{OUTDIR}/{SAMPLE}/misc_logs/R1_internalTrimming.log",
@@ -185,7 +186,7 @@ rule R1_internalTrimming:
         shell(  # Internal trimming to cut out the SlideSeq adapter sequence
             f"""
             python scripts/py/internal_adapter_trim_R1.py \
-                {params.INTERNAL_ADAPTER} \
+                {params.ADAPTER} \
                 {params.INTERNAL_TRIM_QC_LOG} \
                 {threads} \
                 {params.TMPDIR} \
@@ -227,7 +228,6 @@ rule R1_internalTrimming:
 #                     > {output.R1_FQ.strip('.gz')}
 
 #                     {EXEC['PIGZ']} -f -p{threads} {output.R1_FQ.strip('.gz')}
-
 #                     echo "Hard trimming performed on {input.R1_FQ}" > {log.log}
 #                     """
 #                 )
@@ -249,7 +249,7 @@ rule R1_internalTrimming:
 #                 shell(  # Rename R1_FQ if no trimming needed
 #                     # cp {input.R1_FQ} {output.R1_FQ}
 #                     f"""
-#                     touch {output.R1_FQ} 
+#                     touch {output.R1_FQ}
 #                     echo "No trimming performed on {input.R1_FQ}..." {log.log}
 #                     """
 #                 )
