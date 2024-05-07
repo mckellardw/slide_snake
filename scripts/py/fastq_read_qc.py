@@ -85,12 +85,12 @@ def process_reads(fastq_file, tsv_file, chunk_size=100000):
         write_tsv(metrics_chunk, tsv_file)
 
 
-def main(fastq_file, tsv_file, threads):
+def main(fastq_file, tsv_file, threads, chunk_size):
     output_dir = os.path.dirname(tsv_file)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    process_reads(fastq_file, tsv_file)
+    process_reads(fastq_file, tsv_file, chunk_size)
 
 
 if __name__ == "__main__":
@@ -105,6 +105,12 @@ if __name__ == "__main__":
         default=1,
         help="Number of threads to use for multithreading. Default is 1.",
     )
+    parser.add_argument(
+        "--chunk_size",
+        type=int,
+        default=100000,
+        help="Number of reads to process in each chunk. Default is 100k.",
+    )
     args = parser.parse_args()
 
-    main(args.fastq_file, args.tsv_file, args.threads)
+    main(args.fastq_file, args.tsv_file, args.threads, args.chunk_size)
