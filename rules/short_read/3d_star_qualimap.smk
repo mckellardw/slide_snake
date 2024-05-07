@@ -27,6 +27,7 @@ rule qualimapQC_STAR:
             """
         )
 
+
 rule qualimap_summary2csv_STAR:
     input:
         TXT="{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/rnaseq_qc_results.txt",

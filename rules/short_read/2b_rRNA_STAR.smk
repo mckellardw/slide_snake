@@ -63,7 +63,7 @@ rule STAR_rRNA_align:
 #         BC_ADAPTER="{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt",
 #         BC_US="{OUTDIR}/{SAMPLE}/bb/whitelist_underscore.txt",
 #     output:
-#         BAM="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam",  
+#         BAM="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam",
 #         UNMAPPED1="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Unmapped.out.mate1",
 #         UNMAPPED2="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Unmapped.out.mate2",
 #     params:
@@ -85,7 +85,7 @@ rule STAR_rRNA_align:
 #                 --limitBAMsortRAM={params.MEMLIMIT} \
 #                 --readFilesIn {input.R2_FQ} {input.R1_FQ} \
 #                 --outReadsUnmapped Fastx \
-#                 --outSAMunmapped Within KeepPairs \                
+#                 --outSAMunmapped Within KeepPairs \
 #                 --soloType {params.STAR_PARAMS["STAR.soloType"]} {params.STAR_PARAMS["STAR.soloUMI"]} {params.STAR_PARAMS["STAR.soloCB"]} {params.STAR_PARAMS["STAR.soloAdapter"]} {params.STAR_PARAMS["STAR.extra"]} \
 #                 --soloCBwhitelist {params.WHITELIST} \
 #                 --soloCellFilter TopCells $(wc -l {params.WHITELIST}) \
@@ -98,6 +98,7 @@ rule STAR_rRNA_align:
 #                 --soloMultiMappers EM
 #             """
 #         )
+
 
 # compress outputs from STAR (count matrices, cell barcodes, and gene lists)
 rule STAR_rRNA_compress_outs:

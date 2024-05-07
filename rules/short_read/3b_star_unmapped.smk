@@ -79,9 +79,7 @@ rule blast_unmapped:
 
 
 # mv {OUTDIR}/{wildcards.SAMPLE}/Unmapped.out.mate2_blastResults.txt {OUTDIR}/{wildcards.SAMPLE}/Unmapped.out.mate2_blastResults.tsv
-
 # cat {input.UNMAPPED1_FQ} | awk '{{if(NR%4==1) {{printf(">%s\n",substr($0,2));}} else if(NR%4==2) print;}}' > {params.TMP_FA}
-
 # rule bwa_index_phix:
 #     input:
 #        PHIX_IDX = 'resources/phix/bwa.idx',
