@@ -8,7 +8,7 @@ rule merge_formats_ONT:
         ONT_reads=lambda wildcards: ONT[wildcards.SAMPLE],
         CHUNK_SIZE=50,
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/merged.log",
+        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/merged.log",
     threads: config["CORES"]
     run:
         shell(f"mkdir -p {params.TMPDIR}")
@@ -136,7 +136,7 @@ rule ont_call_adapter_scan:
     # conda:
     #     f"{workflow.basedir}/envs/slsn_ont_prep.yml"
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/adapter_scan.log",
+        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/adapter_scan.log",
     shell:
         """
         python scripts/py/adapter_scan_vsearch.py \
@@ -198,7 +198,7 @@ rule ont_subset_fastq_by_adapter_type:
         FQ_ADAPTER="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter.fq.gz",
     threads: config["CORES"]
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/subseq_full_len.log",
+        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/subseq_full_len.log",
     run:
         # for ADAPTER in input.ADAPTER_TYPES:
         shell(
@@ -229,7 +229,7 @@ rule ont_split_fastq_to_R1_R2:
     threads: config["CORES"]
     # 1
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/read_split.log",
+        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/read_split.log",
     run:
         # for ADAPTER in input.ADAPTER_TYPES: #TODO- broaden to other read types, bneyond full_len
         shell(

@@ -1,11 +1,11 @@
 # Get cell/spot/bead barcodes & UMIs
 rule ont_umitools_extract:
     input:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_R1.fq.gz",
-        R1_FQ_HardTrim="{OUTDIR}/{SAMPLE}/tmp/ont/cut_hardTrim_R1.fq.gz",
-        R1_FQ_InternalTrim="{OUTDIR}/{SAMPLE}/tmp/ont/cut_internalTrim_R1.fq.gz",
-        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_R2.fq.gz",        
-        # FQS=lambda w: get_fqs(w, return_type="list", mode="ONT"),
+        # R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_R1.fq.gz",
+        # R1_FQ_HardTrim="{OUTDIR}/{SAMPLE}/tmp/ont/cut_hardTrim_R1.fq.gz",
+        # R1_FQ_InternalTrim="{OUTDIR}/{SAMPLE}/tmp/ont/cut_internalTrim_R1.fq.gz",
+        # R2_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_R2.fq.gz",        
+        FQS=lambda w: get_fqs(w, return_type="list", mode="ONT"),
         BB_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
         BB_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
         BB_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
@@ -31,8 +31,8 @@ rule ont_umitools_extract:
             {EXEC['UMITOOLS']} extract \
                 --extract-method={params.EXTRACT_METHOD} \
                 --bc-pattern='{params.BC_PATTERN}' \
-                --stdin={input.R1_FQ} \
-                --read2-in={input.R2_FQ} \
+                --stdin={input.FQS[0]} \
+                --read2-in={input.FQS[1]} \
                 --stdout={output.R1_FQ} \
                 --read2-out={output.R2_FQ} \
                 --log2stderr \

@@ -26,7 +26,8 @@ def get_fqs(w, return_type=["list", "dict"], mode=["ONT","ILMN"]):
         return_type = "list"    
     if len(mode) > 1: #default
         mode = "ONT"
-
+    R1=""
+    R2=""
     # get file paths
     try:        
         if mode == "ILMN":
@@ -49,15 +50,22 @@ def get_fqs(w, return_type=["list", "dict"], mode=["ONT","ILMN"]):
         elif mode == "ONT":
             if "internalTrim" in w.RECIPE:
                 R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/cut_internalTrim_R1.fq.gz"
-            if "hardTrim" in w.RECIPE:
+            elif "hardTrim" in w.RECIPE:
                 R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/cut_hardTrim_R1.fq.gz"
-    except:
+            else:                
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_R1.fq.gz"
+                R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_R2.fq.gz"
+        else:
+            print("get_fqs(): `mode` not found")
+    except Exception:
         if mode == "ILMN":
             R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_R1.fq.gz"
             R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_R2.fq.gz"
         elif mode == "ONT":
             R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_R1.fq.gz"
             R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_R2.fq.gz"
+        else:
+            print("get_fqs(): `mode` not found")
 
     # return fq path(s)
     if return_type == "list":
@@ -68,17 +76,16 @@ def get_fqs(w, return_type=["list", "dict"], mode=["ONT","ILMN"]):
 # whitelist param handling for different recipes
 def get_whitelist(w):
     try:
-        if "stomics" in w.RECIPE:
-            whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bb/whitelist.txt"
-        elif "noTrim" in w.RECIPE or "matchLinker" in w.RECIPE:
+        if "noTrim" in w.RECIPE or "matchLinker" in w.RECIPE:
             whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bb/whitelist_1.txt {w.OUTDIR}/{w.SAMPLE}/bb/whitelist_2.txt"
         elif "internalTrim" in w.RECIPE:
             whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bb/whitelist.txt"
         elif "adapterInsert" in w.RECIPE:
             whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bb/whitelist_adapter.txt"
         else:
+            # visium, stomics, microST
             whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bb/whitelist.txt"
-    except:
+    except Exception:
         whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bb/whitelist.txt"
 
     # return whitelist path(s)
@@ -94,7 +101,11 @@ def get_ont_barcode_pattern(w):
             BC_PATTERN = "C" * 25 + "N" * 10
         elif "visium" in w.RECIPE:
             BC_PATTERN = "C" * 16 + "N" * 12
-        elif "seeker" in w.RECIPE and "noTrim" in w.RECIPE or "matchLinker" in w.RECIPE:
+        elif "microST_ligation" in w.RECIPE:
+            BC_PATTERN = "C" * 34
+        elif "microST_klenow_v1" in w.RECIPE:
+            BC_PATTERN = "C" * 34 + "N" * 12
+        elif "seeker" in w.RECIPE and "matchLinker" in w.RECIPE:
             BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
         elif "seeker" in w.RECIPE and "internalTrim" in w.RECIPE:
             BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
@@ -102,7 +113,7 @@ def get_ont_barcode_pattern(w):
             BC_PATTERN = "C" * 8 + "C" * 18 + "C" * 6 + "N" * 7
         else:
             BC_PATTERN = "C" * 16 + "N" * 12
-    except:
+    except Exception:
             BC_PATTERN = "C" * 16 + "N" * 12
 
     # return barcode pattern
@@ -131,7 +142,7 @@ def get_STAR_ref(w, mode=["genome","rRNA"]):
             star_ref = REF_DICT[w.SAMPLE]
         elif mode == "rRNA":
             star_ref = rRNA_STAR_DICT[w.SAMPLE]
-    except:
+    except Exception:
         star_ref = "No reference given! Check your sample sheet!"
 
     return star_ref
@@ -151,7 +162,7 @@ def get_STAR_extra_params(w):
     for key in star_info.keys():
         try:
             star_info[key] = RECIPE_SHEET[key][w.RECIPE]
-        except:
+        except Exception:
             # values for rRNA/default?
             recipe = get_recipes(w, mode=f"concatenate")
 
@@ -200,13 +211,13 @@ def get_recipes(w, mode=["ONT","ILMN","list"]):
     if "ONT" in mode:
         try:
             return RECIPE_ONT_DICT[w.SAMPLE]
-        except:
+        except Exception:
             print(f"No ONT recipe given for sample '{w.SAMPLE}'! Check your sample sheet!")
             return ""
     elif "ILMN" in mode:
         try:
             return RECIPE_DICT[w.SAMPLE]
-        except:
+        except Exception:
             print(f"No ILMN recipe given for sample '{w.SAMPLE}'! Check your sample sheet!")
             return ""
     else:

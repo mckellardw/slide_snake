@@ -18,12 +18,16 @@
 # For the time being it's going to be easier to interpret this plot if all
 # of the sequences provided are the same length, so we've gone with 12bp
 # fragments for now.
+# SlideSeq TSO						AAGCTGGTATCAACGCAGAGTGAATGGG
+# SlideSeq rcTSO						CCCATTCACTCTGCGTTGATACCAGCTT
+# SlideSeq BB Internal Adapter					TCTTCAGCGTTCCCGAGA
+#  Illumina Single End PCR Primer 1				AATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT
 
 Illumina Universal Adapter					AGATCGGAAGAG
 Illumina Small RNA Adapter					ATGGAATTCTCG
 Nextera Transposase Sequence				CTGTCTCTTATA
 SOLID Small RNA Adapter						CGCCTTGGCCGT
-SlideSeq TSO						AAGCTGGTATCAACGCAGAGTGAATGGG
-SlideSeq rcTSO						CCCATTCACTCTGCGTTGATACCAGCTT
-SlideSeq BB Internal Adapter					TCTTCAGCGTTCCCGAGA
-Illumina Single End PCR Primer 1				AATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT
+SlideSeq TSO						        AGAGTGAATGGG
+SlideSeq rcTSO						        TGATACCAGCTT
+SlideSeq BB Internal Adapter		        GCGTTCCCGAGA
+Illumina Single End PCR Primer 1			CTCTTCCGATCT

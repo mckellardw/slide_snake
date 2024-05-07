@@ -13,7 +13,8 @@ rule ont_cutadapt:
     params:
         RECIPE = lambda w: get_recipes(w, mode="ONT"),
         R1_LENGTHS = lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ONT"),
-        ADAPTER=config["R1_INTERNAL_ADAPTER"],  # Curio R1 internal adapter
+        # ADAPTER=config["R1_INTERNAL_ADAPTER"],  # Curio R1 internal adapter
+        ADAPTER=lambda w: get_recipe_info(w, "internal.adapter"),
         R1=config["R1_PRIMER"],  # R1 PCR primer (Visium & Seeker)
         ADAPTER_COUNT=4,  # number of adapters that can be trimmed from each read
         QUALITY_MIN=5,  # Low Q score for ONT...
@@ -114,7 +115,7 @@ rule ont_R1_internalTrimming:
         INTERNAL_TRIM_QC_LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/internal_trim_qc.txt",
     params:
         TMPDIR="{OUTDIR}/{SAMPLE}/tmp/seqkit",
-        INTERNAL_ADAPTER=config["R1_INTERNAL_ADAPTER"],  # Curio R1 internal adapter
+        ADAPTER=lambda w: get_recipe_info(w, "internal.adapter"),
         # RECIPE = lambda w: get_recipes(w, mode="ONT"),
         # R1_LENGTH = lambda w: get_recipe_info(w, info_col="R1.finalLength")
     threads: config["CORES"]
@@ -124,7 +125,7 @@ rule ont_R1_internalTrimming:
         shell(  
             f"""
             python scripts/py/internal_adapter_trim_R1.py \
-                {params.INTERNAL_ADAPTER} \
+                {params.ADAPTER} \
                 {output.INTERNAL_TRIM_QC_LOG} \
                 {threads} \
                 {params.TMPDIR} \
