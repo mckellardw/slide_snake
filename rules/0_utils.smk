@@ -20,32 +20,44 @@ rule index_BAM:
 #### Util functions ###########################
 
 # Select input reads based on alignment recipe
-def get_fqs(w, return_type=["list", "dict"]):
+def get_fqs(w, return_type=["list", "dict"], mode=["ONT","ILMN"]):
     # param defaults
     if len(return_type) > 1: #default
-        mode = "list"
+        return_type = "list"    
+    if len(mode) > 1: #default
+        mode = "ONT"
 
     # get file paths
-    try:
-        if "rRNA.STAR" in w.RECIPE:  # Use trimmed & STAR-rRNA-filtered .fq's
-            R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz"
-            R2 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz"
-        elif "rRNA.bwa" in w.RECIPE:  # TODO Use trimmed & bwa-rRNA-filtered .fq's
-            R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz"
-            R2 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz"
-        elif "rRNA" not in w.RECIPE:  # just trimmed .fq's
+    try:        
+        if mode == "ILMN":
+            if "rRNA.STAR" in w.RECIPE:  # Use trimmed & STAR-rRNA-filtered .fq's
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz"
+                R2 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz"
+            elif "rRNA.bwa" in w.RECIPE:  # TODO Use trimmed & bwa-rRNA-filtered .fq's
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz"
+                R2 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz"
+            elif "rRNA" not in w.RECIPE:  # just trimmed .fq's
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_R1.fq.gz"
+                R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_R2.fq.gz"
+            else:
+                print("I just don't know what to do with myself...")
+
+            if "internalTrim" in w.RECIPE:
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_internalTrimmed_R1.fq.gz"
+            if "hardTrim" in w.RECIPE:
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_hardTrimmed_R1.fq.gz"
+        elif mode == "ONT":
+            if "internalTrim" in w.RECIPE:
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/cut_internalTrim_R1.fq.gz"
+            if "hardTrim" in w.RECIPE:
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/cut_hardTrim_R1.fq.gz"
+    except:
+        if mode == "ILMN":
             R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_R1.fq.gz"
             R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_R2.fq.gz"
-        else:
-            print("I just don't know what to do with myself...")
-
-        if "internalTrim" in w.RECIPE:
-            R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_internalTrimmed_R1.fq.gz"
-        if "hardTrim" in w.RECIPE:
-            R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_hardTrimmed_R1.fq.gz"
-    except:
-        R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_R1.fq.gz"
-        R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_R2.fq.gz"
+        elif mode == "ONT":
+            R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_R1.fq.gz"
+            R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_R2.fq.gz"
 
     # return fq path(s)
     if return_type == "list":

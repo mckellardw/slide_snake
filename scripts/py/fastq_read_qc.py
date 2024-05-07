@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 
 
-def calculate_metrics(fastq_file, chunk_size=10000):
+def calculate_metrics(fastq_file, chunk_size=100000):
     is_compressed = fastq_file.endswith(".gz")
     metrics = []
     read_id = ""
@@ -71,7 +71,7 @@ def write_tsv(metrics, tsv_file):
             f.write(line + "\n")
 
 
-def process_reads(fastq_file, tsv_file, chunk_size=10000):
+def process_reads(fastq_file, tsv_file, chunk_size=100000):
     print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Processing reads...")
     for metrics_chunk in calculate_metrics(fastq_file, chunk_size):
         print(f"Processed {len(metrics_chunk)} reads...")

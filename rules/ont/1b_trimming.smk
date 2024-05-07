@@ -9,10 +9,10 @@ rule ont_cutadapt:
     output:
         R1_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/ont/cut_R1.fq.gz"),
         R2_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/ont/cut_R2.fq.gz"),
-        JSON="{OUTDIR}/{SAMPLE}/ont/cutadapt.json",
+        JSON="{OUTDIR}/{SAMPLE}/ont/misc_logs/cutadapt.json",
     params:
         RECIPE = lambda w: get_recipes(w, mode="ONT"),
-        R1_LENGTH = lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ONT"),
+        R1_LENGTHS = lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ONT"),
         ADAPTER=config["R1_INTERNAL_ADAPTER"],  # Curio R1 internal adapter
         R1=config["R1_PRIMER"],  # R1 PCR primer (Visium & Seeker)
         ADAPTER_COUNT=4,  # number of adapters that can be trimmed from each read
@@ -31,7 +31,7 @@ rule ont_cutadapt:
         rcSEEKER_BB_ADAPTER="AGAGCCCTTGCGACTTCT",  # Reverse of the adapter between BB1 & BB2 in R1 
     threads: config["CORES"]
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/cutadapt.log",
+        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/cutadapt.log",
     run:
         R1_LENGTH = min(params.R1_LENGTHS)  # + len(params.R1) # Add R1 primer length for ONT
 

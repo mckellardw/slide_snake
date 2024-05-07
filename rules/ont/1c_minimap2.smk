@@ -5,7 +5,7 @@ rule ont_umitools_extract:
         R1_FQ_HardTrim="{OUTDIR}/{SAMPLE}/tmp/ont/cut_hardTrim_R1.fq.gz",
         R1_FQ_InternalTrim="{OUTDIR}/{SAMPLE}/tmp/ont/cut_internalTrim_R1.fq.gz",
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_R2.fq.gz",        
-        FQS=lambda w: get_fqs(w, return_type="list"),
+        # FQS=lambda w: get_fqs(w, return_type="list", mode="ONT"),
         BB_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
         BB_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
         BB_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
@@ -42,7 +42,6 @@ rule ont_umitools_extract:
         # --error-correct-cell \
         # --whitelist={whitelist} \
         # --error-correct-cell \
-
 
 
 # Align w/ minimap2

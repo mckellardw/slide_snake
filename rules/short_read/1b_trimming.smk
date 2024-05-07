@@ -7,9 +7,6 @@
 rule cutadapt:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/merged_R1.fq.gz",
-        # R1_FQ_HardTrim = '{OUTDIR}/{SAMPLE}/tmp/merged_R1_HardTrim.fq.gz',
-        # R1_FQ_InternalTrim = '{OUTDIR}/{SAMPLE}/tmp/merged_R1_InternalTrim.fq.gz',
-        R1_FQ_Trimmed="{OUTDIR}/{SAMPLE}/tmp/merged_R1.fq.gz",
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/merged_R2.fq.gz",
     output:
         R1_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz"),
@@ -86,13 +83,11 @@ rule cutadapt2:
         POLYA="A" * 100,
         POLYT="T" * 100,
         NEXTERA="CTGTCTCTTATA",  # Nextera sequence
-        rcNEXTERA="TATAAGAGACAG",  # Rev Comp of Nextera sequence
-        
+        rcNEXTERA="TATAAGAGACAG",  # Rev Comp of Nextera sequence        
         TSO="AAGCTGGTATCAACGCAGAGTGAATGGG",  # SlideSeq TSO - remove any polyadenylated TSOs
         TXG_TSO="AAGCAGTGGTATCAACGCAGAGTACATGGG",  # 10x TSO - remove any polyadenylated TSOs
         rcTSO="CCCATTCACTCTGCGTTGATACCAGCTT",  # rev comp of SlideSeq TSO
-        rcTXG_TSO="CCCATGTACTCTGCGTTGATACCACTGCTT",  # rev-comp of 10x TSO sequence
-        
+        rcTXG_TSO="CCCATGTACTCTGCGTTGATACCACTGCTT",  # rev-comp of 10x TSO sequence        
         ILMN_UNIVERSAL="AGATCGGAAGAG",  # Illumina Universal
         FIVE_PRIME_R2_TSO="CCCATTCACTCTGCGTTGATACCAGCTT",  # rev comp of SlideSeq TSO
         FIVE_PRIME_R2_TXG_TSO="CCCATGTACTCTGCGTTGATACCACTGCTT",  # rev-comp of 10x TSO sequence
@@ -137,7 +132,7 @@ rule R1_hardTrimming:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
     output:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_hardTrimmed_R1.fq.gz",  #temp()
+        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_hardTrim_R1.fq.gz",  #temp()
     params:
         CB1end=8,  #TODO- move to config? or recipe_sheet?
         CB2start=27,
@@ -172,7 +167,7 @@ rule R1_internalTrimming:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
     output:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_internalTrimmed_R1.fq.gz",  #temp()
+        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_internalTrim_R1.fq.gz",  #temp()
         INTERNAL_TRIM_QC_LOG="{OUTDIR}/{SAMPLE}/misc_logs/internal_trim_qc.txt",
     params:
         CB1end=8,  #TODO- move to config? or recipe_sheet?
@@ -205,7 +200,7 @@ rule R1_internalTrimming:
 #     input:
 #         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
 #     output:
-#         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_trimmed_R1.fq.gz",  #temp()
+#         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_Trim_R1.fq.gz",  #temp()
 #     params:
 #         CB1end=8,  #TODO- move to config? or recipe_sheet?
 #         CB2start=27,

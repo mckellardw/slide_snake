@@ -15,7 +15,7 @@ rule STARsolo_align:
         # R2_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz",
         # R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz",
         # R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz",
-        FQS=lambda w: get_fqs(w, return_type="list"),
+        FQS=lambda w: get_fqs(w, return_type="list", mode="ILMN"),
         BC_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
         BC_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
         BC_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
@@ -38,7 +38,6 @@ rule STARsolo_align:
         GENEFULL_FEAT="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/features.tsv",
     params:
         MEMLIMIT=config["MEMLIMIT"],  #TODO- move this to resources for slurm
-        # FQS=lambda w: get_fqs(w),
         # RECIPE = lambda w: get_recipes(w, option="ILMN"),
         WHITELIST=lambda w: get_whitelist(w),
         STAR_REF=lambda w: get_STAR_ref(w),

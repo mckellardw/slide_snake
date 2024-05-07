@@ -14,7 +14,7 @@
 SAMPLE_SHEET_PATH: /nfs/home/dmckellar/private_utils/sample_sheets/microST/E073.csv
 
 # Resource parameters
-CORES: 24               # how many cores to give each process
+CORES: 27               # how many cores to give each process
 MEMLIMIT: 256000000000  # limit in bytes; used for STAR
 MEMLIMIT_MB: 128000     # limit in megabytes
 MEMLIMIT_GB: 128G       # mem limit for kallisto

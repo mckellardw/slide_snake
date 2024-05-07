@@ -108,7 +108,7 @@ include: "rules/short_read/4c_kallisto_velo.smk"
 ## small RNA stuff
 # include: "rules/short_read/5_mirge.smk"
 
-# ONT module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ONT module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## preprocessing
 include: "rules/ont/1a_preprocessing.smk"
 include: "rules/ont/1b_trimming.smk"
@@ -122,14 +122,14 @@ include: "rules/ont/2_qualimap.smk"
 include: "rules/ont/2_read_qc.smk"
 include: "rules/ont/2_fastqc.smk"
 
-# Final outputs module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Final outputs module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## scanpy stuff
 include: "rules/6a_scanpy_init.smk"
 
 ### target rule(s) #####################################################################
 rule all:
     input:
-        ### ONT targets ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ### ONT targets ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         [f"{OUTDIR}/{SAMPLE}/ont/{FILE}" 
             for SAMPLE in ONT.keys() 
             for RECIPE in RECIPE_ONT_DICT[SAMPLE]
@@ -168,7 +168,7 @@ rule all:
             for FILE in ["qualimapReport.html","rnaseq_qc_results.csv"] 
         ], # alignment QC with qualimap
 
-        ### short-read targets ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ### short-read targets ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Module 1 - trimming & QC
         [f"{OUTDIR}/{SAMPLE}/fastqc/{TRIM}_{READ}"
             for SAMPLE in R2_FQS.keys()
