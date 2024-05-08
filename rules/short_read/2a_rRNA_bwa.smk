@@ -2,7 +2,9 @@
 # VASAseq implementation - https://github.com/anna-alemany/VASAseq/blob/main/mapping/ribo-bwamem.sh
 # Align to rRNA ref w/ `bwa mem` for cleaner/faster rRNA filtering
 ##TODO incorporate VASAseq style "long"/short read handling with multiple align steps
-##TODO- modify this so that it doesn't treat reads as paired-end
+
+
+# TODO- refactor to incorporate internal trimming options into rRNA filtering
 rule bwa_rRNA_align:
     input:
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
@@ -67,8 +69,8 @@ rule bwa_rRNA_align:
 
 rule bwa_rRNA_filter_R1:
     input:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz",
-        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz",
+        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
+        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
         R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq",
     output:
         R1_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq"),

@@ -35,17 +35,31 @@ def get_fqs(w, return_type=["list", "dict"], mode=["ONT", "ILMN"]):
             if "rRNA.STAR" in w.RECIPE:  # Use trimmed & STAR-rRNA-filtered .fq's
                 R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz"
                 R2 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz"
+
+                #TODO - update to match ribodetector style
+
             elif "rRNA.bwa" in w.RECIPE:  # Use trimmed & bwa-rRNA-filtered .fq's
                 R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz"
                 R2 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz"
+                
+                #TODO - update to match ribodetector style
+
+            elif "ribodetector" in w.RECIPE:
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/ribodetector/noRibo_R1.fq.gz"
+                R2 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/ribodetector/noRibo_R2.fq.gz"
+                
+                if "internalTrim" in w.RECIPE:
+                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/ribodetector/noRibo_internalTrim_R1.fq.gz"
+                if "hardTrim" in w.RECIPE:
+                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/ribodetector/noRibo_hardTrim_R1.fq.gz"
             else:  # just trimmed .fq's
                 R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_R1.fq.gz"
                 R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_R2.fq.gz"
 
-            if "internalTrim" in w.RECIPE:
-                R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_internalTrim_R1.fq.gz"
-            if "hardTrim" in w.RECIPE:
-                R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_hardTrim_R1.fq.gz"
+                if "internalTrim" in w.RECIPE:
+                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_internalTrim_R1.fq.gz"
+                if "hardTrim" in w.RECIPE:
+                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_hardTrim_R1.fq.gz"
         elif mode == "ONT":
             R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_R2.fq.gz"
             if "internalTrim" in w.RECIPE:

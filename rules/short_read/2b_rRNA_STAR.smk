@@ -1,6 +1,8 @@
 # Make output directory, align fastqs, and generate raw/filtered feature/cell-barcode matrices
 #   Info for STARsolo command line paramaters: https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md
-# TODO- dedup rRNA .bam files
+
+
+# TODO- refactor to incorporate internal trimming options into rRNA filtering
 rule STAR_rRNA_align:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
