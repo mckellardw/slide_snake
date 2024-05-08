@@ -1,5 +1,6 @@
 # Rules for formatting barcode whitelists/maps for different chemistries
 
+
 # Copy barcode map
 rule copy_barcode_map:
     input:
@@ -27,10 +28,10 @@ rule get_simple_whitelist:
 rule write_whitelist_variants:
     input:
         BC_MAP="{OUTDIR}/{SAMPLE}/bb/whitelist_map.txt",
-    output: 
-        BC_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt", # Bead barcode #1
-        BC_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt", # Bead Barcode #2
-        BC_US="{OUTDIR}/{SAMPLE}/bb/whitelist_underscore.txt", # Bead Barcode With Underscore for STAR
+    output:
+        BC_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",  # Bead barcode #1
+        BC_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",  # Bead Barcode #2
+        BC_US="{OUTDIR}/{SAMPLE}/bb/whitelist_underscore.txt",  # Bead Barcode With Underscore for STAR
     threads: 1
     run:
         recipes = get_recipes(wildcards, mode="concatenate")[0]
@@ -41,52 +42,38 @@ rule write_whitelist_variants:
 
         # split into multiple whitelists for separated barcodes
         if "seeker" in recipes or "decoder" in recipes:
-            bc_1  = [bb[:8] for bb in list(bc_df.values)]
-            bc_1  = list(set(bc_1))
+            bc_1 = [bb[:8] for bb in list(bc_df.values)]
+            bc_1 = list(set(bc_1))
 
-            bc_2  = [bb[8:] for bb in list(bc_df.values)]
-            bc_2  = list(set(bc_2))
-
+            bc_2 = [bb[8:] for bb in list(bc_df.values)]
+            bc_2 = list(set(bc_2))
 
             bc_us = [bb[:8] + "_" + bb[8:] for bb in list(bc_df.values)]
 
             # save bb files in {SAMPLE}/bb
-            pd.Series(bc_1).to_csv(
-                output.BC_1, header=False, index=False
-            )  
-            pd.Series(bc_2).to_csv(
-                output.BC_2, header=False, index=False
-            )  
-            pd.Series(bc_us).to_csv(
-                output.BC_US, header=False, index=False
-            )
+            pd.Series(bc_1).to_csv(output.BC_1, header=False, index=False)
+            pd.Series(bc_2).to_csv(output.BC_2, header=False, index=False)
+            pd.Series(bc_us).to_csv(output.BC_US, header=False, index=False)
 
         elif "microST" in recipes:
-            bc_1  = [bb[:10] for bb in list(bc_df.values)]
-            bc_1  = list(set(bc_1))
+            bc_1 = [bb[:10] for bb in list(bc_df.values)]
+            bc_1 = list(set(bc_1))
 
-            bc_2  = [bb[10:] for bb in list(bc_df.values)]
-            bc_2  = list(set(bc_2))
-
+            bc_2 = [bb[10:] for bb in list(bc_df.values)]
+            bc_2 = list(set(bc_2))
 
             bc_us = [bb[:10] + "_" + bb[10:] for bb in list(bc_df.values)]
 
             # save bb files in {SAMPLE}/bb
-            pd.Series(bc_1).to_csv(
-                output.BC_1, header=False, index=False
-            )  
-            pd.Series(bc_2).to_csv(
-                output.BC_2, header=False, index=False
-            )  
-            pd.Series(bc_us).to_csv(
-                output.BC_US, header=False, index=False
-            )
+            pd.Series(bc_1).to_csv(output.BC_1, header=False, index=False)
+            pd.Series(bc_2).to_csv(output.BC_2, header=False, index=False)
+            pd.Series(bc_us).to_csv(output.BC_US, header=False, index=False)
 
         else:
             shell(
-                # touch {output.BC_1}
-                # touch {output.BC_2}
                 f"""
+                touch {output.BC_1}
+                touch {output.BC_2}
                 touch {output.BC_US}
                 """
             )
@@ -120,17 +107,13 @@ rule insert_adapter_into_list:
             bc_adapter = bc_1 + params.ADAPTER + bc_2
             bc_adapter_r1 = params.R1_PRIMER + bc_1 + params.ADAPTER + bc_2
 
-            bc_adapter_map = pd.DataFrame(
-                list(zip(bc_adapter[0], bc_df[1], bc_df[2]))
-            )
+            bc_adapter_map = pd.DataFrame(list(zip(bc_adapter[0], bc_df[1], bc_df[2])))
             bc_adapter_r1_map = pd.DataFrame(
                 list(zip(bc_adapter_r1[0], bc_df[1], bc_df[2]))
             )
 
             # save bc files in {SAMPLE}/bb
-            bc_adapter.to_csv(
-                output.BC_ADAPTER, sep="\t", header=False, index=False
-            )
+            bc_adapter.to_csv(output.BC_ADAPTER, sep="\t", header=False, index=False)
             bc_adapter_r1.to_csv(
                 output.BC_ADAPTER_R1, sep="\t", header=False, index=False
             )
@@ -153,17 +136,13 @@ rule insert_adapter_into_list:
             bc_adapter = bc_1 + params.ADAPTER + bc_2
             bc_adapter_r1 = params.R1_PRIMER + bc_1 + params.ADAPTER + bc_2
 
-            bc_adapter_map = pd.DataFrame(
-                list(zip(bc_adapter[0], bc_df[1], bc_df[2]))
-            )
+            bc_adapter_map = pd.DataFrame(list(zip(bc_adapter[0], bc_df[1], bc_df[2])))
             bc_adapter_r1_map = pd.DataFrame(
                 list(zip(bc_adapter_r1[0], bc_df[1], bc_df[2]))
             )
 
             # save bc files in {SAMPLE}/bb
-            bc_adapter.to_csv(
-                output.BC_ADAPTER, sep="\t", header=False, index=False
-            )
+            bc_adapter.to_csv(output.BC_ADAPTER, sep="\t", header=False, index=False)
             bc_adapter_r1.to_csv(
                 output.BC_ADAPTER_R1, sep="\t", header=False, index=False
             )
@@ -174,10 +153,9 @@ rule insert_adapter_into_list:
             bc_adapter_r1_map.to_csv(
                 output.BC_ADAPTER_R1_MAP, sep="\t", header=False, index=False
             )
-        
+
         elif "decoder" in recipes:
             print("TODO")
 
         else:
             shell(f"touch {' '.join(output)}")
-

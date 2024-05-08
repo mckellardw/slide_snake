@@ -125,7 +125,6 @@ rule merge_formats_ONT:
 rule ont_call_adapter_scan:
     input:
         FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz",
-        # FOFN = "{OUTDIR}/{SAMPLE}/ont/chunk/fofn.txt",
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/adapter_scan.tsv",
         FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq.gz",

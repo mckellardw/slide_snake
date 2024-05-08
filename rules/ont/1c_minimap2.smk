@@ -2,11 +2,12 @@
 rule ont_umitools_extract:
     input:
         FQS=lambda w: get_fqs(w, return_type="list", mode="ONT"),
-        BB_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
-        BB_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
-        BB_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
-        BB_ADAPTER="{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt",
-        BB_ADAPTER_R1="{OUTDIR}/{SAMPLE}/bb/whitelist_adapter_r1.txt",
+        # WHITELIST=lambda w: get_whitelist(w),
+        # BB_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
+        # BB_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
+        # BB_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
+        # BB_ADAPTER="{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt",
+        # BB_ADAPTER_R1="{OUTDIR}/{SAMPLE}/bb/whitelist_adapter_r1.txt",
     output:
         R1_FQ="{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/umi_R1.fq.gz",
         R2_FQ="{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/umi_R2.fq.gz",
@@ -33,12 +34,13 @@ rule ont_umitools_extract:
                     --stdout={output.R1_FQ} \
                     --read2-out={output.R2_FQ} \
                     --log2stderr \
-                2>> {log.log}
+                2>&1 | tee {log.log}
                 """
             )
-        # --error-correct-cell \
-        # --whitelist={whitelist} \
-        # --error-correct-cell \
+            # --error-correct-cell \
+            # --whitelist={whitelist} \
+            # --error-correct-cell \
+
 
 
 # Align w/ minimap2
@@ -82,6 +84,8 @@ rule ont_align_minimap2_genome:
             > {output.SAM_TMP}
             """
         )
+
+
 #
 # if "total" in wildcards.RECIPE:
 #     EXTRA_FLAGS = "-M --secondary=yes"
@@ -107,12 +111,9 @@ rule ont_sort_index_output:
                 --reference {params.ref} \
                 -O BAM \
                 -o {output.BAM} \
-                {input.SAM} 
-            
+                {input.SAM}             
             """
         )
-            # {EXEC['SAMTOOLS']} index {output.BAM}
-
 
 
 # Get UMI & CB from R1 fastq
@@ -139,16 +140,18 @@ rule ont_extract_barcodes_from_R1:
             """
         )
 
+
 # Note - run time increases (substantially) with BC length
 rule ont_error_correct_barcodes:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc.bam.bai",
-        BB_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
-        BB_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
-        BB_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
-        BB_ADAPTER="{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt",
-        BB_ADAPTER_R1="{OUTDIR}/{SAMPLE}/bb/whitelist_adapter_r1.txt",
+        WHITELIST=lambda w: get_whitelist(w),
+        # BB_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
+        # BB_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
+        # BB_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
+        # BB_ADAPTER="{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt",
+        # BB_ADAPTER_R1="{OUTDIR}/{SAMPLE}/bb/whitelist_adapter_r1.txt",
     output:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam",
         COUNTS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/counts.tsv",
@@ -159,7 +162,7 @@ rule ont_error_correct_barcodes:
         # kit=lambda w: sample_sheet.loc[w.run_id, "kit_name"],
         KIT="3prime",  #['3prime', '5prime', 'multiome']
         # UMI_LENGTH=lambda w: get_umi_length(w),
-        UMI_LENGTH=lambda w: get_recipe_info(w, info_col="UMI.length"),
+        UMI_LENGTH=lambda w: get_recipe_info(w, info_col="UMI.length", mode="ONT"),
         WHITELIST=lambda w: get_whitelist(w),
     threads: config["CORES"]
     # 1
@@ -182,7 +185,7 @@ rule ont_error_correct_barcodes:
                 --kit {params.KIT} \
                 --adapter1_suff_length {params.adapter1_suff_length} \
                 --umi_length {params.UMI_LENGTH} \
-                {input.BAM} {params.WHITELIST} \
+                {input.BAM} {input.WHITELIST} \
             2>> {log.log}
             """
         )
@@ -231,6 +234,8 @@ rule ont_featureCounts:
             2> {log.log}
             """
         )
+
+
 #
 # --donotsort \
 # −−sortReadsByCoordinates \
@@ -282,7 +287,6 @@ rule ont_add_featureCounts_to_bam:
                 --tag {params.TAG}
             """
         )
-
 
 
 # Generate count matrix w/ umi-tools

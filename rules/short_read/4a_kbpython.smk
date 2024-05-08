@@ -5,14 +5,15 @@
 #############################################
 rule kbpython_standard:
     input:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz",
-        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz",
-        R1_FQ_TWICE_CUT="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
-        R2_FQ_TWICE_CUT="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
-        R1_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz",
-        R2_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz",
-        R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz",
-        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz",
+        # R1_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz",
+        # R2_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz",
+        # R1_FQ_TWICE_CUT="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
+        # R2_FQ_TWICE_CUT="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
+        # R1_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz",
+        # R2_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz",
+        # R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz",
+        # R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz",
+        FQS=lambda w: get_fqs(w, return_type="list", mode="ILMN"),
         BC="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
     output:
         BUS=temp("{OUTDIR}/{SAMPLE}/kbpython/{RECIPE}/output.unfiltered.bus"),
@@ -26,7 +27,6 @@ rule kbpython_standard:
         KB_IDX=lambda wildcards: IDX_DICT[wildcards.SAMPLE],
         KB_X=lambda wildcards: RECIPE_SHEET["kb.x"][wildcards.RECIPE],
         KB_T2G=lambda wildcards: T2G_DICT[wildcards.SAMPLE],
-        FQS=lambda w: get_fqs(w),
         KB=EXEC["KB"],
         KALLISTO=EXEC["KALLISTO"],
         BUSTOOLS=EXEC["BUSTOOLS"],
@@ -54,9 +54,10 @@ rule kbpython_standard:
             -x {params.KB_X} \
             -w {input.BC} \
             -t {threads} \
-            {params.FQS[0]} {params.FQS[1]} \
+            {input.FQS[0]} {input.FQS[1]} \
         2> {log.log}
         """
+
 
 # # gzip the count matrix, etc.
 rule compress_kbpython_outs:

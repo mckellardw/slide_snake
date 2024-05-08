@@ -11,8 +11,8 @@ rule ont_cutadapt:
         R2_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/ont/cut_R2.fq.gz"),
         JSON="{OUTDIR}/{SAMPLE}/ont/misc_logs/cutadapt.json",
     params:
-        RECIPE = lambda w: get_recipes(w, mode="ONT"),
-        R1_LENGTHS = lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ONT"),
+        RECIPE=lambda w: get_recipes(w, mode="ONT"),
+        R1_LENGTHS=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ONT"),
         # ADAPTER=config["R1_INTERNAL_ADAPTER"],  # Curio R1 internal adapter
         ADAPTER=lambda w: get_recipe_info(w, "internal.adapter"),
         R1=config["R1_PRIMER"],  # R1 PCR primer (Visium & Seeker)
@@ -34,7 +34,9 @@ rule ont_cutadapt:
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/cutadapt.log",
     run:
-        R1_LENGTH = min(params.R1_LENGTHS)  # + len(params.R1) # Add R1 primer length for ONT
+        R1_LENGTH = min(
+            params.R1_LENGTHS
+        )  # + len(params.R1) # Add R1 primer length for ONT
 
         # TODO - make some params recipe-specific
         shell(
@@ -75,6 +77,7 @@ rule ont_cutadapt:
         # -a "{params.POLYT};max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \ # 3' poly(T) trimming on R1?
 
 
+
 # Trimming for R1 to handle adapter issues. See README for recipe details (#TODO)
 ## "Hard" trimming, to remove the adapter based on hard-coded base positions
 rule ont_R1_hardTrimming:
@@ -90,7 +93,7 @@ rule ont_R1_hardTrimming:
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/R1_hardTrimming.log",
     run:
-        shell(  
+        shell(
             f"""
             zcat {input.R1_FQ} \
             | awk -v s={params.CB1end} \
@@ -105,6 +108,7 @@ rule ont_R1_hardTrimming:
             """
         )
 
+
 ## Internal trimming to cut out adapter sequences
 ###TODO- rewrite/speed up internal trimming!
 rule ont_R1_internalTrimming:
@@ -115,25 +119,26 @@ rule ont_R1_internalTrimming:
         INTERNAL_TRIM_QC_LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/internal_trim_qc.txt",
     params:
         TMPDIR="{OUTDIR}/{SAMPLE}/tmp/seqkit",
-        ADAPTER=lambda w: get_recipe_info(w, "internal.adapter"),
+        ADAPTER=lambda w: get_recipe_info(w, "internal.adapter")[0],
         # RECIPE = lambda w: get_recipes(w, mode="ONT"),
         # R1_LENGTH = lambda w: get_recipe_info(w, info_col="R1.finalLength")
     threads: config["CORES"]
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/R1_internalTrimming.log",
     run:
-        shell(  
+        shell(
             f"""
             python scripts/py/internal_adapter_trim_R1.py \
                 {params.ADAPTER} \
                 {output.INTERNAL_TRIM_QC_LOG} \
                 {threads} \
                 {params.TMPDIR} \
-                {R1} \
+                {input.R1_FQ} \
                 {output.R1_FQ} \
             | tee {log.log}
             """
         )
+
 
 # rule ont_R1_trimming:
 #     input:
@@ -164,9 +169,7 @@ rule ont_R1_internalTrimming:
 #                         -v E={params.CB2end} \
 #                         -f scripts/awk/hardTrimFq.awk \
 #                     > {output.R1_FQ.strip('.gz')}
-
 #                     {EXEC['PIGZ']} -f -p{threads} {output.R1_FQ.strip('.gz')}
-
 #                     echo "Hard trimming performed on {input.R1_FQ}" > {log.log}
 #                     """
 #                 )
@@ -187,7 +190,7 @@ rule ont_R1_internalTrimming:
 #             else:
 #                 shell(  # Rename R1_FQ if no trimming needed
 #                     f"""
-#                     cp {input.R1_FQ} {output.R1_FQ} 
+#                     cp {input.R1_FQ} {output.R1_FQ}
 #                     echo "No trimming performed on {input.R1_FQ}..." {log.log}
 #                     """
 #                 )

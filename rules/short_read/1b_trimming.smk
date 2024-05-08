@@ -15,7 +15,7 @@ rule cutadapt:
         JSON="{OUTDIR}/{SAMPLE}/misc_logs/cutadapt.json",
     params:
         RECIPE=lambda w: get_recipes(w, mode="ILMN"),
-        R1_LENGTH=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN"),
+        R1_LENGTHS=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN"),
         # R1_LENGTH = 50,
         QUALITY_MIN=20,
         MIN_R2_LENGTH=12,
@@ -175,7 +175,7 @@ rule R1_internalTrimming:
         CB2start=27,
         CB2end=42,
         TMPDIR="{OUTDIR}/{SAMPLE}/tmp/seqkit",
-        ADAPTER=lambda w: get_recipe_info(w, "internal.adapter"),
+        ADAPTER=lambda w: get_recipe_info(w, "internal.adapter")[0],
         RECIPE=lambda w: get_recipes(w, mode="ILMN"),
         R1_LENGTH=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN"),
     threads: config["CORES"]
@@ -187,7 +187,7 @@ rule R1_internalTrimming:
             f"""
             python scripts/py/internal_adapter_trim_R1.py \
                 {params.ADAPTER} \
-                {params.INTERNAL_TRIM_QC_LOG} \
+                {output.INTERNAL_TRIM_QC_LOG} \
                 {threads} \
                 {params.TMPDIR} \
                 {R1} \
@@ -226,7 +226,6 @@ rule R1_internalTrimming:
 #                         -v E={params.CB2end} \
 #                         -f scripts/awk/hardTrimFq.awk \
 #                     > {output.R1_FQ.strip('.gz')}
-
 #                     {EXEC['PIGZ']} -f -p{threads} {output.R1_FQ.strip('.gz')}
 #                     echo "Hard trimming performed on {input.R1_FQ}" > {log.log}
 #                     """

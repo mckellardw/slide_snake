@@ -5,7 +5,7 @@ rule ont_readQC_preCutadapt:
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/readqc/1_preCutadapt/{READ}_qc.tsv",  #TODO compress this?
     params:
-        CHUNK_SIZE=500000        
+        CHUNK_SIZE=500000,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/readqc/1_preCutadapt/{READ}_qc.log",
     threads: config["CORES"]
@@ -27,7 +27,7 @@ rule ont_readQC_postCutadapt:
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/readqc/2_postCutadapt/{READ}_qc.tsv",
     params:
-        CHUNK_SIZE=500000     
+        CHUNK_SIZE=500000,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/readqc/2_postCutadapt/{READ}_qc.log",
     threads: config["CORES"]
@@ -63,12 +63,12 @@ rule readQC_bam:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam.bai",
     output:
-        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/3_aligned/bam_qc.tsv",
+        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/3_aligned/{RECIPE}_qc.tsv",
     params:
-        TAGS="AS NM GN",
+        TAGS="AS NM GN CB UR",
         CHUNK_SIZE=500000,
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/readqc/3_aligned/bam_qc.log",
+        log="{OUTDIR}/{SAMPLE}/ont/readqc/3_aligned/{RECIPE}_qc.log",
     threads: config["CORES"]
     shell:
         """
@@ -84,21 +84,22 @@ rule readQC_bam:
 # Grab the first million reads...
 rule readQC_downsample:
     input:
-        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/3_aligned/bam_qc.tsv",
+        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc.tsv",
     output:
-        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/3_aligned/bam_qc_500000.tsv",
+        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc_500000.tsv",
     threads: 1
     shell:
         """
         head -n 5000000 {input.TSV} > {output.TSV} 
         """
 
+
 # Summary plot
 rule ont_readQC_summaryplot:
     input:
-        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/{CUT}/{READ}_qc_500000.tsv",
+        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc_500000.tsv",
     output:
-        IMG="{OUTDIR}/{SAMPLE}/ont/readqc/{CUT}/{READ}_qc_500000.png",
+        IMG="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc.png",
     threads: 1
     conda:
         f"{workflow.basedir}/envs/ggplot2.yml"

@@ -3,14 +3,15 @@
 #############################################
 rule kallisto_align:
     input:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz",
-        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz",
-        R1_FQ_TWICE_CUT="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
-        R2_FQ_TWICE_CUT="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
-        R1_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz",
-        R2_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz",
-        R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz",
-        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz",
+        # R1_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz",
+        # R2_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz",
+        # R1_FQ_TWICE_CUT="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
+        # R2_FQ_TWICE_CUT="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
+        # R1_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz",
+        # R2_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz",
+        # R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz",
+        # R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz",
+        FQS=lambda w: get_fqs(w, return_type="list", mode="ILMN"),
         BC="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
     output:
         BUS=temp("{OUTDIR}/{SAMPLE}/kb/{RECIPE}/output.bus"),
@@ -19,7 +20,6 @@ rule kallisto_align:
         ECMAP=temp("{OUTDIR}/{SAMPLE}/kb/{RECIPE}/matrix.ec"),
     params:
         MEMLIMIT=config["MEMLIMIT_GB"],
-        FQS=lambda w: get_fqs(w),
     log:
         log="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/kallisto_align.log",
     threads: config["CORES"]
@@ -43,8 +43,8 @@ rule kallisto_align:
                 --log {log.log} \
                 --threads {threads} \
                 --memlimit {params.MEMLIMIT} \
-                --r1fq {params.FQS[0]} \
-                --r2fq {params.FQS[1]}
+                --r1fq {input.FQS[0]} \
+                --r2fq {input.FQS[1]}
             """
         )
 

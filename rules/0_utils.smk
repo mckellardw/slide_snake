@@ -1,5 +1,6 @@
 #### Utility rules ############################2
 
+
 # Index .bam file
 rule index_BAM:
     input:
@@ -19,42 +20,40 @@ rule index_BAM:
 
 #### Util functions ###########################
 
+
 # Select input reads based on alignment recipe
-def get_fqs(w, return_type=["list", "dict"], mode=["ONT","ILMN"]):
+def get_fqs(w, return_type=["list", "dict"], mode=["ONT", "ILMN"]):
     # param defaults
-    if len(return_type) > 1: #default
-        return_type = "list"    
-    if len(mode) > 1: #default
+    if len(return_type) > 1:  # default
+        return_type = "list"
+    if type(mode) is list:  # default
         mode = "ONT"
-    R1=""
-    R2=""
+
     # get file paths
-    try:        
+    try:
         if mode == "ILMN":
             if "rRNA.STAR" in w.RECIPE:  # Use trimmed & STAR-rRNA-filtered .fq's
                 R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz"
                 R2 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz"
-            elif "rRNA.bwa" in w.RECIPE:  # TODO Use trimmed & bwa-rRNA-filtered .fq's
+            elif "rRNA.bwa" in w.RECIPE:  # Use trimmed & bwa-rRNA-filtered .fq's
                 R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz"
                 R2 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz"
-            elif "rRNA" not in w.RECIPE:  # just trimmed .fq's
+            else:  # just trimmed .fq's
                 R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_R1.fq.gz"
                 R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_R2.fq.gz"
-            else:
-                print("I just don't know what to do with myself...")
 
             if "internalTrim" in w.RECIPE:
-                R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_internalTrimmed_R1.fq.gz"
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_internalTrim_R1.fq.gz"
             if "hardTrim" in w.RECIPE:
-                R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_hardTrimmed_R1.fq.gz"
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_hardTrim_R1.fq.gz"
         elif mode == "ONT":
+            R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_R2.fq.gz"
             if "internalTrim" in w.RECIPE:
-                R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/cut_internalTrim_R1.fq.gz"
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_internalTrim_R1.fq.gz"
             elif "hardTrim" in w.RECIPE:
-                R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/cut_hardTrim_R1.fq.gz"
-            else:                
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_hardTrim_R1.fq.gz"
+            else:
                 R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_R1.fq.gz"
-                R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_R2.fq.gz"
         else:
             print("get_fqs(): `mode` not found")
     except Exception:
@@ -71,7 +70,8 @@ def get_fqs(w, return_type=["list", "dict"], mode=["ONT","ILMN"]):
     if return_type == "list":
         return [R1, R2]
     elif return_type == "dict":
-        return {"R1":R1, "R2":R2}
+        return {"R1": R1, "R2": R2}
+
 
 # whitelist param handling for different recipes
 def get_whitelist(w):
@@ -90,7 +90,6 @@ def get_whitelist(w):
 
     # return whitelist path(s)
     return whitelist
-
 
 
 # TODO move these values to recipe_sheet - also write better code than this...
@@ -114,7 +113,7 @@ def get_ont_barcode_pattern(w):
         else:
             BC_PATTERN = "C" * 16 + "N" * 12
     except Exception:
-            BC_PATTERN = "C" * 16 + "N" * 12
+        BC_PATTERN = "C" * 16 + "N" * 12
 
     # return barcode pattern
     return BC_PATTERN
@@ -133,9 +132,9 @@ def get_ont_barcode_pattern(w):
 #     "(?P<umi_1>.{{7}})"
 
 
-def get_STAR_ref(w, mode=["genome","rRNA"]):
+def get_STAR_ref(w, mode=["genome", "rRNA"]):
     try:
-        if len(mode) > 1: #default
+        if len(mode) > 1:  # default
             mode = "genome"
 
         if mode == "genome":
@@ -147,15 +146,16 @@ def get_STAR_ref(w, mode=["genome","rRNA"]):
 
     return star_ref
 
-#TODO- add STAR_rRNA functinoality (no w.RECIPE accessibility)
+
+# TODO- add STAR_rRNA functinoality (no w.RECIPE accessibility)
 def get_STAR_extra_params(w):
-    star_info = {        
-        "STAR.soloType":"",
-        "STAR.soloUMI":"",
-        "STAR.soloCB":"",
-        "STAR.soloCBmatchWLtype":"",
-        "STAR.soloAdapter":"",
-        "STAR.extra":"--outFilterMultimapNmax 50 --outFilterMismatchNoverLmax 0.05  --outFilterMatchNmin 12  --outFilterScoreMinOverLread 0  --outFilterMatchNminOverLread 0",
+    star_info = {
+        "STAR.soloType": "",
+        "STAR.soloUMI": "",
+        "STAR.soloCB": "",
+        "STAR.soloCBmatchWLtype": "",
+        "STAR.soloAdapter": "",
+        "STAR.extra": "--outFilterMultimapNmax 50 --outFilterMismatchNoverLmax 0.05  --outFilterMatchNmin 12  --outFilterScoreMinOverLread 0  --outFilterMatchNminOverLread 0",
     }
 
     # Iterate over each key
@@ -186,7 +186,7 @@ def get_STAR_extra_params(w):
     return star_info
 
 
-def get_recipes(w, mode=["ONT","ILMN","list"]):
+def get_recipes(w, mode=["ONT", "ILMN", "list"]):
     """
     Retrieves the recipe for a given sample based on the mode specified.
 
@@ -205,20 +205,24 @@ def get_recipes(w, mode=["ONT","ILMN","list"]):
     - If "list" is in the mode, it returns the recipe as a list; otherwise, it returns the recipe as a space-separated string.
     - If no recipe is found, it prints a warning message and returns an empty string.
     """
-    if len(mode) > 1: #default
+    if len(mode) > 1:  # default
         mode = "ONT"
-        
+
     if "ONT" in mode:
         try:
             return RECIPE_ONT_DICT[w.SAMPLE]
         except Exception:
-            print(f"No ONT recipe given for sample '{w.SAMPLE}'! Check your sample sheet!")
+            print(
+                f"No ONT recipe given for sample '{w.SAMPLE}'! Check your sample sheet!"
+            )
             return ""
     elif "ILMN" in mode:
         try:
             return RECIPE_DICT[w.SAMPLE]
         except Exception:
-            print(f"No ILMN recipe given for sample '{w.SAMPLE}'! Check your sample sheet!")
+            print(
+                f"No ILMN recipe given for sample '{w.SAMPLE}'! Check your sample sheet!"
+            )
             return ""
     else:
         all_recipes = []
@@ -243,7 +247,7 @@ def get_recipes(w, mode=["ONT","ILMN","list"]):
 
 
 # Pull info from recipe sheet
-def get_recipe_info(w, info_col, mode=["ONT","ILMN"]):
+def get_recipe_info(w, info_col, mode=["ONT", "ILMN"]):
     recipe = get_recipes(w, mode=mode)
 
     # if len(recipe) > 1:
@@ -267,6 +271,7 @@ def build_abs_path(files, abs_path, sep=" "):
     elif isinstance(whitelist, list):
         file_abs_path = sep.join([f"{abs_path}/{f}" for f in files])
 
+
 def unlist(lst):
     result = []
     for item in lst:
@@ -275,6 +280,7 @@ def unlist(lst):
         else:
             result.append(item)
     return result
+
 
 ########## TO BE DEPRECATED ########################################################
 def get_barcode_length(w):
