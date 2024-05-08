@@ -99,16 +99,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Parse BAM/SAM file and write metrics to TSV."
     )
-    parser.add_argument(
-        "--bam_file", 
-        type=str, 
-        help="Path to the input BAM/SAM file."
-    )
-    parser.add_argument(
-        "--tsv_file", 
-        type=str, 
-        help="Path to the output TSV file."
-    )
+    parser.add_argument("--bam_file", type=str, help="Path to the input BAM/SAM file.")
+    parser.add_argument("--tsv_file", type=str, help="Path to the output TSV file.")
     parser.add_argument(
         "--tags",
         type=str,
