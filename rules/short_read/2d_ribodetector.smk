@@ -14,7 +14,7 @@ rule ribodetector:
         # RIBO_R1_FQ="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_R1.fq",
         RIBO_R2_FQ="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/yesRibo_R2.fq",
     params:
-        CHUNK_SIZE=1024,
+        CHUNK_SIZE=2048,
         MIN_ALIGNSCORE=40,
     log:
         log="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/ribodetector.log",
@@ -27,11 +27,11 @@ rule ribodetector:
 
         ribodetector_cpu \
             --threads {threads} \
-            --len ${READ_LEN} \
+            --len  $(printf "%.0f" $READ_LEN) \
             --input {input.R2_FQ} \
             --ensure rrna \
             --chunk_size {params.CHUNK_SIZE} \
-            --rrna {output.R2_FQ} \
+            --rrna {output.RIBO_R2_FQ} \
             --output {output.R2_FQ} \
             --log {log.log}
         """

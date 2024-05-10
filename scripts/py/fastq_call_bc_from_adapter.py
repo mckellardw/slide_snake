@@ -4,7 +4,7 @@ from Bio import pairwise2
 from Bio.Seq import Seq
 
 # Usage:
-## python script_name.py --fastq_file fastq_file.fastq --adapters adapter1 adapter2 --whitelist_files whitelist1.txt whitelist2.txt --barcode_positions left right --mismatches 1 1 --error_rate 1
+## python scripts/py/fastq_call_bc_from_adapter.py --fq_in fq_in.fastq --adapters adapter1 adapter2 --whitelist_files whitelist1.txt whitelist2.txt --barcode_positions left right --mismatches 1 1 --error_rate 1
 
 
 def align_sequences(seq1, seq2, mismatches):
@@ -18,11 +18,11 @@ def align_sequences(seq1, seq2, mismatches):
 
 
 def extract_barcodes(
-    fastq_file, adapters, whitelist_files, barcode_positions, mismatches, error_rate
+    fq_in, adapters, whitelist_files, barcode_positions, mismatches, error_rate
 ):
     barcode_dict = {f: [] for f in whitelist_files}
 
-    with pysam.FastxFile(fastq_file) as fastq:
+    with pysam.FastxFile(fq_in) as fastq:
         for read in fastq:
             for adapter, whitelist_file, position, mismatches in zip(
                 adapters, whitelist_files, barcode_positions, mismatches
@@ -49,7 +49,8 @@ def extract_barcodes(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Extract barcodes from FASTQ file.")
-    parser.add_argument("--fastq_file", required=True, help="Path to the FASTQ file.")
+    parser.add_argument("--fq_in", required=True, help="Path to the FASTQ file.")
+    # parser.add_argument("--tsv_out", required=True, help="Path to the FASTQ file.")
     parser.add_argument(
         "--adapters", nargs="+", required=True, help="List of adapter sequences."
     )
@@ -78,7 +79,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     extract_barcodes(
-        args.fastq_file,
+        args.fq_in,
         args.adapters,
         args.whitelist_files,
         args.barcode_positions,

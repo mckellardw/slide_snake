@@ -5,14 +5,15 @@
 #############################################
 rule kbpython_velo:
     input:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz",
-        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz",
-        R1_FQ_TWICE_CUT="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
-        R2_FQ_TWICE_CUT="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
-        R1_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz",
-        R2_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz",
-        R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz",
-        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz",
+        # R1_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz",
+        # R2_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz",
+        # R1_FQ_TWICE_CUT="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
+        # R2_FQ_TWICE_CUT="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
+        # R1_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz",
+        # R2_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz",
+        # R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz",
+        # R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz",
+        FQS=lambda w: get_fqs(w, return_type="list", mode="ILMN"),
         BC="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
     output:
         BUS=temp("{OUTDIR}/{SAMPLE}/kbpython/{RECIPE}/output.unfiltered.bus"),
@@ -26,7 +27,6 @@ rule kbpython_velo:
         KB_X=lambda wildcards: RECIPE_SHEET["kb.x"][wildcards.RECIPE],
         KB_IDX=lambda wildcards: IDX_VELO_DICT[wildcards.SAMPLE],
         KB_T2G=lambda wildcards: T2G_DICT[wildcards.SAMPLE],
-        FQS=lambda w: get_fqs(w),
         KALLISTO=EXEC["KALLISTO"],
         KB=EXEC["KB"],
     log:

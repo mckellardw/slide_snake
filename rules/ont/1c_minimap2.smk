@@ -1,6 +1,7 @@
 # Get cell/spot/bead barcodes & UMIs
 rule ont_umitools_extract:
     input:
+        LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/adapter_scan_results.txt",
         FQS=lambda w: get_fqs(w, return_type="list", mode="ONT"),
         # WHITELIST=lambda w: get_whitelist(w),
         # BB_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
@@ -19,7 +20,7 @@ rule ont_umitools_extract:
         log="{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/extract.log",
     threads: 1
     run:
-        if "N" in params:
+        if "N" in params.BC_PATTERN:
             shell(
                 f"""
                 echo "Barcode pattern: '{params.BC_PATTERN}'" > {log.log}
@@ -85,12 +86,6 @@ rule ont_align_minimap2_genome:
             """
         )
 
-
-#
-# if "total" in wildcards.RECIPE:
-#     EXTRA_FLAGS = "-M --secondary=yes"
-# else:
-#     EXTRA_FLAGS = "--secondary=no"
 
 
 rule ont_sort_index_output:

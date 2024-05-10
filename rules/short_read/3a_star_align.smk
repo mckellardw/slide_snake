@@ -10,11 +10,6 @@ rule STARsolo_align:
     input:
         FQS=lambda w: get_fqs(w, return_type="list", mode="ILMN"),
         WHITELIST=lambda w: get_whitelist(w),
-        # BC_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
-        # BC_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
-        # BC_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
-        # BC_ADAPTER="{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt",
-        # BC_US="{OUTDIR}/{SAMPLE}/bb/whitelist_underscore.txt",
     output:
         BAM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.out.bam",  #TODO: add temp()
         UNMAPPED1="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate1",
@@ -31,7 +26,6 @@ rule STARsolo_align:
         GENEFULL_BC="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv",
         GENEFULL_FEAT="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/features.tsv",
     params:
-        MEMLIMIT=config["MEMLIMIT"],  #TODO- move this to resources for slurm
         WHITELIST=lambda w: get_whitelist(w),
         STAR_REF=lambda w: get_STAR_ref(w),
         STAR_PARAMS=lambda w: get_STAR_extra_params(w),
@@ -53,7 +47,6 @@ rule STARsolo_align:
                 --readFilesCommand zcat \
                 --genomeDir {params.STAR_REF} \
                 --readFilesIn {input.FQS[1]} {input.FQS[0]} \
-                --clipAdapterType CellRanger4 \
                 --outReadsUnmapped Fastx \
                 --outSAMunmapped Within KeepPairs \
                 --soloType {params.STAR_PARAMS["STAR.soloType"]} {params.STAR_PARAMS["STAR.soloUMI"]} {params.STAR_PARAMS["STAR.soloCB"]} {params.STAR_PARAMS["STAR.soloAdapter"]} {params.STAR_PARAMS["STAR.extra"]} \
@@ -67,9 +60,11 @@ rule STARsolo_align:
                 --soloMultiMappers EM
             """
         )
+                # --clipAdapterType CellRanger4 \
         # --soloType {soloType} {soloUMI} {soloCB} {soloAdapter} {extraSTAR} \
         # --soloCBmatchWLtype {soloCBmatchWLtype} \
         # --soloCellFilter TopCells {nBB} \
+
 
 
 # compress outputs from STAR (count matrices, cell barcodes, and gene lists)

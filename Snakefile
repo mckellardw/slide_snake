@@ -77,6 +77,8 @@ for i in range(0,SAMPLE_SHEET.shape[0]):
         if len(ONT[tmp_sample]) > 0:
             RECIPE_ONT_DICT[tmp_sample] = list(SAMPLE_SHEET["recipe_ONT"])[i].split()
 
+
+
 ### include rules #######################################################################
 # Pre-flight module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 include: "rules/0a_barcode_maps.smk" 
@@ -92,6 +94,7 @@ include: "rules/short_read/1c_fastqc.smk"
 include: "rules/short_read/2a_rRNA_bwa.smk"
 include: "rules/short_read/2b_rRNA_STAR.smk"
 include: "rules/short_read/2c_rRNA_qualimap.smk"
+include: "rules/short_read/2d_ribodetector.smk"
 
 ## STAR alignment, QC, and post-processing - TODO update numbering
 include: "rules/short_read/3a_star_align.smk"
@@ -134,8 +137,6 @@ rule all:
             for SAMPLE in ONT.keys() 
             for RECIPE in RECIPE_ONT_DICT[SAMPLE]
             for FILE in [
-                    f"minimap2/{RECIPE}/sorted.bam",
-                    f"minimap2/{RECIPE}/sorted_bc.bam",
                     f"minimap2/{RECIPE}/sorted_bc_gn.bam",
                     f"minimap2/{RECIPE}/raw/output.h5ad",
                 ]
@@ -154,10 +155,11 @@ rule all:
         #     for TRIM in ["ont_preAdapterScan",f"ont_preCutadapt_{READ}",f"ont_postCutadapt_{READ}"]
         # ], # ONT fastqc - not really useful...
 
-        [f"{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc.{FILE}"
+        [f"{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}_qc.{FILE}"
             for SAMPLE in ONT.keys()
             for READ in ["R1","R2"]
-            for TRIM in ["1_preCutadapt","2_postCutadapt"]
+            for RECIPE in RECIPE_ONT_DICT[SAMPLE]
+            for TRIM in [f"1_preCutadapt/{READ}",f"2_postCutadapt/{READ}", f"3_aligned/{RECIPE}"]
             for FILE in ["tsv", "png"]
         ], # ONT readqc
 
@@ -193,11 +195,11 @@ rule all:
         # ),        
 
         # Module 3 - STAR alignment        
-        [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.dedup.out{STRAND}.bam.bai"
-            for SAMPLE in R2_FQS.keys() 
-            for RECIPE in RECIPE_DICT[SAMPLE] 
-            for STRAND in ["", ".fwd", ".rev"]
-        ], # deduped and/or strand-split, umi_tools deduplicated .bam #TODO- REF=["STARsolo_rRNA", "STARsolo"]
+        # [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.dedup.out{STRAND}.bam.bai"
+        #     for SAMPLE in R2_FQS.keys() 
+        #     for RECIPE in RECIPE_DICT[SAMPLE] 
+        #     for STRAND in ["", ".fwd", ".rev"]
+        # ], # deduped and/or strand-split, umi_tools deduplicated .bam #TODO- REF=["STARsolo_rRNA", "STARsolo"]
         [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx.gz" 
             for SAMPLE in R2_FQS.keys() 
             for RECIPE in RECIPE_DICT[SAMPLE]
@@ -234,17 +236,17 @@ rule all:
         # ], # miRge3.0 pseudobulk analysis
 
         # Module 6 - anndata/scanpy
-        [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.h5ad" 
-            for SAMPLE in R2_FQS.keys() 
-            for RECIPE in RECIPE_DICT[SAMPLE] 
-            for SOLO in ["Gene","GeneFull"]
-            for ALGO in ["UniqueAndMult-EM","matrix"]
-        ], # anndata files (with spatial info) - STAR        
-        [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/raw/output.h5ad" 
-            for SAMPLE in R2_FQS.keys() 
-            for RECIPE in RECIPE_DICT[SAMPLE] 
-            for KB in ["kb"] # "kb_velo", "kb_nuc" 
-        ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`        
+        # [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.h5ad" 
+        #     for SAMPLE in R2_FQS.keys() 
+        #     for RECIPE in RECIPE_DICT[SAMPLE] 
+        #     for SOLO in ["Gene","GeneFull"]
+        #     for ALGO in ["UniqueAndMult-EM","matrix"]
+        # ], # anndata files (with spatial info) - STAR        
+        # [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/raw/output.h5ad" 
+        #     for SAMPLE in R2_FQS.keys() 
+        #     for RECIPE in RECIPE_DICT[SAMPLE] 
+        #     for KB in ["kb"] # "kb_velo", "kb_nuc" 
+        # ], # anndata files (with spatial info) - kallisto #TODO- add kb_velo to `KB`        
         # [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/counts_unfiltered/output.h5ad" 
         #     for SAMPLE in R2_FQS.keys() 
         #     for RECIPE in RECIPE_DICT[SAMPLE] 

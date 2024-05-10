@@ -21,10 +21,18 @@ rule index_BAM:
 #### Util functions ###########################
 
 
+def check_recipe_sheet():
+    print("TODO")
+
+
+def check_sample_sheet():
+    print("TODO")
+
+
 # Select input reads based on alignment recipe
 def get_fqs(w, return_type=["list", "dict"], mode=["ONT", "ILMN"]):
     # param defaults
-    if len(return_type) > 1:  # default
+    if type(return_type) is list and len(return_type) > 1:  # default
         return_type = "list"
     if type(mode) is list:  # default
         mode = "ONT"
@@ -36,18 +44,18 @@ def get_fqs(w, return_type=["list", "dict"], mode=["ONT", "ILMN"]):
                 R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz"
                 R2 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz"
 
-                #TODO - update to match ribodetector style
+                # TODO - update to match ribodetector style
 
             elif "rRNA.bwa" in w.RECIPE:  # Use trimmed & bwa-rRNA-filtered .fq's
                 R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz"
                 R2 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz"
-                
-                #TODO - update to match ribodetector style
+
+                # TODO - update to match ribodetector style
 
             elif "ribodetector" in w.RECIPE:
                 R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/ribodetector/noRibo_R1.fq.gz"
                 R2 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/ribodetector/noRibo_R2.fq.gz"
-                
+
                 if "internalTrim" in w.RECIPE:
                     R1 = f"{w.OUTDIR}/{w.SAMPLE}/ribodetector/noRibo_internalTrim_R1.fq.gz"
                 if "hardTrim" in w.RECIPE:
@@ -148,7 +156,7 @@ def get_ont_barcode_pattern(w):
 
 def get_STAR_ref(w, mode=["genome", "rRNA"]):
     try:
-        if len(mode) > 1:  # default
+        if type(mode) is list and len(mode) > 1:  # default
             mode = "genome"
 
         if mode == "genome":
@@ -177,16 +185,16 @@ def get_STAR_extra_params(w):
         try:
             star_info[key] = RECIPE_SHEET[key][w.RECIPE]
         except Exception:
-            # values for rRNA/default?
+            # values for rRNA/default
             recipe = get_recipes(w, mode=f"concatenate")
 
             if "stomics" in recipe:
                 star_info[key] = RECIPE_SHEET[key]["stomics_total"]
             elif "visium" in recipe:
                 star_info[key] = RECIPE_SHEET[key]["visium_total"]
-            elif "seeker" in recipe and "noTrim" in recipe or "matchLinker" in recipe:
+            elif "seeker" in recipe and "matchLinker" in recipe:
                 star_info[key] = RECIPE_SHEET[key]["seeker_matchLinker_total"]
-            elif "seeker" in recipe and "internalTrim" in recipe:
+            elif "seeker" in recipe and "Trim" in recipe:
                 star_info[key] = RECIPE_SHEET[key]["seeker_internalTrim_total"]
             elif "seeker" in recipe and "adapterInsert" in recipe:
                 star_info[key] = RECIPE_SHEET[key]["seeker_adapterInsert_total"]
@@ -194,9 +202,9 @@ def get_STAR_extra_params(w):
                 star_info[key] = RECIPE_SHEET[key]["seeker_total"]
             else:
                 star_info[key] = RECIPE_SHEET[key]["visium_total"]
-        # except Exception:
-        #     pass
 
+    # remove empty values
+    # star_info = [k for k, v in star_info.items() if v]
     return star_info
 
 
@@ -262,13 +270,16 @@ def get_recipes(w, mode=["ONT", "ILMN", "list"]):
 
 # Pull info from recipe sheet
 def get_recipe_info(w, info_col, mode=["ONT", "ILMN"]):
-    recipe = get_recipes(w, mode=mode)
+    try:
+        return RECIPE_SHEET[info_col][w.RECIPE]
+    except:
+        recipe = unlist(get_recipes(w, mode=mode))
 
-    # if len(recipe) > 1:
-    #     return [RECIPE_SHEET[info_col][x] for x in recipe]
-    # else:
-    #     return RECIPE_SHEET[info_col][recipe]
-    return [RECIPE_SHEET[info_col][x] for x in recipe]
+        # if len(recipe) > 1:
+        #     return [RECIPE_SHEET[info_col][x] for x in recipe]
+        # else:
+        #     return RECIPE_SHEET[info_col][recipe]
+        return [RECIPE_SHEET[info_col][x] for x in recipe]
 
 
 # Convert a megabyte value (str) to bytes [int]
@@ -287,13 +298,16 @@ def build_abs_path(files, abs_path, sep=" "):
 
 
 def unlist(lst):
-    result = []
-    for item in lst:
-        if isinstance(item, list):
-            result.extend(unlist(item))
-        else:
-            result.append(item)
-    return result
+    if isinstance(lst, list) and len(lst) == 1:
+        return lst[0]
+    elif isinstance(lst, list) and len(lst) > 1:
+        result = []
+        for item in lst:
+            if isinstance(item, list):
+                result.extend(unlist(item))
+            else:
+                result.append(item)
+        return result
 
 
 ########## TO BE DEPRECATED ########################################################

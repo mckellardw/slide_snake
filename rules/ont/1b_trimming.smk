@@ -128,7 +128,7 @@ rule ont_R1_internalTrimming:
     run:
         shell(
             f"""
-            python scripts/py/internal_adapter_trim_R1.py \
+            python scripts/py/fastq_internal_adapter_trim_R1.py \
                 {params.ADAPTER} \
                 {output.INTERNAL_TRIM_QC_LOG} \
                 {threads} \

@@ -12,7 +12,7 @@ rule cutadapt:
     output:
         R1_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz"),
         R2_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz"),
-        JSON="{OUTDIR}/{SAMPLE}/misc_logs/cutadapt.json",
+        JSON="{OUTDIR}/{SAMPLE}/misc_logs/cutadapt1.json",
     params:
         RECIPE=lambda w: get_recipes(w, mode="ILMN"),
         R1_LENGTHS=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN"),
@@ -36,7 +36,7 @@ rule cutadapt:
         rcSEEKER_BB_ADAPTER="AGAGCCCTTGCGACTTCT",  # Reverse of the adapter between BB1 & BB2 in R1 
     threads: config["CORES"]
     log:
-        log="{OUTDIR}/{SAMPLE}/misc_logs/cutadapt_round2.log",
+        log="{OUTDIR}/{SAMPLE}/misc_logs/cutadapt1.log",
     run:
         R1_LENGTH = min(params.R1_LENGTHS)
 
@@ -52,12 +52,12 @@ rule cutadapt:
                 -A POLYT_3p="{params.POLYT}X;max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
                 -B TSO={params.TSO} \
                 -B TXG_TSO={params.TXG_TSO} \
-                -B SEEKER_ADAPTER="{params.THREE_PRIME_R2_SEEKER_BB_ADAPTER}" \
+                -B SEEKER_ADAPTER="{params.SEEKER_BB_ADAPTER}" \
                 -B NEXTERA="{params.NEXTERA}" \
                 -A ILMN_UNIVERSAL_3p="{params.ILMN_UNIVERSAL}" \
                 --pair-filter=any \
-                -o {output.FINAL_R1_FQ} \
-                -p {output.FINAL_R2_FQ} \
+                -o {output.R1_FQ} \
+                -p {output.R2_FQ} \
                 --cores {threads} \
                 --json {output.JSON} \
                 {input.R1_FQ} {input.R2_FQ} \
@@ -71,12 +71,12 @@ rule cutadapt2:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz",
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz",
     output:
-        FINAL_R1_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz"),
-        FINAL_R2_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz"),
+        R1_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz"),
+        R2_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz"),
         JSON="{OUTDIR}/{SAMPLE}/misc_logs/cutadapt2.json",
     params:
         RECIPE=lambda w: get_recipes(w, mode="ILMN"),
-        R1_LENGTH=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN"),
+        R1_LENGTHS=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN"),
         # R1_LENGTH = 50,
         QUALITY_MIN=20,
         MIN_R2_LENGTH=12,
@@ -97,7 +97,7 @@ rule cutadapt2:
         rcSEEKER_BB_ADAPTER="AGAGCCCTTGCGACTTCT",  # Reverse of the adapter between BB1 & BB2 in R1 
     threads: config["CORES"]
     log:
-        log="{OUTDIR}/{SAMPLE}/misc_logs/cutadapt_round2.log",
+        log="{OUTDIR}/{SAMPLE}/misc_logs/cutadapt2.log",
     run:
         R1_LENGTH = min(params.R1_LENGTHS)
 
@@ -113,12 +113,12 @@ rule cutadapt2:
                 -A POLYT_3p="{params.POLYT}X;max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
                 -B TSO={params.TSO} \
                 -B TXG_TSO={params.TXG_TSO} \
-                -B SEEKER_ADAPTER="{params.THREE_PRIME_R2_SEEKER_BB_ADAPTER}" \
+                -B SEEKER_ADAPTER="{params.SEEKER_BB_ADAPTER}" \
                 -B NEXTERA="{params.NEXTERA}" \
                 -A ILMN_UNIVERSAL_3p="{params.ILMN_UNIVERSAL}" \
                 --pair-filter=any \
-                -o {output.FINAL_R1_FQ} \
-                -p {output.FINAL_R2_FQ} \
+                -o {output.R1_FQ} \
+                -p {output.R2_FQ} \
                 --cores {threads} \
                 --json {output.JSON} \
                 {input.R1_FQ} {input.R2_FQ} \
@@ -185,12 +185,12 @@ rule R1_internalTrimming:
         # TODO- rewrite/speed up internal trimming!
         shell(  # Internal trimming to cut out the SlideSeq adapter sequence
             f"""
-            python scripts/py/internal_adapter_trim_R1.py \
+            python scripts/py/fastq_internal_adapter_trim_R1.py \
                 {params.ADAPTER} \
                 {output.INTERNAL_TRIM_QC_LOG} \
                 {threads} \
                 {params.TMPDIR} \
-                {R1} \
+                {input.R1_FQ} \
                 {output.R1_FQ} \
             | tee {log.log}
             """

@@ -9,7 +9,12 @@ rule copy_barcode_map:
         BC_MAP="{OUTDIR}/{SAMPLE}/bb/whitelist_map.txt",
     threads: 1
     run:
-        shell(f"cp {input.BC_MAP} {output.BC_MAP}")
+        shell(
+            f"""
+            mkdir -p $(dirname {output.BC_MAP})
+            cat {input.BC_MAP} > {output.BC_MAP}
+            """
+        )
 
 
 rule get_simple_whitelist:
@@ -19,7 +24,12 @@ rule get_simple_whitelist:
         BC="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
     threads: 1
     run:
-        shell(f"cut -f1 {input.BC_MAP} > {output.BC}")
+        shell(
+            f"""
+            mkdir -p $(dirname {output.BC_MAP})
+            cut -f1 {input.BC_MAP} > {output.BC}
+            """
+        )
 
 
 # Split the barcodes and save whitelists

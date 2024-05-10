@@ -167,11 +167,32 @@ rule ont_readIDs_by_adapter_type:
         )
 
 
+# Write lists of read IDs for each adapter type
+rule ont_adapterScan_QC:
+    input:
+        FULL_LEN="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
+        SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
+    output:
+        LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/adapter_scan_results.txt",
+    threads: 1
+    run:
+        shell(
+            f"""
+            dir_path=$(dirname {input.FULL_LEN})
+
+            for file in "$dir_path"/*.txt; do
+                echo "$(basename $file)"\t"$(wc -l <"$file")" >> {output.LOG}
+            done
+            """
+        )
+
+
 # merge lists of useable reads
 ## FULL_LEN = R1 sequence & TSO sequence
 ## SINGLE_ADAPTER1 = just R1 sequence - incompletely sequenced
 rule ont_merge_scan_lists:
     input:
+        LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/adapter_scan_results.txt",
         FULL_LEN="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
         SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
     output:
