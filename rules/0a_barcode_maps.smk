@@ -115,33 +115,49 @@ rule insert_adapter_into_list:
         BC_ADAPTER_MAP="{OUTDIR}/{SAMPLE}/bc/whitelist_adapter_map.txt",
         BC_ADAPTER_R1_MAP="{OUTDIR}/{SAMPLE}/bc/whitelist_adapter_r1_map.txt",
     params:
-        ADAPTER=lambda w: get_recipe_info(w, "internal.adapter"),
+        ADAPTER=lambda w: get_recipe_info(w, "internal.adapter")[0],
         R1_PRIMER=config["R1_PRIMER"],  # R1 PCR primer (Visium & Seeker)
+        recipes_to_split=["seeker","microST","decoder"]
     threads: 1
     run:
         recipes = get_recipes(wildcards, mode="concatenate")[0]
 
-        if "seeker" in recipes:
+        if any(recipe in recipes for recipe in params.recipes_to_split):
             # load bc
             bc_df = pd.read_csv(input.BC_MAP, sep="\t", header=None)
+            if "seeker" in recipes:
+                # split for 2 separate barcodes
+                bc_1 = [bc[:8] for bc in list(bc_df[0])]
+                bc_2 = [bc[8:] for bc in list(bc_df[0])]# Stitch bc_1, adapter, and bc_2
 
-            # split for 2 separate barcodes
-            bc_1 = pd.DataFrame(bc[:8] for bc in list(bc_df[0]))
-            bc_2 = pd.DataFrame(bc[8:] for bc in list(bc_df[0]))
+                bc_adapter =    [f"{item1}{params.ADAPTER}{item2}" for item1, item2 in zip(bc_1, bc_2)]
+                bc_adapter_r1 = [f"{params.R1_PRIMER}{item1}{params.ADAPTER}{item2}" for item1, item2 in zip(bc_1, bc_2)]
 
-            # Stitch bc_1, adapter, and bc_2
-            bc_adapter = list(zip(bc_1 + params.ADAPTER + bc_2))
-            bc_adapter_r1 = list(zip(params.R1_PRIMER + bc_1 + params.ADAPTER + bc_2))
+            elif "microST" in recipes:
+                # split for 2 separate barcodes
+                bc_1 = [bc[0:10] for bc in list(bc_df[0])]
+                bc_2 = [bc[10:] for bc in list(bc_df[0])]
 
-            bc_adapter_map = pd.DataFrame(list(zip(bc_adapter[0], bc_df[1], bc_df[2])))
+                bc_adapter =    [f"{item1}{params.ADAPTER}{item2}" for item1, item2 in zip(bc_1, bc_2)]
+                bc_adapter_r1 = [f"{params.R1_PRIMER}{item1}{params.ADAPTER}{item2}" for item1, item2 in zip(bc_1, bc_2)]
+
+            elif "decoder" in recipes:
+                print("TODO")
+            
+            
+            bc_adapter_map = pd.DataFrame(
+                list(zip(bc_adapter, bc_df[1], bc_df[2]))
+            )
             bc_adapter_r1_map = pd.DataFrame(
-                list(zip(bc_adapter_r1[0], bc_df[1], bc_df[2]))
+                list(zip(bc_adapter_r1, bc_df[1], bc_df[2]))
             )
 
             # save bc files in {SAMPLE}/bc
-            bc_adapter.to_csv(output.BC_ADAPTER, sep="\t", header=False, index=False)
-            bc_adapter_r1.to_csv(
-                output.BC_ADAPTER_R1, sep="\t", header=False, index=False
+            pd.Series(bc_adapter).to_csv(
+                output.BC_ADAPTER, sep="\n", header=False, index=False
+            )
+            pd.Series(bc_adapter_r1).to_csv(
+                output.BC_ADAPTER_R1, sep="\n", header=False, index=False
             )
 
             bc_adapter_map.to_csv(
@@ -150,38 +166,5 @@ rule insert_adapter_into_list:
             bc_adapter_r1_map.to_csv(
                 output.BC_ADAPTER_R1_MAP, sep="\t", header=False, index=False
             )
-        elif "microST" in recipes:
-            # load bc
-            bc_df = pd.read_csv(input.BC_MAP, sep="\t", header=None)
-
-            # split for 2 separate barcodes
-            bc_1 = pd.DataFrame(bc[0:10] for bc in list(bc_df[0]))
-            bc_2 = pd.DataFrame(bc[10:] for bc in list(bc_df[0]))
-
-            # Stitch bc_1, adapter, and bc_2
-            bc_adapter = bc_1 + params.ADAPTER + bc_2
-            bc_adapter_r1 = params.R1_PRIMER + bc_1 + params.ADAPTER + bc_2
-
-            bc_adapter_map = pd.DataFrame(list(zip(bc_adapter[0], bc_df[1], bc_df[2])))
-            bc_adapter_r1_map = pd.DataFrame(
-                list(zip(bc_adapter_r1[0], bc_df[1], bc_df[2]))
-            )
-
-            # save bc files in {SAMPLE}/bc
-            bc_adapter.to_csv(output.BC_ADAPTER, sep="\t", header=False, index=False)
-            bc_adapter_r1.to_csv(
-                output.BC_ADAPTER_R1, sep="\t", header=False, index=False
-            )
-
-            bc_adapter_map.to_csv(
-                output.BC_ADAPTER_MAP, sep="\t", header=False, index=False
-            )
-            bc_adapter_r1_map.to_csv(
-                output.BC_ADAPTER_R1_MAP, sep="\t", header=False, index=False
-            )
-
-        elif "decoder" in recipes:
-            print("TODO")
-
         else:
             shell(f"touch {' '.join(output)}")
