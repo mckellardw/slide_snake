@@ -100,6 +100,8 @@ rule write_whitelist_variants:
                 f"""
                 touch {output.BC_1}
                 touch {output.BC_2}
+                touch {output.BC_UNIQ_1}
+                touch {output.BC_UNIQ_2}
                 touch {output.BC_US}
                 """
             )

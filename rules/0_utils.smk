@@ -288,6 +288,7 @@ def get_recipe_info(w, info_col, mode=["ONT", "ILMN"]):
     try:
         return RECIPE_SHEET[info_col][w.RECIPE]
     except:
+        # print(f"Couldn't find `{info_col}`")
         recipe = unlist(get_recipes(w, mode=mode))
 
         # if len(recipe) > 1:
@@ -313,9 +314,14 @@ def build_abs_path(files, abs_path, sep=" "):
 
 
 def unlist(lst):
-    if isinstance(lst, list) and len(lst) == 1:
-        return lst[0]
+    if not isinstance(lst, list) and not isinstance(lst, dict):
+        # not a list or dict; return as a list
+        return [lst]
+    elif isinstance(lst, list) and len(lst) == 1:
+        # list w/ 1 entry; return input as is
+        return lst
     elif isinstance(lst, list) and len(lst) > 1:
+        # nested lists- untangle
         result = []
         for item in lst:
             if isinstance(item, list):

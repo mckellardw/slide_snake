@@ -1,6 +1,7 @@
 #############################################
 ## Read trimming rules
 #############################################
+# TODO - make some params recipe-specific
 rule ont_cutadapt:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_R1.fq.gz",
@@ -12,10 +13,10 @@ rule ont_cutadapt:
         JSON="{OUTDIR}/{SAMPLE}/ont/misc_logs/cutadapt.json",
     params:
         RECIPE=lambda w: get_recipes(w, mode="ONT"),
-        R1_LENGTHS=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ONT"),
+        R1_LENGTHS=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="list"),
         # ADAPTER=config["R1_INTERNAL_ADAPTER"],  # Curio R1 internal adapter
-        ADAPTER=lambda w: get_recipe_info(w, "internal.adapter"),
-        R1=config["R1_PRIMER"],  # R1 PCR primer (Visium & Seeker)
+        ADAPTER=lambda w: get_recipe_info(w, "internal.adapter", mode="ONT"),
+        R1_PRIMER=config["R1_PRIMER"],  # R1 PCR primer (Visium & Seeker)
         ADAPTER_COUNT=4,  # number of adapters that can be trimmed from each read
         QUALITY_MIN=5,  # Low Q score for ONT...
         MIN_R2_LENGTH=12,
@@ -38,7 +39,6 @@ rule ont_cutadapt:
             params.R1_LENGTHS
         )  # + len(params.R1) # Add R1 primer length for ONT
 
-        # TODO - make some params recipe-specific
         shell(
             f"""
             mkdir -p $(dirname  {output.R1_FQ})
@@ -52,7 +52,7 @@ rule ont_cutadapt:
                 --overlap {params.OVERLAP} \
                 --match-read-wildcards \
                 --times {params.ADAPTER_COUNT} \
-                -g READ1=X{params.R1} \
+                -g R1_PRIMER=X{params.R1_PRIMER} \
                 -A POLYA_3p="{params.POLYA}X;max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
                 -B TSO={params.TSO} \
                 -B TXG_TSO={params.TXG_TSO} \
