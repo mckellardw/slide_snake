@@ -4,10 +4,10 @@
 # TODO: add exec paths for samtools, bamtools
 rule umitools_dedupBAM:
     input:
-        BC_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
-        BC_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
-        BC_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
-        BC_US="{OUTDIR}/{SAMPLE}/bb/whitelist_underscore.txt",
+        BC_WHITELIST="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
+        BC_1="{OUTDIR}/{SAMPLE}/bc/whitelist_1.txt",
+        BC_2="{OUTDIR}/{SAMPLE}/bc/whitelist_2.txt",
+        BC_US="{OUTDIR}/{SAMPLE}/bc/whitelist_underscore.txt",
         BAM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.out.bam",
     output:
         BAM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.dedup.out.bam",

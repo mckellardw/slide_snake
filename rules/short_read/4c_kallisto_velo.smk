@@ -15,7 +15,7 @@ rule kallisto_align_velocity:
         R2_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz",
         R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz",
         R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz",
-        BB="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
+        BB="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
     output:
         BUS=temp("{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/output.bus"),
         BUS_CORRECTED=temp("{OUTDIR}/{SAMPLE}/kb_velo/{RECIPE}/output.corrected.bus"),

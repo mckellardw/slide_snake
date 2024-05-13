@@ -47,7 +47,7 @@ rule ribodetector_get_noRibo_list:
         shell(
             f"""
             cat {input.R2_FQ_NORIBO} \
-            | awk -f scripts/awk/fq_readHeader.awk - \
+            | awk -f scripts/awk/fq_readIDs.awk - \
             > {output.NORIBO_LIST}
             """
         )
@@ -77,7 +77,7 @@ rule ribodetector_filter_R1:
     run:
         shell(
             f"""
-            {EXEC['SEQTK']} subseq {output.R1_FQ} {output.NORIBO_LIST} \
+            {EXEC['SEQTK']} subseq {input.R1_FQ} {input.NORIBO_LIST} \
             > {output.R1_FQ_NORIBO}
             """
         )
@@ -93,7 +93,7 @@ rule ribodetector_filter_R1_internalTrim:
     run:
         shell(
             f"""
-            {EXEC['SEQTK']} subseq {output.R1_FQ} {output.NORIBO_LIST} \
+            {EXEC['SEQTK']} subseq {input.R1_FQ} {input.NORIBO_LIST} \
             > {output.R1_FQ_NORIBO}
             """
         )
@@ -109,7 +109,7 @@ rule ribodetector_filter_R1_hardTrim:
     run:
         shell(
             f"""
-            {EXEC['SEQTK']} subseq {output.R1_FQ} {output.NORIBO_LIST} \
+            {EXEC['SEQTK']} subseq {input.R1_FQ} {input.NORIBO_LIST} \
             > {output.R1_FQ_NORIBO}
             """
         )

@@ -5,7 +5,7 @@ rule cache_preQC_h5ad_STAR:
         BCS="{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/barcodes.tsv.gz",
         FEATS="{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/features.tsv.gz",
         MAT="{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.mtx.gz",
-        BB_map="{OUTDIR}/{SAMPLE}/bb/whitelist_underscore.txt",
+        BC_map="{OUTDIR}/{SAMPLE}/bc/whitelist_underscore.txt",
     output:
         H5AD="{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.h5ad",
     params:
@@ -21,7 +21,7 @@ rule cache_preQC_h5ad_STAR:
             --mat_in {input.MAT} \
             --feat_in {input.FEATS} \
             --bc_in {input.BCS} \
-            --bb_map {input.BB_map} \
+            --bb_map {input.BC_map} \
             --ad_out {output.H5AD} \
             --feat_col 1 \
             --remove_zero_features \
@@ -36,7 +36,7 @@ rule cache_preQC_h5ad_kb:
         BCS="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.barcodes.txt.gz",
         FEATS="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.genes.txt.gz",
         MAT="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.mtx.gz",
-        BB_map="{OUTDIR}/{SAMPLE}/bb/whitelist_underscore.txt",
+        BC_map="{OUTDIR}/{SAMPLE}/bc/whitelist_underscore.txt",
     output:
         H5AD="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.h5ad",
     log:
@@ -52,7 +52,7 @@ rule cache_preQC_h5ad_kb:
             --mat_in {input.MAT} \
             --feat_in {input.FEATS} \
             --bc_in {input.BCS} \
-            --bb_map {input.BB_map} \
+            --bb_map {input.BC_map} \
             --ad_out {output.H5AD} \
             --feat_col 0 \
             --remove_zero_features \
@@ -65,7 +65,7 @@ rule cache_preQC_h5ad_kbpython:
         BCS="{OUTDIR}/{SAMPLE}/kbpython/{RECIPE}/counts_unfiltered/cells_x_genes.barcodes.txt.gz",
         FEATS="{OUTDIR}/{SAMPLE}/kbpython/{RECIPE}/counts_unfiltered/cells_x_genes.genes.txt.gz",
         MAT="{OUTDIR}/{SAMPLE}/kbpython/{RECIPE}/counts_unfiltered/cells_x_genes.mtx.gz",
-        BB_map="{OUTDIR}/{SAMPLE}/bb/whitelist_underscore.txt",
+        BC_map="{OUTDIR}/{SAMPLE}/bc/whitelist_underscore.txt",
     output:
         H5AD="{OUTDIR}/{SAMPLE}/kbpython/{RECIPE}/counts_unfiltered/output.h5ad",
     log:
@@ -81,7 +81,7 @@ rule cache_preQC_h5ad_kbpython:
             --mat_in {input.MAT} \
             --feat_in {input.FEATS} \
             --bc_in {input.BCS} \
-            --bb_map {input.BB_map} \
+            --bb_map {input.BC_map} \
             --ad_out {output.H5AD} \
             --feat_col 0 \
             --remove_zero_features \
@@ -96,7 +96,7 @@ rule cache_preQC_h5ad_miRNA:
         BCS="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/raw/barcodes.tsv.gz",
         FEATS="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/{RECIPE}/raw/features.tsv.gz",
         MAT="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/raw/matrix.mtx.gz",
-        BB_map="{OUTDIR}/{SAMPLE}/bb/whitelist_underscore.txt",
+        BC_map="{OUTDIR}/{SAMPLE}/bc/whitelist_underscore.txt",
     output:
         H5AD="{OUTDIR}/{SAMPLE}/miRNA/{RECIPE}/raw/output.h5ad",
     threads: 1
@@ -108,7 +108,7 @@ rule cache_preQC_h5ad_miRNA:
             --mat_in {input.MAT} \
             --feat_in {input.FEATS} \
             --bc_in {input.BCS} \
-            --bb_map {input.BB_map} \
+            --bb_map {input.BC_map} \
             --ad_out {output.H5AD} \
             --feat_col 0 \
             --remove_zero_features
@@ -122,7 +122,7 @@ rule cache_preQC_h5ad_piRNA:
         BCS="{OUTDIR}/{SAMPLE}/piRNA/{RECIPE}/raw/barcodes.tsv.gz",
         FEATS="{OUTDIR}/{SAMPLE}/piRNA/{RECIPE}/raw/features.tsv.gz",
         MAT="{OUTDIR}/{SAMPLE}/piRNA/{RECIPE}/raw/matrix.mtx.gz",
-        BB_map="{OUTDIR}/{SAMPLE}/bb/whitelist_underscore.txt",
+        BC_map="{OUTDIR}/{SAMPLE}/bc/whitelist_underscore.txt",
     output:
         H5AD="{OUTDIR}/{SAMPLE}/piRNA/{RECIPE}/raw/output.h5ad",
     threads: 1
@@ -134,7 +134,7 @@ rule cache_preQC_h5ad_piRNA:
             --mat_in {input.MAT} \
             --feat_in {input.FEATS} \
             --bc_in {input.BCS} \
-            --bb_map {input.BB_map} \
+            --bb_map {input.BC_map} \
             --ad_out {output.H5AD} \
             --feat_col 0 \
             --remove_zero_features
@@ -146,7 +146,7 @@ rule cache_preQC_h5ad_piRNA:
 # rule ont_cache_preQC_h5ad_minimap2:
 #     input:
 #         MAT = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/umitools_counts.tsv.gz",
-#         BB_map = lambda wildcards: BB_DICT[wildcards.SAMPLE] #TODO Adjust to match barcode handling schemas
+#         BC_map = lambda wildcards: BB_DICT[wildcards.SAMPLE] #TODO Adjust to match barcode handling schemas
 #     output:
 #         H5AD = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/output.h5ad"
 #     threads:
@@ -157,7 +157,7 @@ rule cache_preQC_h5ad_piRNA:
 #         """
 #         python scripts/py/cache_umitools_to_h5ad.py \
 #             --mat_in {input.MAT} \
-#             --bb_map {input.BB_map}\
+#             --bb_map {input.BC_map}\
 #             --ad_out {output.H5AD}\
 #             --remove_zero_features
 #         """
@@ -168,7 +168,7 @@ rule ont_cache_preQC_h5ad_minimap2:
         BCS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/barcodes.tsv.gz",
         FEATS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/features.tsv.gz",
         MAT="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/matrix.mtx.gz",
-        BB_map="{OUTDIR}/{SAMPLE}/bb/whitelist_underscore.txt",
+        BC_map="{OUTDIR}/{SAMPLE}/bc/whitelist_underscore.txt",
     output:
         H5AD="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/output.h5ad",
     log:
@@ -182,7 +182,7 @@ rule ont_cache_preQC_h5ad_minimap2:
             --mat_in {input.MAT} \
             --feat_in {input.FEATS} \
             --bc_in {input.BCS} \
-            --bb_map {input.BB_map} \
+            --bb_map {input.BC_map} \
             --ad_out {output.H5AD} \
             --feat_col 0 \
             --remove_zero_features \

@@ -14,7 +14,7 @@ rule kbpython_velo:
         # R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz",
         # R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz",
         FQS=lambda w: get_fqs(w, return_type="list", mode="ILMN"),
-        BC="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
+        BC="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
     output:
         BUS=temp("{OUTDIR}/{SAMPLE}/kbpython/{RECIPE}/output.unfiltered.bus"),
         # BUS_CORRECTED = temp('{OUTDIR}/{SAMPLE}/kbpython/{RECIPE}/output.corrected.bus'),

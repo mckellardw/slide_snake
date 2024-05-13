@@ -9,7 +9,7 @@
 rule STARsolo_align:
     input:
         FQS=lambda w: get_fqs(w, return_type="list", mode="ILMN"),
-        WHITELIST=lambda w: get_whitelist(w),
+        WHITELIST=lambda w: get_whitelist(w, return_type="list"),
     output:
         BAM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.out.bam",  #TODO: add temp()
         UNMAPPED1="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate1",
@@ -26,7 +26,6 @@ rule STARsolo_align:
         GENEFULL_BC="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv",
         GENEFULL_FEAT="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/features.tsv",
     params:
-        WHITELIST=lambda w: get_whitelist(w),
         STAR_REF=lambda w: get_STAR_ref(w),
         STAR_PARAMS=lambda w: get_STAR_extra_params(w),
     threads: config["CORES"]
@@ -49,10 +48,10 @@ rule STARsolo_align:
                 --readFilesIn {input.FQS[1]} {input.FQS[0]} \
                 --outReadsUnmapped Fastx \
                 --outSAMunmapped Within KeepPairs \
-                --soloType {params.STAR_PARAMS["STAR.soloType"]} {params.STAR_PARAMS["STAR.soloUMI"]} {params.STAR_PARAMS["STAR.soloCB"]} {params.STAR_PARAMS["STAR.soloAdapter"]} {params.STAR_PARAMS["STAR.extra"]} \
-                --soloCBmatchWLtype {params.STAR_PARAMS["STAR.soloCBmatchWLtype"]} \
-                --soloCBwhitelist {params.WHITELIST} \
-                --soloCellFilter TopCells $(wc -l {params.WHITELIST}) \
+                --soloType {params.STAR_PARAMS['STAR.soloType']} {params.STAR_PARAMS['STAR.soloUMI']} {params.STAR_PARAMS['STAR.soloCB']} {params.STAR_PARAMS['STAR.soloAdapter']} {params.STAR_PARAMS['STAR.extra']} \
+                --soloCBmatchWLtype {params.STAR_PARAMS['STAR.soloCBmatchWLtype']} \
+                --soloCBwhitelist {" ".join(input.WHITELIST)} \
+                --soloCellFilter TopCells $(wc -l {input.WHITELIST}) \
                 --soloUMIfiltering MultiGeneUMI CR \
                 --soloUMIdedup 1MM_CR \
                 --soloBarcodeReadLength 0 \

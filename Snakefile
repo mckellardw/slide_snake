@@ -5,6 +5,7 @@ import pandas as pd
 import scipy.io
 import scipy.sparse
 
+
 ### Config #############################################################################
 configfile:"config/config.yaml"
 
@@ -14,9 +15,11 @@ RECIPE_SHEET = pd.read_csv(
     index_col=0
 ) 
 
+
 ### Directory locations ################################################################
 TMPDIR = config["TMPDIR"]
 OUTDIR = config["OUTDIR"]
+
 
 ### Variables and references ###########################################################
 SAMPLE_SHEET = pd.read_csv(
@@ -36,11 +39,18 @@ R2_FQS = {SAMP: READ.split() for SAMP, READ in R2_FQS.items() if READ}
 ONT = dict(zip(SAMPLES, list(SAMPLE_SHEET["ONT"]))) 
 ONT = {SAMP: READ.split() for SAMP, READ in ONT.items() if READ}
 
+
 ### Executables ########################################################################
 EXEC = config["EXEC"]
 
+
+### Wildcard constraints ###############################################################
+wildcard_constraints:
+    OUTDIR = config["OUTDIR"],
+    SAMPLE = "[A-Za-z0-9_-]+"
+
+
 ### Pre-run setup ######################################################################
-#TODO- move to utils
 # Build dictionaries of recipes & species to use for alignment
 RECIPE_DICT = {}        # Dictionary of lists; recipes to use for each sample (short_read module)
 RECIPE_ONT_DICT = {}    # Dictionary of lists; recipes to use for each sample (ONT module)
@@ -145,7 +155,6 @@ rule all:
         #     for SAMPLE in ONT.keys() 
         #     for RECIPE in RECIPE_DICT[SAMPLE]
         #     for FILE in [
-        #             f"Aligned.sortedByCoord.out.bam"
         #         ]
         # ], # ONT outputs
 

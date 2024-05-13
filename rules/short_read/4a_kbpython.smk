@@ -5,16 +5,8 @@
 #############################################
 rule kbpython_standard:
     input:
-        # R1_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz",
-        # R2_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz",
-        # R1_FQ_TWICE_CUT="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
-        # R2_FQ_TWICE_CUT="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
-        # R1_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz",
-        # R2_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz",
-        # R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz",
-        # R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz",
         FQS=lambda w: get_fqs(w, return_type="list", mode="ILMN"),
-        BC="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
+        BC="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
     output:
         BUS=temp("{OUTDIR}/{SAMPLE}/kbpython/{RECIPE}/output.unfiltered.bus"),
         # BUS_CORRECTED = temp('{OUTDIR}/{SAMPLE}/kbpython/{RECIPE}/output.corrected.bus'),
@@ -42,11 +34,9 @@ rule kbpython_standard:
         """
         mkdir -p $(dirname {output.BUS})
 
-        {params.KB} count \
+        kb count \
             -i {params.KB_IDX} \
             -g {params.KB_T2G} \
-            --kallisto {params.KALLISTO} \
-            --bustools {params.BUSTOOLS} \
             -o $(dirname {output.BUS}) \
             --strand forward \
             -mm \
@@ -57,6 +47,9 @@ rule kbpython_standard:
             {input.FQS[0]} {input.FQS[1]} \
         2> {log.log}
         """
+        # {params.KB}
+            # --kallisto {params.KALLISTO} \
+            # --bustools {params.BUSTOOLS} \
 
 
 # # gzip the count matrix, etc.

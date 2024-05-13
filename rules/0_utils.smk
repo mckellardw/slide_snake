@@ -96,19 +96,34 @@ def get_fqs(w, return_type=["list", "dict"], mode=["ONT", "ILMN"]):
 
 
 # whitelist param handling for different recipes
-def get_whitelist(w):
+def get_whitelist(w, return_type=None):
     try:
         if "noTrim" in w.RECIPE or "matchLinker" in w.RECIPE:
-            whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bb/whitelist_1.txt {w.OUTDIR}/{w.SAMPLE}/bb/whitelist_2.txt"
+            if return_type == "list":
+                whitelist = [f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_1.txt", f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_2.txt"]
+            else:
+                whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_1.txt {w.OUTDIR}/{w.SAMPLE}/bc/whitelist_2.txt"
         elif "internalTrim" in w.RECIPE:
-            whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bb/whitelist.txt"
+            if return_type == "list":
+                whitelist = [f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist.txt"]
+            else:
+                whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist.txt"
         elif "adapterInsert" in w.RECIPE:
-            whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bb/whitelist_adapter.txt"
+            if return_type == "list":
+                whitelist = [f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_adapter.txt"]
+            else:
+                whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_adapter.txt"
         else:
             # visium, stomics, microST
-            whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bb/whitelist.txt"
+            if return_type == "list":
+                whitelist = [f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist.txt"]
+            else:
+                whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist.txt"
     except Exception:
-        whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bb/whitelist.txt"
+        if return_type == "list":
+            whitelist = [f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist.txt"]
+        else:
+            whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist.txt"
 
     # return whitelist path(s)
     return whitelist

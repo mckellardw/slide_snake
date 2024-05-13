@@ -7,11 +7,11 @@ rule STAR_rRNA_align:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
-        BC_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
-        BC_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
-        BC_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
-        BC_ADAPTER="{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt",
-        BC_US="{OUTDIR}/{SAMPLE}/bb/whitelist_underscore.txt",
+        BC_WHITELIST="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
+        BC_1="{OUTDIR}/{SAMPLE}/bc/whitelist_1.txt",
+        BC_2="{OUTDIR}/{SAMPLE}/bc/whitelist_2.txt",
+        BC_ADAPTER="{OUTDIR}/{SAMPLE}/bc/whitelist_adapter.txt",
+        BC_US="{OUTDIR}/{SAMPLE}/bc/whitelist_underscore.txt",
     output:
         BAM="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam",  #TODO: add temp()
         UNMAPPED1="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Unmapped.out.mate1",
@@ -58,11 +58,11 @@ rule STAR_rRNA_align:
 #     input:
 #         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
 #         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
-#         BC_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
-#         BC_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
-#         BC_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
-#         BC_ADAPTER="{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt",
-#         BC_US="{OUTDIR}/{SAMPLE}/bb/whitelist_underscore.txt",
+#         BC_WHITELIST="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
+#         BC_1="{OUTDIR}/{SAMPLE}/bc/whitelist_1.txt",
+#         BC_2="{OUTDIR}/{SAMPLE}/bc/whitelist_2.txt",
+#         BC_ADAPTER="{OUTDIR}/{SAMPLE}/bc/whitelist_adapter.txt",
+#         BC_US="{OUTDIR}/{SAMPLE}/bc/whitelist_underscore.txt",
 #     output:
 #         BAM="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam",
 #         UNMAPPED1="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Unmapped.out.mate1",

@@ -8,10 +8,10 @@
 rule bwa_rRNA_align:
     input:
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
-        BC_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
-        BC_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
-        BC_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
-        BC_ADAPTER="{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt",
+        BC_WHITELIST="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
+        BC_1="{OUTDIR}/{SAMPLE}/bc/whitelist_1.txt",
+        BC_2="{OUTDIR}/{SAMPLE}/bc/whitelist_2.txt",
+        BC_ADAPTER="{OUTDIR}/{SAMPLE}/bc/whitelist_adapter.txt",
     output:
         BAM1=temp("{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned.bam"),
         BAM2="{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam",
@@ -54,19 +54,6 @@ rule bwa_rRNA_align:
         )
 
 
-# rule bwa_rRNA_index_alignment:
-#     input:
-#         BAM = "{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam",
-#     output:
-#         BAI = "{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam.bai",
-#     run:
-#         shell(
-#             f"""
-#             {EXEC['SAMTOOLS']} index {input.BAM}
-#             """
-#         )
-
-
 rule bwa_rRNA_filter_R1:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
@@ -75,19 +62,18 @@ rule bwa_rRNA_filter_R1:
     output:
         R1_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq"),
         R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq",
-        # rRNA_LIST  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/rRNA_readID.list', #temp()
-        UNMAPPED_LIST="{OUTDIR}/{SAMPLE}/rRNA/bwa/rRNA_readID.list",  #temp()
+        rRNA_LIST="{OUTDIR}/{SAMPLE}/rRNA/bwa/rRNA_readID.list",
     threads: config["CORES"]
     run:
         shell(
             f"""
             cat {input.R2_FQ_BWA_FILTERED} \
             | awk -f scripts/awk/fq_readHeader.awk - \
-            > {output.UNMAPPED_LIST}
+            > {output.rRNA_LIST}
 
             zcat {input.R1_FQ} > {output.R1_FQ} 
             
-            {EXEC['SEQTK']} subseq {output.R1_FQ} {output.UNMAPPED_LIST} \
+            {EXEC['SEQTK']} subseq {output.R1_FQ} {output.rRNA_LIST} \
             > {output.R1_FQ_BWA_FILTERED}
             """
         )
