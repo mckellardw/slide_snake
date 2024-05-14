@@ -20,12 +20,16 @@ rule index_BAM:
 
 #### Util functions ###########################
 
+# Check to see if recipes are in the recipe sheet; does not kill run, only prints warnings.
+def check_recipe_sheet(RECIPE_SHEET, RECIPE_DICT, RECIPE_ONT_DICT):
+    RECIPES = unlist(RECIPE_DICT, unique=True) + unlist(RECIPE_ONT_DICT, unique=True)
+    for RECIPE in RECIPES:
+        if RECIPE not in list(RECIPE_SHEET.index):
+            print(f"WARNING: `{RECIPE}` not found in recipe sheet!")
+            print(f"Fix RECIPE_SHEET [{config['RECIPE_SHEET']}] and try again!")
 
-def check_recipe_sheet():
-    print("TODO")
 
-
-def check_sample_sheet():
+def check_sample_sheet(SAMPLE_SHEET):
     print("TODO")
 
 
@@ -209,14 +213,19 @@ def get_STAR_extra_params(w):
                 star_info[key] = RECIPE_SHEET[key]["visium_total"]
             elif "seeker" in recipe and "matchLinker" in recipe:
                 star_info[key] = RECIPE_SHEET[key]["seeker_matchLinker_total"]
-            elif "seeker" in recipe and "Trim" in recipe:
+            elif "seeker" in recipe and "internalTrim" in recipe:
                 star_info[key] = RECIPE_SHEET[key]["seeker_internalTrim_total"]
             elif "seeker" in recipe and "adapterInsert" in recipe:
                 star_info[key] = RECIPE_SHEET[key]["seeker_adapterInsert_total"]
             elif "seeker" in recipe:
                 star_info[key] = RECIPE_SHEET[key]["seeker_total"]
+            elif "microST" in recipe:
+                star_info[key] = RECIPE_SHEET[key]["microST_ligation_total"]
+            elif "decoder" in recipe:
+                star_info[key] = RECIPE_SHEET[key]["decoderseq_total"]
             else:
-                star_info[key] = RECIPE_SHEET[key]["visium_total"]
+                # star_info[key] = RECIPE_SHEET[key]["visium_total"]
+                star_info[key] = "Couldn't find the recipe!"
 
     # remove empty values
     # star_info = [k for k, v in star_info.items() if v]
@@ -242,7 +251,7 @@ def get_recipes(w, mode=["ONT", "ILMN", "list"]):
     - If "list" is in the mode, it returns the recipe as a list; otherwise, it returns the recipe as a space-separated string.
     - If no recipe is found, it prints a warning message and returns an empty string.
     """
-    if len(mode) > 1:  # default
+    if isinstance(mode, list) and len(mode) > 1:  # default
         mode = "ONT"
 
     if "ONT" in mode:
@@ -269,14 +278,11 @@ def get_recipes(w, mode=["ONT", "ILMN", "list"]):
         if "RECIPE_DICT" in globals():
             if w.SAMPLE in RECIPE_DICT:
                 all_recipes.extend(RECIPE_DICT[w.SAMPLE])
-        print("elseesese")
         all_recipes = unlist(all_recipes)
-
         if len(all_recipes) > 0:
             if "list" in mode:
                 return all_recipes
             else:
-                print(42424242)
                 return " ".join(all_recipes)
         else:
             print(f"No recipe found for {w.SAMPLE}! Check your sample sheet!")
@@ -290,11 +296,7 @@ def get_recipe_info(w, info_col, mode=["ONT", "ILMN"]):
     except:
         # print(f"Couldn't find `{info_col}`")
         recipe = unlist(get_recipes(w, mode=mode))
-
-        # if len(recipe) > 1:
-        #     return [RECIPE_SHEET[info_col][x] for x in recipe]
-        # else:
-        #     return RECIPE_SHEET[info_col][recipe]
+        
         return [RECIPE_SHEET[info_col][x] for x in recipe]
 
 
@@ -313,7 +315,7 @@ def build_abs_path(files, abs_path, sep=" "):
         file_abs_path = sep.join([f"{abs_path}/{f}" for f in files])
 
 
-def unlist(lst):
+def unlist(lst, unique=False):
     if not isinstance(lst, list) and not isinstance(lst, dict):
         # not a list or dict; return as a list
         return [lst]
@@ -328,8 +330,54 @@ def unlist(lst):
                 result.extend(unlist(item))
             else:
                 result.append(item)
-        return result
+    elif isinstance(lst, dict):
+        # dictionary; untangle values
+        result = []
+        for value in lst.values():
+            if isinstance(value, (list, dict)):
+                result.extend(unlist(value))
+            else:
+                result.append(value)
+    
+    if unique:
+        result = list(set(result)) 
+        
+    return result
 
+# def unlist(*args, unique=False):
+#     result = []
+#     for arg in args:
+#         if isinstance(arg, (list, dict)):
+#             if isinstance(arg, list):
+#                 result.extend(unlist(arg))
+#             elif isinstance(arg, dict):
+#                 result.extend(unlist(list(arg.values())))
+#         else:
+#             result.append(arg)
+    
+#     if unique:
+#         result = list(set(result))  # Convert to set to remove duplicates, then back to list
+    
+#     return result
+
+# def unlist(*args, unique=False):
+#     def process_item(item):
+#         if isinstance(item, (list, dict)):
+#             if isinstance(item, list):
+#                 yield from unlist(item, unique=unique)
+#             elif isinstance(item, dict):
+#                 yield from unlist(list(item.values()), unique=unique)
+#         else:
+#             yield item
+
+#     result = []
+#     for arg in args:
+#         result.extend(process_item(arg))
+    
+#     if unique:
+#         result = list(set(result))  # Convert to set to remove duplicates, then back to list
+    
+#     return result
 
 ########## TO BE DEPRECATED ########################################################
 def get_barcode_length(w):
