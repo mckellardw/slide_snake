@@ -1,6 +1,6 @@
 # Recipes for `slide_snake`
 
-## 
+The default receipe sheet is stored in `resources/recipe_sheet.csv`. Change the path in `config/config.yaml` if you would like to point to a custom version. If you want to add a custom recipe, read below!
 
 ## **Recipe descriptions**:
 "Recipes" are descriptions for the alignment workflow- how to trim the barcode read, whether or not to filter out ribosomal RNA reads, additional alignment parameters, etc. One goal of `slide_snake` is to make the alignment preprocessing modular so that all of these parameters can be compared directly and rigorously. Please note the following:
@@ -8,8 +8,12 @@
   - You can also add a new recipe! Just add a new line to `resources/recipe_sheet.csv` and give it a unique name in the 1st (0th for you pythoners) column. 
   - Recipe naming convention:
     - Include the preprocessing steps that you want to use- i.e., including "rRNA.bwa" in the name means that rRNA filtering with bwa alignment will be done prior to genomic alignment. 
+
+
 <details close>
 <summary> SlideSeq/Seeker (Curio) </summary>
+[manuscript link]()
+[Curio website](https://curiobioscience.com/)
 
 Because of read quality issues (indels, low Q scores, etc.) in the SlideSeq barcode read, I have added a few custom strategies for handling these data:
 - `seeker` - No hard trimming, and use the base positions for barcode/UMI (*Note*, this recipe doesn't work well w/ Curio Seeker b/c of in/del issues w/ the barcode synthesis)
@@ -28,11 +32,23 @@ Because of read quality issues (indels, low Q scores, etc.) in the SlideSeq barc
 
 </details>
 
+
 <details close>
 <summary> Visium (10x Genomics) </summary>
 
 - `visium` - #description
 - `visium_total` - #description
 - `visium_total_rRNA.STAR` - #description
+
+</details>
+
+
+<details close>
+<summary> DecoderSeq (Cao et al, Nat Biotechnol, 2024) </summary>
+[manuscript link](https://www.nature.com/articles/s41587-023-02086-y)  
+
+- `decoder` - #description
+- `decoder_total` - #description
+- `decoder_total_rRNA.STAR` - #description
 
 </details>
