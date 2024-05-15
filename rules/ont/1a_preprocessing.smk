@@ -237,7 +237,7 @@ rule ont_subset_fastq_by_adapter_type:
         )
 
 
-# TODO- parallelize by chunking input fastq
+# Split reads in the poly(T) stretch and rev-comp the "R2" sequence
 rule ont_split_fastq_to_R1_R2:
     input:
         FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter.fq.gz",
@@ -245,19 +245,20 @@ rule ont_split_fastq_to_R1_R2:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_R1.fq.gz",
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_R2.fq.gz",
     params:
-        ADAPTER="T" * 10,
+        ADAPTER="T" * 8,
     threads: config["CORES"]
-    # 1
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/read_split.log",
     run:
         # for ADAPTER in input.ADAPTER_TYPES: #TODO- broaden to other read types, bneyond full_len
         shell(
             f"""
-            python scripts/py/split_reads_parallelized.py \
+            python scripts/py/fastq_split_reads_parallelized.py \
                 --fq_in {input.FQ} \
                 --split_seq {params.ADAPTER} \
                 --threads {threads} \
              2> {log.log}
             """
         )
+                # --min_R1_length {} \
+                # --max_R1_length {} \

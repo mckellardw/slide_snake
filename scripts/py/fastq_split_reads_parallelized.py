@@ -56,7 +56,6 @@ def find_and_split_reads(fq_in, split_seq, log=None, max_errors=2, min_read_leng
         ) as output_fastq2:
             for read in input_fastq:
                 # Perform pairwise alignment to find the sequence with allowed mismatches
-                # TODO- update this code
                 alignments = aligner.align(read.sequence, split_seq)
 
                 # Calculate the error rate for the best alignment
@@ -68,17 +67,19 @@ def find_and_split_reads(fq_in, split_seq, log=None, max_errors=2, min_read_leng
                 )
 
                 # print(best_alignment.aligned[0][0][0])
+                # print(best_alignment.aligned[0][0][1])
+                # print("")
                 # Check if the error rate is within the allowed limit
                 if error_rate <= max_errors:
                     # Split the read into two at the identified sequence
                     sequence_start = best_alignment.aligned[0][0][0]
                     sequence_end = best_alignment.aligned[0][0][1]
 
-                    # R1
-                    part1_sequence = read.sequence[:sequence_start]
-                    part1_quality = read.quality[:sequence_start]
+                    # R1 - include the poly(T) region
+                    part1_sequence = read.sequence[:sequence_end]
+                    part1_quality = read.quality[:sequence_end]
 
-                    # R2
+                    # R2 - include the poly(T) region as well, rev-comp it to a poly(A) tail
                     # part2_sequence = read.sequence[sequence_end:]
                     # part2_quality = read.quality[sequence_end:]
                     part2_sequence = read.sequence[sequence_start:]
@@ -170,8 +171,6 @@ if __name__ == "__main__":
         )
 
         # Trim each chunked file, in parallel
-        # tmp_fqs_in = [f"stdin.part_00{n}.fastq" for n in list(range(1,args.threads+1))] #seqkit split
-        # tmp_fqs_in = [f"{args.fq_in.replace('fq.gz','')}_{str(n).zfill(3)}.fq" for n in range(1,n_chunks+1)] #splitNfqs
         chunked_fqs_in = [
             f"{args.fq_in.strip('.fq.gz')}_{str(n).zfill(3)}.fq"
             for n in list(range(1, args.threads + 1))
