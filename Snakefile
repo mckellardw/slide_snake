@@ -21,6 +21,9 @@ TMPDIR = config["TMPDIR"]
 OUTDIR = config["OUTDIR"]
 
 
+### Executables ########################################################################
+EXEC = config["EXEC"]
+
 ### Variables and references ###########################################################
 SAMPLE_SHEET = pd.read_csv(
     config["SAMPLE_SHEET_PATH"], 
@@ -40,14 +43,6 @@ ONT = dict(zip(SAMPLES, list(SAMPLE_SHEET["ONT"])))
 ONT = {SAMP: READ.split() for SAMP, READ in ONT.items() if READ}
 
 
-### Executables ########################################################################
-EXEC = config["EXEC"]
-
-
-### Wildcard constraints ###############################################################
-wildcard_constraints:
-    OUTDIR = config["OUTDIR"],
-    SAMPLE = "[A-Za-z0-9_-]+"
 
 
 ### Pre-run setup ######################################################################
@@ -88,11 +83,21 @@ for i in range(0,SAMPLE_SHEET.shape[0]):
             RECIPE_ONT_DICT[tmp_sample] = list(SAMPLE_SHEET["recipe_ONT"])[i].split()
 
 
+### recipe_sheet & sample_sheet checks ######################################################################
+include: "rules/0_utils.smk" 
+check_recipe_sheet(RECIPE_SHEET, RECIPE_DICT, RECIPE_ONT_DICT)
+# check_sample_sheet(SAMPLE_SHEET)
+
+### Wildcard constraints ###############################################################
+wildcard_constraints:
+    OUTDIR = config["OUTDIR"],
+    SAMPLE = "[A-Za-z0-9_-]+"
+
 
 ### include rules #######################################################################
 # Pre-flight module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 include: "rules/0a_barcode_maps.smk" 
-include: "rules/0_utils.smk" 
+# include: "rules/0_utils.smk" 
 
 # Short-read module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## fastq preprocessing & QC
@@ -125,9 +130,10 @@ include: "rules/short_read/4c_kallisto_velo.smk"
 ## preprocessing
 include: "rules/ont/1a_preprocessing.smk"
 include: "rules/ont/1b_trimming.smk"
+include: "rules/ont/1c_barcode_calling.smk"
 
 ## alignment
-include: "rules/ont/1c_minimap2.smk"
+include: "rules/ont/1d_minimap2.smk"
 include: "rules/ont/1d_STAR.smk"
 
 ## QC

@@ -17,7 +17,7 @@ import gzip
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
 # from Bio.Blast import NCBIWWW
-from Bio import pairwise2
+# from Bio import pairwise2
 from Bio import Align
 
 # params
@@ -27,23 +27,23 @@ n_cores = int(sys.argv[3])
 tmp_dir = sys.argv[4]
 fq1_in = sys.argv[5]
 fq1_out = sys.argv[6]
+min_adapter_start_pos = sys.argv[7]
+min_align_score = sys.argv[8]
+
 # prefix = sys.argv[5]
 
 # fq2_in = sys.argv[7]
 # fq2_out = sys.argv[8]
 
 # TODO: add in read filtering for both R1 and R2 for reads which have alignment[0].score < 50
-# TODO: fix indentation in log files
 
-# TODO: add fq1_in param check for fq vs fastq suffix; replace all '.fq. with `suffix`
-
+print(f"Adapter sequence:                   {adapter_seq}")
+print(f"Input fastq:                        {fq1_in}")
+print(f"Output fastq:                       {fq1_out}")
+print(f"Minimum adapter start position:     {min_adapter_start_pos}")
+print(f"Minimum adapter alignment score:    {min_align_score}")
 
 # Function to run internal trimming on a single .fq.gz file
-# TODO- update to newer biopython functions...
-# warnings.warn(
-# /home/dwm269/miniconda3/envs/STARsolo/lib/python3.9/site-packages/Bio/pairwise2.py:278: BiopythonDeprecationWarning: Bio.pairwise2
-# has been deprecated, and we intend to remove it in a future release of Biopython. As an alternative, please consider using
-# Bio.Align.PairwiseAligner as a replacement, and contact the Biopython developers if you still need the Bio.pairwise2 module.
 def trim_fq(fq_in, fq_out, gz):
     # fq_in, fq_out, gz = args
 
@@ -79,20 +79,11 @@ def trim_fq(fq_in, fq_out, gz):
         # Get best alignment
         alignment = alignments[0] if alignments else None
 
-        # alignment = pairwise2.align.localms(
-        #     seq,
-        #     adapter_seq,
-        #     4,
-        #     -0.5,
-        #     -6,
-        #     -6,  # Manually set these for Curio data
-        #     # score_only = True,
-        #     one_alignment_only=True,
-        # )
-
         # For troubleshooting:
-        # if alignments[0].score < 60 and alignments[0].score > 55:# and alignments[0].start > 9:
-        #     print(alignments[0])
+        if alignments[0].score < 60:# and alignments[0].score > 55:# and alignments[0].start > 9:
+            print(alignments[0])
+            print(alignment.score)
+            print(alignment.aligned[0][0][0])
         #     print(pairwise2.format_alignment(*alignments[0]))
         #     print(seq[0:8]+seq[alignments[0].end:])
 
@@ -101,14 +92,14 @@ def trim_fq(fq_in, fq_out, gz):
         end = alignment.aligned[0][0][1]
 
         # Acount for reads with deletions in `BB_1`
-        if start < 8:  # Deletion in BB_1
-            offset = 8 - start
-            seq_out = "N" * offset + seq[start:8] + seq[end:]
-            qual_out = "!" * offset + qual[start:8] + qual[end:]
+        if start < min_adapter_start_pos:  # Deletion in BB_1
+            offset = min_adapter_start_pos - start
+            seq_out = "N" * offset + seq[start:min_adapter_start_pos] + seq[end:]
+            qual_out = "!" * offset + qual[start:min_adapter_start_pos] + qual[end:]
 
             del_count += 1
         else:
-            if start > 8:  # Insertion in BB_1
+            if start > min_adapter_start_pos:  # Insertion in BB_1
                 ins_count += 1
 
             ## Trim the first base in the read
@@ -116,14 +107,15 @@ def trim_fq(fq_in, fq_out, gz):
             # qual_out = qual[start-8:start]+qual[alignment[0].end:]
 
             ## Trim the base closest to adapter
-            seq_out = seq[0:8] + seq[end:]
-            qual_out = qual[0:8] + qual[end:]
+            seq_out = seq[0:min_adapter_start_pos] + seq[end:]
+            qual_out = qual[0:min_adapter_start_pos] + qual[end:]
 
         # Broken read; erase R1 and add `NNNNNNNNNN` with qval=0 (!!!!!!!!!!)
         # Alignment score cuttoff was determined by spot-checking ~100 bead barcodes, based on predicted adapter location
-        if len(seq_out) < 22 or alignment.score < 58:
-            seq_out = "N" * 10
-            qual_out = "!" * 10
+        # Seeker recommendation is min_align_score=58
+        if len(seq_out) < 22 or alignment.score < min_align_score:
+            seq_out = "N" * 3
+            qual_out = "!" * 3
             broken_count += 1
 
         # Write to new .fq.gz file

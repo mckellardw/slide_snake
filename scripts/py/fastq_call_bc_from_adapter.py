@@ -1,61 +1,110 @@
 import argparse
 import pysam
-from Bio import pairwise2
+from Bio import Align
 from Bio.Seq import Seq
 
 # Usage:
-## python scripts/py/fastq_call_bc_from_adapter.py --fq_in fq_in.fastq --adapters adapter1 adapter2 --whitelist_files whitelist1.txt whitelist2.txt --barcode_positions left right --mismatches 1 1 --error_rate 1
+""" 
+python scripts/py/fastq_call_bc_from_adapter.py \
+    --fq_in fq_in.fastq \
+    --tsv_out barcodes.tsv \
+    --adapters ACTGACTG TGCATGCAT \
+    --barcode_lengths 10 10 \
+    --barcode_positions left right \
+    --mismatches 1 1 \
+    --error_rate 1 1
+"""
 
+def align_sequences(seq, adapter_seq, aligner, mismatches):
+    alignments = aligner.align(seq, adapter_seq)
 
-def align_sequences(seq1, seq2, mismatches):
-    alignments = pairwise2.align.globalxx(
-        seq1, seq2, score_only=False, one_alignment_only=True
-    )
-    for a in alignments:
-        if a.score >= (len(seq2) - mismatches):
-            return a
-    return None
+    # Get best alignment
+    alignment = alignments[0] if alignments else None
 
+    return alignment
+    # for a in alignments:
+    #     print(a.score)
+    #     if a.score >= (len(adapter_seq) - mismatches):
+    #         return a
+    # return None
 
 def extract_barcodes(
-    fq_in, adapters, whitelist_files, barcode_positions, mismatches, error_rate
-):
-    barcode_dict = {f: [] for f in whitelist_files}
+    fq_in, tsv_out, adapters, barcode_positions, barcode_lengths, mismatches
+):    
+    bc_match_count=0
+    bc_missing_count=0
+    no_bc_count=0
+    read_count=0
 
+    # Set up aligner 
+    #TODO- these params need to be better optimized...
+    aligner = Align.PairwiseAligner()
+    aligner.mode = "local"  # Use 'local' for local alignment
+    aligner.match_score = 4  # Match score
+    aligner.mismatch_score = -0.5  # Mismatch score
+    aligner.open_gap_score = -6  # Gap opening penalty
+    aligner.extend_gap_score = -6  # Gap extension penalty
+
+    L_RANGES = list(zip(adapters, barcode_positions, barcode_lengths, mismatches))
+    
     with pysam.FastxFile(fq_in) as fastq:
-        for read in fastq:
-            for adapter, whitelist_file, position, mismatches in zip(
-                adapters, whitelist_files, barcode_positions, mismatches
-            ):
-                with open(whitelist_file, "r") as whitelist:
-                    whitelist = set(whitelist.read().splitlines())
-                    if position == "left":
-                        barcode_seq = read.sequence[: len(adapter)]
-                    else:
-                        barcode_seq = read.sequence[-len(adapter) :]
-                    alignment = align_sequences(
-                        Seq(barcode_seq), Seq(adapter), mismatches
-                    )
-                    if alignment:
-                        barcode = alignment.seqA.tostring()
-                        if barcode in whitelist:
-                            barcode_dict[whitelist_file].append(barcode)
-                            break
+        with open(tsv_out, "w") as outfile:
 
-    with open("output.tsv", "w") as outfile:
-        for whitelist_file, barcodes in barcode_dict.items():
-            outfile.write("\t".join(barcodes) + "\n")
+            for read in fastq:
+                if read_count%1000000==0:
+                    print(f"{read_count} reads processed...")
+                bc_to_write = []
+                for adapter, position, length, mismatches in L_RANGES:
+                    alignment = align_sequences(
+                        Seq(read.sequence), Seq(adapter), aligner, mismatches
+                    )
+                    # if alignment.score < 45: #debug
+                    #     print(alignment)
+                    #     print(alignment.score)
+
+                    if alignment.score > 2*len(adapter):
+                        start = alignment.aligned[0][0][0]
+                        end = alignment.aligned[0][0][1]
+                        # print(start)
+                        # print(end)
+                        if position == "left":
+                            barcode_seq = read.sequence[(start-length):start]
+                        elif position=="right":
+                            barcode_seq = read.sequence[end:(end+length)]
+                        else:
+                            print(f"Incorrect barcode position [{position}] specified!")
+                            
+                        # print(barcode_seq)
+                        bc_to_write.append(barcode_seq)
+                    else:
+                        bc_to_write.append("")
+                # end alignment
+                
+                # Write barcode to file 
+                if bc_to_write.count("") == 0:
+                    bc_match_count+=1
+                    # outfile.write(f"{read.name}\t{'\t'.join(bc_to_write)}\n")
+                    outfile.write("{}\t{}\n".format(read.name, '\t'.join(bc_to_write)))
+                elif bc_to_write.count("") == len(adapters):
+                    no_bc_count+=1
+                else:
+                    bc_missing_count+=1
+                read_count+=1
+            # end fq iterator
+        # end tsv open
+    # end fq open
+    return bc_match_count, bc_missing_count, no_bc_count
+
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Extract barcodes from FASTQ file.")
-    parser.add_argument("--fq_in", required=True, help="Path to the FASTQ file.")
-    # parser.add_argument("--tsv_out", required=True, help="Path to the FASTQ file.")
+    parser = argparse.ArgumentParser(description="Extract barcodes from FASTQ file and write them in the header.")
+    parser.add_argument("--fq_in", required=True, help="Path to the input FASTQ file.")
+    parser.add_argument("--tsv_out", required=True, help="Path to the output FASTQ file.")
     parser.add_argument(
-        "--adapters", nargs="+", required=True, help="List of adapter sequences."
-    )
-    parser.add_argument(
-        "--whitelist_files", nargs="+", required=True, help="List of whitelist files."
+        "--adapters", 
+        nargs="+", 
+        required=True, help="List of adapter sequences."
     )
     parser.add_argument(
         "--barcode_positions",
@@ -64,25 +113,46 @@ if __name__ == "__main__":
         help="List of barcode positions (left or right).",
     )
     parser.add_argument(
+        "--barcode_lengths",
+        nargs="+",
+        type=int,
+        required=True, 
+        help="List of barcode lengths.",
+    )
+    parser.add_argument(
         "--mismatches",
         nargs="+",
         type=int,
         required=True,
         help="Number of mismatches allowed in the adapter sequence.",
     )
-    parser.add_argument(
-        "--error_rate",
-        type=int,
-        default=1,
-        help="Error rate for barcode matching (default: 1 error per 10 bases).",
-    )
     args = parser.parse_args()
 
-    extract_barcodes(
+    print(
+f"""
+input fastq:        {args.fq_in}
+output tsv:         {args.tsv_out}
+adapter sequences:  {args.adapters}
+barcode positions:  {args.barcode_positions}
+barcode lengths:    {args.barcode_lengths}
+mismatches allowed: {args.mismatches}
+"""
+    )
+    print("Running...")
+    print("")
+    bc_match_count, bc_missing_count, no_bc_count = extract_barcodes(
         args.fq_in,
+        args.tsv_out,
         args.adapters,
-        args.whitelist_files,
         args.barcode_positions,
+        args.barcode_lengths,
         args.mismatches,
-        args.error_rate,
+    )
+    print("")
+    print(
+f"""
+n_reads w/ all barcodes found:        {bc_match_count}
+n_reads w/ at least one barcode missing:         {bc_missing_count}
+n_reads w/ no barcodes  {no_bc_count}
+"""
     )

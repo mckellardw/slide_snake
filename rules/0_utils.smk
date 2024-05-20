@@ -76,6 +76,7 @@ def get_fqs(w, return_type=["list", "dict"], mode=["ONT", "ILMN"]):
             R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_R2.fq.gz"
             if "internalTrim" in w.RECIPE:
                 R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_internalTrim_R1.fq.gz"
+                R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/twiceCut_internalTrim_R2.fq.gz"
             elif "hardTrim" in w.RECIPE:
                 R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_hardTrim_R1.fq.gz"
             else:
@@ -290,7 +291,7 @@ def get_recipes(w, mode=["ONT", "ILMN", "list"]):
 
 
 # Pull info from recipe sheet
-def get_recipe_info(w, info_col, mode=["ONT", "ILMN"]):
+def get_recipe_info(w, info_col, mode=["ONT", "ILMN", "list"]):
     try:
         return RECIPE_SHEET[info_col][w.RECIPE]
     except:

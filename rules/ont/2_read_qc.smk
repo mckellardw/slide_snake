@@ -8,7 +8,7 @@ rule ont_readQC_preCutadapt:
         CHUNK_SIZE=500000,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/readqc/1_preCutadapt/{READ}_qc.log",
-    threads: config["CORES"]
+    threads: 1 #config["CORES"]
     shell:
         """
         python scripts/py/fastq_read_qc.py \
@@ -30,7 +30,7 @@ rule ont_readQC_postCutadapt:
         CHUNK_SIZE=500000,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/readqc/2_postCutadapt/{READ}_qc.log",
-    threads: config["CORES"]
+    threads: 1 #config["CORES"]
     shell:
         """
         python scripts/py/fastq_read_qc.py \
@@ -69,7 +69,7 @@ rule readQC_bam:
         CHUNK_SIZE=500000,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/readqc/3_aligned/{RECIPE}_qc.log",
-    threads: config["CORES"]
+    threads: 1 #config["CORES"]
     shell:
         """
         python scripts/py/bam_read_qc.py \

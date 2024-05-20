@@ -1,54 +1,49 @@
-# Get cell/spot/bead barcodes & UMIs
-rule ont_umitools_extract:
-    input:
-        LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/adapter_scan_results.txt",
-        FQS=lambda w: get_fqs(w, return_type="list", mode="ONT"),
-        # WHITELIST=lambda w: get_whitelist(w),
-        # BB_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
-        # BB_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
-        # BB_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
-        # BB_ADAPTER="{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt",
-        # BB_ADAPTER_R1="{OUTDIR}/{SAMPLE}/bb/whitelist_adapter_r1.txt",
-    output:
-        R1_FQ="{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/umi_R1.fq.gz",
-        R2_FQ="{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/umi_R2.fq.gz",
-    params:
-        WHITELIST=lambda w: get_whitelist(w),
-        BC_PATTERN=lambda w: get_ont_barcode_pattern(w),
-        EXTRACT_METHOD="string",
-    log:
-        log="{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/extract.log",
-    threads: 1
-    run:
-        if "N" in params.BC_PATTERN:
-            shell(
-                f"""
-                echo "Barcode pattern: '{params.BC_PATTERN}'" > {log.log}
-                echo "Extract method:  {params.EXTRACT_METHOD}" >> {log.log}
-                echo "" >> {log.log}
-
-                {EXEC['UMITOOLS']} extract \
-                    --extract-method={params.EXTRACT_METHOD} \
-                    --bc-pattern='{params.BC_PATTERN}' \
-                    --stdin={input.FQS[0]} \
-                    --read2-in={input.FQS[1]} \
-                    --stdout={output.R1_FQ} \
-                    --read2-out={output.R2_FQ} \
-                    --log2stderr \
-                2>&1 | tee {log.log}
-                """
-            )
-            # --error-correct-cell \
-            # --whitelist={whitelist} \
-            # --error-correct-cell \
-
-
-
 # Align w/ minimap2
 ## minimap2 docs - https://lh3.github.io/minimap2/minimap2.html
+# rule ont_align_minimap2_genome:
+#     input:
+#         FQ="{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/umi_R2.fq.gz",
+#     output:
+#         SAM_TMP=temp("{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tmp.sam"),
+#     params:
+#         EXTRA_FLAGS=lambda wildcards: RECIPE_SHEET["minimap2.extra"][wildcards.RECIPE],
+#         ref=config["REF_GENOME_FASTA"],
+#         chrom_sizes=config["REF_CHROM_SIZES"],
+#         bed=config["REF_GENES_BED"],
+#         flags=config["RESOURCES_MM2_FLAGS"],
+#     log:
+#         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/minimap2.log",
+#     threads: config["CORES"]
+#     # resources:
+#     #     mem_gb=get_split_ont_align_mem_gb,
+#     # conda:
+#     #     f"{workflow.basedir}/envs/minimap2.yml" #TODO
+#     run:
+#         shell(
+#             f"""
+#             mkdir -p $(dirname {output.SAM_TMP})
+
+#             echo "Extra flags: {params.EXTRA_FLAGS}" > {log.log} 
+#             echo "" >> {log.log} 
+
+#             {EXEC['MINIMAP2']} \
+#                 -ax splice \
+#                 -uf \
+#                 --MD \
+#                 -t {threads} \
+#                 --junc-bed {params.bed} \
+#                 {params.flags} {params.EXTRA_FLAGS} \
+#                 {params.ref} \
+#                 {input.FQ} \
+#             2>> {log.log} \
+#             > {output.SAM_TMP}
+#             """
+#         )
+
 rule ont_align_minimap2_genome:
     input:
-        FQ="{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/umi_R2.fq.gz",
+        # FQ="{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/umi_R2.fq.gz",
+        FQ=lambda w: get_fqs(w, return_type="list", mode="ONT")[1],
     output:
         SAM_TMP=temp("{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tmp.sam"),
     params:
@@ -85,8 +80,6 @@ rule ont_align_minimap2_genome:
             > {output.SAM_TMP}
             """
         )
-
-
 
 rule ont_sort_index_output:
     input:
