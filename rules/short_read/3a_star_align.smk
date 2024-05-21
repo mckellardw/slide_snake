@@ -59,11 +59,11 @@ rule STARsolo_align:
                 --soloMultiMappers EM
             """
         )
+                # --outSAMtype BAM SortedByCoordinate \
                 # --clipAdapterType CellRanger4 \
         # --soloType {soloType} {soloUMI} {soloCB} {soloAdapter} {extraSTAR} \
         # --soloCBmatchWLtype {soloCBmatchWLtype} \
         # --soloCellFilter TopCells {nBB} \
-
 
 
 # compress outputs from STAR (count matrices, cell barcodes, and gene lists)

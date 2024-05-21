@@ -39,10 +39,8 @@ R2_FQS = dict(zip(SAMPLES, list(SAMPLE_SHEET["fastq_R2"])))
 R2_FQS = {SAMP: READ.split() for SAMP, READ in R2_FQS.items() if READ}
 
 # long-read data
-ONT = dict(zip(SAMPLES, list(SAMPLE_SHEET["ONT"]))) 
+ONT = dict(zip(SAMPLES, list(SAMPLE_SHEET["ONT"])))
 ONT = {SAMP: READ.split() for SAMP, READ in ONT.items() if READ}
-
-
 
 
 ### Pre-run setup ######################################################################

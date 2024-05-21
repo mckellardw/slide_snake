@@ -2,7 +2,6 @@
 ## Read trimming rules
 #############################################
 
-
 # TSO & homopolymer trimming
 # TODO: add "{ADAPTER};noindels" to adapter sequence trimming? - *Note- do not do this for the BB_ADAPTER
 rule cutadapt:
@@ -162,8 +161,7 @@ rule R1_hardTrimming:
         )
 
 
-## Internal trimming to cut out adapter sequences
-###TODO- rewrite/speed up internal trimming!
+## Internal trimming to cut out adapter sequences (SlideSeq, DecoderSeq, microST, etc.)
 rule R1_internalTrimming:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
@@ -171,19 +169,18 @@ rule R1_internalTrimming:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_internalTrim_R1.fq.gz",  #temp()
         INTERNAL_TRIM_QC_LOG="{OUTDIR}/{SAMPLE}/misc_logs/internal_trim_qc.txt",
     params:
-        CB1end=8,  #TODO- move to config? or recipe_sheet?
-        CB2start=27,
-        CB2end=42,
+        # CB1end=8, 
+        # CB2start=27,
+        # CB2end=42,
         TMPDIR="{OUTDIR}/{SAMPLE}/tmp/seqkit",
-        ADAPTER=lambda w: get_recipe_info(w, "internal.adapter")[0],
-        RECIPE=lambda w: get_recipes(w, mode="ILMN"),
+        ADAPTER=lambda w: get_recipe_info(w, "internal.adapter", mode="ILMN")[0],
+        # RECIPE=lambda w: get_recipes(w, mode="ILMN"),
         R1_LENGTH=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN"),
     threads: config["CORES"]
     log:
         log="{OUTDIR}/{SAMPLE}/misc_logs/R1_internalTrimming.log",
     run:
-        # TODO- rewrite/speed up internal trimming!
-        shell(  # Internal trimming to cut out the SlideSeq adapter sequence
+        shell(
             f"""
             python scripts/py/fastq_internal_adapter_trim_R1.py \
                 {params.ADAPTER} \
@@ -195,60 +192,3 @@ rule R1_internalTrimming:
             | tee {log.log}
             """
         )
-
-
-# rule R1_trimming:
-#     input:
-#         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
-#     output:
-#         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_Trim_R1.fq.gz",  #temp()
-#     params:
-#         CB1end=8,  #TODO- move to config? or recipe_sheet?
-#         CB2start=27,
-#         CB2end=42,
-#         INTERNAL_TRIM_QC_LOG="{OUTDIR}/{SAMPLE}/internal_trim_qc.txt",
-#         TMPDIR="{OUTDIR}/{SAMPLE}/tmp/seqkit",
-#         INTERNAL_ADAPTER=config["R1_INTERNAL_ADAPTER"],  # Curio R1 internal adapter
-#         RECIPE = lambda w: get_recipes(w, mode="ILMN"),
-#         R1_LENGTH = lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN")
-#     threads: config["CORES"]
-#     log:
-#         log="{OUTDIR}/{SAMPLE}/R1_trimming.log",
-#     run:
-#         # param handling for different alignment strategies
-#         for recipe in params.RECIPE:
-#             if "hardTrim" in recipe:
-#                 shell(  # "Hard" trimming, to remove the adapter based on hard-coded base positions
-#                     f"""
-#                     zcat {input.R1_FQ} \
-#                     | awk -v s={params.CB1end} \
-#                         -v S={params.CB2start} \
-#                         -v E={params.CB2end} \
-#                         -f scripts/awk/hardTrimFq.awk \
-#                     > {output.R1_FQ.strip('.gz')}
-#                     {EXEC['PIGZ']} -f -p{threads} {output.R1_FQ.strip('.gz')}
-#                     echo "Hard trimming performed on {input.R1_FQ}" > {log.log}
-#                     """
-#                 )
-#             elif "internalTrim" in recipe:
-#                 # TODO- rewrite/speed up internal trimming!
-#                 shell(  # Internal trimming to cut out the SlideSeq adapter sequence
-#                     f"""
-#                     python scripts/py/internal_adapter_trim_R1.py \
-#                         {params.INTERNAL_ADAPTER} \
-#                         {params.INTERNAL_TRIM_QC_LOG} \
-#                         {threads} \
-#                         {params.TMPDIR} \
-#                         {R1} \
-#                         {output.R1_FQ} \
-#                     | tee {log.log}
-#                     """
-#                 )
-#             else:
-#                 shell(  # Rename R1_FQ if no trimming needed
-#                     # cp {input.R1_FQ} {output.R1_FQ}
-#                     f"""
-#                     touch {output.R1_FQ}
-#                     echo "No trimming performed on {input.R1_FQ}..." {log.log}
-#                     """
-#                 )

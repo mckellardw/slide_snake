@@ -45,14 +45,14 @@ def get_fqs(w, return_type=["list", "dict"], mode=["ONT", "ILMN"]):
     try:
         if mode == "ILMN":
             if "rRNA.STAR" in w.RECIPE:  # Use trimmed & STAR-rRNA-filtered .fq's
-                R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz"
-                R2 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz"
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/STARsolo/noRibo_R1.fq.gz"
+                R2 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/STARsolo/noRibo_R2.fq.gz"
 
                 # TODO - update to match ribodetector style
 
             elif "rRNA.bwa" in w.RECIPE:  # Use trimmed & bwa-rRNA-filtered .fq's
-                R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz"
-                R2 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz"
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/bwa/noRibo_R1.fq.gz"
+                R2 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/bwa/noRibo_R2.fq.gz"
 
                 # TODO - update to match ribodetector style
 

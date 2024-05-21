@@ -104,7 +104,7 @@ rule blast_unmapped:
 #     output:
 #         BAM1 = temp('{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/aligned.bam'), #temp()?
 #         BAM2 = '{OUTDIR}/{SAMPLE}unmapped/{RECIPE}/aligned_sorted.bam', #temp()?
-#         R2_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/final_filtered_R2.fq'
+#         R2_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/noRibo_R2.fq'
 #     params:
 #         MEMLIMIT = config['MEMLIMIT']
 #     log:

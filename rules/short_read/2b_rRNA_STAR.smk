@@ -54,53 +54,6 @@ rule STAR_rRNA_align:
                 # --clipAdapterType CellRanger4 \
 
 
-# rule STAR_rRNA_align_simpleCellCalling:
-#     input:
-#         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
-#         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
-#         BC_WHITELIST="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
-#         BC_1="{OUTDIR}/{SAMPLE}/bc/whitelist_1.txt",
-#         BC_2="{OUTDIR}/{SAMPLE}/bc/whitelist_2.txt",
-#         BC_ADAPTER="{OUTDIR}/{SAMPLE}/bc/whitelist_adapter.txt",
-#         BC_US="{OUTDIR}/{SAMPLE}/bc/whitelist_underscore.txt",
-#     output:
-#         BAM="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam",
-#         UNMAPPED1="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Unmapped.out.mate1",
-#         UNMAPPED2="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Unmapped.out.mate2",
-#     params:
-#         MEMLIMIT=config["MEMLIMIT"],
-#         STAR_REF=lambda w: get_STAR_ref(w, mode="rRNA"),
-#         STAR_PARAMS=lambda w: get_STAR_extra_params(w),
-#     threads: config["CORES"]
-#     run:
-#         shell(
-#             f"""
-#             mkdir -p $(dirname {output.BAM})
-
-#             {EXEC['STAR']} \
-#                 --runThreadN {threads} \
-#                 --outFileNamePrefix $(dirname {output.BAM})/ \
-#                 --outSAMtype BAM SortedByCoordinate \
-#                 --readFilesCommand zcat \
-#                 --genomeDir {params.STAR_REF} \
-#                 --limitBAMsortRAM={params.MEMLIMIT} \
-#                 --readFilesIn {input.R2_FQ} {input.R1_FQ} \
-#                 --outReadsUnmapped Fastx \
-#                 --outSAMunmapped Within KeepPairs \
-#                 --soloType {params.STAR_PARAMS["STAR.soloType"]} {params.STAR_PARAMS["STAR.soloUMI"]} {params.STAR_PARAMS["STAR.soloCB"]} {params.STAR_PARAMS["STAR.soloAdapter"]} {params.STAR_PARAMS["STAR.extra"]} \
-#                 --soloCBwhitelist {params.WHITELIST} \
-#                 --soloCellFilter TopCells $(wc -l {params.WHITELIST}) \
-#                 --soloCBmatchWLtype {params.STAR_PARAMS["STAR.soloCBmatchWLtype"]} \
-#                 --soloCellFilter TopCells $(wc -l {params.WHITELIST}) \
-#                 --soloUMIfiltering MultiGeneUMI CR \
-#                 --soloUMIdedup 1MM_CR \
-#                 --soloBarcodeReadLength 0 \
-#                 --soloFeatures GeneFull \
-#                 --soloMultiMappers EM
-#             """
-#         )
-
-
 # compress outputs from STAR (count matrices, cell barcodes, and gene lists)
 rule STAR_rRNA_compress_outs:
     input:
@@ -158,8 +111,8 @@ rule STAR_rRNA_rename_compress_unmapped:
         UNMAPPED1="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Unmapped.out.mate1",
         UNMAPPED2="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Unmapped.out.mate2",
     output:
-        FILTERED1_FQ="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R1.fq.gz",
-        FILTERED2_FQ="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz",
+        FILTERED1_FQ="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/noRibo_R1.fq.gz",
+        FILTERED2_FQ="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/noRibo_R2.fq.gz",
     threads: config["CORES"]
     run:
         shell(
@@ -181,7 +134,7 @@ rule STAR_rRNA_rename_compress_unmapped:
 #  Run fastqc on unmapped reads;
 rule STAR_rRNA_filtered_fastqc:
     input:
-        FQ="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_{READ}.fq.gz",
+        FQ="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/noRibo_{READ}.fq.gz",
     output:
         FQC_DIR=directory("{OUTDIR}/{SAMPLE}/fastqc/rRNA_STAR_{READ}"),
     params:

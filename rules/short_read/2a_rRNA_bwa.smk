@@ -15,8 +15,8 @@ rule bwa_rRNA_align:
     output:
         BAM1=temp("{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned.bam"),
         BAM2="{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam",
-        # R1_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq',
-        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq",
+        # R1_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_R1.fq',
+        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_R2.fq",
     params:
         # MEMLIMIT = config['MEMLIMIT'],
         BWA_REF=lambda w: rRNA_BWA_DICT[w.SAMPLE],
@@ -58,10 +58,10 @@ rule bwa_rRNA_filter_R1:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
-        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq",
+        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_R2.fq",
     output:
         R1_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq"),
-        R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq",
+        R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_R1.fq",
         rRNA_LIST="{OUTDIR}/{SAMPLE}/rRNA/bwa/rRNA_readID.list",
     threads: config["CORES"]
     run:
@@ -81,11 +81,11 @@ rule bwa_rRNA_filter_R1:
 
 rule bwa_rRNA_compress_unmapped:
     input:
-        R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq",
-        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq",
+        R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_R1.fq",
+        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_R2.fq",
     output:
-        R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R1.fq.gz",
-        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz",
+        R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_R1.fq.gz",
+        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_R2.fq.gz",
     threads: config["CORES"]
     run:
         shell(
@@ -98,7 +98,7 @@ rule bwa_rRNA_compress_unmapped:
 #  Run fastqc on unmapped reads;
 rule bwa_rRNA_filtered_fastqc:
     input:
-        FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_{READ}.fq.gz",
+        FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_{READ}.fq.gz",
     output:
         FQC_DIR=directory("{OUTDIR}/{SAMPLE}/fastqc/rRNA_bwa_{READ}"),
     params:
