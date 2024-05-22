@@ -167,7 +167,7 @@ rule R1_internalTrimming:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
     output:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_internalTrim_R1.fq.gz",  #temp()
-        INTERNAL_TRIM_QC_LOG="{OUTDIR}/{SAMPLE}/misc_logs/internal_trim_qc.txt",
+        # INTERNAL_TRIM_QC_LOG="{OUTDIR}/{SAMPLE}/misc_logs/internal_trim_qc.txt",
     params:
         # CB1end=8, 
         # CB2start=27,
@@ -176,7 +176,8 @@ rule R1_internalTrimming:
         ADAPTER=lambda w: get_recipe_info(w, "internal.adapter", mode="ILMN")[0],
         # RECIPE=lambda w: get_recipes(w, mode="ILMN"),
         # R1_LENGTH=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN"),
-        BC1_LENGTH=lambda w: get_recipe_info(w, info_col="BC.length", mode="ILMN"),
+        BC1_LENGTH=8, #TODO - lambda w: get_recipe_info(w, info_col="BC.length", mode="ILMN"),
+        MIN_ALIGN_SCORE = 58,
     threads: config["CORES"]
     log:
         log="{OUTDIR}/{SAMPLE}/misc_logs/R1_internalTrimming.log",
@@ -184,14 +185,14 @@ rule R1_internalTrimming:
         shell(
             f"""
             python scripts/py/fastq_internal_adapter_trim_R1.py \
-                {params.ADAPTER} \
-                {output.INTERNAL_TRIM_QC_LOG} \
-                {threads} \
-                {params.TMPDIR} \
-                {input.R1_FQ} \
-                {output.R1_FQ} \
-                {params.BC1_LENGTH} \
-                min_align_score \
+                --adapter_seq {params.ADAPTER} \
+                --n_cores {threads} \
+                --tmp_dir {params.TMPDIR} \
+                --fq1_in {input.R1_FQ} \
+                --fq1_out {output.R1_FQ} \
+                --min_adapter_start_pos {params.BC1_LENGTH} \
+                --min_align_score {params.MIN_ALIGN_SCORE} \
             | tee {log.log}
             """
         )
+                # {output.INTERNAL_TRIM_QC_LOG} \

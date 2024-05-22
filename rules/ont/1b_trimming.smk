@@ -104,18 +104,19 @@ rule ont_R1_hardTrimming:
 
 
 ## Internal trimming to cut out adapter sequences
-###TODO- rewrite/speed up internal trimming!
 rule ont_R1_internalTrim:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_R1.fq.gz",
     output:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_internalTrim_R1.fq.gz",
-        INTERNAL_TRIM_QC_LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/internal_trim_qc.txt",
+        # INTERNAL_TRIM_QC_LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/internal_trim_qc.txt",
     params:
         TMPDIR="{OUTDIR}/{SAMPLE}/tmp/seqkit",
         ADAPTER=lambda w: get_recipe_info(w, info_col="internal.adapter", mode="list")[0],
         # RECIPE = lambda w: get_recipes(w, mode="ONT"),
-        # R1_LENGTH = lambda w: get_recipe_info(w, info_col="R1.finalLength")
+        R1_LENGTH = lambda w: get_recipe_info(w, info_col="R1.finalLength")
+        BC1_LENGTH=lambda w: get_recipe_info(w, info_col="BC.length", mode="ILMN"),
+        MIN_ALIGN_SCORE = 10,
     threads: config["CORES"]
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/R1_internalTrimming.log",
@@ -123,14 +124,13 @@ rule ont_R1_internalTrim:
         shell(
             f"""
             python scripts/py/fastq_internal_adapter_trim_R1.py \
-                {params.ADAPTER} \
-                {output.INTERNAL_TRIM_QC_LOG} \
-                {threads} \
-                {params.TMPDIR} \
-                {input.R1_FQ} \
-                {output.R1_FQ} \
-                {30} \
-                {10}
+                --adapter_seq {params.ADAPTER} \
+                --n_cores {threads} \
+                --tmp_dir {params.TMPDIR} \
+                --fq1_in {input.R1_FQ} \
+                --fq1_out {output.R1_FQ} \
+                --min_adapter_start_pos {params.R1_LENGTH + params.BC1_LENGTH} \
+                --min_align_score {params.MIN_ALIGN_SCORE} \
             | tee {log.log}
             """
         )
