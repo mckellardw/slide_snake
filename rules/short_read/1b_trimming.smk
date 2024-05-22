@@ -175,7 +175,8 @@ rule R1_internalTrimming:
         TMPDIR="{OUTDIR}/{SAMPLE}/tmp/seqkit",
         ADAPTER=lambda w: get_recipe_info(w, "internal.adapter", mode="ILMN")[0],
         # RECIPE=lambda w: get_recipes(w, mode="ILMN"),
-        R1_LENGTH=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN"),
+        # R1_LENGTH=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN"),
+        BC1_LENGTH=lambda w: get_recipe_info(w, info_col="BC.length", mode="ILMN"),
     threads: config["CORES"]
     log:
         log="{OUTDIR}/{SAMPLE}/misc_logs/R1_internalTrimming.log",
@@ -189,6 +190,8 @@ rule R1_internalTrimming:
                 {params.TMPDIR} \
                 {input.R1_FQ} \
                 {output.R1_FQ} \
+                {params.BC1_LENGTH} \
+                min_align_score \
             | tee {log.log}
             """
         )

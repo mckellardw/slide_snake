@@ -179,7 +179,6 @@ if n_cores > 1:
         pigz -p{n_cores} {fq1_out.replace('.gz','')}
         """
     )
-    # {tmp_dir}/stdin.part_*_trimmed.fastq
 
     # Remove tmp fastqs
     # for n in list(range(1,n_cores+1)):
@@ -188,13 +187,13 @@ if n_cores > 1:
     #     if os.path.isfile(f"{tmp_dir}/stdin.part_{str(n).zfill(3)}_trimmed.fastq"):
     #         os.remove()
 
+    # Remove tmp fastqs
     if os.path.isfile(fq1_out):
         os.system(
             f"""
             rm {fq1_in.replace('.fq.gz','')}_[0-9][0-9][0-9].fq {fq1_in.replace('.fq.gz','')}_*_trimmed.fq
             """
         )
-    # {tmp_dir}/stdin.part_*_trimmed.fastq ||:
 
     with open(log_out, "w") as text_file:
         text_file.write(

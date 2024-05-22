@@ -103,7 +103,7 @@ def get_fqs(w, return_type=["list", "dict"], mode=["ONT", "ILMN"]):
 # whitelist param handling for different recipes
 def get_whitelist(w, return_type=None):
     try:
-        if "noTrim" in w.RECIPE or "matchLinker" in w.RECIPE:
+        if "matchLinker" in w.RECIPE:
             if return_type == "list":
                 whitelist = [f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_1.txt", f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_2.txt"]
             else:
@@ -161,17 +161,17 @@ def get_ont_barcode_pattern(w):
     return BC_PATTERN
 
 
-# BC_PATTERN="(?P<discard_1>CTACACGACGCTCTTCCGATCT)"+ \
-#     "(?P<cell_1>.{{8}})"+ \
-#     "(?P<discard_2>TCTTCAGCGTTCCCGAGA)"+ \
-#     "(?P<cell_2>.{{6}})"+ \
-#     "(?P<umi_1>.{{7}})"
+    # BC_PATTERN="(?P<discard_1>CTACACGACGCTCTTCCGATCT)"+ \
+    #     "(?P<cell_1>.{{8}})"+ \
+    #     "(?P<discard_2>TCTTCAGCGTTCCCGAGA)"+ \
+    #     "(?P<cell_2>.{{6}})"+ \
+    #     "(?P<umi_1>.{{7}})"
 
-# BC_PATTERN="(?P<discard_1>XXXXXXXXXXXXXXXXXXXXXXX)"+ \
-#     "(?P<cell_1>.{{8}})"+ \
-#     "(?P<discard_2>XXXXXXXXXXXXXXXXXX)"+ \
-#     "(?P<cell_2>.{{6}})"+ \
-#     "(?P<umi_1>.{{7}})"
+    # BC_PATTERN="(?P<discard_1>XXXXXXXXXXXXXXXXXXXXXXX)"+ \
+    #     "(?P<cell_1>.{{8}})"+ \
+    #     "(?P<discard_2>XXXXXXXXXXXXXXXXXX)"+ \
+    #     "(?P<cell_2>.{{6}})"+ \
+    #     "(?P<umi_1>.{{7}})"
 
 
 def get_STAR_ref(w, mode=["genome", "rRNA"]):
