@@ -16,7 +16,7 @@ def calculate_metrics(fastq_file, chunk_size=100000):
     with gzip.open(fastq_file, "rt") if is_compressed else open(fastq_file, "r") as f:
         for i, line in enumerate(f):
             if i % 4 == 0:  # ID line
-                read_id = line.strip()
+                read_id = line.strip().replace("@", "").split(" ", 1)[0]
             elif i % 4 == 1:  # Sequence line
                 seq = line.strip()
                 if len(seq) > 0:
