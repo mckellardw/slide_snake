@@ -33,7 +33,7 @@ rule ont_umitools_extract:
                 """
             )
 
-#TODO
+#TODO- add UMI option to script
 rule ont_fastq_call_bc_from_adapter:
     input:
         LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/adapter_scan_results.txt",
@@ -43,7 +43,7 @@ rule ont_fastq_call_bc_from_adapter:
     params:
         WHITELIST=lambda w: get_whitelist(w),
         BC_PATTERN=lambda w: get_ont_barcode_pattern(w),
-        EXTRACT_METHOD="string",
+        ADAPTER=lambda w: get_recipe_info(w, "internal.adapter", mode="ONT"),
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/fastq_call_bc_from_adapter.log",
     threads: 1
@@ -52,12 +52,25 @@ rule ont_fastq_call_bc_from_adapter:
             shell(
                 f"""
                 python scripts/py/fastq_call_bc_from_adapter.py \
-                    --fq_in sandbox/lig3_R1.fq \
-                    --tsv_out sandbox/barcodes.tsv \
+                    --fq_in {input.FQS[0]} \
+                    --tsv_out {output.TSV} \
                     --adapters TCCACGTGCTTGAG TCCACGTGCTTGAG \
                     --barcode_lengths 10 10 \
                     --barcode_positions left right \
                     --mismatches 1 1
                 2>&1 | tee {log.log}
+                """
+            )
+            
+            shell(
+                f"""
+                python scripts/py/fastq_call_bc_from_adapter.py \
+                    --fq_in {input.FQS[0]} \
+                    --tsv_out {output.TSV} \
+                    --adapters {params.ADAPTERS} \
+                    --barcode_lengths 10 10 \
+                    --barcode_positions left right \
+                    --mismatches 1 1
+                | tee {log.log}
                 """
             )

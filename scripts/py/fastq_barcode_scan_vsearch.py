@@ -579,8 +579,6 @@ def main(args):
         shutil.rmtree(args.tempdir, ignore_errors=True)
     os.mkdir(args.tempdir)
 
-
-
     #############################
     fastq_fns = write_tmp_fastx_files_for_processing(n_batches, args)
 

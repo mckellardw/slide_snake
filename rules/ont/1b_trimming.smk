@@ -114,7 +114,7 @@ rule ont_R1_internalTrim:
         TMPDIR="{OUTDIR}/{SAMPLE}/tmp/seqkit",
         ADAPTER=lambda w: get_recipe_info(w, info_col="internal.adapter", mode="list")[0],
         # RECIPE = lambda w: get_recipes(w, mode="ONT"),
-        R1_LENGTH = lambda w: get_recipe_info(w, info_col="R1.finalLength")
+        R1_LENGTH = lambda w: get_recipe_info(w, info_col="R1.finalLength"),
         BC1_LENGTH=lambda w: get_recipe_info(w, info_col="BC.length", mode="ILMN"),
         MIN_ALIGN_SCORE = 10,
     threads: config["CORES"]

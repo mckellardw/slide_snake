@@ -19,10 +19,11 @@ rule STAR_rRNA_align:
         GENEDIRECTORY=directory("{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Solo.out/GeneFull"),
         GENEMAT="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Solo.out/GeneFull/raw/matrix.mtx",
     params:
-        MEMLIMIT=config['MEMLIMIT'],
         WHITELIST=lambda w: get_whitelist(w),
         STAR_REF=lambda w: get_STAR_ref(w, mode="rRNA"),
         STAR_PARAMS=lambda w: get_STAR_extra_params(w),
+    resources:
+        MEMLIMIT=megabytes2bytes(config["MEMLIMIT_MB"]),
     threads: config["CORES"]
     run:
         shell(
@@ -36,7 +37,7 @@ rule STAR_rRNA_align:
                 --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
                 --readFilesCommand zcat \
                 --genomeDir {params.STAR_REF} \
-                --limitBAMsortRAM={params.MEMLIMIT} \
+                --limitBAMsortRAM={resources.MEMLIMIT} \
                 --readFilesIn {input.R2_FQ} {input.R1_FQ} \
                 --outReadsUnmapped Fastx \
                 --soloType {params.STAR_PARAMS['STAR.soloType']} {params.STAR_PARAMS['STAR.soloUMI']} {params.STAR_PARAMS['STAR.soloCB']} {params.STAR_PARAMS['STAR.soloAdapter']} {params.STAR_PARAMS['STAR.extra']} \

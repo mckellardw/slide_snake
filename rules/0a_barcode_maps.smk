@@ -53,7 +53,7 @@ rule write_whitelist_variants:
         BC_US="{OUTDIR}/{SAMPLE}/bc/whitelist_underscore.txt",  # Bead Barcode With Underscore for STAR
     threads: 1
     run:
-        recipes = get_recipes(wildcards, mode="list")
+        recipes = "".join(get_recipes(wildcards, mode="list"))
         
         # load bc
         bc_df = pd.read_csv(input.BC_MAP, sep="\t", header=None).iloc[:, 0]
@@ -121,7 +121,7 @@ rule insert_adapter_into_list:
         recipes_to_split=["seeker","microST","decoder"]
     threads: 1
     run:
-        recipes = get_recipes(wildcards, mode="list")
+        recipes = "".join(get_recipes(wildcards, mode="list"))
 
         if any(recipe in recipes for recipe in params.recipes_to_split):
             # load bc

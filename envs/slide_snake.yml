@@ -98,7 +98,6 @@ dependencies:
   - jq=1.5
   - k8=0.2.5
   - kaleido-core=0.2.1
-  - kallisto=0.50.0
   - kernel-headers_linux-64=2.6.32
   - keyutils=1.6.1
   - kiwisolver=1.4.5
@@ -338,13 +337,11 @@ dependencies:
   - zstandard=0.21.0
   - zstd=1.5.5
   - pip:
-      - anndata==0.10.5.post1
       - appdirs==1.4.4
       - array-api-compat==1.4.1
       - attrs==23.2.0
       - beautifulsoup4==4.12.3
       - bleach==6.1.0
-      - bustools==0.1.0.dev2
       - charset-normalizer==3.3.2
       - click==8.1.7
       - configargparse==1.7
@@ -367,7 +364,6 @@ dependencies:
       - jupyter-client==8.6.0
       - jupyter-core==5.7.1
       - jupyterlab-pygments==0.3.0
-      - kb-python==0.28.2
       - llvmlite==0.42.0
       - loompy==3.0.7
       - matplotlib==3.8.3

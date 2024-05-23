@@ -31,45 +31,45 @@ rule cache_preQC_h5ad_STAR:
 
 # initialize & cache the **raw** counts as an anndata file for easier loading later
 ## Removes barcodes for which there are no molecules detected [`--remove_zero_features`]
-rule cache_preQC_h5ad_kb:
-    input:
-        BCS="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.barcodes.txt.gz",
-        FEATS="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.genes.txt.gz",
-        MAT="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.mtx.gz",
-        BC_map="{OUTDIR}/{SAMPLE}/bc/whitelist_underscore.txt",
-    output:
-        H5AD="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.h5ad",
-    log:
-        log="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/cache.log",
-    # params:
-    #     var_names = "gene_symbols" # scanpy.read_10x_mtx()
-    threads: 1
-    conda:
-        f"{workflow.basedir}/envs/slsn_scanpy.yml"
-    shell:
-        """
-        python scripts/py/cache_mtx_to_h5ad.py \
-            --mat_in {input.MAT} \
-            --feat_in {input.FEATS} \
-            --bc_in {input.BCS} \
-            --bb_map {input.BC_map} \
-            --ad_out {output.H5AD} \
-            --feat_col 0 \
-            --remove_zero_features \
-        1> {log.log}
-        """
+# rule cache_preQC_h5ad_kb:
+#     input:
+#         BCS="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.barcodes.txt.gz",
+#         FEATS="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.genes.txt.gz",
+#         MAT="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.mtx.gz",
+#         BC_map="{OUTDIR}/{SAMPLE}/bc/whitelist_underscore.txt",
+#     output:
+#         H5AD="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.h5ad",
+#     log:
+#         log="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/cache.log",
+#     # params:
+#     #     var_names = "gene_symbols" # scanpy.read_10x_mtx()
+#     threads: 1
+#     conda:
+#         f"{workflow.basedir}/envs/slsn_scanpy.yml"
+#     shell:
+#         """
+#         python scripts/py/cache_mtx_to_h5ad.py \
+#             --mat_in {input.MAT} \
+#             --feat_in {input.FEATS} \
+#             --bc_in {input.BCS} \
+#             --bb_map {input.BC_map} \
+#             --ad_out {output.H5AD} \
+#             --feat_col 0 \
+#             --remove_zero_features \
+#         1> {log.log}
+#         """
 
 
-rule cache_preQC_h5ad_kbpython:
+rule cache_preQC_h5ad_kbpython_std:
     input:
-        BCS="{OUTDIR}/{SAMPLE}/kbpython/{RECIPE}/counts_unfiltered/cells_x_genes.barcodes.txt.gz",
-        FEATS="{OUTDIR}/{SAMPLE}/kbpython/{RECIPE}/counts_unfiltered/cells_x_genes.genes.txt.gz",
-        MAT="{OUTDIR}/{SAMPLE}/kbpython/{RECIPE}/counts_unfiltered/cells_x_genes.mtx.gz",
+        BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.barcodes.txt.gz",
+        FEATS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.genes.txt.gz",
+        MAT="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.mtx.gz",
         BC_map="{OUTDIR}/{SAMPLE}/bc/whitelist_underscore.txt",
     output:
-        H5AD="{OUTDIR}/{SAMPLE}/kbpython/{RECIPE}/counts_unfiltered/output.h5ad",
+        H5AD="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/output.h5ad",
     log:
-        log="{OUTDIR}/{SAMPLE}/kbpython/{RECIPE}/counts_unfiltered/cache.log",
+        log="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cache.log",
     # params:
     #     var_names = "gene_symbols" # scanpy.read_10x_mtx()
     threads: 1
