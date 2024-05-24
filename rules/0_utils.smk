@@ -100,7 +100,7 @@ def get_fqs(w, return_type=["list", "dict"], mode=["ONT", "ILMN"]):
         return {"R1": R1, "R2": R2}
 
 
-# whitelist param handling for different recipes
+# whitelist param handling for different recipes/technologies/chemistries/etc
 def get_whitelist(w, return_type=None):
     try:
         if "matchLinker" in w.RECIPE:
@@ -132,6 +132,25 @@ def get_whitelist(w, return_type=None):
 
     # return whitelist path(s)
     return whitelist
+
+
+# Barcode map param handling for different recipes/technologies/chemistries/etc
+def get_bc_map(w, mode=["ONT", "ILMN"]):
+    try:
+        if "matchLinker" in w.RECIPE:
+            bc_map = f"{w.OUTDIR}/{w.SAMPLE}/bc/map_underscore.txt"
+        elif "internalTrim" in w.RECIPE:
+            bc_map = f"{w.OUTDIR}/{w.SAMPLE}/bc/map.txt"
+        elif "adapterInsert" in w.RECIPE:
+            bc_map = f"{w.OUTDIR}/{w.SAMPLE}/bc/map_adapter.txt"
+        else:
+            # visium, stomics, microST
+            bc_map = f"{w.OUTDIR}/{w.SAMPLE}/bc/map.txt"
+    except Exception:
+        bc_map = f"{w.OUTDIR}/{w.SAMPLE}/bc/map.txt"
+
+    # return whitelist path(s)
+    return bc_map
 
 
 # TODO move these values to recipe_sheet - also write better code than this...
