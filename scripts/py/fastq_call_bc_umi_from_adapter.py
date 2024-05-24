@@ -64,8 +64,11 @@ def init_aligner():
 
     return aligner
 
+# Simple python version of R rep() function
+def rep(val, n):
+    return [val for i in range(0,n)]
 
-def extract_barcodes(
+def main(
     fq_in, tsv_out, 
     bc_adapters, bc_positions, bc_lengths, bc_offsets, bc_mismatches,
     umi_adapters, umi_positions, umi_lengths, umi_offsets, umi_mismatches,
@@ -83,7 +86,7 @@ def extract_barcodes(
 
     BC_RANGES = list(zip(bc_adapters, bc_positions, bc_lengths, bc_offsets, bc_mismatches))
     UMI_RANGES = list(zip(umi_adapters, umi_positions, umi_lengths, umi_offsets, umi_mismatches))
-    print(bc_adapters)
+    
     with pysam.FastxFile(fq_in) as fastq:
         with open(tsv_out, "w") as outfile:
 
@@ -208,7 +211,7 @@ if __name__ == "__main__":
         "--umi_positions",
         nargs="+",
         required=True,
-        help="List of UMI positions (left or right).",
+        help="List of UMI positions (`left` or `right`).",
     )
     parser.add_argument(
         "--umi_lengths",
@@ -233,6 +236,20 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
+    # param checks ------
+    if len(args.bc_mismatches) != len(args.bc_adapters) and len(args.bc_mismatches)==1:
+        args.bc_mismatches = rep(val=args.bc_mismatches[0], n=len(args.bc_adapters))
+    
+    if len(args.bc_offsets) != len(args.bc_adapters) and len(args.bc_offsets)==1:
+        args.bc_offsets = rep(val=args.bc_offsets[0], n=len(args.bc_adapters))
+    
+    if len(args.umi_mismatches) != len(args.umi_adapters) and len(args.umi_mismatches)==1:
+        args.umi_mismatches = rep(val=args.umi_mismatches[0], n=len(args.umi_adapters))
+    
+    if len(args.umi_offsets) != len(args.umi_adapters) and len(args.umi_offsets)==1:
+        args.umi_offsets = rep(val=args.umi_offsets[0], n=len(args.umi_adapters))
+
+    # Print run settings for log files ----
     print(
         f"input fastq:                      {args.fq_in}\n"
         f"output tsv:                       {args.tsv_out}\n"
@@ -250,9 +267,8 @@ if __name__ == "__main__":
     print("Running...")
     print("")
 
-    #TODO- add param checks
-
-    bc_match_count, bc_missing_count, no_bc_count, umi_match_count, umi_missing_count, no_umi_count = extract_barcodes(
+    # Run main function ------
+    bc_match_count, bc_missing_count, no_bc_count, umi_match_count, umi_missing_count, no_umi_count = main(
         args.fq_in, args.tsv_out,
         args.bc_adapters, args.bc_positions, args.bc_lengths, args.bc_offsets, args.bc_mismatches,
         args.umi_adapters, args.umi_positions, args.umi_lengths, args.umi_offsets, args.umi_mismatches

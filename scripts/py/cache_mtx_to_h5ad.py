@@ -12,14 +12,14 @@ from numpy import intersect1d
 #   --mat_in input_matrix.mtx \
 #   --feat_in input_features.tsv \
 #   --bc_in input_barcodes.txt \
-#   --bb_map input_spatial_map.tsv \
+#   --bc_map input_spatial_map.tsv \
 #   --ad_out output_anndata.h5ad \
 #   --feat_col 1 \
 #   --remove_zero_features
 
 
 def main(
-    mat_in, feat_in, bc_in, bb_map, ad_out, feat_col=1, remove_zero_features=False
+    mat_in, feat_in, bc_in, bc_map, ad_out, feat_col=1, remove_zero_features=False, verbose=True
 ):
     # Count matrix
     adata = read_mtx(mat_in)
@@ -43,10 +43,11 @@ def main(
 
     # Add spatial location
     spatial_data = pd.read_csv(
-        bb_map, sep="\t", header=None, names=["barcode", "x", "y"]
+        bc_map, sep="\t", header=None, names=["barcode", "x", "y"]
     )
 
-    print(f"Found {spatial_data.shape[0]} cell barcodes in whitelist/map.")
+    if(verbose):
+        print(f"Found {spatial_data.shape[0]} cell barcodes in whitelist/map.")
 
     # Set the cell barcode as index
     spatial_data.set_index("barcode", inplace=True)
@@ -89,7 +90,7 @@ if __name__ == "__main__":
         "--bc_in", required=True, help="Input barcode file (txt format)"
     )
     parser.add_argument(
-        "--bb_map", required=True, help="Input spatial map file (tsv format)"
+        "--bc_map", required=True, help="Input spatial map file (tsv format)"
     )
     parser.add_argument(
         "--ad_out", required=True, help="Output AnnData file (h5ad format)"
@@ -107,12 +108,20 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-
+    print(
+        f"matrix file:                  {args.mat_in}\n"
+        f"features/genes file:          {args.feat_in}\n"
+        f"barcodes file:                {args.bc_in}\n"
+        f"barcode map file:             {args.bc_map}\n"
+        f"output AnnData file:          {args.ad_out}\n"
+        f"Feature column index:         {args.feat_col}\n"        
+        f"Remove undetected features:   {args.remove_zero_features}\n"
+    )
     main(
         args.mat_in,
         args.feat_in,
         args.bc_in,
-        args.bb_map,
+        args.bc_map,
         args.ad_out,
         args.feat_col,
         args.remove_zero_features,
