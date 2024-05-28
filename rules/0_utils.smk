@@ -20,6 +20,7 @@ rule index_BAM:
 
 #### Util functions ###########################
 
+
 # Check to see if recipes are in the recipe sheet; does not kill run, only prints warnings.
 def check_recipe_sheet(RECIPE_SHEET, RECIPE_DICT, RECIPE_ONT_DICT):
     RECIPES = unlist(RECIPE_DICT, unique=True) + unlist(RECIPE_ONT_DICT, unique=True)
@@ -105,7 +106,10 @@ def get_whitelist(w, return_type=None):
     try:
         if "matchLinker" in w.RECIPE:
             if return_type == "list":
-                whitelist = [f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_1.txt", f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_2.txt"]
+                whitelist = [
+                    f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_1.txt",
+                    f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_2.txt",
+                ]
             else:
                 whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_1.txt {w.OUTDIR}/{w.SAMPLE}/bc/whitelist_2.txt"
         elif "internalTrim" in w.RECIPE:
@@ -152,6 +156,11 @@ def get_bc_map(w, mode=["ONT", "ILMN"]):
     # return whitelist path(s)
     return bc_map
 
+# Get number of barcodes (does not include UMIs!)
+def get_n_bcs(w):
+    bc_lengths = get_recipe_info(w, info_col="BC.length").split()
+    n_bcs = len(bc_lengths)
+    return n_bcs
 
 # TODO move these values to recipe_sheet - also write better code than this...
 def get_ont_barcode_pattern(w):
@@ -178,7 +187,6 @@ def get_ont_barcode_pattern(w):
 
     # return barcode pattern
     return BC_PATTERN
-
 
     # BC_PATTERN="(?P<discard_1>CTACACGACGCTCTTCCGATCT)"+ \
     #     "(?P<cell_1>.{{8}})"+ \
@@ -316,7 +324,7 @@ def get_recipe_info(w, info_col, mode=["ONT", "ILMN", "list"]):
     except:
         # print(f"Couldn't find `{info_col}`")
         recipe = unlist(get_recipes(w, mode=mode))
-        
+
         return [RECIPE_SHEET[info_col][x] for x in recipe]
 
 
@@ -358,11 +366,33 @@ def unlist(lst, unique=False):
                 result.extend(unlist(value))
             else:
                 result.append(value)
-    
+
     if unique:
-        result = list(set(result)) 
-        
+        result = list(set(result))
+
     return result
+
+
+# USed for finding max BC length
+def max_sum_of_entries(lst):
+    max_sum = 0
+    current_sum = 0
+
+    for item in lst:
+        try:
+            # Try converting the item to int; if successful, it's a single number
+            num = int(item)
+            current_sum = num
+        except ValueError:
+            # If conversion fails, it's a string representing a list of numbers
+            numbers = list(map(int, item.split()))
+            current_sum = sum(numbers)
+
+        if current_sum > max_sum:
+            max_sum = current_sum
+
+    return max_sum
+
 
 # def unlist(*args, unique=False):
 #     result = []
@@ -374,10 +404,10 @@ def unlist(lst, unique=False):
 #                 result.extend(unlist(list(arg.values())))
 #         else:
 #             result.append(arg)
-    
+
 #     if unique:
 #         result = list(set(result))  # Convert to set to remove duplicates, then back to list
-    
+
 #     return result
 
 # def unlist(*args, unique=False):
@@ -393,11 +423,12 @@ def unlist(lst, unique=False):
 #     result = []
 #     for arg in args:
 #         result.extend(process_item(arg))
-    
+
 #     if unique:
 #         result = list(set(result))  # Convert to set to remove duplicates, then back to list
-    
+
 #     return result
+
 
 ########## TO BE DEPRECATED ########################################################
 def get_barcode_length(w):
