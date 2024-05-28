@@ -2,7 +2,13 @@ import argparse
 import pysam
 
 # Usage:
-## python tsv2tag.py path/to/in_bam path/to/tsv_file path/to/out_bam --tag GN
+"""
+python scripts/py/tsv2tag.py \
+    --in_bam path/to/in_bam \
+    --tsv_file path/to/tsv_file \
+    --out_bam path/to/out_bam \
+    --tag GN
+"""
 
 
 def parse_tsv(tsv_file):
@@ -33,9 +39,13 @@ def main():
         description="Add gene assignment from TSV to BAM as a tag."
     )
 
-    parser.add_argument("in_bam", help="Path to the BAM file.")
-    parser.add_argument("tsv_file", help="Path to the TSV file.")
-    parser.add_argument("out_bam", help="Path to the output BAM file.")
+    parser.add_argument("--in_bam", help="Path to the BAM file.")
+    parser.add_argument("--tsv_file", help="Path to the TSV file.")
+    parser.add_argument(
+        "--tagColumn", 
+        help="Which (zero-indexed) column in the TSV file contains the info that will be added to the output bam? Default is 1 (zero-indexed, second column...)."
+    )
+    parser.add_argument("--out_bam", help="Path to the output BAM file.")
     parser.add_argument(
         "--tag", default="GN", help='Tag to use for gene assignment. Default is "GN".'
     )

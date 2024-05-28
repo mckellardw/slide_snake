@@ -70,7 +70,7 @@ rule write_whitelist_variants:
             bc_us_map.iloc[:, 0] = bc_us
 
             # save bc files in {SAMPLE}/bc
-            bc_us_map.to_csv(output.BC_US_MAP, header=False, index=False)
+            bc_us_map.to_csv(output.BC_US_MAP, header=False, index=False, sep='\t')
             pd.Series(bc_1).to_csv(output.BC_1, header=False, index=False)
             pd.Series(bc_2).to_csv(output.BC_2, header=False, index=False)
             pd.Series(list(set(bc_1))).to_csv(output.BC_UNIQ_1, header=False, index=False)
@@ -85,7 +85,7 @@ rule write_whitelist_variants:
             bc_us_map.iloc[:, 0] = bc_us
 
             # save bc files in {SAMPLE}/bc
-            bc_us_map.to_csv(output.BC_US_MAP, header=False, index=False)
+            bc_us_map.to_csv(output.BC_US_MAP, header=False, index=False, sep="\t")
             pd.Series(bc_1).to_csv(output.BC_1, header=False, index=False)
             pd.Series(bc_2).to_csv(output.BC_2, header=False, index=False)
             pd.Series(list(set(bc_1))).to_csv(output.BC_UNIQ_1, header=False, index=False)
@@ -101,7 +101,7 @@ rule write_whitelist_variants:
             bc_us_map.iloc[:, 0] = bc_us
 
             # save bc files in {SAMPLE}/bc
-            bc_us_map.to_csv(output.BC_US_MAP, header=False, index=False)
+            bc_us_map.to_csv(output.BC_US_MAP, header=False, index=False, sep="\t")
             pd.Series(bc_1).to_csv(output.BC_1, header=False, index=False)
             pd.Series(bc_2).to_csv(output.BC_2, header=False, index=False)
             pd.Series(list(set(bc_1))).to_csv(output.BC_UNIQ_1, header=False, index=False)

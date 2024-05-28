@@ -24,7 +24,15 @@ python scripts/py/tsv_bc_correction.py \
 
 ## Visium
 """
-
+python scripts/py/tsv_bc_correction.py \
+    --tsv_in barcodes.tsv \
+    --tsv_out_full barcodes_corrected_full.tsv \
+    --tsv_out_slim barcodes_corrected.tsv \
+    --id_column 0 \
+    --bc_columns 1 \
+    --concat_bcs True \
+    --whitelist_files out/Vis_yPAP_3D/bc/whitelist.txt \
+    --max_ham 2
 """
 
 
@@ -156,11 +164,16 @@ def main(tsv_in, tsv_out_full, tsv_out_slim, id_column, bc_columns, concat_bcs, 
             writer_slim = csv.writer(outfile_slim, delimiter="\t")
             # writer.writerow(['Read_ID    Corrected_Barcode'])
 
+            read_count = 0
             with open(tsv_in, "r") as infile:
                 reader = csv.reader(infile, delimiter="\t")
                 next(reader)  # Skip header row
 
                 for row in reader:
+                    read_count += 1
+                    if read_count % 1000000 == 0:
+                        print(f"{read_count} reads processed...")
+                    
                     read_id = row[id_column]
                     barcodes = [row[i] for i in bc_columns]
 
