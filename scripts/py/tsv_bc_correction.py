@@ -31,14 +31,15 @@ python scripts/py/tsv_bc_correction.py \
     --id_column 0 \
     --bc_columns 1 \
     --concat_bcs True \
-    --whitelist_files out/Vis_yPAP_3D/bc/whitelist.txt \
+    --whitelist_files out/Vis_yPAP_3C/bc/whitelist.txt \
     --max_ham 2
 """
 
 
 # Simple python version of R rep() function
 def rep(val, n):
-    return [val for i in range(0,n)]
+    return [val for i in range(0, n)]
+
 
 def filter_whitelist_by_kmers(wl, kmers, kmer_to_bc_index):
     """
@@ -147,7 +148,16 @@ def calc_ed_with_whitelist(bc_uncorr, whitelist):
     return bc_match, bc_match_ed, next_match_diff
 
 
-def main(tsv_in, tsv_out_full, tsv_out_slim, id_column, bc_columns, concat_bcs, whitelist_files, max_hams):
+def main(
+    tsv_in,
+    tsv_out_full,
+    tsv_out_slim,
+    id_column,
+    bc_columns,
+    concat_bcs,
+    whitelist_files,
+    max_hams,
+):
     # prep whitelists
     whitelists = {}
     for i, whitelist_file in enumerate(whitelist_files):
@@ -173,38 +183,41 @@ def main(tsv_in, tsv_out_full, tsv_out_slim, id_column, bc_columns, concat_bcs, 
                     read_count += 1
                     if read_count % 1000000 == 0:
                         print(f"{read_count} reads processed...")
-                    
+
                     read_id = row[id_column]
                     barcodes = [row[i] for i in bc_columns]
 
                     if concat_bcs:
                         barcodes = ["".join(barcodes)]
 
-                    row2write = [read_id] # initialize row to write in output .tsv
+                    row2write = [read_id]  # initialize row to write in output .tsv
 
-                    RANGE = [[barcodes[i], whitelists[i], max_hams[i]] for i in range(len(barcodes))]
+                    RANGE = [
+                        [barcodes[i], whitelists[i], max_hams[i]]
+                        for i in range(len(barcodes))
+                    ]
                     for barcode, whitelist, max_ham in RANGE:
-                        corrected_bc, bc_match_ham, next_match_diff = calc_ed_with_whitelist(
-                            barcode, whitelist
+                        corrected_bc, bc_match_ham, next_match_diff = (
+                            calc_ed_with_whitelist(barcode, whitelist)
                         )
-                        
-                        if bc_match_ham < max_ham:
+
+                        if bc_match_ham <= max_ham:
                             # row2write.append(f"{barcode}\t{corrected_bc}\t{bc_match_ed}")
                             row2write.extend(
                                 [barcode, corrected_bc, bc_match_ham, next_match_diff]
                             )
                         else:
                             # row2write.append(f"{barcode}\t \t{bc_match_ed}")
-                            row2write.extend([barcode, " ", bc_match_ham, next_match_diff])
+                            row2write.extend(
+                                [barcode, " ", bc_match_ham, next_match_diff]
+                            )
                     writer_full.writerow(row2write)
-                    writer_slim.writerow([read_id,corrected_bc])
+                    writer_slim.writerow([read_id, corrected_bc])
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Correct barcodes in a TSV file.")
-    parser.add_argument(
-        "--tsv_in", required=True, help="Path to the input TSV file."
-    )
+    parser.add_argument("--tsv_in", required=True, help="Path to the input TSV file.")
     parser.add_argument(
         "--tsv_out_full",
         required=True,
@@ -216,7 +229,7 @@ if __name__ == "__main__":
         help="Path to output TSV file which only contains the read ID and final BC. Columns contain ['Read_ID', 'Corrected_Barcode']",
     )
     parser.add_argument(
-        "--whitelist_files",        
+        "--whitelist_files",
         nargs="+",
         required=True,
         help="Space-separated list of whitelist file paths.",
@@ -252,20 +265,20 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # param checks ------
-    if len(args.max_hams) != len(args.bc_columns) and len(args.max_hams)==1:
+    if len(args.max_hams) != len(args.bc_columns) and len(args.max_hams) == 1:
         args.max_hams = rep(val=args.max_hams[0], n=len(args.bc_columns))
-    
-    if args.concat_bcs and len(args.whitelist_files)>1:
+
+    if args.concat_bcs and len(args.whitelist_files) > 1:
         print(f"Need a merged barcode whitelist!")
         sys.exit(1)
-    
+
     # Print run settings for log files ----
     print(
         f"input tsv:                    {args.tsv_in}\n"
         f"output tsv (Full Info):       {args.tsv_out_full}\n"
         f"output tsv (CBs only):        {args.tsv_out_slim}\n"
         f"read ID column:               {args.id_column}\n"
-        f"barcode column(s):            {args.bc_columns}\n"        
+        f"barcode column(s):            {args.bc_columns}\n"
         f"Concatenate uncorrected BCs?: {args.concat_bcs}\n"
         f"whitelist file(s):            {args.whitelist_files}\n"
         f"minimum hamming distance(s):  {args.max_hams}\n"
@@ -273,14 +286,13 @@ if __name__ == "__main__":
     print("Running...")
     print("")
 
-
     main(
-        tsv_in=args.tsv_in, 
+        tsv_in=args.tsv_in,
         tsv_out_full=args.tsv_out_full,
         tsv_out_slim=args.tsv_out_slim,
-        id_column=args.id_column[0], 
+        id_column=args.id_column[0],
         bc_columns=args.bc_columns,
         concat_bcs=args.concat_bcs,
-        whitelist_files=args.whitelist_files, 
-        max_hams=args.max_hams
+        whitelist_files=args.whitelist_files,
+        max_hams=args.max_hams,
     )

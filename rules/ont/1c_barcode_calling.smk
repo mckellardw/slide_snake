@@ -1,4 +1,5 @@
 # Get cell/spot/bead barcodes & UMIs
+##DEPRECATED
 rule ont_umitools_extract:
     input:
         LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/adapter_scan_results.txt",
@@ -74,7 +75,7 @@ rule ont_fastq_call_bc_from_adapter:
                 --umi_offsets {params.UMI_OFFSETS} \
                 --umi_positions {params.UMI_POSITIONS} \
                 --umi_mismatches {params.UMI_MISMATCHES} \
-            2>&1 | tee {log.log}
+            1> {log.log}
             """
         )
         # else:
@@ -104,16 +105,16 @@ rule ont_tsv_bc_correction:
         TSV_FULL="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected_full.tsv",
     params:
         # BC_PATTERN=lambda w: get_ont_barcode_pattern(w),
-        MAX_HAM=2,
+        MAX_HAM=3,
         BC_COLUMNS=lambda w: " ".join(map(str, range(1, get_n_bcs(w) + 1))),
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/tsv_bc_correction.log",
-    threads: 1
+    threads: config["CORES"]
     run:
         # if any([umi_length > 0 for umi_length in params.UMI_LENGTHS]):
         shell(
             f"""
-            python scripts/py/tsv_bc_correction.py \
+            python scripts/py/tsv_bc_correction_parallelized.py \
                 --tsv_in {input.TSV} \
                 --tsv_out_full {output.TSV_FULL} \
                 --tsv_out_slim {output.TSV_SLIM} \
@@ -122,7 +123,8 @@ rule ont_tsv_bc_correction:
                 --concat_bcs True \
                 --whitelist_files {input.WHITELIST} \
                 --max_ham {params.MAX_HAM} \
-            2>&1 | tee {log.log}
+                --threads {threads} \
+            1> {log.log}
             """
         )
         # else: # no UMI

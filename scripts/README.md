@@ -1,4 +1,5 @@
 # scripts
+#TODO - update this list...
 
 - `cache_h5ad.py` - load in .mtx file and save a .h5ad for easy scanpy analysis later
 - `hardTrimfq.awk` - hard trimming on the adapter sequence in R1

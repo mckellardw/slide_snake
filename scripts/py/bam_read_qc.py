@@ -5,6 +5,14 @@ import time
 from itertools import groupby
 from collections import Counter
 
+# Example usage:
+"""
+python scripts/py/bam_read_qc.py \
+    --tags {params.TAGS} \
+    --chunk-size {params.CHUNK_SIZE} \
+    --bam_file {input.BAM} \
+    --tsv_file {output.TSV} 
+"""
 
 def calculate_metrics_bam(bam_file, tags, chunk_size=10000):
     metrics = []

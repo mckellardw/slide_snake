@@ -58,10 +58,10 @@ rule ont_readQC_postCutadapt:
 # │ cg │  Z   │ CIGAR string (only in PAF)                            │
 # │ cs │  Z   │ Difference string                                     │
 # └────┴──────┴───────────────────────────────────────────────────────┘
-rule readQC_bam:
+rule ont_readQC_bam:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam",
-        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_bc_corrected.bam.bai",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam",
+        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam.bai",
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/readqc/3_aligned/{RECIPE}_qc.tsv",
     params:

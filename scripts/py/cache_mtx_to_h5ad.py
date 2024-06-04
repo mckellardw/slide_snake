@@ -19,7 +19,14 @@ from numpy import intersect1d
 
 
 def main(
-    mat_in, feat_in, bc_in, bc_map, ad_out, feat_col=1, remove_zero_features=False, verbose=True
+    mat_in,
+    feat_in,
+    bc_in,
+    bc_map,
+    ad_out,
+    feat_col=1,
+    remove_zero_features=False,
+    verbose=True,
 ):
     # Count matrix
     adata = read_mtx(mat_in)
@@ -46,7 +53,7 @@ def main(
         bc_map, sep="\t", header=None, names=["barcode", "x", "y"]
     )
 
-    if(verbose):
+    if verbose:
         print(f"Found {spatial_data.shape[0]} cell barcodes in whitelist/map.")
 
     # Set the cell barcode as index
@@ -114,7 +121,7 @@ if __name__ == "__main__":
         f"barcodes file:                {args.bc_in}\n"
         f"barcode map file:             {args.bc_map}\n"
         f"output AnnData file:          {args.ad_out}\n"
-        f"Feature column index:         {args.feat_col}\n"        
+        f"Feature column index:         {args.feat_col}\n"
         f"Remove undetected features:   {args.remove_zero_features}\n"
     )
     main(

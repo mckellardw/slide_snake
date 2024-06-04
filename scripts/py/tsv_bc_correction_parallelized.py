@@ -40,52 +40,58 @@ python scripts/py/tsv_bc_correction.py \
     --threads 10
 """
 
+
 # Random name for temp directory
 def generate_temp_dir_name(length=16):
     # Combine all ASCII letters and digits
     chars = string.ascii_letters + string.digits
     # Generate a random string of the specified length
-    return 'temp_'+''.join(random.choice(chars) for _ in range(length))
+    return "temp_" + "".join(random.choice(chars) for _ in range(length))
+
 
 # Get number of lines in a file
 def file_line_count(filename):
-    with open(filename, 'r') as f:
+    with open(filename, "r") as f:
         for i, _ in enumerate(f):
             pass
     return i + 1
+
 
 # Split a txt file into chunks for parallelization
 def split_file(file_path, temp_dir, num_chunks):
     # Ensure the temporary directory exists
     if not os.path.exists(temp_dir):
         os.makedirs(temp_dir)
-    
+
     # Calculate the size of each chunk (number of lines)
-    chunk_size = (file_line_count(file_path) // num_chunks)+1
+    chunk_size = (file_line_count(file_path) // num_chunks) + 1
     print(chunk_size)
     # Initialize an empty list to store chunk file names
-    chunk_file_names = [f"{temp_dir}/chunk_{str(i).zfill(3)}.tsv" for i in range(num_chunks)]
-    
+    chunk_file_names = [
+        f"{temp_dir}/chunk_{str(i).zfill(3)}.tsv" for i in range(num_chunks)
+    ]
+
     # Open the original file and start writing the chunks
-    with open(file_path, 'r') as infile:
+    with open(file_path, "r") as infile:
         chunk_index = 0
         line_count = 0
         for line in infile:
             # Determine the output file name
             output_file_name = chunk_file_names[chunk_index]
-                        
+
             # Open the output file
-            with open(output_file_name, 'a') as outfile:
+            with open(output_file_name, "a") as outfile:
                 outfile.write(line)
-            
-            line_count+=1
-            
+
+            line_count += 1
+
             # Check if we have reached the next chunk
             if line_count >= chunk_size:
                 line_count = 0
                 chunk_index += 1
-    
+
     return chunk_file_names
+
 
 # Concatenate a list of files
 def concatenate_files(filenames, output_filename):
@@ -97,19 +103,21 @@ def concatenate_files(filenames, output_filename):
     - output_filename: The name of the output file.
     """
     # Open the output file in write mode
-    with open(output_filename, 'w') as outfile:
+    with open(output_filename, "w") as outfile:
         # Iterate through the list of input files
         for filename in filenames:
             # Open each input file in read mode
-            with open(filename, 'r') as infile:
+            with open(filename, "r") as infile:
                 # Read the content of the input file
                 content = infile.read()
                 # Write the content to the output file
                 outfile.write(content)
 
+
 # Simple python version of R rep() function
 def rep(val, n):
-    return [val for i in range(0,n)]
+    return [val for i in range(0, n)]
+
 
 def filter_whitelist_by_kmers(wl, kmers, kmer_to_bc_index):
     """
@@ -218,7 +226,17 @@ def calc_ed_with_whitelist(bc_uncorr, whitelist):
     return bc_match, bc_match_ed, next_match_diff
 
 
-def process_tsv(tsv_in, tsv_out_full, tsv_out_slim, id_column, bc_columns, concat_bcs, whitelist_files, max_hams, verbose=False):
+def process_tsv(
+    tsv_in,
+    tsv_out_full,
+    tsv_out_slim,
+    id_column,
+    bc_columns,
+    concat_bcs,
+    whitelist_files,
+    max_hams,
+    verbose=False,
+):
     # prep whitelists
     whitelists = {}
     for i, whitelist_file in enumerate(whitelist_files):
@@ -244,38 +262,41 @@ def process_tsv(tsv_in, tsv_out_full, tsv_out_slim, id_column, bc_columns, conca
                     read_count += 1
                     if verbose and read_count % 1000000 == 0:
                         print(f"{read_count} reads processed...")
-                    
+
                     read_id = row[id_column]
                     barcodes = [row[i] for i in bc_columns]
 
                     if concat_bcs:
                         barcodes = ["".join(barcodes)]
 
-                    row2write = [read_id] # initialize row to write in output .tsv
+                    row2write = [read_id]  # initialize row to write in output .tsv
 
-                    RANGE = [[barcodes[i], whitelists[i], max_hams[i]] for i in range(len(barcodes))]
+                    RANGE = [
+                        [barcodes[i], whitelists[i], max_hams[i]]
+                        for i in range(len(barcodes))
+                    ]
                     for barcode, whitelist, max_ham in RANGE:
-                        corrected_bc, bc_match_ham, next_match_diff = calc_ed_with_whitelist(
-                            barcode, whitelist
+                        corrected_bc, bc_match_ham, next_match_diff = (
+                            calc_ed_with_whitelist(barcode, whitelist)
                         )
-                        
-                        if bc_match_ham < max_ham:
+
+                        if bc_match_ham <= max_ham:
                             # row2write.append(f"{barcode}\t{corrected_bc}\t{bc_match_ed}")
                             row2write.extend(
                                 [barcode, corrected_bc, bc_match_ham, next_match_diff]
                             )
                         else:
                             # row2write.append(f"{barcode}\t \t{bc_match_ed}")
-                            row2write.extend([barcode, " ", bc_match_ham, next_match_diff])
+                            row2write.extend(
+                                [barcode, " ", bc_match_ham, next_match_diff]
+                            )
                     writer_full.writerow(row2write)
-                    writer_slim.writerow([read_id,corrected_bc])
+                    writer_slim.writerow([read_id, corrected_bc])
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Correct barcodes in a TSV file.")
-    parser.add_argument(
-        "--tsv_in", required=True, help="Path to the input TSV file."
-    )
+    parser.add_argument("--tsv_in", required=True, help="Path to the input TSV file.")
     parser.add_argument(
         "--tsv_out_full",
         required=True,
@@ -287,7 +308,7 @@ if __name__ == "__main__":
         help="Path to output TSV file which only contains the read ID and final BC. Columns contain ['Read_ID', 'Corrected_Barcode']",
     )
     parser.add_argument(
-        "--whitelist_files",        
+        "--whitelist_files",
         nargs="+",
         required=True,
         help="Space-separated list of whitelist file paths.",
@@ -329,39 +350,39 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # param checks ------
-    if len(args.max_hams) != len(args.bc_columns) and len(args.max_hams)==1:
+    if len(args.max_hams) != len(args.bc_columns) and len(args.max_hams) == 1:
         args.max_hams = rep(val=args.max_hams[0], n=len(args.bc_columns))
-    
-    if args.concat_bcs and len(args.whitelist_files)>1:
+
+    if args.concat_bcs and len(args.whitelist_files) > 1:
         print(f"Need a merged barcode whitelist!")
         sys.exit(1)
-    
+
     # Print run settings for log files ----
     print(
         f"input tsv:                    {args.tsv_in}\n"
         f"output tsv (Full Info):       {args.tsv_out_full}\n"
         f"output tsv (CBs only):        {args.tsv_out_slim}\n"
         f"read ID column:               {args.id_column}\n"
-        f"barcode column(s):            {args.bc_columns}\n"        
+        f"barcode column(s):            {args.bc_columns}\n"
         f"Concatenate uncorrected BCs?: {args.concat_bcs}\n"
         f"whitelist file(s):            {args.whitelist_files}\n"
         f"minimum hamming distance(s):  {args.max_hams}\n"
     )
-    
+
     # Single-threaded = verbose
     if args.threads == 1:
         print(f"Running on {args.threads} thread...")
         print("")
         process_tsv(
-            tsv_in=args.tsv_in, 
+            tsv_in=args.tsv_in,
             tsv_out_full=args.tsv_out_full,
             tsv_out_slim=args.tsv_out_slim,
-            id_column=args.id_column[0], 
+            id_column=args.id_column[0],
             bc_columns=args.bc_columns,
             concat_bcs=args.concat_bcs,
-            whitelist_files=args.whitelist_files, 
+            whitelist_files=args.whitelist_files,
             max_hams=args.max_hams,
-            verbose=True
+            verbose=True,
         )
 
     # Multi-threaded = not verbose
@@ -369,58 +390,58 @@ if __name__ == "__main__":
         print(f"Running on {args.threads} threads...")
         # Source: https://superfastpython.com/multiprocessing-pool-for-loop/
         import multiprocessing
+
         print("")
         print(f"Splitting input tsv...")
         temp_dir = generate_temp_dir_name()
         temp_tsvs_in = split_file(
-            file_path=args.tsv_in,
-            temp_dir=temp_dir,
-            num_chunks = args.threads
+            file_path=args.tsv_in, temp_dir=temp_dir, num_chunks=args.threads
         )
 
         print(f"Correcting barcodes...")
 
-        temp_tsvs_out_full = [fn.replace('.tsv', '_corr_full.tsv') for fn in temp_tsvs_in]
-        temp_tsvs_out_slim = [fn.replace('.tsv', '_corr_slim.tsv') for fn in temp_tsvs_in]
+        temp_tsvs_out_full = [
+            fn.replace(".tsv", "_corr_full.tsv") for fn in temp_tsvs_in
+        ]
+        temp_tsvs_out_slim = [
+            fn.replace(".tsv", "_corr_slim.tsv") for fn in temp_tsvs_in
+        ]
 
         # multiprocessing
         items = [
             (
-                temp_tsvs_in[i], 
+                temp_tsvs_in[i],
                 temp_tsvs_out_full[i],
                 temp_tsvs_out_slim[i],
-                args.id_column[0], 
+                args.id_column[0],
                 args.bc_columns,
                 args.concat_bcs,
-                args.whitelist_files, 
-                args.max_hams
+                args.whitelist_files,
+                args.max_hams,
             )
             for i in list(range(args.threads))
         ]
 
-        
         with multiprocessing.Pool(args.threads) as pool:
             multi_out = pool.starmap(process_tsv, items)
 
         # process_tsv(
-        #     tsv_in=args.tsv_in, 
+        #     tsv_in=args.tsv_in,
         #     tsv_out_full=args.tsv_out_full,
         #     tsv_out_slim=args.tsv_out_slim,
-        #     id_column=args.id_column[0], 
+        #     id_column=args.id_column[0],
         #     bc_columns=args.bc_columns,
         #     concat_bcs=args.concat_bcs,
-        #     whitelist_files=args.whitelist_files, 
+        #     whitelist_files=args.whitelist_files,
         #     max_hams=args.max_hams
         # )
 
         print(f"Concatenating results...")
         concatenate_files(
-            filenames=temp_tsvs_out_full,
-            output_filename=args.tsv_out_full
+            filenames=temp_tsvs_out_full, output_filename=args.tsv_out_full
         )
         concatenate_files(
-            filenames=temp_tsvs_out_slim,
-            output_filename=args.tsv_out_slim
+            filenames=temp_tsvs_out_slim, output_filename=args.tsv_out_slim
         )
 
         print(f"Removing temp files (temp_dir: `{temp_dir}`)...")
