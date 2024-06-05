@@ -8,14 +8,16 @@ from scanpy import read_mtx
 from numpy import intersect1d
 
 # Example usage:
-## python script.py \
-#   --mat_in input_matrix.mtx \
-#   --feat_in input_features.tsv \
-#   --bc_in input_barcodes.txt \
-#   --bc_map input_spatial_map.tsv \
-#   --ad_out output_anndata.h5ad \
-#   --feat_col 1 \
-#   --remove_zero_features
+""" 
+python script.py \
+    --mat_in input_matrix.mtx \
+    --feat_in input_features.tsv \
+    --bc_in input_barcodes.txt \
+    --bc_map input_spatial_map.tsv \
+    --ad_out output_anndata.h5ad \
+    --feat_col 1 \
+    --remove_zero_features
+"""
 
 
 def main(
@@ -116,11 +118,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     print(
-        f"matrix file:                  {args.mat_in}\n"
-        f"features/genes file:          {args.feat_in}\n"
-        f"barcodes file:                {args.bc_in}\n"
-        f"barcode map file:             {args.bc_map}\n"
-        f"output AnnData file:          {args.ad_out}\n"
+        f"Matrix file:                  {args.mat_in}\n"
+        f"Features/genes file:          {args.feat_in}\n"
+        f"Barcodes file:                {args.bc_in}\n"
+        f"Barcode map file:             {args.bc_map}\n"
+        f"Output AnnData file:          {args.ad_out}\n"
         f"Feature column index:         {args.feat_col}\n"
         f"Remove undetected features:   {args.remove_zero_features}\n"
     )

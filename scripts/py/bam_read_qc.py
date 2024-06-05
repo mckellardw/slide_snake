@@ -14,6 +14,7 @@ python scripts/py/bam_read_qc.py \
     --tsv_file {output.TSV} 
 """
 
+
 def calculate_metrics_bam(bam_file, tags, chunk_size=10000):
     metrics = []
     with pysam.AlignmentFile(bam_file, "rb") as samfile:

@@ -260,5 +260,5 @@ rule ont_split_fastq_to_R1_R2:
              2> {log.log}
             """
         )
-                # --min_R1_length {} \
-                # --max_R1_length {} \
+        # --min_R1_length {} \
+        # --max_R1_length {} \

@@ -2,6 +2,7 @@ import argparse
 import pysam
 from Bio import Align
 from Bio.Seq import Seq
+import time
 
 # Usage:
 # SlideSeq
@@ -38,6 +39,11 @@ python scripts/py/fastq_call_bc_umi_from_adapter.py \
     --umi_mismatches 2 
 """
 
+
+def currentTime():
+    return time.strftime("%D | %H:%M:%S", time.localtime())
+
+
 # Align adapter to read, return alignment
 def align_sequences(read, adapter, aligner, mismatches):
     alignments = aligner.align(read, adapter)
@@ -52,6 +58,7 @@ def align_sequences(read, adapter, aligner, mismatches):
     #         return a
     # return None
 
+
 # Set up aligner
 def init_aligner():
     # TODO- these params need to be better optimized...
@@ -64,14 +71,25 @@ def init_aligner():
 
     return aligner
 
+
 # Simple python version of R rep() function
 def rep(val, n):
-    return [val for i in range(0,n)]
+    return [val for i in range(0, n)]
+
 
 def main(
-    fq_in, tsv_out, 
-    bc_adapters, bc_positions, bc_lengths, bc_offsets, bc_mismatches,
-    umi_adapters, umi_positions, umi_lengths, umi_offsets, umi_mismatches,
+    fq_in,
+    tsv_out,
+    bc_adapters,
+    bc_positions,
+    bc_lengths,
+    bc_offsets,
+    bc_mismatches,
+    umi_adapters,
+    umi_positions,
+    umi_lengths,
+    umi_offsets,
+    umi_mismatches,
 ):
     bc_match_count = 0
     bc_missing_count = 0
@@ -84,18 +102,22 @@ def main(
     # Set up aligner
     aligner = init_aligner()
 
-    BC_RANGES = list(zip(bc_adapters, bc_positions, bc_lengths, bc_offsets, bc_mismatches))
-    UMI_RANGES = list(zip(umi_adapters, umi_positions, umi_lengths, umi_offsets, umi_mismatches))
-    
+    BC_RANGES = list(
+        zip(bc_adapters, bc_positions, bc_lengths, bc_offsets, bc_mismatches)
+    )
+    UMI_RANGES = list(
+        zip(umi_adapters, umi_positions, umi_lengths, umi_offsets, umi_mismatches)
+    )
+
     with pysam.FastxFile(fq_in) as fastq:
         with open(tsv_out, "w") as outfile:
 
             for read in fastq:
-                if read_count % 1000000 == 0:
-                    print(f"{read_count} reads processed...")
+                if read_count % 5000000 == 0:
+                    print(f"{currentTime()} - {read_count} reads processed...")
 
                 bc_to_write = []
-                #TODO- abstract this chunk to a function
+                # TODO- abstract this chunk to a function
                 for adapter, position, length, offset, mismatches in BC_RANGES:
                     alignment = align_sequences(
                         Seq(read.sequence), Seq(adapter), aligner, mismatches
@@ -108,17 +130,25 @@ def main(
                         start = alignment.aligned[0][0][0]
                         end = alignment.aligned[0][0][1]
                         if position == "left":
-                            bc_seq = read.sequence[(start - offset - length) : (start - offset)]
+                            bc_seq = read.sequence[
+                                (start - offset - length) : (start - offset)
+                            ]
                         elif position == "right":
-                            bc_seq = read.sequence[(end + offset) : (end + offset + length)]
+                            bc_seq = read.sequence[
+                                (end + offset) : (end + offset + length)
+                            ]
                         else:
                             print(f"Incorrect barcode position [{position}] specified!")
 
-                        bc_to_write.append(bc_seq)
+                        # Don't write partial barcodes
+                        if len(bc_seq) == length:
+                            bc_to_write.append(bc_seq)
+                        else:
+                            bc_to_write.append("")
                     else:
                         bc_to_write.append("")
                 # end BC alignment
-                
+
                 # Write barcode to file
                 ## Only write BC if all positions are found
                 if bc_to_write.count("") == 0:
@@ -135,18 +165,30 @@ def main(
                             start = alignment.aligned[0][0][0]
                             end = alignment.aligned[0][0][1]
                             if position == "left":
-                                umi_seq = read.sequence[(start - offset - length) : (start - offset)]
+                                umi_seq = read.sequence[
+                                    (start - offset - length) : (start - offset)
+                                ]
                             elif position == "right":
-                                umi_seq = read.sequence[(end + offset) : (end + offset + length)]
+                                umi_seq = read.sequence[
+                                    (end + offset) : (end + offset + length)
+                                ]
                             else:
                                 print(f"Incorrect UMI position [{position}] specified!")
 
-                            umi_to_write.append(umi_seq)
+                            # Don't write partial barcodes
+                            if len(umi_seq) == length:
+                                umi_to_write.append(umi_seq)
+                            else:
+                                umi_to_write.append("")
                         else:
                             umi_to_write.append("")
                     # end UMI alignment
-                    
-                    outfile.write("{}\t{}\t{}\n".format(read.name, "\t".join(bc_to_write),"\t".join(umi_to_write)))
+
+                    outfile.write(
+                        "{}\t{}\t{}\n".format(
+                            read.name, "\t".join(bc_to_write), "\t".join(umi_to_write)
+                        )
+                    )
                     # Write UMI to file
                     if umi_to_write.count("") == 0:
                         umi_match_count += 1
@@ -163,7 +205,14 @@ def main(
             # end fq iterator
         # end tsv open
     # end fq open
-    return bc_match_count, bc_missing_count, no_bc_count, umi_match_count, umi_missing_count, no_umi_count 
+    return (
+        bc_match_count,
+        bc_missing_count,
+        no_bc_count,
+        umi_match_count,
+        umi_missing_count,
+        no_umi_count,
+    )
 
 
 if __name__ == "__main__":
@@ -175,7 +224,10 @@ if __name__ == "__main__":
         "--tsv_out", required=True, help="Path to the output FASTQ file."
     )
     parser.add_argument(
-        "--bc_adapters", nargs="+", required=True, help="List of adapter sequences used for barcode extraction."
+        "--bc_adapters",
+        nargs="+",
+        required=True,
+        help="List of adapter sequences used for barcode extraction.",
     )
     parser.add_argument(
         "--bc_positions",
@@ -205,7 +257,10 @@ if __name__ == "__main__":
         help="Number of mismatches allowed in the adapter sequence.",
     )
     parser.add_argument(
-        "--umi_adapters", nargs="+", required=True, help="List of adapter sequences used for UMI extraction."
+        "--umi_adapters",
+        nargs="+",
+        required=True,
+        help="List of adapter sequences used for UMI extraction.",
     )
     parser.add_argument(
         "--umi_positions",
@@ -237,16 +292,22 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # param checks ------
-    if len(args.bc_mismatches) != len(args.bc_adapters) and len(args.bc_mismatches)==1:
+    if (
+        len(args.bc_mismatches) != len(args.bc_adapters)
+        and len(args.bc_mismatches) == 1
+    ):
         args.bc_mismatches = rep(val=args.bc_mismatches[0], n=len(args.bc_adapters))
-    
-    if len(args.bc_offsets) != len(args.bc_adapters) and len(args.bc_offsets)==1:
+
+    if len(args.bc_offsets) != len(args.bc_adapters) and len(args.bc_offsets) == 1:
         args.bc_offsets = rep(val=args.bc_offsets[0], n=len(args.bc_adapters))
-    
-    if len(args.umi_mismatches) != len(args.umi_adapters) and len(args.umi_mismatches)==1:
+
+    if (
+        len(args.umi_mismatches) != len(args.umi_adapters)
+        and len(args.umi_mismatches) == 1
+    ):
         args.umi_mismatches = rep(val=args.umi_mismatches[0], n=len(args.umi_adapters))
-    
-    if len(args.umi_offsets) != len(args.umi_adapters) and len(args.umi_offsets)==1:
+
+    if len(args.umi_offsets) != len(args.umi_adapters) and len(args.umi_offsets) == 1:
         args.umi_offsets = rep(val=args.umi_offsets[0], n=len(args.umi_adapters))
 
     # Print run settings for log files ----
@@ -264,21 +325,37 @@ if __name__ == "__main__":
         f"UMI length(s):                    {args.umi_lengths}\n"
         f"UMI adapter mismatches allowed:   {args.umi_mismatches}\n"
     )
-    print("Running...")
+    print(f"{currentTime()} - Running...")
     print("")
 
     # Run main function ------
-    bc_match_count, bc_missing_count, no_bc_count, umi_match_count, umi_missing_count, no_umi_count = main(
-        args.fq_in, args.tsv_out,
-        args.bc_adapters, args.bc_positions, args.bc_lengths, args.bc_offsets, args.bc_mismatches,
-        args.umi_adapters, args.umi_positions, args.umi_lengths, args.umi_offsets, args.umi_mismatches
+    (
+        bc_match_count,
+        bc_missing_count,
+        no_bc_count,
+        umi_match_count,
+        umi_missing_count,
+        no_umi_count,
+    ) = main(
+        args.fq_in,
+        args.tsv_out,
+        args.bc_adapters,
+        args.bc_positions,
+        args.bc_lengths,
+        args.bc_offsets,
+        args.bc_mismatches,
+        args.umi_adapters,
+        args.umi_positions,
+        args.umi_lengths,
+        args.umi_offsets,
+        args.umi_mismatches,
     )
     print("")
     print(
+        f"{currentTime()}"
         f"# Reads w/ all barcodes found:            {bc_match_count}\n"
         f"# Reads w/ at least one barcode missing:  {bc_missing_count}\n"
         f"# Reads w/ no barcodes                    {no_bc_count}\n"
-        
         f"# Reads w/ all UMIs found:            {umi_match_count}\n"
         f"# Reads w/ at least one UMI missing:  {umi_missing_count}\n"
         f"# Reads w/ no UMIs                    {no_umi_count}\n"

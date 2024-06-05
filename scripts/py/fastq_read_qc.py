@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 
 
+# TODO- add multithreading
 def calculate_metrics(fastq_file, chunk_size=100000):
     is_compressed = fastq_file.endswith(".gz")
     metrics = []
@@ -90,7 +91,13 @@ def main(fastq_file, tsv_file, threads, chunk_size):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    process_reads(fastq_file, tsv_file, chunk_size)
+    if threads == 1:
+        process_reads(fastq_file, tsv_file, chunk_size)
+    elif threads > 1:
+        print("Multithreading not yet implemented...")
+        # process_reads(fastq_file, tsv_file, chunk_size)
+    else:
+        print(f"Wrong number of threads [{threads}]!")
 
 
 if __name__ == "__main__":

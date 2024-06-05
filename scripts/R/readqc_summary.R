@@ -169,6 +169,13 @@ create_plots <- function(data_file, out_file, n_reads) {
         # scale_y_log10()+
         ggtitle("Longest Homopolymer Length")
 
+    # Re-size Read1 plots..
+    if(grepl("R1", data_file)){
+        scatter.gc <- scatter.gc + xlim(0,1000)
+        
+        plot.readLength.zoom <- plot.readLength.zoom + xlim(0,100)
+    }
+
     # Combine plots using patchwork
     combined_plot <- wrap_plots(
         wrap_plots(
@@ -195,9 +202,9 @@ create_plots <- function(data_file, out_file, n_reads) {
         out_file, 
         plot = combined_plot, 
         device = device,
-        width = NA,
-        height = NA,
-        units = c("in", "cm", "mm", "px"),
+        width = 180,
+        height = 240,
+        units = "mm",#c("in", "cm", "mm", "px"),
         dpi = 300,
         create.dir = T
     )

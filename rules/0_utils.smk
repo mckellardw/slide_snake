@@ -142,7 +142,10 @@ def get_whitelist(w, return_type=None):
 def get_bc_map(w, mode=["ONT", "ILMN"]):
     try:
         if "matchLinker" in w.RECIPE:
-            bc_map = f"{w.OUTDIR}/{w.SAMPLE}/bc/map_underscore.txt"
+            if mode == "ILMN":
+                bc_map = f"{w.OUTDIR}/{w.SAMPLE}/bc/map_underscore.txt"
+            elif mode == "ONT":
+                bc_map = f"{w.OUTDIR}/{w.SAMPLE}/bc/map.txt"
         elif "internalTrim" in w.RECIPE:
             bc_map = f"{w.OUTDIR}/{w.SAMPLE}/bc/map.txt"
         elif "adapterInsert" in w.RECIPE:
@@ -156,11 +159,13 @@ def get_bc_map(w, mode=["ONT", "ILMN"]):
     # return whitelist path(s)
     return bc_map
 
+
 # Get number of barcodes (does not include UMIs!)
 def get_n_bcs(w):
     bc_lengths = get_recipe_info(w, info_col="BC.length").split()
     n_bcs = len(bc_lengths)
     return n_bcs
+
 
 # TODO move these values to recipe_sheet - also write better code than this...
 def get_ont_barcode_pattern(w):

@@ -5,7 +5,7 @@ rule cache_preQC_h5ad_STAR:
         BCS="{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/barcodes.tsv.gz",
         FEATS="{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/features.tsv.gz",
         MAT="{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.mtx.gz",
-        BC_map = lambda w: get_bc_map(w, mode="ILMN"),
+        BC_map=lambda w: get_bc_map(w, mode="ILMN"),
         # BC_map="{OUTDIR}/{SAMPLE}/bc/map_underscore.txt",
     output:
         H5AD="{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.h5ad",
@@ -90,6 +90,7 @@ rule cache_preQC_h5ad_kbpython_std:
         1> {log.log}
         """
 
+
 # initialize & cache the **raw** counts as an anndata file for easier loading later
 ## Removes barcodes for which there are no molecules detected [`--remove_zero_features`]
 # rule ont_cache_preQC_h5ad_minimap2:
@@ -117,7 +118,7 @@ rule ont_cache_preQC_h5ad_minimap2:
         BCS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/barcodes.tsv.gz",
         FEATS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/features.tsv.gz",
         MAT="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/matrix.mtx.gz",
-        BC_map = lambda w: get_bc_map(w, mode="ONT"),
+        BC_map=lambda w: get_bc_map(w, mode="ONT"),
         # BC_map="{OUTDIR}/{SAMPLE}/bc/map_underscore.txt",
     output:
         H5AD="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/output.h5ad",

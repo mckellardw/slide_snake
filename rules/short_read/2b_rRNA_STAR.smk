@@ -51,8 +51,9 @@ rule STAR_rRNA_align:
                 --soloMultiMappers EM
             """
         )
-                # --outSAMunmapped Within KeepPairs \     
-                # --clipAdapterType CellRanger4 \
+        # --outSAMunmapped Within KeepPairs \
+        # --clipAdapterType CellRanger4 \
+
 
 
 # compress outputs from STAR (count matrices, cell barcodes, and gene lists)

@@ -20,7 +20,7 @@ rule kbpython_std:
         KB_X=lambda wildcards: RECIPE_SHEET["kb.x"][wildcards.RECIPE],
         KB_EXTRA=lambda wildcards: RECIPE_SHEET["kb.extra"][wildcards.RECIPE],
         KB_T2G=lambda wildcards: T2G_DICT[wildcards.SAMPLE],
-        N_READS_SUMMARY=1000000, # number of reads to use for summary stats
+        N_READS_SUMMARY=1000000,  # number of reads to use for summary stats
         KB=EXEC["KB"],
         KALLISTO=EXEC["KALLISTO"],
         BUSTOOLS=EXEC["BUSTOOLS"],
@@ -44,6 +44,7 @@ rule kbpython_std:
             --workflow standard \
             -x '{params.KB_X}' \
             -w {input.BC} \
+            --cellranger \
             --overwrite \
             -t {threads} {params.KB_EXTRA} \
             {input.FQS[0]} {input.FQS[1]} \
@@ -52,14 +53,11 @@ rule kbpython_std:
         # code to compute mean & std dev of read lengths...
         # --fragment-l $(zcat {input.FQS[1]} | head -n {params.N_READS_SUMMARY} | awk -f scripts/awk/fq_meanReadLength_int.awk) \
         # --fragment-s $(zcat {input.FQS[1]} | head -n {params.N_READS_SUMMARY} | awk -f scripts/awk/fq_stdDevReadLength_int.awk) \
-
         # meanLength=$(zcat {input.FQS[1]} | head -n {params.N_READS_SUMMARY} | awk -f scripts/awk/fq_meanReadLength.awk)
         # sdLength=$(zcat {input.FQS[1]} | head -n {params.N_READS_SUMMARY} | awk -f scripts/awk/fq_stdDevReadLength.awk)
-
         # echo "Using {params.N_READS_SUMMARY} for summary stats" > {log.log}
         # echo "Mean read length:               $meanLength" >> {log.log}
         # echo "Standard Deviation read length: $sdLength" >> {log.log}
-
         # -m {resources.MEM_GB} \
 
 
