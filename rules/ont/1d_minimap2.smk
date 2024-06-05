@@ -340,10 +340,34 @@ rule ont_add_umis:
         )
 
 # Generate count matrix w/ umi-tools
-rule ont_umitools_count:
+rule ont_filter_bam_empty_tags:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam",
-        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam.bai",
+        # BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam.bai",
+    output:
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_gn_cb_ub.bam",
+    params:
+        CELL_TAG="CB",  # uncorrected = CR; corrected = CB
+        GENE_TAG="GN",  # GN XS
+        UMI_TAG="UR",  # uncorrected = UR; corrected = UB
+    threads: 1
+    run:
+        shell(
+            f"""
+            {EXEC['SAMTOOLS']} view -h {input.BAM} \
+            | awk -v tag={params.CELL_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
+            | awk -v tag={params.GENE_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
+            | awk -v tag={params.UMI_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
+            | {EXEC['SAMTOOLS']} view -b \
+            > {output.BAM}
+            """
+        )
+
+# Generate count matrix w/ umi-tools
+rule ont_umitools_count:
+    input:
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_gn_cb_ub.bam",
+        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_gn_cb_ub.bam.bai",
     output:
         COUNTS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/umitools_counts.tsv.gz",
     params:

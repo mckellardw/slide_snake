@@ -144,9 +144,9 @@ def main(
                         if len(bc_seq) == length:
                             bc_to_write.append(bc_seq)
                         else:
-                            bc_to_write.append("")
+                            bc_to_write.append("-")
                     else:
-                        bc_to_write.append("")
+                        bc_to_write.append("-")
                 # end BC alignment
 
                 # Write barcode to file
@@ -179,9 +179,9 @@ def main(
                             if len(umi_seq) == length:
                                 umi_to_write.append(umi_seq)
                             else:
-                                umi_to_write.append("")
+                                umi_to_write.append("-")
                         else:
-                            umi_to_write.append("")
+                            umi_to_write.append("-")
                     # end UMI alignment
 
                     outfile.write(

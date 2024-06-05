@@ -65,7 +65,8 @@ def split_file(file_path, temp_dir, num_chunks):
 
     # Calculate the size of each chunk (number of lines)
     chunk_size = (file_line_count(file_path) // num_chunks) + 1
-    print(chunk_size)
+    # print(chunk_size)
+    
     # Initialize an empty list to store chunk file names
     chunk_file_names = [
         f"{temp_dir}/chunk_{str(i).zfill(3)}.tsv" for i in range(num_chunks)
@@ -288,7 +289,7 @@ def process_tsv(
                         else:
                             # row2write.append(f"{barcode}\t \t{bc_match_ed}")
                             row2write.extend(
-                                [barcode, " ", bc_match_ham, next_match_diff]
+                                [barcode, "-", bc_match_ham, next_match_diff]
                             )
                     writer_full.writerow(row2write)
                     writer_slim.writerow([read_id, corrected_bc])
