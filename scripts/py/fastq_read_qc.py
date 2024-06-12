@@ -4,17 +4,26 @@ import gzip
 import os
 from itertools import groupby
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
 import time
 
+# Usage:
+"""
+python scripts/py/fastq_read_qc2.py \
+    data/test_seeker/heart_ctrl_4k_ont.fq.gz \
+    heart_ctrl_4k_ont.tsv \
+    --threads 4 \
+    --chunk_size 1000
+"""
 
-# TODO- add multithreading
-def calculate_metrics(fastq_file, chunk_size=100000):
+
+def calculate_metrics(fastq_file, start, end, chunk_size=100000):
     is_compressed = fastq_file.endswith(".gz")
     metrics = []
     read_id = ""
+    offset = start * 4  # Adjust for 4 lines per read
 
     with gzip.open(fastq_file, "rt") if is_compressed else open(fastq_file, "r") as f:
+        f.seek(offset)
         for i, line in enumerate(f):
             if i % 4 == 0:  # ID line
                 read_id = line.strip().replace("@", "").split(" ", 1)[0]
@@ -50,7 +59,7 @@ def calculate_metrics(fastq_file, chunk_size=100000):
                     }
                 )
 
-            if len(metrics) >= chunk_size:
+            if (i + 1) % chunk_size == 0:
                 yield metrics
                 metrics = []
 
@@ -59,45 +68,50 @@ def calculate_metrics(fastq_file, chunk_size=100000):
 
 
 def write_tsv(metrics, tsv_file):
-    # Check if the file is empty to determine if we need to write the header
     file_is_empty = not os.path.exists(tsv_file) or os.stat(tsv_file).st_size == 0
 
-    with open(tsv_file, "a") as f:  # Open in append mode
+    with open(tsv_file, "a") as f:
         if file_is_empty:
-            f.write(
-                "\t".join(metrics[0].keys()) + "\n"
-            )  # Write header only if file is empty
+            f.write("\t".join(metrics[0].keys()) + "\n")
         for metric in metrics:
             line = "\t".join([str(val) for val in metric.values()])
             f.write(line + "\n")
 
 
-def process_reads(fastq_file, tsv_file, chunk_size=100000):
+def process_reads(fastq_file, tsv_file, chunk_size=100000, threads=1):
     print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Processing reads...")
-    for metrics_chunk in calculate_metrics(fastq_file, chunk_size):
-        print(f"Processed {len(metrics_chunk)} reads...")
-        print(
-            f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Writing metrics to file..."
-        )
 
-        # Force overwrite...
-        if os.path.exists(tsv_file):
-            os.remove(tsv_file)
-        write_tsv(metrics_chunk, tsv_file)
+    def worker(start, end):
+        for metrics_chunk in calculate_metrics(fastq_file, start, end, chunk_size):
+            print(f"Processed {len(metrics_chunk)} reads...")
+            print(
+                f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Writing metrics to file..."
+            )
+            write_tsv(metrics_chunk, tsv_file)
+
+    total_chunks = sum(1 for _ in calculate_metrics(fastq_file, 0, 0))
+    chunk_size_bytes = chunk_size * 4  # Each read takes 4 lines
+
+    with ThreadPoolExecutor(max_workers=threads) as executor:
+        futures = [
+            executor.submit(
+                worker,
+                i * chunk_size,
+                ((i + 1) * chunk_size) if i < total_chunks - 1 else None,
+            )
+            for i in range(total_chunks)
+        ]
+
+        for future in as_completed(futures):
+            future.result()
 
 
 def main(fastq_file, tsv_file, threads, chunk_size):
     output_dir = os.path.dirname(tsv_file)
-    if not os.path.exists(output_dir):
+    if len(output_dir) > 0 and not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    if threads == 1:
-        process_reads(fastq_file, tsv_file, chunk_size)
-    elif threads > 1:
-        print("Multithreading not yet implemented...")
-        # process_reads(fastq_file, tsv_file, chunk_size)
-    else:
-        print(f"Wrong number of threads [{threads}]!")
+    process_reads(fastq_file, tsv_file, chunk_size, threads)
 
 
 if __name__ == "__main__":
