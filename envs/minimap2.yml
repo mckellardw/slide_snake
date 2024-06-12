@@ -1,0 +1,37 @@
+name: minimap2
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - _libgcc_mutex=0.1
+  - _openmp_mutex=4.5
+  - _sysroot_linux-64_curr_repodata_hack=3
+  - bzip2=1.0.8
+  - c-ares=1.28.1
+  - ca-certificates=2024.6.2
+  - htslib=1.20
+  - k8=1.2
+  - kernel-headers_linux-64=3.10.0
+  - keyutils=1.6.1
+  - krb5=1.21.2
+  - libcurl=8.8.0
+  - libdeflate=1.20
+  - libedit=3.1.20191231
+  - libev=4.33
+  - libgcc-ng=13.2.0
+  - libgomp=13.2.0
+  - libnghttp2=1.58.0
+  - libssh2=1.11.0
+  - libstdcxx-ng=13.2.0
+  - libzlib=1.2.13
+  - minimap2=2.28
+  - ncurses=6.5
+  - openssl=3.3.1
+  - python_abi=3.8
+  - samtools=1.20
+  - subread=2.0.6
+  - sysroot_linux-64=2.17
+  - xz=5.2.6
+  - zlib=1.2.13
+  - zstd=1.5.6
+prefix: /gpfs/commons/groups/innovation/dwm/mambaforge/envs/minimap2

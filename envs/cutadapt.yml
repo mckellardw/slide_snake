@@ -1,0 +1,44 @@
+name: cutadapt
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - _libgcc_mutex=0.1
+  - _openmp_mutex=4.5
+  - bzip2=1.0.8
+  - ca-certificates=2024.6.2
+  - cffi=1.16.0
+  - cutadapt=4.8
+  - dnaio=1.2.0
+  - isa-l=2.31.0
+  - ld_impl_linux-64=2.40
+  - libexpat=2.6.2
+  - libffi=3.4.2
+  - libgcc-ng=13.2.0
+  - libgomp=13.2.0
+  - libnsl=2.0.1
+  - libsqlite=3.46.0
+  - libstdcxx-ng=13.2.0
+  - libuuid=2.38.1
+  - libxcrypt=4.4.36
+  - libzlib=1.3.1
+  - ncurses=6.5
+  - openssl=3.3.1
+  - pbzip2=1.1.13
+  - pigz=2.8
+  - pip=24.0
+  - pycparser=2.22
+  - python=3.12.3
+  - python-isal=1.6.1
+  - python-zlib-ng=0.4.3
+  - python_abi=3.12
+  - readline=8.2
+  - setuptools=70.0.0
+  - tk=8.6.13
+  - tzdata=2024a
+  - wheel=0.43.0
+  - xopen=2.0.1
+  - xz=5.2.6
+  - zlib-ng=2.0.7
+  - zstandard=0.22.0
+  - zstd=1.5.5
