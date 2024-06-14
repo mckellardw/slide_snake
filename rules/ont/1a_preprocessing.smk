@@ -136,6 +136,8 @@ rule ont_call_adapter_scan:
     #     f"{workflow.basedir}/envs/slsn_ont_prep.yml"
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/adapter_scan.log",
+    conda:
+        f"{workflow.basedir}/envs/adapter_scan.yml"
     shell:
         """
         python scripts/py/adapter_scan_vsearch.py \

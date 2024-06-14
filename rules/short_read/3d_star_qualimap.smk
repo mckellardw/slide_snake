@@ -11,21 +11,21 @@ rule qualimapQC_STAR:
     threads: 1
     resources:
         mem="32G",
-    run:
-        shell(
-            f"""
-            mkdir -p $(dirname {output.TXT})
+    conda:
+        f"{workflow.basedir}/envs/qualimap.yml"
+    shell:
+        """
+        mkdir -p $(dirname {output.TXT})
 
-            {EXEC['QUALIMAP']} rnaseq \
-                -bam {input.SORTEDBAM} \
-                -gtf {params.GENES_GTF} \
-                --sequencing-protocol strand-specific-forward \
-                --sorted \
-                --java-mem-size={resources.mem} \
-                -outdir $(dirname {output.TXT}) \
-                -outformat html
-            """
-        )
+        qualimap rnaseq \
+            -bam {input.SORTEDBAM} \
+            -gtf {params.GENES_GTF} \
+            --sequencing-protocol strand-specific-forward \
+            --sorted \
+            --java-mem-size={resources.mem} \
+            -outdir $(dirname {output.TXT}) \
+            -outformat html
+        """
 
 
 rule qualimap_summary2csv_STAR:
@@ -34,9 +34,7 @@ rule qualimap_summary2csv_STAR:
     output:
         CSV="{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/rnaseq_qc_result.csv",
     threads: 1
-    run:
-        shell(
-            f"""
-            python scripts/py/qualimap_summary2csv.py {input.TXT} {output.CSV}
-            """
-        )
+    shell:
+        """
+        python scripts/py/qualimap_summary2csv.py {input.TXT} {output.CSV}
+        """

@@ -111,7 +111,6 @@ def main(
 
     with pysam.FastxFile(fq_in) as fastq:
         with open(tsv_out, "w") as outfile:
-
             for read in fastq:
                 if read_count % 5000000 == 0:
                     print(f"{currentTime()} - {read_count} reads processed...")
@@ -119,32 +118,39 @@ def main(
                 bc_to_write = []
                 # TODO- abstract this chunk to a function
                 for adapter, position, length, offset, mismatches in BC_RANGES:
+                    if len(read.sequence) < len(adapter):
+                        continue
+                    elif len(read.sequence) < length:
+                        continue
+
                     alignment = align_sequences(
                         Seq(read.sequence), Seq(adapter), aligner, mismatches
                     )
                     # if alignment.score < 45: #debug
                     #     print(alignment)
                     #     print(alignment.score)
+                    if alignment is not None:
+                        if alignment.score > 2 * len(adapter):
+                            start = alignment.aligned[0][0][0]
+                            end = alignment.aligned[0][0][1]
+                            if position == "left":
+                                bc_seq = read.sequence[
+                                    (start - offset - length) : (start - offset)
+                                ]
+                            elif position == "right":
+                                bc_seq = read.sequence[
+                                    (end + offset) : (end + offset + length)
+                                ]
+                            else:
+                                print(
+                                    f"Incorrect barcode position [{position}] specified!"
+                                )
 
-                    if alignment.score > 2 * len(adapter):
-                        start = alignment.aligned[0][0][0]
-                        end = alignment.aligned[0][0][1]
-                        if position == "left":
-                            bc_seq = read.sequence[
-                                (start - offset - length) : (start - offset)
-                            ]
-                        elif position == "right":
-                            bc_seq = read.sequence[
-                                (end + offset) : (end + offset + length)
-                            ]
-                        else:
-                            print(f"Incorrect barcode position [{position}] specified!")
-
-                        # Don't write partial barcodes
-                        if len(bc_seq) == length:
-                            bc_to_write.append(bc_seq)
-                        else:
-                            bc_to_write.append("-")
+                            # Don't write partial barcodes
+                            if len(bc_seq) == length:
+                                bc_to_write.append(bc_seq)
+                            else:
+                                bc_to_write.append("-")
                     else:
                         bc_to_write.append("-")
                 # end BC alignment

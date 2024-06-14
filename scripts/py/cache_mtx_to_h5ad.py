@@ -9,7 +9,7 @@ from numpy import intersect1d
 
 # Example usage:
 """ 
-python script.py \
+python scripts/py/cache_mtx_to_h5ad.py \
     --mat_in input_matrix.mtx \
     --feat_in input_features.tsv \
     --bc_in input_barcodes.txt \
@@ -27,6 +27,7 @@ def main(
     bc_map,
     ad_out,
     feat_col=1,
+    transpose=True,
     remove_zero_features=False,
     verbose=True,
 ):
@@ -34,8 +35,9 @@ def main(
     adata = read_mtx(mat_in)
 
     # Transpose for STAR inputs...
-    if "Solo.out" in mat_in:
+    if transpose:
         print("transposing count matrix...")
+        print("")
         adata = adata.transpose()
 
     # Features
@@ -56,7 +58,11 @@ def main(
     )
 
     if verbose:
-        print(f"Found {spatial_data.shape[0]} cell barcodes in whitelist/map.")
+        print(
+            f"Found {len(adata.var_names)} features in count matrix.\n"
+            f"Found {len(adata.obs_names)} cell barcodes in count matrix.\n"
+            f"Found {spatial_data.shape[0]} cell barcodes in whitelist/map.\n"
+        )
 
     # Set the cell barcode as index
     spatial_data.set_index("barcode", inplace=True)
@@ -64,7 +70,7 @@ def main(
     # Check if the barcodes in the AnnData object match the ones in the spatial data
     if not all(adata.obs_names.isin(spatial_data.index)):
         print(
-            "Warning: Not all barcodes in the AnnData object match the ones in the spatial data."
+            "Warning: Not all barcodes in the AnnData object match the ones in the barcode map..."
         )
 
     # Add the spatial coordinates to the AnnData object
@@ -72,7 +78,9 @@ def main(
     adata = adata[common_labels, :]
     spatial_coord = spatial_data.loc[common_labels, ["x", "y"]]
 
-    print(f"{len(common_labels)} / {len(adata.obs_names)} found in barcode map...")
+    print(
+        f"{len(common_labels)} / {len(adata.obs_names)} in output AnnData object found in barcode map..."
+    )
 
     # spatial_coord = spatial_data.loc[adata.obs_names, ['x', 'y']] #w/ out filtering for intersection
     adata.obsm["spatial"] = spatial_coord.to_numpy()
@@ -82,6 +90,7 @@ def main(
         adata = adata[adata.X.sum(axis=1) > 0, :]
 
     # Write output
+    print(f"Writing to {ad_out}")
     adata.write(ad_out)
 
 
@@ -111,6 +120,12 @@ if __name__ == "__main__":
         help="Feature column index in the feature file (default: 1)",
     )
     parser.add_argument(
+        "--transpose",
+        type=bool,
+        default=False,
+        help="Transpose count matrix? (default: False)",
+    )
+    parser.add_argument(
         "--remove_zero_features",
         action="store_true",
         help="Remove observations with zero features detected (default: False)",
@@ -124,6 +139,7 @@ if __name__ == "__main__":
         f"Barcode map file:             {args.bc_map}\n"
         f"Output AnnData file:          {args.ad_out}\n"
         f"Feature column index:         {args.feat_col}\n"
+        f"Transpose matrix:             {args.transpose}\n"
         f"Remove undetected features:   {args.remove_zero_features}\n"
     )
     main(
@@ -133,5 +149,6 @@ if __name__ == "__main__":
         args.bc_map,
         args.ad_out,
         args.feat_col,
+        args.transpose,
         args.remove_zero_features,
     )

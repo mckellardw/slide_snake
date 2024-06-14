@@ -16,7 +16,7 @@ rule cache_preQC_h5ad_STAR:
     log:
         log="{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}_cache.log",
     conda:
-        f"{workflow.basedir}/envs/slsn_scanpy.yml"
+        f"{workflow.basedir}/envs/scanpy.yml"
     shell:
         """
         python scripts/py/cache_mtx_to_h5ad.py \
@@ -26,6 +26,7 @@ rule cache_preQC_h5ad_STAR:
             --bc_map {input.BC_map} \
             --ad_out {output.H5AD} \
             --feat_col 1 \
+            --transpose True \
             --remove_zero_features \
         1> {log.log}
         """
@@ -47,7 +48,7 @@ rule cache_preQC_h5ad_STAR:
 #     #     var_names = "gene_symbols" # scanpy.read_10x_mtx()
 #     threads: 1
 #     conda:
-#         f"{workflow.basedir}/envs/slsn_scanpy.yml"
+#         f"{workflow.basedir}/envs/scanpy.yml"
 #     shell:
 #         """
 #         python scripts/py/cache_mtx_to_h5ad.py \
@@ -64,9 +65,12 @@ rule cache_preQC_h5ad_STAR:
 
 rule cache_preQC_h5ad_kbpython_std:
     input:
-        BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.barcodes.txt.gz",
-        FEATS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.genes.txt.gz",
-        MAT="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.mtx.gz",
+        # BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.barcodes.txt.gz",
+        # FEATS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.genes.txt.gz",
+        # MAT="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.mtx.gz",
+        BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes_noSuffix.tsv.gz",
+        FEATS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/genes.tsv.gz",
+        MAT="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/matrix.mtx.gz",
         BC_map="{OUTDIR}/{SAMPLE}/bc/map_underscore.txt",
     output:
         H5AD="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/output.h5ad",
@@ -76,7 +80,7 @@ rule cache_preQC_h5ad_kbpython_std:
     #     var_names = "gene_symbols" # scanpy.read_10x_mtx()
     threads: 1
     conda:
-        f"{workflow.basedir}/envs/slsn_scanpy.yml"
+        f"{workflow.basedir}/envs/scanpy.yml"
     shell:
         """
         python scripts/py/cache_mtx_to_h5ad.py \
@@ -86,6 +90,7 @@ rule cache_preQC_h5ad_kbpython_std:
             --bc_map {input.BC_map} \
             --ad_out {output.H5AD} \
             --feat_col 0 \
+            --transpose True \
             --remove_zero_features \
         1> {log.log}
         """
@@ -102,7 +107,7 @@ rule cache_preQC_h5ad_kbpython_std:
 #     threads:
 #         1
 #     conda:
-#         f"{workflow.basedir}/envs/slsn_scanpy.yml"
+#         f"{workflow.basedir}/envs/scanpy.yml"
 #     shell:
 #         """
 #         python scripts/py/cache_umitools_to_h5ad.py \
@@ -126,7 +131,7 @@ rule ont_cache_preQC_h5ad_minimap2:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/cache.log",
     threads: 1
     conda:
-        f"{workflow.basedir}/envs/slsn_scanpy.yml"
+        f"{workflow.basedir}/envs/scanpy.yml"
     shell:
         """
         python scripts/py/cache_mtx_to_h5ad.py \

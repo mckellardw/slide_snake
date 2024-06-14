@@ -3,10 +3,12 @@
 
 
 # TODO- refactor to incorporate internal trimming options into rRNA filtering
+## Need to run per (used) whitelist, per sample
 rule STAR_rRNA_align:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
-        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
+        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",        
+        # WHITELIST=lambda w: get_whitelist(w, mode="all_used"),
         BC_WHITELIST="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
         BC_1="{OUTDIR}/{SAMPLE}/bc/whitelist_1.txt",
         BC_2="{OUTDIR}/{SAMPLE}/bc/whitelist_2.txt",
@@ -19,7 +21,7 @@ rule STAR_rRNA_align:
         GENEDIRECTORY=directory("{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Solo.out/GeneFull"),
         GENEMAT="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Solo.out/GeneFull/raw/matrix.mtx",
     params:
-        WHITELIST=lambda w: get_whitelist(w),
+        WHITELIST=lambda w: get_default_whitelist(w),
         STAR_REF=lambda w: get_STAR_ref(w, mode="rRNA"),
         STAR_PARAMS=lambda w: get_STAR_extra_params(w),
     resources:
@@ -92,21 +94,6 @@ rule STAR_rRNA_compress_outs:
         )
 
 
-# Index the .bam file produced by STAR
-# rule STAR_rRNA_indexSortedBAM:
-#     input:
-#         SORTEDBAM="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam",
-#     output:
-#         BAI="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam.bai",
-#     threads: config["CORES"]
-#     run:
-#         shell(
-#             f"""
-#             {EXEC['SAMTOOLS']} index -@ {threads} {input.SORTEDBAM}
-#             """
-#         )
-
-
 # Switch names because of STAR weirdness
 rule STAR_rRNA_rename_compress_unmapped:
     input:
@@ -129,8 +116,6 @@ rule STAR_rRNA_rename_compress_unmapped:
             """
         )
 
-
-#
 
 
 #  Run fastqc on unmapped reads;

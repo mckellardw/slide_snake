@@ -13,27 +13,19 @@ python scripts/py/tsv2tag.py \
 """
 
 
-# def parse_tsv(in_tsv, readIDcolumn, tagColumn):
-#     """Parse the TSV file and return a dictionary mapping read IDs to gene assignments."""
-#     read_to_tag = {}
-#     with open(in_tsv, "r") as file:
-#         for line in file:
-#             # TODO: abstract this out...
-#             line_as_list = line.strip().split("\t")
-#             read_to_tag[readIDcolumn] = line_as_list[tagColumn]
-#     return read_to_tag
-
-
 def parse_tsv(in_tsv, readIDcolumn, tagColumns):
-    """Parse the TSV file and return a dictionary mapping read IDs to tag values."""
+    """Parse the TSV file and return a dictionary mapping read IDs (keys) to bam tags (values)."""
     read_to_tags = {}
     with open(in_tsv, "r") as file:
         for line in file:
             line_as_list = line.strip().split("\t")
             read_id = line_as_list[readIDcolumn]
-            read_to_tags[read_id] = [
-                line_as_list[tagColumn] for tagColumn in tagColumns
-            ]
+            try:
+                read_to_tags[read_id] = [
+                    line_as_list[tagColumn] for tagColumn in tagColumns
+                ]
+            except:
+                continue
     return read_to_tags
 
 

@@ -12,9 +12,12 @@ rule kbpython_std:
         # BUS_CORRECTED = temp('{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/output.corrected.bus'),
         # TRANSCRIPTS = '{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/transcripts.txt',
         ECMAP=temp("{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/matrix.ec"),
-        BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.barcodes.txt",
-        GENES="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.genes.txt",
-        MAT="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.mtx",
+        # BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.barcodes.txt",
+        # FEATS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.genes.txt",
+        # MAT="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.mtx",        
+        BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes.tsv",
+        FEATS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/genes.tsv",
+        MAT="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/matrix.mtx",
     params:
         KB_IDX=lambda wildcards: IDX_DICT[wildcards.SAMPLE],
         KB_X=lambda wildcards: RECIPE_SHEET["kb.x"][wildcards.RECIPE],
@@ -60,21 +63,39 @@ rule kbpython_std:
         # echo "Standard Deviation read length: $sdLength" >> {log.log}
         # -m {resources.MEM_GB} \
 
+rule kbpython_std_remove_suffix:
+    input:
+        BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes.tsv",
+    output:
+        BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes_noSuffix.tsv"
+    params:
+        SUFFIX="-1"
+    threads: config["CORES"]
+    shell:
+        """
+        sed 's/{params.SUFFIX}//' {input.BCS} > {output.BCS}
+        """
 
 # # gzip the count matrix, etc.
 rule kbpython_std_compress_outs:
     input:
-        BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.barcodes.txt",
-        GENES="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.genes.txt",
-        MAT="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.mtx",
+        # BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.barcodes.txt",
+        # FEATS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.genes.txt",
+        # MAT="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.mtx",
+        BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes.tsv",
+        BCS2="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes_noSuffix.tsv",
+        FEATS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/genes.tsv",
+        MAT="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/matrix.mtx",
     output:
-        BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.barcodes.txt.gz",
-        GENES="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.genes.txt.gz",
-        MAT="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.mtx.gz",
+        # BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.barcodes.txt.gz",
+        # FEATS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.genes.txt.gz",
+        # MAT="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.mtx.gz",
+        BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes.tsv.gz",
+        BCS2="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes_noSuffix.tsv.gz",
+        FEATS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/genes.tsv.gz",
+        MAT="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/matrix.mtx.gz",
     threads: config["CORES"]
-    run:
-        shell(
-            f"""
-            {EXEC['PIGZ']} -p{threads} {input.BCS} {input.GENES} {input.MAT}
-            """
-        )
+    shell:
+        """
+        pigz -p{threads} {input.BCS} {input.FEATS} {input.MAT} {input.BCS2}
+        """

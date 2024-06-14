@@ -2,7 +2,6 @@
 ## Unmapped read analyses
 #############################################
 
-
 # Run fastqc on unmapped reads; switch names because of STAR weirdness
 rule fastqc_unmapped:
     input:
@@ -35,7 +34,6 @@ rule fastqc_unmapped:
 
 
 # Only BLAST R2, which contains the insert (converts .fq to .fa, then removes the .fa file)
-## TODO: change demux step to fastx-collapser
 rule blast_unmapped:
     input:
         UNMAPPED2_FQ="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2.fastq.gz",
@@ -50,32 +48,32 @@ rule blast_unmapped:
         OUTFMT="6 qseqid sseqid stitle pident length mismatch gapopen qstart qend sstart send evalue bitscore",
     log:
         log="{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/blast/blast_unmapped.log",
-    run:
-        shell(
-            f"""
-            mkdir -p $(dirname {output.BLAST_R2})
+    conda:
+        f"{workflow.basedir}/envs/blast.yml"
+    shell:
+        """
+        mkdir -p $(dirname {output.BLAST_R2})
 
-            zcat {input.UNMAPPED2_FQ} \
-            | sed -n '1~4s/^@/>/p;2~4p' \
-            > {output.TMP_FA}
+        zcat {input.UNMAPPED2_FQ} \
+        | sed -n '1~4s/^@/>/p;2~4p' \
+        > {output.TMP_FA}
 
-            echo "Number of unmapped reads: " >> {log.log}
-            grep -c ">" {output.TMP_FA}       >> {log.log}
+        echo "Number of unmapped reads: " >> {log.log}
+        grep -c ">" {output.TMP_FA}       >> {log.log}
 
-            {EXEC['VSEARCH']} \
-                --sortbysize {output.TMP_FA} \
-                --topn {params.TOPN} \
-                --output {output.TOP_FA}
+        vsearch \
+            --sortbysize {output.TMP_FA} \
+            --topn {params.TOPN} \
+            --output {output.TOP_FA}
 
-            {EXEC['BLASTN']} \
-                -db {params.BLASTDB}/nt \
-                -query {output.TOP_FA} \
-                -out {output.BLAST_R2} \
-                -outfmt '{params.OUTFMT}' \
-                -max_target_seqs 5 \
-                -num_threads {threads}
-            """
-        )
+        blastn \
+            -db {params.BLASTDB}/nt \
+            -query {output.TOP_FA} \
+            -out {output.BLAST_R2} \
+            -outfmt '{params.OUTFMT}' \
+            -max_target_seqs 5 \
+            -num_threads {threads}
+        """
 
 
 # mv {OUTDIR}/{wildcards.SAMPLE}/Unmapped.out.mate2_blastResults.txt {OUTDIR}/{wildcards.SAMPLE}/Unmapped.out.mate2_blastResults.tsv

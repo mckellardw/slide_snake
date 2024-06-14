@@ -14,7 +14,7 @@ rule cutadapt:
         JSON="{OUTDIR}/{SAMPLE}/misc_logs/cutadapt1.json",
     params:
         RECIPE=lambda w: get_recipes(w, mode="ILMN"),
-        R1_LENGTHS=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN"),
+        R1_LENGTH=lambda w: min(get_recipe_info(w, info_col="R1.finalLength", mode="ILMN")),
         # R1_LENGTH = 50,
         QUALITY_MIN=20,
         MIN_R2_LENGTH=12,
@@ -36,33 +36,31 @@ rule cutadapt:
     threads: config["CORES"]
     log:
         log="{OUTDIR}/{SAMPLE}/misc_logs/cutadapt1.log",
-    run:
-        R1_LENGTH = min(params.R1_LENGTHS)
-
-        shell(
-            f"""
-            {EXEC['CUTADAPT']} \
-                --minimum-length {R1_LENGTH}:{params.MIN_R2_LENGTH} \
-                --quality-cutoff {params.QUALITY_MIN} \
-                --overlap {params.OVERLAP} \
-                --match-read-wildcards \
-                --nextseq-trim=20 \
-                -A POLYA_3p="{params.POLYA}X;max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
-                -A POLYT_3p="{params.POLYT}X;max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
-                -B TSO={params.TSO} \
-                -B TXG_TSO={params.TXG_TSO} \
-                -B SEEKER_ADAPTER="{params.SEEKER_BB_ADAPTER}" \
-                -B NEXTERA="{params.NEXTERA}" \
-                -A ILMN_UNIVERSAL_3p="{params.ILMN_UNIVERSAL}" \
-                --pair-filter=any \
-                -o {output.R1_FQ} \
-                -p {output.R2_FQ} \
-                --cores {threads} \
-                --json {output.JSON} \
-                {input.R1_FQ} {input.R2_FQ} \
-            1> {log.log}
-            """
-        )
+    conda:
+        f"{workflow.basedir}/envs/cutadapt.yml"
+    shell:
+        """
+        cutadapt \
+            --minimum-length {params.R1_LENGTH}:{params.MIN_R2_LENGTH} \
+            --quality-cutoff {params.QUALITY_MIN} \
+            --overlap {params.OVERLAP} \
+            --match-read-wildcards \
+            --nextseq-trim=20 \
+            -A POLYA_3p="{params.POLYA}X;max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
+            -A POLYT_3p="{params.POLYT}X;max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
+            -B TSO={params.TSO} \
+            -B TXG_TSO={params.TXG_TSO} \
+            -B SEEKER_ADAPTER="{params.SEEKER_BB_ADAPTER}" \
+            -B NEXTERA="{params.NEXTERA}" \
+            -A ILMN_UNIVERSAL_3p="{params.ILMN_UNIVERSAL}" \
+            --pair-filter=any \
+            -o {output.R1_FQ} \
+            -p {output.R2_FQ} \
+            --cores {threads} \
+            --json {output.JSON} \
+            {input.R1_FQ} {input.R2_FQ} \
+        1> {log.log}
+        """
 
 
 rule cutadapt2:
@@ -75,7 +73,7 @@ rule cutadapt2:
         JSON="{OUTDIR}/{SAMPLE}/misc_logs/cutadapt2.json",
     params:
         RECIPE=lambda w: get_recipes(w, mode="ILMN"),
-        R1_LENGTHS=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN"),
+        R1_LENGTH=lambda w: min(get_recipe_info(w, info_col="R1.finalLength", mode="ILMN")),
         # R1_LENGTH = 50,
         QUALITY_MIN=20,
         MIN_R2_LENGTH=12,
@@ -97,33 +95,31 @@ rule cutadapt2:
     threads: config["CORES"]
     log:
         log="{OUTDIR}/{SAMPLE}/misc_logs/cutadapt2.log",
-    run:
-        R1_LENGTH = min(params.R1_LENGTHS)
-
-        shell(
-            f"""
-            {EXEC['CUTADAPT']} \
-                --minimum-length {R1_LENGTH}:{params.MIN_R2_LENGTH} \
-                --quality-cutoff {params.QUALITY_MIN} \
-                --overlap {params.OVERLAP} \
-                --match-read-wildcards \
-                --nextseq-trim=20 \
-                -A POLYA_3p="{params.POLYA}X;max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
-                -A POLYT_3p="{params.POLYT}X;max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
-                -B TSO={params.TSO} \
-                -B TXG_TSO={params.TXG_TSO} \
-                -B SEEKER_ADAPTER="{params.SEEKER_BB_ADAPTER}" \
-                -B NEXTERA="{params.NEXTERA}" \
-                -A ILMN_UNIVERSAL_3p="{params.ILMN_UNIVERSAL}" \
-                --pair-filter=any \
-                -o {output.R1_FQ} \
-                -p {output.R2_FQ} \
-                --cores {threads} \
-                --json {output.JSON} \
-                {input.R1_FQ} {input.R2_FQ} \
-            1> {log.log}
-            """
-        )
+    conda:
+        f"{workflow.basedir}/envs/cutadapt.yml"
+    shell:
+        """
+        cutadapt \
+            --minimum-length {params.R1_LENGTH}:{params.MIN_R2_LENGTH} \
+            --quality-cutoff {params.QUALITY_MIN} \
+            --overlap {params.OVERLAP} \
+            --match-read-wildcards \
+            --nextseq-trim=20 \
+            -A POLYA_3p="{params.POLYA}X;max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
+            -A POLYT_3p="{params.POLYT}X;max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
+            -B TSO={params.TSO} \
+            -B TXG_TSO={params.TXG_TSO} \
+            -B SEEKER_ADAPTER="{params.SEEKER_BB_ADAPTER}" \
+            -B NEXTERA="{params.NEXTERA}" \
+            -A ILMN_UNIVERSAL_3p="{params.ILMN_UNIVERSAL}" \
+            --pair-filter=any \
+            -o {output.R1_FQ} \
+            -p {output.R2_FQ} \
+            --cores {threads} \
+            --json {output.JSON} \
+            {input.R1_FQ} {input.R2_FQ} \
+        1> {log.log}
+        """
 
 
 # Trimming for R1 to handle Curio adapter issues. See README for recipe details
@@ -181,18 +177,17 @@ rule R1_internalTrimming:
     threads: config["CORES"]
     log:
         log="{OUTDIR}/{SAMPLE}/misc_logs/R1_internalTrimming.log",
-    run:
-        shell(
-            f"""
-            python scripts/py/fastq_internal_adapter_trim_R1.py \
-                --adapter_seq {params.ADAPTER} \
-                --n_cores {threads} \
-                --tmp_dir {params.TMPDIR} \
-                --fq1_in {input.R1_FQ} \
-                --fq1_out {output.R1_FQ} \
-                --min_adapter_start_pos {params.BC1_LENGTH} \
-                --min_align_score {params.MIN_ALIGN_SCORE} \
-            | tee {log.log}
-            """
-        )
+    shell:
+        """
+        python scripts/py/fastq_internal_adapter_trim_R1.py \
+            --adapter_seq {params.ADAPTER} \
+            --n_cores {threads} \
+            --tmp_dir {params.TMPDIR} \
+            --fq1_in {input.R1_FQ} \
+            --fq1_out {output.R1_FQ} \
+            --min_adapter_start_pos {params.BC1_LENGTH} \
+            --min_align_score {params.MIN_ALIGN_SCORE} \
+        | tee {log.log}
+        """
+        
                 # {output.INTERNAL_TRIM_QC_LOG} \

@@ -9,7 +9,6 @@ import editdistance as ed
 import sys
 import csv
 import argparse
-from itertools import product
 
 # Usage:
 # SlideSeq
@@ -66,7 +65,7 @@ def split_file(file_path, temp_dir, num_chunks):
     # Calculate the size of each chunk (number of lines)
     chunk_size = (file_line_count(file_path) // num_chunks) + 1
     # print(chunk_size)
-    
+
     # Initialize an empty list to store chunk file names
     chunk_file_names = [
         f"{temp_dir}/chunk_{str(i).zfill(3)}.tsv" for i in range(num_chunks)
@@ -277,9 +276,11 @@ def process_tsv(
                         for i in range(len(barcodes))
                     ]
                     for barcode, whitelist, max_ham in RANGE:
-                        corrected_bc, bc_match_ham, next_match_diff = (
-                            calc_ed_with_whitelist(barcode, whitelist)
-                        )
+                        (
+                            corrected_bc,
+                            bc_match_ham,
+                            next_match_diff,
+                        ) = calc_ed_with_whitelist(barcode, whitelist)
 
                         if bc_match_ham <= max_ham:
                             # row2write.append(f"{barcode}\t{corrected_bc}\t{bc_match_ed}")
@@ -339,7 +340,7 @@ if __name__ == "__main__":
         nargs="+",
         type=int,
         default=2,
-        help="Minimum Hamming distance for correction (default: 2).",
+        help="Maximum Hamming distance for correction (default: 2).",
     )
     parser.add_argument(
         "--threads",
@@ -360,14 +361,14 @@ if __name__ == "__main__":
 
     # Print run settings for log files ----
     print(
-        f"input tsv:                    {args.tsv_in}\n"
-        f"output tsv (Full Info):       {args.tsv_out_full}\n"
-        f"output tsv (CBs only):        {args.tsv_out_slim}\n"
-        f"read ID column:               {args.id_column}\n"
-        f"barcode column(s):            {args.bc_columns}\n"
+        f"Input tsv:                    {args.tsv_in}\n"
+        f"Output tsv (Full Info):       {args.tsv_out_full}\n"
+        f"Output tsv (CBs only):        {args.tsv_out_slim}\n"
+        f"Read ID column:               {args.id_column}\n"
+        f"Barcode column(s):            {args.bc_columns}\n"
         f"Concatenate uncorrected BCs?: {args.concat_bcs}\n"
-        f"whitelist file(s):            {args.whitelist_files}\n"
-        f"minimum hamming distance(s):  {args.max_hams}\n"
+        f"Whitelist file(s):            {args.whitelist_files}\n"
+        f"Maximum hamming distance(s):  {args.max_hams}\n"
     )
 
     # Single-threaded = verbose

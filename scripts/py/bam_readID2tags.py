@@ -21,7 +21,6 @@ def parse_bam_and_add_tags(input_bam, output_bam, barcode_tag, umi_tag):
     with pysam.AlignmentFile(input_bam, "rb") as infile, pysam.AlignmentFile(
         output_bam, "wb", template=infile
     ) as outfile:
-
         for read in infile:
             read_id = read.query_name
             parts = read_id.split("_")

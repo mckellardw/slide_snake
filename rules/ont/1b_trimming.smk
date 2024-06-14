@@ -13,10 +13,10 @@ rule ont_cutadapt:
         JSON="{OUTDIR}/{SAMPLE}/ont/misc_logs/cutadapt.json",
     params:
         RECIPE=lambda w: get_recipes(w, mode="ONT"),
-        R1_LENGTHS=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="list"),
+        R1_PRIMER=config["R1_PRIMER"],  # R1 PCR primer (Visium & Seeker)
+        R1_LENGTH=lambda w: min(get_recipe_info(w, info_col="R1.finalLength", mode="list"))+ len(config["R1_PRIMER"]), # Add R1 primer length for ONT,
         # ADAPTER=config["R1_INTERNAL_ADAPTER"],  # Curio R1 internal adapter
         ADAPTER=lambda w: get_recipe_info(w, "internal.adapter", mode="ONT"),
-        R1_PRIMER=config["R1_PRIMER"],  # R1 PCR primer (Visium & Seeker)
         ADAPTER_COUNT=4,  # number of adapters that can be trimmed from each read
         QUALITY_MIN=5,  # Low Q score for ONT...
         MIN_R2_LENGTH=12,
@@ -34,37 +34,33 @@ rule ont_cutadapt:
     threads: config["CORES"]
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/cutadapt.log",
-    run:
-        R1_LENGTH = min(params.R1_LENGTHS) + len(
-            params.R1_PRIMER
-        )  # Add R1 primer length for ONT
+    conda:
+        f"{workflow.basedir}/envs/cutadapt.yml"
+    shell:
+        """
+        mkdir -p $(dirname  {output.R1_FQ})
 
-        shell(
-            f"""
-            mkdir -p $(dirname  {output.R1_FQ})
+        echo "Minimum R1 length: {params.R1_LENGTH}" > {log.log}
+        echo "" >> {log.log}
 
-            echo "Minimum R1 length: {R1_LENGTH}" > {log.log}
-            echo "" >> {log.log}
-
-            {EXEC['CUTADAPT']} \
-                --minimum-length {R1_LENGTH}:{params.MIN_R2_LENGTH} \
-                --error-rate {params.HETEROPOLYMER_ERROR_RATE} \
-                --overlap {params.OVERLAP} \
-                --match-read-wildcards \
-                --times {params.ADAPTER_COUNT} \
-                -A POLYA_3p="{params.POLYA}X;max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
-                -B TSO={params.TSO} \
-                -B TXG_TSO={params.TXG_TSO} \
-                -B SEEKER_LINKER={params.SEEKER_BB_LINKER} \
-                --pair-filter=any \
-                -o {output.R1_FQ} \
-                -p {output.R2_FQ} \
-                --cores {threads} \
-                --json {output.JSON} \
-                {input.R1_FQ} {input.R2_FQ} \
-            1>> {log.log}
-            """
-        )
+        cutadapt \
+            --minimum-length {params.R1_LENGTH}:{params.MIN_R2_LENGTH} \
+            --error-rate {params.HETEROPOLYMER_ERROR_RATE} \
+            --overlap {params.OVERLAP} \
+            --match-read-wildcards \
+            --times {params.ADAPTER_COUNT} \
+            -A POLYA_3p="{params.POLYA}X;max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
+            -B TSO={params.TSO} \
+            -B TXG_TSO={params.TXG_TSO} \
+            -B SEEKER_LINKER={params.SEEKER_BB_LINKER} \
+            --pair-filter=any \
+            -o {output.R1_FQ} \
+            -p {output.R2_FQ} \
+            --cores {threads} \
+            --json {output.JSON} \
+            {input.R1_FQ} {input.R2_FQ} \
+        1>> {log.log}
+        """
         # -g R1_PRIMER=X{params.R1_PRIMER} \
         # --minimum-length {R1_LENGTH}:{params.MIN_R2_LENGTH} \
         # --maximum-length {2*R1_LENGTH}: \
@@ -150,31 +146,27 @@ rule ont_cutadapt_internalTrimming:
         JSON="{OUTDIR}/{SAMPLE}/ont/misc_logs/cutadapt_internalTrim.json",
     params:
         RECIPE=lambda w: get_recipes(w, mode="ONT"),
-        R1_LENGTHS=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="list"),
+        R1_LENGTH=lambda w: min(get_recipe_info(w, info_col="R1.finalLength", mode="list"))+ len(params.R1), # Add R1 primer length for ONT,
         ADAPTER=lambda w: get_recipe_info(w, "internal.adapter", mode="ONT"),
     threads: config["CORES"]
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/cutadapt_internalTrim.log",
-    run:
-        R1_LENGTH = min(
-            params.R1_LENGTHS
-        )  # + len(params.R1) # Add R1 primer length for ONT
+    conda:
+        f"{workflow.basedir}/envs/cutadapt.yml"
+    shell:
+        """
+        mkdir -p $(dirname  {output.R1_FQ})
 
-        shell(
-            f"""
-            mkdir -p $(dirname  {output.R1_FQ})
+        echo "Minimum R1 length: {params.R1_LENGTH}" > {log.log}
+        echo "" >> {log.log}
 
-            echo "Minimum R1 length: {R1_LENGTH}" > {log.log}
-            echo "" >> {log.log}
-
-            {EXEC['CUTADAPT']} \
-                --minimum-length {R1_LENGTH}: \
-                --pair-filter=any \
-                -o {output.R1_FQ} \
-                -p {output.R2_FQ} \
-                --cores {threads} \
-                --json {output.JSON} \
-                {input.R1_FQ} {input.R2_FQ} \
-            1>> {log.log}
-            """
-        )
+        cutadapt \
+            --minimum-length {params.R1_LENGTH}: \
+            --pair-filter=any \
+            -o {output.R1_FQ} \
+            -p {output.R2_FQ} \
+            --cores {threads} \
+            --json {output.JSON} \
+            {input.R1_FQ} {input.R2_FQ} \
+        1>> {log.log}
+        """

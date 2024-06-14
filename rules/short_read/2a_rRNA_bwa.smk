@@ -24,34 +24,34 @@ rule bwa_rRNA_align:
     log:
         log="{OUTDIR}/{SAMPLE}/rRNA/bwa/bwa_mem.log",
     threads: config["CORES"]
-    run:
-        shell(
-            f"""
-            mkdir -p $(dirname {output.BAM1})
+    conda:
+        f"{workflow.basedir}/envs/bwa.yml"
+    shell:
+        """
+        mkdir -p $(dirname {output.BAM1})
 
-            {EXEC['BWA']} mem \
-                -t {threads} \
-                {params.BWA_REF} \
-                {input.R2_FQ} \
-            1> {output.BAM1} \
-            2> {log.log} \
-            
-            {EXEC['SAMTOOLS']} sort \
-                -@ {threads} \
-                -O BAM \
-                {output.BAM1} \
-            > {output.BAM2} 
+        bwa-mem2 mem \
+            -t {threads} \
+            {params.BWA_REF} \
+            {input.R2_FQ} \
+        1> {output.BAM1} \
+        2> {log.log} \
+        
+        samtools sort \
+            -@ {threads} \
+            -O BAM \
+            {output.BAM1} \
+        > {output.BAM2} 
 
-            {EXEC['SAMTOOLS']} view \
-                -h {output.BAM2} \
-            | awk \
-                -v quality={params.MIN_ALIGNSCORE} \
-                -f scripts/awk/bam_lowPassMAPQFilter.awk \
-            | {EXEC['SAMTOOLS']} fastq \
-                {output.BAM2} \
-            > {output.R2_FQ_BWA_FILTERED} 
-            """
-        )
+        samtools view \
+            -h {output.BAM2} \
+        | awk \
+            -v quality={params.MIN_ALIGNSCORE} \
+            -f scripts/awk/bam_lowPassMAPQFilter.awk \
+        | samtools fastq \
+            {output.BAM2} \
+        > {output.R2_FQ_BWA_FILTERED} 
+        """
 
 
 rule bwa_rRNA_filter_R1:

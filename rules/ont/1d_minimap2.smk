@@ -1,45 +1,5 @@
 # Align w/ minimap2
 ## minimap2 docs - https://lh3.github.io/minimap2/minimap2.html
-# rule ont_align_minimap2_genome:
-#     input:
-#         FQ="{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/umi_R2.fq.gz",
-#     output:
-#         SAM_TMP=temp("{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tmp.sam"),
-#     params:
-#         EXTRA_FLAGS=lambda wildcards: RECIPE_SHEET["minimap2.extra"][wildcards.RECIPE],
-#         ref=config["REF_GENOME_FASTA"],
-#         chrom_sizes=config["REF_CHROM_SIZES"],
-#         bed=config["REF_GENES_BED"],
-#         flags=config["RESOURCES_MM2_FLAGS"],
-#     log:
-#         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/minimap2.log",
-#     threads: config["CORES"]
-#     # resources:
-#     #     mem_gb=get_split_ont_align_mem_gb,
-#     # conda:
-#     #     f"{workflow.basedir}/envs/minimap2.yml" #TODO
-#     run:
-#         shell(
-#             f"""
-#             mkdir -p $(dirname {output.SAM_TMP})
-
-#             echo "Extra flags: {params.EXTRA_FLAGS}" > {log.log} 
-#             echo "" >> {log.log} 
-
-#             {EXEC['MINIMAP2']} \
-#                 -ax splice \
-#                 -uf \
-#                 --MD \
-#                 -t {threads} \
-#                 --junc-bed {params.bed} \
-#                 {params.flags} {params.EXTRA_FLAGS} \
-#                 {params.ref} \
-#                 {input.FQ} \
-#             2>> {log.log} \
-#             > {output.SAM_TMP}
-#             """
-#         )
-
 rule ont_align_minimap2_genome:
     input:
         # FQ="{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/umi_R2.fq.gz",
@@ -57,31 +17,29 @@ rule ont_align_minimap2_genome:
     threads: config["CORES"]
     # resources:
     #     mem_gb=get_split_ont_align_mem_gb,
-    # conda:
-    #     f"{workflow.basedir}/envs/minimap2.yml" #TODO
-    run:
-        shell(
-            f"""
-            mkdir -p $(dirname {output.SAM_TMP})
+    conda:
+        f"{workflow.basedir}/envs/minimap2.yml"
+    shell:
+        """
+        mkdir -p $(dirname {output.SAM_TMP})
 
-            echo "Extra flags: {params.EXTRA_FLAGS}" > {log.log} 
-            echo "" >> {log.log} 
+        echo "Extra flags: {params.EXTRA_FLAGS}" > {log.log} 
+        echo "" >> {log.log} 
 
-            {EXEC['MINIMAP2']} \
-                -ax splice \
-                -uf \
-                --MD \
-                -t {threads} \
-                --junc-bed {params.bed} \
-                {params.flags} {params.EXTRA_FLAGS} \
-                {params.ref} \
-                {input.FQ} \
-            2>> {log.log} \
-            > {output.SAM_TMP}
-            """
-        )
+        minimap2 \
+            -ax splice \
+            -uf \
+            --MD \
+            -t {threads} \
+            --junc-bed {params.bed} \
+            {params.flags} {params.EXTRA_FLAGS} \
+            {params.ref} \
+            {input.FQ} \
+        2>> {log.log} \
+        > {output.SAM_TMP}
+        """
 
-rule ont_sort_index_output:
+rule ont_sort_compress_output:
     input:
         SAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tmp.sam",
     output:
@@ -90,8 +48,6 @@ rule ont_sort_index_output:
         # BAI=temp("{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam.bai"),
     params:
         ref=config["REF_GENOME_FASTA"],
-    # threads:
-    #     config["CORES"]
     run:
         shell(
             f"""
@@ -102,86 +58,6 @@ rule ont_sort_index_output:
                 {input.SAM}             
             """
         )
-
-
-# Get UMI & CB from R1 fastq
-# rule ont_extract_barcodes_from_R1:
-#     input:
-#         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam",
-#     output:
-#         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_cb.bam",
-#     params:
-#         BARCODE_TAG="CR",  # uncorrected!
-#         UMI_TAG="UR",  # uncorrected!
-#     threads: 1
-#     log:
-#         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/extract_barcodes.log",
-#     run:
-#         shell(
-#             f"""
-#             python scripts/py/bam_readID2tags.py \
-#                 --input {input.BAM} \
-#                 --output {output.BAM} \
-#                 -c {params.BARCODE_TAG} \
-#                 -y {params.UMI_TAG} \
-#             2>> {log.log}
-#             """
-#         )
-
-# Note - run time increases (substantially) with BC length
-# rule ont_error_correct_barcodes:
-#     input:
-#         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_cb.bam",
-#         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_cb.bam.bai",
-#         WHITELIST=lambda w: get_whitelist(w),
-#         # BB_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
-#         # BB_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
-#         # BB_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
-#         # BB_ADAPTER="{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt",
-#         # BB_ADAPTER_R1="{OUTDIR}/{SAMPLE}/bb/whitelist_adapter_r1.txt",
-#     output:
-#         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_cb_corrected.bam",
-#         COUNTS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/counts.tsv",
-#     params:
-#         max_ed=config["BARCODE_MAX_ED"],
-#         min_ed_diff=config["BARCODE_MIN_ED_DIFF"],
-#         adapter1_suff_length=config["BARCODE_ADAPTER1_SUFF_LENGTH"],
-#         # kit=lambda w: sample_sheet.loc[w.run_id, "kit_name"],
-#         KIT="3prime",  #['3prime', '5prime', 'multiome']
-#         # UMI_LENGTH=lambda w: get_umi_length(w),
-#         UMI_LENGTH=lambda w: get_recipe_info(w, info_col="UMI.length", mode="ONT"),
-#         WHITELIST=lambda w: get_whitelist(w),
-#     threads: config["CORES"]
-#     # 1
-#     log:
-#         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/correct_barcodes.log",
-#     # conda:
-#     #     "../envs/barcodes.yml"
-#     run:
-#         shell(
-#             f"""
-#             echo "UMI length:        {params.UMI_LENGTH}" > {log.log}
-#             echo "Barcode whitelist: {params.WHITELIST}" >> {log.log}
-
-#             python scripts/py/barcodes_correct_parallelized.py \
-#                 -t {threads} \
-#                 --output_bam {output.BAM} \
-#                 --output_counts {output.COUNTS} \
-#                 --max_ed {params.max_ed} \
-#                 --min_ed_diff {params.min_ed_diff} \
-#                 --kit {params.KIT} \
-#                 --adapter1_suff_length {params.adapter1_suff_length} \
-#                 --umi_length {params.UMI_LENGTH} \
-#                 {input.BAM} {input.WHITELIST} \
-#             2>> {log.log}
-#             """
-#         )
-
-        # barcode_length = get_barcode_length(wildcards)
-        # barcode_length = len(open(whitelist).readline())
-        # umi_length = get_umi_length(wildcards)
-        # echo "Barcode length: {barcode_length}" > {log.log}
-        #     --barcode_length {barcode_length} \
 
 
 rule ont_featureCounts:
@@ -201,29 +77,25 @@ rule ont_featureCounts:
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/featureCounts.log",
     threads: 1  # long reads can only run single-threaded
-    # conda:
-    run:
-        shell(
-            f"""
-            {EXEC['FEATURECOUNTS']} \
-                -a {params.GTF} \
-                -o {output.FEAT} \
-                -L \
-                -s 1 \
-                -f \
-                -d {params.MIN_TEMPLATE_LENGTH} \
-                -D {params.MAX_TEMPLATE_LENGTH} \
-                -t 'transcript' \
-                -g 'transcript_id' \
-                -T {threads} \
-                -R CORE {params.EXTRA_FLAGS} \
-                {input.BAM} \
-            |& tee {log.log}
-            """
-        )
-
-
-#
+    conda:
+        f"{workflow.basedir}/envs/minimap2.yml"
+    shell:
+        """
+        featureCounts \
+            -a {params.GTF} \
+            -o {output.FEAT} \
+            -L \
+            -s 1 \
+            -f \
+            -d {params.MIN_TEMPLATE_LENGTH} \
+            -D {params.MAX_TEMPLATE_LENGTH} \
+            -t 'transcript' \
+            -g 'transcript_id' \
+            -T {threads} \
+            -R CORE {params.EXTRA_FLAGS} \
+            {input.BAM} \
+        |& tee {log.log}
+        """
 # --donotsort \
 # −−sortReadsByCoordinates \
 
@@ -377,21 +249,21 @@ rule ont_umitools_count:
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/umitools_count.log",
     threads: 1
-    run:
-        shell(
-            f"""
-            {EXEC['UMITOOLS']} count \
-                --extract-umi-method=tag \
-                --per-gene \
-                --per-cell \
-                --cell-tag={params.CELL_TAG} \
-                --gene-tag={params.GENE_TAG}  \
-                --umi-tag={params.UMI_TAG}  \
-                --log={log.log} \
-                -I {input.BAM} \
-                -S {output.COUNTS} 
-            """
-        )
+    conda:
+        f"{workflow.basedir}/envs/umi_tools.yml"
+    shell:
+        """
+        umi_tools count \
+            --extract-umi-method=tag \
+            --per-gene \
+            --per-cell \
+            --cell-tag={params.CELL_TAG} \
+            --gene-tag={params.GENE_TAG}  \
+            --umi-tag={params.UMI_TAG}  \
+            --log={log.log} \
+            -I {input.BAM} \
+            -S {output.COUNTS} 
+        """
 
 
 rule ont_counts_to_sparse:
