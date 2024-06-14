@@ -1,4 +1,4 @@
-name: slsn_scanpy
+name: scanpy
 channels:
   - conda-forge
   - bioconda
@@ -113,4 +113,3 @@ dependencies:
   - xorg-libxdmcp=1.1.3
   - xz=5.2.6
   - zstd=1.5.5
-prefix: /nfs/home/dmckellar/mambaforge/envs/slsn_scanpy
