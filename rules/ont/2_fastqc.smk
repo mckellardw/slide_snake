@@ -8,18 +8,18 @@ rule ont_fastQC_preTrim:
         adapters=config["FASTQC_ADAPTERS"],
     threads: config["CORES"]
     # min([config['CORES'],8]) # 8 core max
+    conda:
+        f"{workflow.basedir}/envs/fastqc.yml"
     run:
-        shell(
-            f"""
-            mkdir -p {output.DIR}
+        """
+        mkdir -p {output.DIR}
 
-            {EXEC['FASTQC']} \
-                --outdir {output.DIR} \
-                --threads {threads} \
-                -a {params.adapters} \
-                {input.FQ}
-            """
-        )
+        fastqc \
+            --outdir {output.DIR} \
+            --threads {threads} \
+            -a {params.adapters} \
+            {input.FQ}
+        """
 
 
 # fastqc after cutadapt trimming
@@ -32,18 +32,18 @@ rule ont_fastQC_preCutadapt:
         adapters=config["FASTQC_ADAPTERS"],
     threads: config["CORES"]
     # min([config['CORES'],8]) # 8 core max
-    run:
-        shell(
-            f"""
-            mkdir -p {output.DIR}
+    conda:
+        f"{workflow.basedir}/envs/fastqc.yml"
+    shell:
+        """
+        mkdir -p {output.DIR}
 
-            {EXEC['FASTQC']} \
-                --outdir {output.DIR} \
-                --threads {threads} \
-                -a {params.adapters} \
-                {input.FQ}
-            """
-        )
+        fastqc \
+            --outdir {output.DIR} \
+            --threads {threads} \
+            -a {params.adapters} \
+            {input.FQ}
+        """
 
 
 # fastqc after cutadapt trimming
@@ -56,15 +56,16 @@ rule ont_fastQC_postCutadapt:
         adapters=config["FASTQC_ADAPTERS"],
     threads: config["CORES"]
     # min([config['CORES'],8]) # 8 core max
-    run:
-        shell(
-            f"""
+    conda:
+        f"{workflow.basedir}/envs/fastqc.yml"
+    shell:
+        """
             mkdir -p {output.DIR}
 
-            {EXEC['FASTQC']} \
+            fastqc \
                 --outdir {output.DIR} \
                 --threads {threads} \
                 -a {params.adapters} \
                 {input.FQ}
             """
-        )
+        

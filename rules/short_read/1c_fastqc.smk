@@ -11,18 +11,18 @@ rule fastQC_preTrim:
         adapters=config["FASTQC_ADAPTERS"],
     threads: config["CORES"]
     # min([config['CORES'],8]) # 8 core max
-    run:
-        shell(
-            f"""
-            mkdir -p {output.fastqcDir}
+    conda:
+        f"{workflow.basedir}/envs/fastqc.yml"
+    shell:
+        """
+        mkdir -p {output.fastqcDir}
 
-            {EXEC['FASTQC']} \
-                --outdir {output.fastqcDir} \
-                --threads {threads} \
-                -a {params.adapters} \
-                {input.MERGED_FQ}
-            """
-        )
+        fastqc \
+            --outdir {output.fastqcDir} \
+            --threads {threads} \
+            -a {params.adapters} \
+            {input.MERGED_FQ}
+        """
 
 
 # fastqc on R1 after linker removal & R2 trimming/filtering
@@ -36,18 +36,18 @@ rule fastQC_postTrim:
     # min([config['CORES'],8]) # 8 core max
     params:
         adapters=config["FASTQC_ADAPTERS"],
-    run:
-        shell(
-            f"""
-            mkdir -p {output.fastqcDir}
+    conda:
+        f"{workflow.basedir}/envs/fastqc.yml"
+    shell:
+        """
+        mkdir -p {output.fastqcDir}
 
-            {EXEC['FASTQC']} \
-                --outdir {output.fastqcDir} \
-                --threads {threads} \
-                -a {params.adapters} \
-                {input.FINAL_FQ}
-            """
-        )
+        fastqc \
+            --outdir {output.fastqcDir} \
+            --threads {threads} \
+            -a {params.adapters} \
+            {input.FINAL_FQ}
+        """
 
 
 rule fastQC_twiceTrim:
@@ -60,15 +60,15 @@ rule fastQC_twiceTrim:
     # min([config['CORES'],8]) # 8 core max
     params:
         adapters=config["FASTQC_ADAPTERS"],
-    run:
-        shell(
-            f"""
-            mkdir -p {output.fastqcDir}
+    conda:
+        f"{workflow.basedir}/envs/fastqc.yml"
+    shell:
+        """
+        mkdir -p {output.fastqcDir}
 
-            {EXEC['FASTQC']} \
-                --outdir {output.fastqcDir} \
-                --threads {threads} \
-                -a {params.adapters} \
-                {input.FINAL_FQ}
-            """
-        )
+        fastqc \
+            --outdir {output.fastqcDir} \
+            --threads {threads} \
+            -a {params.adapters} \
+            {input.FINAL_FQ}
+        """
