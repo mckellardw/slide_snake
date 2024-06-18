@@ -10,7 +10,7 @@ rule ont_fastQC_preTrim:
     # min([config['CORES'],8]) # 8 core max
     conda:
         f"{workflow.basedir}/envs/fastqc.yml"
-    run:
+    shell:
         """
         mkdir -p {output.DIR}
 
