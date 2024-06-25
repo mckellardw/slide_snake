@@ -63,7 +63,6 @@ def extract_barcodes(
 
     with pysam.FastxFile(fq_in) as fastq:
         with open(tsv_out, "w") as outfile:
-
             for read in fastq:
                 if read_count % 1000000 == 0:
                     print(f"{read_count} reads processed...")

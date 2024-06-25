@@ -167,7 +167,6 @@ def read_csv_to_dict(filename, names2check=""):
 
     # Open the CSV file
     with open(filename, "r") as file:
-
         # Create a CSV reader object
         reader = csv.reader(file)
 
@@ -179,10 +178,8 @@ def read_csv_to_dict(filename, names2check=""):
 
         # Loop through each row in the CSV file
         for row in reader:
-
             # Loop through each column in the row
             for col, value in zip(header, row):
-
                 # Add the value to the corresponding column in the dictionary
                 if value:  # skip empty strings
                     dict_out[col].append(value)

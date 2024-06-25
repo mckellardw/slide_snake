@@ -276,11 +276,11 @@ rule ont_counts_to_sparse:
     params:
         OUTDIR=config["OUTDIR"],
     threads: 1
-    run:
-        output_dir = output.COUNTS.replace("/matrix.mtx.gz", "")
-        shell(
-            f"""
-            mkdir -p {output_dir}
-            python scripts/py/long2mtx.py {input.COUNTS} {output_dir}
-            """
-        )
+    conda:
+        f"{workflow.basedir}/envs/scanpy.yml"
+    shell:
+        """
+        mkdir -p $(dirname {output.COUNTS})
+        python scripts/py/long2mtx.py {input.COUNTS} $(dirname {output.COUNTS})
+        """
+        

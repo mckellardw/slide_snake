@@ -268,7 +268,6 @@ def plot_grid_of_embeddings(
 ):
     """
     Plot a grid of embeddings for multiple Anndata objects.
-    #TODO
     Parameters:
         adata_dict (dict): Dictionary of Anndata objects. The keys represent the plot titles and the values are the corresponding Anndata objects.
         color (list): List of feature names to use for coloring the embeddings.
@@ -285,7 +284,9 @@ def plot_grid_of_embeddings(
 
     if titles is None:
         titles = list(adata_dict.keys())
+
     nrows = len(list(color))
+
     if len(color) >= 1:
         fig, axes = plt.subplots(
             nrows=nrows,
@@ -340,8 +341,10 @@ def plot_grid_of_embeddings(
 
         for j, (tmp_key, adata) in enumerate(adata_dict.items()):
             ax = axes[i * ncols + j]
+            ax.set_aspect("equal")
             # vmin = color_min if same_scale else None
             vmax = color_max if same_scale else None
+
             if "cmap" in kwargs.keys():
                 if kwargs["cmap"] is not None and type(kwargs["cmap"]) == str:
                     kwargs["cmap"] = mpl.colormaps.get_cmap(kwargs["cmap"])

@@ -102,7 +102,7 @@ def get_fqs(w, return_type=["list", "dict"], mode=["ONT", "ILMN"]):
 
 
 # whitelist param handling for different recipes/technologies/chemistries/etc
-def get_whitelist(w, return_type=None):
+def get_whitelist(w, return_type=None, mode=["recipe","all_used", "all"]):
     try:
         if "matchLinker" in w.RECIPE:
             if return_type == "list":
@@ -137,6 +137,45 @@ def get_whitelist(w, return_type=None):
     # return whitelist path(s)
     return whitelist
 
+def get_default_whitelist(w, return_type=None):
+    try:
+        if any("seeker" in recipe for recipe in get_recipes(w)):
+            if return_type == "list":
+                whitelist = [
+                    f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_1.txt",
+                    f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_2.txt",
+                ]
+            else:
+                whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_1.txt {w.OUTDIR}/{w.SAMPLE}/bc/whitelist_2.txt"
+        else:
+            # visium, stomics, microST
+            if return_type == "list":
+                whitelist = [f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist.txt"]
+            else:
+                whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist.txt"
+    except Exception:
+        if return_type == "list":
+            whitelist = [f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist.txt"]
+        else:
+            whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist.txt"
+
+    # return whitelist path(s)
+    return whitelist
+
+def get_all_used_whitelists(w, return_type=None):
+    try:
+        recipes = get_recipes(w.SAMPLE)
+        whitelist = []
+        for recipe in recipes:
+            whitelist.append(get_whitelist(w,mode="recipe"))
+    except Exception:
+        if return_type == "list":
+            whitelist = [f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist.txt"]
+        else:
+            whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist.txt"
+
+    # return whitelist path(s)
+    return whitelist
 
 # Barcode map param handling for different recipes/technologies/chemistries/etc
 def get_bc_map(w, mode=["ONT", "ILMN"]):

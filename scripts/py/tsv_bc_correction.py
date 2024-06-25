@@ -197,9 +197,11 @@ def main(
                         for i in range(len(barcodes))
                     ]
                     for barcode, whitelist, max_ham in RANGE:
-                        corrected_bc, bc_match_ham, next_match_diff = (
-                            calc_ed_with_whitelist(barcode, whitelist)
-                        )
+                        (
+                            corrected_bc,
+                            bc_match_ham,
+                            next_match_diff,
+                        ) = calc_ed_with_whitelist(barcode, whitelist)
 
                         if bc_match_ham <= max_ham:
                             # row2write.append(f"{barcode}\t{corrected_bc}\t{bc_match_ed}")
