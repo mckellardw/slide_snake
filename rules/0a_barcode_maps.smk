@@ -31,13 +31,11 @@ rule get_simple_whitelist:
     output:
         BC="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
     threads: 1
-    run:
-        shell(
-            f"""
-            mkdir -p $(dirname {output.BC})
-            cut -f1 {input.BC_MAP} > {output.BC}
-            """
-        )
+    shell:
+        """
+        mkdir -p $(dirname {output.BC})
+        cut -f1 {input.BC_MAP} > {output.BC}
+        """
 
 
 # Split the barcodes and save whitelists

@@ -25,7 +25,7 @@ rule merge_formats_ONT:
                     cp {F} {output.MERGED_FQ} 2>> {log.log}
                     """
                 )
-            elif ".sam" in F or ".bam" in F:
+            elif ".sam" in F or ".bam" in F or ".cram" in F:
                 shell(
                     f"""
                     if [ -f {F} ]; then
@@ -39,6 +39,8 @@ rule merge_formats_ONT:
                     {EXEC['PIGZ']} -p{threads} {output.MERGED_FQ.strip('.gz')} 2>> {log.log}
                     """
                 )
+            else:
+                print(f"File type for [{F}] not supported!")
         elif len(params.ONT_reads) == 1 and "*" in params.ONT_reads[0]:
             import glob
 
@@ -69,7 +71,7 @@ rule merge_formats_ONT:
                         zcat {F} >> {F_base}
                         """
                     )
-                elif ".sam" in F or ".bam" in F:
+                elif ".sam" in F or ".bam" in F or ".cram" in F:
                     shell(
                         f"""
                         {EXEC['SAMTOOLS']} fastq {F} \
@@ -77,6 +79,8 @@ rule merge_formats_ONT:
                         2>> {log.log}
                         """
                     )
+                else:
+                    print(f"File type for [{F}] not supported!")
                     # end for loop
 
             shell(
@@ -100,7 +104,7 @@ rule merge_formats_ONT:
                         fi
                         """
                     )
-                elif ".sam" in F or ".bam" in F:
+                elif ".sam" in F or ".bam" in F or ".cram" in F:
                     shell(
                         f"""
                         if [ -f {F} ]; then
@@ -112,7 +116,9 @@ rule merge_formats_ONT:
                         fi                    
                         """
                     )
-                    # end loop
+                else:
+                    print(f"File type for [{F}] not supported!")
+            # end loop
 
             shell(
                 f"""
@@ -177,16 +183,14 @@ rule ont_adapterScan_QC:
     output:
         LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/adapter_scan_results.txt",
     threads: 1
-    run:
-        shell(
-            f"""
-            dir_path=$(dirname {input.FULL_LEN})
+    shell:
+        """
+        dir_path=$(dirname {input.FULL_LEN})
 
-            for file in "$dir_path"/*.txt; do
-                echo "$(basename $file)"\t"$(wc -l <"$file")" >> {output.LOG}
-            done
-            """
-        )
+        for file in "$dir_path"/*.txt; do
+            echo "$(basename $file)"\t"$(wc -l <"$file")" >> {output.LOG}
+        done
+        """
 
 
 # merge lists of useable reads

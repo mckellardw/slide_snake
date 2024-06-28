@@ -3,7 +3,7 @@ import argparse
 import gzip
 import os
 from itertools import groupby
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, as_completed
 import time
 
 # Usage:
@@ -11,12 +11,12 @@ import time
 python scripts/py/fastq_read_qc2.py \
     data/test_seeker/heart_ctrl_4k_ont.fq.gz \
     heart_ctrl_4k_ont.tsv \
-    --threads 4 \
+    --cores 4 \
     --chunk_size 1000
 """
 
 
-def calculate_metrics(fastq_file, start, end, chunk_size=100000):
+def calculate_metrics(fastq_file, start, chunk_size=100000):
     is_compressed = fastq_file.endswith(".gz")
     metrics = []
     read_id = ""
@@ -78,27 +78,29 @@ def write_tsv(metrics, tsv_file):
             f.write(line + "\n")
 
 
-def process_reads(fastq_file, tsv_file, chunk_size=100000, threads=1):
+def worker(fastq_file, tsv_file, start, chunk_size):
+    for metrics_chunk in calculate_metrics(fastq_file, start, chunk_size):
+        print(f"Processed {len(metrics_chunk)} reads...")
+        print(
+            f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Writing metrics to file..."
+        )
+        write_tsv(metrics_chunk, tsv_file)
+
+
+def process_reads(fastq_file, tsv_file, chunk_size=100000, cores=1):
     print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Processing reads...")
 
-    def worker(start, end):
-        for metrics_chunk in calculate_metrics(fastq_file, start, end, chunk_size):
-            print(f"Processed {len(metrics_chunk)} reads...")
-            print(
-                f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Writing metrics to file..."
-            )
-            write_tsv(metrics_chunk, tsv_file)
+    # Determine the number of chunks to process
+    total_reads = sum(
+        1 for _ in calculate_metrics(fastq_file, 0, chunk_size=1)
+    )  # Only counting reads
+    total_chunks = (
+        total_reads + chunk_size - 1
+    ) // chunk_size  # Round up to cover all reads
 
-    total_chunks = sum(1 for _ in calculate_metrics(fastq_file, 0, 0))
-    chunk_size_bytes = chunk_size * 4  # Each read takes 4 lines
-
-    with ThreadPoolExecutor(max_workers=threads) as executor:
+    with ProcessPoolExecutor(max_workers=cores) as executor:
         futures = [
-            executor.submit(
-                worker,
-                i * chunk_size,
-                ((i + 1) * chunk_size) if i < total_chunks - 1 else None,
-            )
+            executor.submit(worker, fastq_file, tsv_file, i * chunk_size, chunk_size)
             for i in range(total_chunks)
         ]
 
@@ -106,12 +108,12 @@ def process_reads(fastq_file, tsv_file, chunk_size=100000, threads=1):
             future.result()
 
 
-def main(fastq_file, tsv_file, threads, chunk_size):
+def main(fastq_file, tsv_file, cores, chunk_size):
     output_dir = os.path.dirname(tsv_file)
     if len(output_dir) > 0 and not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    process_reads(fastq_file, tsv_file, chunk_size, threads)
+    process_reads(fastq_file, tsv_file, chunk_size, cores)
 
 
 if __name__ == "__main__":
@@ -121,10 +123,10 @@ if __name__ == "__main__":
     parser.add_argument("fastq_file", type=str, help="Path to the input FASTQ file.")
     parser.add_argument("tsv_file", type=str, help="Path to the output TSV file.")
     parser.add_argument(
-        "--threads",
+        "--cores",
         type=int,
         default=1,
-        help="Number of threads to use for multithreading. Default is 1.",
+        help="Number of cores to use for multithreading. Default is 1.",
     )
     parser.add_argument(
         "--chunk_size",
@@ -134,4 +136,4 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    main(args.fastq_file, args.tsv_file, args.threads, args.chunk_size)
+    main(args.fastq_file, args.tsv_file, args.cores, args.chunk_size)
