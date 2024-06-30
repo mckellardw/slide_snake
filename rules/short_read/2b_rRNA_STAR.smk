@@ -7,7 +7,7 @@
 rule STAR_rRNA_align:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
-        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",        
+        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
         # WHITELIST=lambda w: get_whitelist(w, mode="all_used"),
         BC_WHITELIST="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
         BC_1="{OUTDIR}/{SAMPLE}/bc/whitelist_1.txt",
@@ -106,16 +106,15 @@ rule STAR_rRNA_rename_compress_unmapped:
     run:
         shell(
             f"""
-            mv {input.UNMAPPED1} {output.FILTERED2_FQ.replace('.gz','')}
-            mv {input.UNMAPPED2} {output.FILTERED1_FQ.replace('.gz','')}
+            mv {input.UNMAPPED1} {output.FILTERED2_FQ.replace('.gz' , '')}
+            mv {input.UNMAPPED2} {output.FILTERED1_FQ.replace('.gz' , '')}
 
             {EXEC['PIGZ']} \
                 -p{threads} \
-                {output.FILTERED2_FQ.replace('.gz','')} \
-                {output.FILTERED1_FQ.replace('.gz','')}
+                {output.FILTERED2_FQ.replace('.gz' , '')} \
+                {output.FILTERED1_FQ.replace('.gz' , '')}
             """
         )
-
 
 
 #  Run fastqc on unmapped reads;
@@ -127,15 +126,15 @@ rule STAR_rRNA_filtered_fastqc:
     params:
         adapters=config["FASTQC_ADAPTERS"],
     threads: config["CORES"]
-    run:
-        shell(
-            f"""
-            mkdir -p {output.FQC_DIR}
+    conda:
+        f"{workflow.basedir}/envs/fastqc.yml"
+    shell:
+        """
+        mkdir -p {output.FQC_DIR}
 
-            {EXEC['FASTQC']} \
-                -o {output.FQC_DIR} \
-                -t {threads} \
-                -a {params.adapters} \
-                {input.FQ}
-            """
-        )
+        fastqc \
+            -o {output.FQC_DIR} \
+            -t {threads} \
+            -a {params.adapters} \
+            {input.FQ}
+        """

@@ -98,21 +98,21 @@ rule bwa_rRNA_compress_unmapped:
 #  Run fastqc on unmapped reads;
 rule bwa_rRNA_filtered_fastqc:
     input:
-        FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_{READ}.fq.gz",
+        FQ="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_{READ}.fq.gz",
     output:
         FQC_DIR=directory("{OUTDIR}/{SAMPLE}/fastqc/rRNA_bwa_{READ}"),
     params:
         adapters=config["FASTQC_ADAPTERS"],
     threads: config["CORES"]
-    run:
-        shell(
-            f"""
-            mkdir -p {output.FQC_DIR}
+    conda:
+        f"{workflow.basedir}/envs/fastqc.yml"
+    shell:
+        """
+        mkdir -p {output.FQC_DIR}
 
-            {EXEC['FASTQC']} \
-                -o {output.FQC_DIR} \
-                -t {threads} \
-                -a {params.adapters} \
-                {input.FQ_BWA_FILTERED}
-            """
-        )
+        fastqc \
+            -o {output.FQC_DIR} \
+            -t {threads} \
+            -a {params.adapters} \
+            {input.FQ}
+        """
