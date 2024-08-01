@@ -358,7 +358,7 @@ if __name__ == "__main__":
     )
     print("")
     print(
-        f"{currentTime()}"
+        f"{currentTime()}\n"
         f"# Reads w/ all barcodes found:            {bc_match_count}\n"
         f"# Reads w/ at least one barcode missing:  {bc_missing_count}\n"
         f"# Reads w/ no barcodes                    {no_bc_count}\n"
