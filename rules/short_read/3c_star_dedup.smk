@@ -4,10 +4,7 @@
 # TODO: add exec paths for samtools, bamtools
 rule umitools_dedupBAM:
     input:
-        BC_WHITELIST="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
-        BC_1="{OUTDIR}/{SAMPLE}/bc/whitelist_1.txt",
-        BC_2="{OUTDIR}/{SAMPLE}/bc/whitelist_2.txt",
-        BC_US="{OUTDIR}/{SAMPLE}/bc/whitelist_underscore.txt",
+        WHITELIST=lambda w: get_whitelist(w, return_type="list"),
         BAM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.out.bam",
     output:
         BAM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.dedup.out.bam",
@@ -16,39 +13,25 @@ rule umitools_dedupBAM:
     threads: config["CORES"]
     log:
         log="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/dedup.log",
-    run:
-        shell(
-            f"""
-            bash scripts/bash/split_dedup.sh \
-                {input.BAM} \
-                {params.WHITELIST} \
-                {threads} \
-                {output.BAM} \
-                $(dirname {output.BAM})/tmp/dedup  \
-            | tee {log.log}
-            """
-        )
-
-
-# # Index the deduplicated .bam file
-# rule umitools_indexDedupBAM:
-#     input:
-#         BAM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.dedup.out.bam",
-#     output:
-#         BAI="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.dedup.out.bam.bai",
-#     threads: config["CORES"]
-#     run:
-#         shell(
-#             f"""
-#             {EXEC['SAMTOOLS']} index -@ {threads} {input.BAM}
-#             """
-#         )
+    conda:
+        f"{workflow.basedir}/envs/umi_tools.yml"
+    shell:
+        """
+        bash scripts/bash/split_dedup.sh \
+            {input.BAM} \
+            {input.WHITELIST} \
+            {threads} \
+            {output.BAM} \
+            $(dirname {output.BAM})/tmp/dedup  \
+        | tee {log.log}
+        """
 
 
 # Split .bam file by strand for IGV browsing
 rule strand_split_dedup_bam:
     input:
-        DEDUPBAM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.dedup.out.bam",
+        BAM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.dedup.out.bam",
+        BAI="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.dedup.out.bam.bai",
     output:
         FWDBAM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.dedup.out.fwd.bam",
         REVBAM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.dedup.out.rev.bam",
@@ -56,8 +39,8 @@ rule strand_split_dedup_bam:
     run:
         shell(
             f"""
-            {EXEC['SAMTOOLS']} view -b -F 0x10 {input.DEDUPBAM} > {output.FWDBAM}
-            {EXEC['SAMTOOLS']} view -b -f 0x10 {input.DEDUPBAM} > {output.REVBAM}
+            {EXEC['SAMTOOLS']} view -b -F 0x10 {input.BAM} > {output.FWDBAM}
+            {EXEC['SAMTOOLS']} view -b -f 0x10 {input.BAM} > {output.REVBAM}
             """
         )
 

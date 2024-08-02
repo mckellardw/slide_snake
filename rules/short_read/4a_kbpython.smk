@@ -31,7 +31,7 @@ rule kbpython_std:
         log="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/kbpython_std.log",
     threads: config["CORES"]
     resources:
-        MEM_GB=config["MEMLIMIT_GB"],
+        mem=config["MEMLIMIT_GB"],
     priority: 42
     conda:
         f"{workflow.basedir}/envs/kb.yml"
@@ -49,6 +49,7 @@ rule kbpython_std:
             -w {input.BC} \
             --cellranger \
             --overwrite \
+            -m {resources.mem} \
             -t {threads} {params.KB_EXTRA} \
             {input.FQS[0]} {input.FQS[1]} \
         2> {log.log}
@@ -61,7 +62,7 @@ rule kbpython_std:
         # echo "Using {params.N_READS_SUMMARY} for summary stats" > {log.log}
         # echo "Mean read length:               $meanLength" >> {log.log}
         # echo "Standard Deviation read length: $sdLength" >> {log.log}
-        # -m {resources.MEM_GB} \
+        # 
 
 rule kbpython_std_remove_suffix:
     input:
@@ -70,7 +71,7 @@ rule kbpython_std_remove_suffix:
         BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes_noSuffix.tsv"
     params:
         SUFFIX="-1"
-    threads: config["CORES"]
+    threads: config["CORES"],
     shell:
         """
         sed 's/{params.SUFFIX}//' {input.BCS} > {output.BCS}

@@ -139,7 +139,7 @@ def get_whitelist(w, return_type=None, mode=["recipe","all_used", "all"]):
 
 def get_default_whitelist(w, return_type=None):
     try:
-        if any("seeker" in recipe for recipe in get_recipes(w)):
+        if any("seeker" in recipe for recipe in get_recipes(w, mode="ILMN")):
             if return_type == "list":
                 whitelist = [
                     f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_1.txt",

@@ -35,7 +35,8 @@ rule ont_umitools_extract:
             )
 
 
-# TODO- add UMI option to script
+# Barcode and UMI calling (custom script)
+# TODO-add option for UMI-free assay
 rule ont_fastq_call_bc_from_adapter:
     input:
         LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/adapter_scan_results.txt",
