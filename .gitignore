@@ -2,7 +2,7 @@
 .snakemake/*
 
 # Slurm garbage
-*slurm*
+.slurm*
 
 # VScode garbage
 .vscode/*
@@ -27,5 +27,8 @@
 # slide_snake
 sandbox/**
 out/**
-tmp/**
+tmp*/**
+temp*/**
 scripts/*/not_used/*
+scripts/py/__pycache__/**
+notebooks/__pycache__/**

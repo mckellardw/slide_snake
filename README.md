@@ -11,7 +11,7 @@ The goal of this project is to build a snakemake workflow for assessing differen
 ### Installation:
 Install base environment w/ `mamba`/`conda`:
 ```
-mamba create --name slide_snake --file=envs/slide_snake.yml
+mamba env create --name slide_snake --file=envs/slide_snake.yml
 mamba activate slide_snake
 ```
 
@@ -31,10 +31,16 @@ snakemake -k -p --use-conda --conda-frontend mamba -j 56
 ```
 
 ### Example run w/ `slurm`:
+`snakemake` version 7:
 ```
-snakemake --cluster-config config/slurm.yaml --cluster "sbatch -p {cluster.partition} -t {cluster.time} -N {cluster.nodes} --mem {cluster.mem} -o {cluster.output} --cpus-per-task={cluster.threads}" -j 16 -k -p --nt --cluster-cancel scancel --rerun-incomplete --use-conda  --conda-frontend mamba
+snakemake --cluster-config config/slurm.yaml --cluster "sbatch -p {cluster.partition} -t {cluster.time} -N {cluster.nodes} --mem {cluster.mem} -o {cluster.output} --cpus-per-task={cluster.threads}" -j 16 -k -p --nt --cluster-cancel scancel --use-conda  --conda-frontend mamba
 ```
 *Note*, rule-specific resource usage found in `config/slurm.yaml`
+
+`snakemake` version 8 (using snakemake profiles):
+```
+snakemake -k -p --nt --use-conda --conda-frontend mamba -j 56 --profile profiles/slurm
+```
 
 ## **Helpful links:**
 - [Barcode download from Curio](https://curiobioscience.com/support/barcode/)

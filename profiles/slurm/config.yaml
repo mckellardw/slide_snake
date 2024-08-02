@@ -1,0 +1,5 @@
+jobscript: "slurm-jobscript.sh"
+default-resources:
+  - account=dmckellar
+  - time="1:00:00"
+  - partition=pe2

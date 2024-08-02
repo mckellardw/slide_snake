@@ -1,0 +1,131 @@
+# slurm_config.yml - cluster configuration
+__default__:
+    job-name: slide_snake
+    partition: pe2
+    time: 1:00:00 
+    nodes: 1
+    threads: 1
+    mem: 8G
+    output: .slurm/%j.log
+    chdir: /gpfs/commons/groups/innovation/dwm/slide_snake
+
+# rule-specific
+# 1 ~~~~~~~~~~~~~~~
+cutadapt:
+    threads: 8
+
+# 2 ~~~~~~~~~~~~~~~
+bwa_rRNA_filter_R1:
+    mem: 64G
+
+bwa_rRNA_align:
+    threads: 16
+    time: 2:00:00
+    mem: 96G
+
+qualimapQC_rRNA_bwa:
+    mem: 32G
+
+ribodetector:
+    threads: 16
+    mem: 16G
+
+ribodetector_filter_R1:
+    mem: 32G
+
+ribodetector_filter_R1_internalTrim:
+    mem: 32G
+
+ribodetector_filter_R1_hardTrim:
+    mem: 32G
+
+# 3 ~~~~~~~~~~~~~~~
+STARsolo_align_rRNA:
+    threads: 16
+    time: 2:00:00
+    mem_mb: 256000
+
+STARsolo_align:
+    threads: 16
+    time: 2:00:00
+    mem: 256G
+    mem_mb: 256000
+
+qualimapQC_STAR:
+    mem: 32G
+
+# 4 ~~~~~~~~~~~~~~~
+kallisto_align:
+    threads: 16
+    time: 2:00:00
+    mem: 256G
+    mem_mb: 256000
+
+# 5 ~~~~~~~~~~~~~~~    
+miRge3_pseudobulk:
+    threads: 16
+    time: 2:00:00
+    mem: 256G
+    mem_mb: 256000
+    
+# 6 ~~~~~~~~~~~~~~~
+cache_preQC_h5ad_STAR:
+    mem: 32G
+
+# ONT ~~~~~~~~~~~~~
+ont_call_adapter_scan:
+    mem: 16G
+
+ont_readIDs_by_adapter_type:
+    threads: 24
+    mem: 16G
+    
+
+ont_subset_fastq_by_adapter_type:
+    threads: 24
+    mem: 16G
+
+ont_cutadapt:
+    threads: 24
+    mem: 16G
+
+ont_split_fastq_to_R1_R2:
+    threads: 16
+
+ont_fastq_call_bc_from_adapter:
+    threads: 24
+    mem: 32G
+
+ont_tsv_bc_correction:
+    threads: 24
+    mem: 32G
+
+ont_align_minimap2_genome:
+    threads: 16
+    time: 2:00:00
+    mem: 128G
+    mem_mb: 128000
+
+ont_add_featureCounts_to_bam:
+    mem: 16G
+
+ont_add_corrected_barcodes:
+    mem: 16G
+
+ont_add_umis:
+    mem: 16G
+
+ont_STARsolo_align:
+    threads: 16
+    time: 2:00:00
+    mem: 128G
+    mem_mb: 128000
+
+ont_qualimap:
+    mem: 32G
+
+ont_readQC_postCutadapt:
+    mem: 4G
+
+ont_readQC_summaryplot:
+    mem: 8G
