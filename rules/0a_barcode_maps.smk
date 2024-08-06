@@ -7,7 +7,8 @@ rule copy_barcode_map:
         BC_MAP=lambda wildcards: BC_DICT[wildcards.SAMPLE],
     output:
         BC_MAP="{OUTDIR}/{SAMPLE}/bc/map.txt",
-    threads: 1
+    resources:
+        threads=1,
     run:
         if input.BC_MAP.endswith(".gz"):
             shell(
@@ -30,7 +31,8 @@ rule get_simple_whitelist:
         BC_MAP="{OUTDIR}/{SAMPLE}/bc/map.txt",
     output:
         BC="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
-    threads: 1
+    resources:
+        threads=1,
     shell:
         """
         mkdir -p $(dirname {output.BC})
@@ -51,7 +53,8 @@ rule write_whitelist_variants:
         BC_UNIQ_1="{OUTDIR}/{SAMPLE}/bc/whitelist_uniq_1.txt",  # barcode #1, unique values
         BC_UNIQ_2="{OUTDIR}/{SAMPLE}/bc/whitelist_uniq_2.txt",  # Barcode #2, unique values
         BC_US="{OUTDIR}/{SAMPLE}/bc/whitelist_underscore.txt",  # Barcode With Underscore for STAR
-    threads: 1
+    resources:
+        threads=1,
     run:
         recipes = "".join(get_recipes(wildcards, mode="list"))
 
@@ -144,7 +147,8 @@ rule insert_adapter_into_list:
         ADAPTER=lambda w: get_recipe_info(w, "internal.adapter", mode="list")[0],
         R1_PRIMER=config["R1_PRIMER"],  # R1 PCR primer (Visium & Seeker)
         recipes_to_split=["seeker", "microST", "decoder"],
-    threads: 1
+    resources:
+        threads=1,
     run:
         recipes = "".join(get_recipes(wildcards, mode="list"))
 

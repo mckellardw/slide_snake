@@ -25,21 +25,23 @@ rule STAR_rRNA_align:
         STAR_REF=lambda w: get_STAR_ref(w, mode="rRNA"),
         STAR_PARAMS=lambda w: get_STAR_extra_params(w),
     resources:
-        MEMLIMIT=megabytes2bytes(config["MEMLIMIT_MB"]),
+        mem=megabytes2bytes(config["MEMLIMIT_MB"]),
+        time="2:00:00",
+        threads=config["CORES"],
     threads: config["CORES"]
     run:
         shell(
             f"""
             mkdir -p $(dirname {output.BAM})
 
-            {EXEC['STAR']} \
-                --runThreadN {threads} \
+            STAR \
+                --runThreadN {resources.threads} \
                 --outFileNamePrefix $(dirname {output.BAM})/ \
                 --outSAMtype BAM SortedByCoordinate \
                 --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
                 --readFilesCommand zcat \
                 --genomeDir {params.STAR_REF} \
-                --limitBAMsortRAM={resources.MEMLIMIT} \
+                --limitBAMsortRAM={resources.mem} \
                 --readFilesIn {input.R2_FQ} {input.R1_FQ} \
                 --outReadsUnmapped Fastx \
                 --soloType {params.STAR_PARAMS['STAR.soloType']} {params.STAR_PARAMS['STAR.soloUMI']} {params.STAR_PARAMS['STAR.soloCB']} {params.STAR_PARAMS['STAR.soloAdapter']} {params.STAR_PARAMS['STAR.extra']} \
@@ -66,7 +68,8 @@ rule STAR_rRNA_compress_outs:
         GENEMAT="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Solo.out/GeneFull/raw/matrix.mtx.gz",
     params:
         GENEDIR=directory("{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Solo.out/GeneFull"),
-    threads: config["CORES"]
+    resources:
+        threads=config["CORES"],
     run:
         recipe = RECIPE_DICT[wildcards.SAMPLE]
         if "noTrim" in recipe:
@@ -86,8 +89,8 @@ rule STAR_rRNA_compress_outs:
             # compress
         shell(
             f"""
-            {EXEC['PIGZ']} \
-                -p{threads} \
+            pigz \
+                -p{resources.threads} \
                 {params.GENEDIR}/*/*.tsv \
                 {params.GENEDIR}/*/*.mtx 
             """
@@ -102,15 +105,16 @@ rule STAR_rRNA_rename_compress_unmapped:
     output:
         FILTERED1_FQ="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/noRibo_R1.fq.gz",
         FILTERED2_FQ="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/noRibo_R2.fq.gz",
-    threads: config["CORES"]
+    resources:
+        threads=config["CORES"],
     run:
         shell(
             f"""
             mv {input.UNMAPPED1} {output.FILTERED2_FQ.replace('.gz' , '')}
             mv {input.UNMAPPED2} {output.FILTERED1_FQ.replace('.gz' , '')}
 
-            {EXEC['PIGZ']} \
-                -p{threads} \
+            pigz \
+                -p{resources.threads} \
                 {output.FILTERED2_FQ.replace('.gz' , '')} \
                 {output.FILTERED1_FQ.replace('.gz' , '')}
             """
@@ -125,7 +129,8 @@ rule STAR_rRNA_filtered_fastqc:
         FQC_DIR=directory("{OUTDIR}/{SAMPLE}/fastqc/rRNA_STAR_{READ}"),
     params:
         adapters=config["FASTQC_ADAPTERS"],
-    threads: config["CORES"]
+    resources:
+        threads=config["CORES"],
     conda:
         f"{workflow.basedir}/envs/fastqc.yml"
     shell:
@@ -134,7 +139,7 @@ rule STAR_rRNA_filtered_fastqc:
 
         fastqc \
             -o {output.FQC_DIR} \
-            -t {threads} \
+            -t {resources.threads} \
             -a {params.adapters} \
             {input.FQ}
         """

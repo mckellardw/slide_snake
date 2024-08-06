@@ -23,7 +23,10 @@ rule bwa_rRNA_align:
         MIN_ALIGNSCORE=40,
     log:
         log="{OUTDIR}/{SAMPLE}/rRNA/bwa/bwa_mem.log",
-    threads: config["CORES"]
+    resources:
+        mem="96G",
+        time="2:00:00",
+        threads=config["CORES"],
     conda:
         f"{workflow.basedir}/envs/bwa.yml"
     shell:
@@ -31,14 +34,14 @@ rule bwa_rRNA_align:
         mkdir -p $(dirname {output.BAM1})
 
         bwa-mem2 mem \
-            -t {threads} \
+            -t {resources.threads} \
             {params.BWA_REF} \
             {input.R2_FQ} \
         1> {output.BAM1} \
         2> {log.log} \
         
         samtools sort \
-            -@ {threads} \
+            -@ {resources.threads} \
             -O BAM \
             {output.BAM1} \
         > {output.BAM2} 
@@ -63,18 +66,17 @@ rule bwa_rRNA_filter_R1:
         R1_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq"),
         R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_R1.fq",
         rRNA_LIST="{OUTDIR}/{SAMPLE}/rRNA/bwa/rRNA_readID.list",
-    threads: config["CORES"]
+    resources:
+        mem="64G",
+        threads=config["CORES"],
     run:
         shell(
             f"""
-            cat {input.R2_FQ_BWA_FILTERED} \
-            | awk -f scripts/awk/fq_readHeader.awk - \
-            > {output.rRNA_LIST}
+            cat {input.R2_FQ_BWA_FILTERED} | awk -f scripts/awk/fq_readHeader.awk - > {output.rRNA_LIST}
 
             zcat {input.R1_FQ} > {output.R1_FQ} 
             
-            {EXEC['SEQTK']} subseq {output.R1_FQ} {output.rRNA_LIST} \
-            > {output.R1_FQ_BWA_FILTERED}
+            seqtk subseq {output.R1_FQ} {output.rRNA_LIST} > {output.R1_FQ_BWA_FILTERED}
             """
         )
 
@@ -86,13 +88,13 @@ rule bwa_rRNA_compress_unmapped:
     output:
         R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_R1.fq.gz",
         R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_R2.fq.gz",
-    threads: config["CORES"]
-    run:
-        shell(
-            f"""
-            {EXEC['PIGZ']} -p{threads} {input}
-            """
-        )
+    resources:
+        mem="16G",
+        threads=config["CORES"],
+    shell:
+        """
+        pigz -p{resources.threads} {input}
+        """
 
 
 #  Run fastqc on unmapped reads;
@@ -103,7 +105,9 @@ rule bwa_rRNA_filtered_fastqc:
         FQC_DIR=directory("{OUTDIR}/{SAMPLE}/fastqc/rRNA_bwa_{READ}"),
     params:
         adapters=config["FASTQC_ADAPTERS"],
-    threads: config["CORES"]
+    resources:
+        mem="16G",
+        threads=config["CORES"],
     conda:
         f"{workflow.basedir}/envs/fastqc.yml"
     shell:
@@ -112,7 +116,7 @@ rule bwa_rRNA_filtered_fastqc:
 
         fastqc \
             -o {output.FQC_DIR} \
-            -t {threads} \
+            -t {resources.threads} \
             -a {params.adapters} \
             {input.FQ}
         """

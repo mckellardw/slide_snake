@@ -14,9 +14,9 @@ rule ont_align_minimap2_genome:
         flags=config["RESOURCES_MM2_FLAGS"],
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/minimap2.log",
-    threads: config["CORES"]
-    # resources:
-    #     mem_gb=get_split_ont_align_mem_gb,
+    resources:
+        mem="128G",
+        threads=config["CORES"],
     conda:
         f"{workflow.basedir}/envs/minimap2.yml"
     shell:
@@ -30,7 +30,7 @@ rule ont_align_minimap2_genome:
             -ax splice \
             -uf \
             --MD \
-            -t {threads} \
+            -t {resources.threads} \
             --junc-bed {params.bed} \
             {params.flags} {params.EXTRA_FLAGS} \
             {params.ref} \
@@ -39,19 +39,22 @@ rule ont_align_minimap2_genome:
         > {output.SAM_TMP}
         """
 
+
 rule ont_sort_compress_output:
     input:
         SAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tmp.sam",
     output:
         # BAM_UNSORT_TMP=temp("{OUTDIR}/{SAMPLE}/ont/tmp_unsort.sam"),
         BAM=temp("{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam"),
-        # BAI=temp("{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam.bai"),
     params:
-        ref=config["REF_GENOME_FASTA"],
+        ref=config["REF_GENOME_FASTA"],  #TODO- sample-specific... ref_snake integration?
+    resources:
+        mem="16G",
+        threads=1,
     run:
         shell(
             f"""
-            {EXEC['SAMTOOLS']} sort \
+            samtools sort \
                 --reference {params.ref} \
                 -O BAM \
                 -o {output.BAM} \
@@ -76,7 +79,9 @@ rule ont_featureCounts:
         MAX_TEMPLATE_LENGTH=10000,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/featureCounts.log",
-    threads: 1  # long reads can only run single-threaded
+    resources:
+        mem="32G",
+        threads=1,  # long reads can only run single-threaded
     conda:
         f"{workflow.basedir}/envs/minimap2.yml"
     shell:
@@ -91,15 +96,17 @@ rule ont_featureCounts:
             -D {params.MAX_TEMPLATE_LENGTH} \
             -t 'transcript' \
             -g 'transcript_id' \
-            -T {threads} \
+            -T {resources.threads} \
             -R CORE {params.EXTRA_FLAGS} \
             {input.BAM} \
         |& tee {log.log}
         """
+
+
 # --donotsort \
 # −−sortReadsByCoordinates \
 
-
+# TODO?
 # rule salmon_quant:
 #     input:
 #         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_cb.bam",
@@ -120,11 +127,12 @@ rule ont_featureCounts:
 #          f"{workflow.basedir}/envs/salmon.yml"
 #     shell:
 #         """
-#         salmon quant -i {input.INDEX} -l {params.LIBTYPE} -p {threads} \
+#         salmon quant -i {input.INDEX} -l {params.LIBTYPE} -p {resources.threads} \
 #         --validateMappings {params.VALIDATE_MAPPINGS} --gcBias {params.GC_BIAS} \
 #         --numGibbsSamples {params.NUM_GIBBS_SAMPLES} -o {output.QUANT} \
 #         -1 {input.BAM} 2> {log.log}
 #         """
+
 
 # Add gene tag (GN) to bam...
 rule ont_add_featureCounts_to_bam:
@@ -136,23 +144,23 @@ rule ont_add_featureCounts_to_bam:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn.bam",
     params:
         READ_ID_COLUMN=0,
-        TAG="GN", # corrected barcode
+        TAG="GN",  # corrected barcode tag
         TAG_COLUMN=3,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_1_GN.log",
-    run:
-        shell(
-            f"""
-            python scripts/py/tsv2tag.py \
-                --in_bam {input.BAM} \
-                --in_tsv {input.TSV} \
-                --out_bam {output.BAM} \
-                --readIDColumn {params.READ_ID_COLUMN} \
-                --tagColumns {params.TAG_COLUMN} \
-                --tags {params.TAG} \
-            |& tee {log.log}
-            """
-        )
+    resources:
+        mem="16G",
+        threads=1,
+    shell:
+        """
+        python scripts/py/tsv2tag.py --in_bam {input.BAM} \
+            --in_tsv {input.TSV} \
+            --out_bam {output.BAM} \
+            --readIDColumn {params.READ_ID_COLUMN} \
+            --tagColumns {params.TAG_COLUMN} \
+            --tags {params.TAG} \
+        |& tee {log.log}
+        """
 
 
 # Add CB to gene-tagged .bam
@@ -164,16 +172,17 @@ rule ont_add_corrected_barcodes:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb.bam",
     params:
         READ_ID_COLUMN=0,
-        BARCODE_TAG="CB", # corrected barcode
+        BARCODE_TAG="CB",  # corrected barcode
         BARCODE_TSV_COLUMN=1,
-    threads: 1
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_2_CB.log",
+    resources:
+        mem="16G",
+        threads=1,
     run:
         shell(
             f"""
-            python scripts/py/tsv2tag.py \
-                --in_bam {input.BAM} \
+            python scripts/py/tsv2tag.py --in_bam {input.BAM} \
                 --in_tsv {input.TSV} \
                 --out_bam {output.BAM} \
                 --readIDColumn {params.READ_ID_COLUMN} \
@@ -182,6 +191,7 @@ rule ont_add_corrected_barcodes:
             |& tee {log.log}
             """
         )
+
 
 # Add UMI (UR) to barcoded & gene-tagged .bam
 rule ont_add_umis:
@@ -192,24 +202,24 @@ rule ont_add_umis:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam",
     params:
         READ_ID_COLUMN=0,
-        UMI_TSV_COLUMN=-1, # last column
-        UMI_TAG="UR", # uncorrected UMI
-    threads: 1
+        UMI_TSV_COLUMN=-1,  # last column
+        UMI_TAG="UR",  # uncorrected UMI
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_3_UR.log",
-    run:
-        shell(
-            f"""
-            python scripts/py/tsv2tag.py \
-                --in_bam {input.BAM} \
-                --in_tsv {input.TSV} \
-                --out_bam {output.BAM} \
-                --readIDColumn {params.READ_ID_COLUMN} \
-                --tagColumns {params.UMI_TSV_COLUMN} \
-                --tags {params.UMI_TAG} \
-            |& tee {log.log}
-            """
-        )
+    resources:
+        mem="16G",
+        threads=1,
+    shell:
+        """
+        python scripts/py/tsv2tag.py --in_bam {input.BAM} \
+            --in_tsv {input.TSV} \
+            --out_bam {output.BAM} \
+            --readIDColumn {params.READ_ID_COLUMN} \
+            --tagColumns {params.UMI_TSV_COLUMN} \
+            --tags {params.UMI_TAG} \
+        |& tee {log.log}
+        """
+
 
 # Generate count matrix w/ umi-tools
 rule ont_filter_bam_empty_tags:
@@ -222,18 +232,21 @@ rule ont_filter_bam_empty_tags:
         CELL_TAG="CB",  # uncorrected = CR; corrected = CB
         GENE_TAG="GN",  # GN XS
         UMI_TAG="UR",  # uncorrected = UR; corrected = UB
-    threads: 1
+    resources:
+        mem="16G",
+        threads=1,
     run:
         shell(
             f"""
-            {EXEC['SAMTOOLS']} view -h {input.BAM} \
+            samtools view -h {input.BAM} \
             | awk -v tag={params.CELL_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
             | awk -v tag={params.GENE_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
             | awk -v tag={params.UMI_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
-            | {EXEC['SAMTOOLS']} view -b \
+            | samtools view -b \
             > {output.BAM}
             """
         )
+
 
 # Generate count matrix w/ umi-tools
 rule ont_umitools_count:
@@ -248,7 +261,9 @@ rule ont_umitools_count:
         UMI_TAG="UR",
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/umitools_count.log",
-    threads: 1
+    resources:
+        mem="16G",
+        threads=1,
     conda:
         f"{workflow.basedir}/envs/umi_tools.yml"
     shell:
@@ -273,9 +288,9 @@ rule ont_counts_to_sparse:
         BCS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/barcodes.tsv.gz",
         FEATS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/features.tsv.gz",
         COUNTS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/matrix.mtx.gz",
-    params:
-        OUTDIR=config["OUTDIR"],
-    threads: 1
+    resources:
+        mem="16G",
+        threads=1,
     conda:
         f"{workflow.basedir}/envs/scanpy.yml"
     shell:
@@ -283,4 +298,3 @@ rule ont_counts_to_sparse:
         mkdir -p $(dirname {output.COUNTS})
         python scripts/py/long2mtx.py {input.COUNTS} $(dirname {output.COUNTS})
         """
-        

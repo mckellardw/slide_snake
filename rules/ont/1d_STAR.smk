@@ -18,11 +18,12 @@ rule ont_clipBeforeSTAR:
                 -f scripts/awk/fq_clipToNBases.awk \
             > {output.FQ.strip('.gz')}
 
-            {EXEC['PIGZ']} -p{threads} {output.FQ.strip('.gz')}
+            {EXEC['PIGZ']} -p{resources.threads} {output.FQ.strip('.gz')}
             """
         )
 
 
+# TODO update to match other STARsolo rule(s)
 rule ont_STARsolo_align:
     input:
         # R1_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len_R1.fq.gz",
@@ -31,10 +32,10 @@ rule ont_STARsolo_align:
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len_clipped_R2.fq.gz",
         # R1_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/cut_R1.fq.gz",
         # R2_FQ = "{OUTDIR}/{SAMPLE}/tmp/ont/cut_R2.fq.gz",
-        BB_WHITELIST="{OUTDIR}/{SAMPLE}/bb/whitelist.txt",
-        BB_1="{OUTDIR}/{SAMPLE}/bb/whitelist_1.txt",
-        BB_2="{OUTDIR}/{SAMPLE}/bb/whitelist_2.txt",
-        BB_ADAPTER="{OUTDIR}/{SAMPLE}/bb/whitelist_adapter.txt",
+        BC_WHITELIST="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
+        BC_1="{OUTDIR}/{SAMPLE}/bc/whitelist_1.txt",
+        BC_2="{OUTDIR}/{SAMPLE}/bc/whitelist_2.txt",
+        BC_ADAPTER="{OUTDIR}/{SAMPLE}/bc/whitelist_adapter.txt",
     output:
         BAM="{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Aligned.sortedByCoord.out.bam",  #TODO: add temp()
         UNMAPPED1="{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Unmapped.out.mate1",
@@ -56,10 +57,10 @@ rule ont_STARsolo_align:
     run:
         # recipe = RECIPE_ONT_DICT[wildcards.SAMPLE]
         recipe = wildcards.RECIPE
-        STAR_REF = REF_DICT[wildcards.SAMPLE]  # Use rRNA reference
-        nBB = sum(
-            1 for line in open(input.BB_WHITELIST)
-        )  # get number of bead barcodes for filtered count matrix, `--soloCellFilter`
+        STAR_REF = REF_DICT[wildcards.SAMPLE]
+        # nBB = sum(
+        #     1 for line in open(input.BC_WHITELIST)
+        # )  # get number of bead barcodes for filtered count matrix, `--soloCellFilter`
 
         # TODO: add try catches
         soloType = RECIPE_SHEET["STAR.soloType"][recipe]
@@ -83,7 +84,7 @@ rule ont_STARsolo_align:
             mkdir -p $(dirname {output.BAM})
 
             {EXEC['STAR']}long-avx2 \
-                --runThreadN {threads} \
+                --runThreadN {resources.threads} \
                 --outFileNamePrefix $(dirname {output.BAM})/ \
                 --outSAMtype BAM SortedByCoordinate \
                 --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
@@ -97,7 +98,7 @@ rule ont_STARsolo_align:
                 --soloType {soloType} {soloUMI} {soloCB} {soloAdapter} {extraSTAR} \
                 --soloCBwhitelist {params.WHITELIST} \
                 --soloCBmatchWLtype {soloCBmatchWLtype} \
-                --soloCellFilter TopCells {nBB} \
+                --soloCellFilter TopCells $(wc -l {params.WHITELIST}) \
                 --soloUMIfiltering MultiGeneUMI CR \
                 --soloUMIdedup 1MM_CR \
                 --soloBarcodeReadLength 0 \
@@ -156,7 +157,7 @@ rule ont_compress_STAR_outs:
 
         shell(
             f"""
-            {EXEC['PIGZ']} -p{threads} -f \
+            {EXEC['PIGZ']} -p{resources.threads} -f \
                 {OUTDIR}/{wildcards.SAMPLE}/STARsolo/ont/{recipe}/*/*/*/*.tsv \
                 {OUTDIR}/{wildcards.SAMPLE}/STARsolo/ont/{recipe}/*/*/*/*.mtx
             """
@@ -177,7 +178,7 @@ rule ont_indexSortedBAM:
     run:
         shell(
             f"""
-            {EXEC['SAMTOOLS']} index -@ {threads} {input.BAM}
+            {EXEC['SAMTOOLS']} index -@ {resources.threads} {input.BAM}
             """
         )
 

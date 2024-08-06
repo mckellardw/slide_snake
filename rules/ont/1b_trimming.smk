@@ -14,7 +14,10 @@ rule ont_cutadapt:
     params:
         RECIPE=lambda w: get_recipes(w, mode="ONT"),
         R1_PRIMER=config["R1_PRIMER"],  # R1 PCR primer (Visium & Seeker)
-        R1_LENGTH=lambda w: min(get_recipe_info(w, info_col="R1.finalLength", mode="list"))+ len(config["R1_PRIMER"]), # Add R1 primer length for ONT,
+        R1_LENGTH=lambda w: min(
+            get_recipe_info(w, info_col="R1.finalLength", mode="list")
+        )
+        + len(config["R1_PRIMER"]),  # Add R1 primer length for ONT,
         # ADAPTER=config["R1_INTERNAL_ADAPTER"],  # Curio R1 internal adapter
         ADAPTER=lambda w: get_recipe_info(w, "internal.adapter", mode="ONT"),
         ADAPTER_COUNT=4,  # number of adapters that can be trimmed from each read
@@ -30,8 +33,10 @@ rule ont_cutadapt:
         rcTSO="CCCATTCACTCTGCGTTGATACCAGCTT",  # rev comp of SlideSeq TSO
         rcTXG_TSO="CCCATGTACTCTGCGTTGATACCACTGCTT",  # rev-comp of 10x TSO sequence
         SEEKER_BB_LINKER="TCTTCAGCGTTCCCGAGA",  # Adapter between BB1 & BB2 in R1 
-        rcSEEKER_BB_ADAPTER="AGAGCCCTTGCGACTTCT",  # Reverse of the adapter between BB1 & BB2 in R1 
-    threads: config["CORES"]
+        rcSEEKER_BB_ADAPTER="AGAGCCCTTGCGACTTCT",  # Reverse of the adapter between BB1 & BB2 in R1     
+    resources:
+        mem="16G",
+        threads=config["CORES"],
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/cutadapt.log",
     conda:
@@ -56,7 +61,7 @@ rule ont_cutadapt:
             --pair-filter=any \
             -o {output.R1_FQ} \
             -p {output.R2_FQ} \
-            --cores {threads} \
+            --cores {resources.threads} \
             --json {output.JSON} \
             {input.R1_FQ} {input.R2_FQ} \
         1>> {log.log}
@@ -65,7 +70,6 @@ rule ont_cutadapt:
         # --minimum-length {R1_LENGTH}:{params.MIN_R2_LENGTH} \
         # --maximum-length {2*R1_LENGTH}: \
         # -A POLYT_3p="{params.POLYT};max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
-
 
 
 # Trimming for R1 to handle adapter issues. See README for recipe details (#TODO)
@@ -79,7 +83,9 @@ rule ont_R1_hardTrimming:
         CB1end=8,  #TODO- move to config? or recipe_sheet?
         CB2start=27,
         CB2end=42,
-    threads: config["CORES"]
+    resources:
+        mem="16G",
+        threads=config["CORES"],
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/R1_hardTrimming.log",
     run:
@@ -92,7 +98,7 @@ rule ont_R1_hardTrimming:
                 -f scripts/awk/hardTrimFq.awk \
             > {output.R1_FQ.strip('.gz')}
 
-            {EXEC['PIGZ']} -f -p{threads} {output.R1_FQ.strip('.gz')}
+            {EXEC['PIGZ']} -f -p{resources.threads} {output.R1_FQ.strip('.gz')}
 
             echo "Hard trimming performed on {input.R1_FQ}" > {log.log}
             """
@@ -117,23 +123,23 @@ rule ont_R1_internalTrim:
             get_recipe_info(w, info_col="BC.length", mode="ILMN")
         ),
         MIN_ALIGN_SCORE=10,
-    threads: config["CORES"]
+    resources:
+        mem="16G",
+        threads=config["CORES"],
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/R1_internalTrimming.log",
-    run:
-        shell(
-            f"""
-            python scripts/py/fastq_internal_adapter_trim_R1.py \
-                --adapter_seq {params.ADAPTER} \
-                --n_cores {threads} \
-                --tmp_dir {params.TMPDIR} \
-                --fq1_in {input.R1_FQ} \
-                --fq1_out {output.R1_FQ} \
-                --min_adapter_start_pos {params.BC1_LENGTH} \
-                --min_align_score {params.MIN_ALIGN_SCORE} \
-            | tee {log.log}
-            """
-        )
+    shell:
+        """
+        python scripts/py/fastq_internal_adapter_trim_R1.py \
+            --adapter_seq {params.ADAPTER} \
+            --n_cores {resources.threads} \
+            --tmp_dir {params.TMPDIR} \
+            --fq1_in {input.R1_FQ} \
+            --fq1_out {output.R1_FQ} \
+            --min_adapter_start_pos {params.BC1_LENGTH} \
+            --min_align_score {params.MIN_ALIGN_SCORE} \
+        | tee {log.log}
+        """
 
 
 rule ont_cutadapt_internalTrimming:
@@ -146,9 +152,14 @@ rule ont_cutadapt_internalTrimming:
         JSON="{OUTDIR}/{SAMPLE}/ont/misc_logs/cutadapt_internalTrim.json",
     params:
         RECIPE=lambda w: get_recipes(w, mode="ONT"),
-        R1_LENGTH=lambda w: min(get_recipe_info(w, info_col="R1.finalLength", mode="list"))+ len(params.R1), # Add R1 primer length for ONT,
+        R1_LENGTH=lambda w: min(
+            get_recipe_info(w, info_col="R1.finalLength", mode="list")
+        )
+        + len(params.R1),  # Add R1 primer length for ONT,
         ADAPTER=lambda w: get_recipe_info(w, "internal.adapter", mode="ONT"),
-    threads: config["CORES"]
+    resources:
+        mem="16G",
+        threads=config["CORES"],
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/cutadapt_internalTrim.log",
     conda:
@@ -165,7 +176,7 @@ rule ont_cutadapt_internalTrimming:
             --pair-filter=any \
             -o {output.R1_FQ} \
             -p {output.R2_FQ} \
-            --cores {threads} \
+            --cores {resources.threads} \
             --json {output.JSON} \
             {input.R1_FQ} {input.R2_FQ} \
         1>> {log.log}
