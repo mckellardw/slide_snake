@@ -9,8 +9,9 @@ rule fastQC_preTrim:
         fastqcDir=directory("{OUTDIR}/{SAMPLE}/fastqc/preCutadapt_{READ}"),
     params:
         adapters=config["FASTQC_ADAPTERS"],
-    threads: config["CORES"]
-    # min([config['CORES'],8]) # 8 core max
+    resources:
+        mem="16G",
+        threads=config["CORES"],
     conda:
         f"{workflow.basedir}/envs/fastqc.yml"
     shell:
@@ -19,7 +20,7 @@ rule fastQC_preTrim:
 
         fastqc \
             --outdir {output.fastqcDir} \
-            --threads {threads} \
+            --threads {resources.threads} \
             -a {params.adapters} \
             {input.MERGED_FQ}
         """
@@ -31,11 +32,11 @@ rule fastQC_postTrim:
         FINAL_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_{READ}.fq.gz",
     output:
         fastqcDir=directory("{OUTDIR}/{SAMPLE}/fastqc/postCutadapt_{READ}"),
-        # fastqcReport = ''
-    threads: config["CORES"]
-    # min([config['CORES'],8]) # 8 core max
     params:
         adapters=config["FASTQC_ADAPTERS"],
+    resources:
+        mem="16G",
+        threads=config["CORES"],
     conda:
         f"{workflow.basedir}/envs/fastqc.yml"
     shell:
@@ -44,7 +45,7 @@ rule fastQC_postTrim:
 
         fastqc \
             --outdir {output.fastqcDir} \
-            --threads {threads} \
+            --threads {resources.threads} \
             -a {params.adapters} \
             {input.FINAL_FQ}
         """
@@ -55,11 +56,11 @@ rule fastQC_twiceTrim:
         FINAL_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_{READ}.fq.gz",
     output:
         fastqcDir=directory("{OUTDIR}/{SAMPLE}/fastqc/twiceCutadapt_{READ}"),
-        # fastqcReport = ''
-    threads: config["CORES"]
-    # min([config['CORES'],8]) # 8 core max
     params:
         adapters=config["FASTQC_ADAPTERS"],
+    resources:
+        mem="16G",
+        threads=config["CORES"],
     conda:
         f"{workflow.basedir}/envs/fastqc.yml"
     shell:
@@ -68,7 +69,7 @@ rule fastQC_twiceTrim:
 
         fastqc \
             --outdir {output.fastqcDir} \
-            --threads {threads} \
+            --threads {resources.threads} \
             -a {params.adapters} \
             {input.FINAL_FQ}
         """

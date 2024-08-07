@@ -1,0 +1,160 @@
+default-resources:
+  slurm_partition: pe2
+  slurm_account: innovation
+  runtime: 1:00:00
+  nodes: 1
+  mem_mb: 8192
+  mem: 8G
+  threads: 1
+
+set-threads:
+  merge_fastqs: 1
+  cutadapt: 8
+  cutadapt2: 8
+  R1_hardTrimming: 24
+  R1_internalTrimming: 24
+  fastQC_preTrim: 24
+  fastQC_postTrim: 24
+  fastQC_twiceTrim: 24
+  bwa_rRNA_filter_R1: 16
+  bwa_rRNA_align: 16
+  ribodetector: 16
+  STARsolo_align_rRNA: 16
+  STARsolo_align: 16
+  qualimapQC_STAR: 16
+  kbpython_std: 16
+  miRge3_pseudobulk: 16
+  ont_call_adapter_scan: 24
+  ont_readIDs_by_adapter_type: 24
+  ont_adapterScan_QC: 1
+  ont_merge_scan_lists: 1
+  ont_subset_fastq_by_adapter_type: 24
+  ont_split_fastq_to_R1_R2: 16
+  ont_cutadapt: 24
+  ont_R1_hardTrimming: 24
+  ont_R1_internalTrim: 24
+  ont_cutadapt_internalTrimming: 24
+  ont_fastq_call_bc_from_adapter: 1
+  ont_tsv_bc_correction: 24
+  ont_align_minimap2_genome: 16
+  ont_sort_compress_output: 1
+  ont_featureCounts: 1
+  ont_add_featureCounts_to_bam: 1
+  ont_add_corrected_barcodes: 1
+  ont_add_umis: 1
+  ont_filter_bam_empty_tags: 1
+  ont_umitools_count: 1
+  ont_counts_to_sparse: 1
+  ont_STARsolo_align: 16
+  ont_qualimap_minimap2: 1
+  ont_qualimap_STAR: 1
+  ont_qualimap_summary2csv: 1
+  ont_readQC_preCutadapt: 16
+  ont_readQC_postCutadapt: 16
+  ont_readQC_bam: 1
+  readQC_downsample: 1
+  ont_readQC_summaryplot: 16
+
+set-resources:
+  merge_fastqs:
+    mem: 16G # Converted 16G to MB
+  cutadapt:
+    mem: 16G
+  cutadapt2:
+    mem: 16G
+  R1_hardTrimming:
+    mem: 16G
+  R1_internalTrimming:
+    mem: 16G
+  fastQC_preTrim:
+    mem: 16G
+  fastQC_postTrim:
+    mem: 16G
+  fastQC_twiceTrim:
+    mem: 16G
+  bwa_rRNA_filter_R1:
+    mem: 64G # Converted 64G to MB
+  bwa_rRNA_align:
+    mem: 96G # Converted 96G to MB
+  qualimapQC_rRNA_bwa:
+    mem: 32G
+  ribodetector:
+    mem: 16G
+  ribodetector_filter_R1:
+    mem: 32G
+  ribodetector_filter_R1_internalTrim:
+    mem: 32G
+  ribodetector_filter_R1_hardTrim:
+    mem: 32G
+  STARsolo_align_rRNA:
+    mem: 256G
+  STARsolo_align:
+    mem: 256
+  qualimapQC_STAR:
+    mem: 32G
+  kbpython_std:
+    mem: 256
+  miRge3_pseudobulk:
+    mem: 256
+  cache_preQC_h5ad_STAR:
+    mem: 32G
+  ont_call_adapter_scan:
+    mem: 16G
+  ont_readIDs_by_adapter_type:
+    mem: 16G
+  ont_adapterScan_QC:
+    mem: 8G
+  ont_merge_scan_lists:
+    mem: 16G
+  ont_subset_fastq_by_adapter_type:
+    mem: 16G
+  ont_split_fastq_to_R1_R2:
+    mem: 8G
+  ont_cutadapt:
+    mem: 16G
+  ont_R1_hardTrimming:
+    mem: 16G
+  ont_R1_internalTrim:
+    mem: 16G
+  ont_cutadapt_internalTrimming:
+    mem: 16G
+  ont_fastq_call_bc_from_adapter:
+    mem: 32G
+  ont_tsv_bc_correction:
+    mem: 32G
+  ont_align_minimap2_genome:
+    mem: 128G
+  ont_sort_compress_output:
+    mem: 16G
+  ont_featureCounts:
+    mem: 32G
+  ont_add_featureCounts_to_bam:
+    mem: 16G
+  ont_add_corrected_barcodes:
+    mem: 16G
+  ont_add_umis:
+    mem: 16G
+  ont_filter_bam_empty_tags:
+    mem: 16G
+  ont_umitools_count:
+    mem: 16G
+  ont_counts_to_sparse:
+    mem: 16G
+  ont_STARsolo_align:
+    mem: 128G
+  ont_qualimap_minimap2:
+    mem: 32G
+  ont_qualimap_STAR:
+    mem: 32G
+  ont_qualimap_summary2csv:
+    mem: 8G
+  ont_readQC_preCutadapt:
+    mem: 8G
+  ont_readQC_postCutadapt:
+    mem: 8G
+  ont_readQC_bam:
+    mem: 8G
+  readQC_downsample:
+    mem: 4G
+  ont_readQC_summaryplot:
+    mem: 8G

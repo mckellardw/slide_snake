@@ -358,7 +358,7 @@ if __name__ == "__main__":
     if args.concat_bcs and len(args.whitelist_files) > 1:
         print(f"Need a merged barcode whitelist!")
         sys.exit(1)
-
+    
     # Print run settings for log files ----
     print(
         f"Input tsv:                    {args.tsv_in}\n"
@@ -379,7 +379,8 @@ if __name__ == "__main__":
             tsv_in=args.tsv_in,
             tsv_out_full=args.tsv_out_full,
             tsv_out_slim=args.tsv_out_slim,
-            id_column=args.id_column[0],
+            # id_column=args.id_column[0],
+            id_column=args.id_column,
             bc_columns=args.bc_columns,
             concat_bcs=args.concat_bcs,
             whitelist_files=args.whitelist_files,
@@ -396,6 +397,7 @@ if __name__ == "__main__":
         print("")
         print(f"Splitting input tsv...")
         temp_dir = generate_temp_dir_name()
+        print(f"Temporary directory: {temp_dir}")
         temp_tsvs_in = split_file(
             file_path=args.tsv_in, temp_dir=temp_dir, num_chunks=args.threads
         )
@@ -415,7 +417,8 @@ if __name__ == "__main__":
                 temp_tsvs_in[i],
                 temp_tsvs_out_full[i],
                 temp_tsvs_out_slim[i],
-                args.id_column[0],
+                # args.id_column[0],
+                args.id_column,
                 args.bc_columns,
                 args.concat_bcs,
                 args.whitelist_files,

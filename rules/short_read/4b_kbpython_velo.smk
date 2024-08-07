@@ -26,7 +26,8 @@ rule kbpython_nac:
         log="{OUTDIR}/{SAMPLE}/kbpython_nac/{RECIPE}/kbpython_nac.log",
     threads: config["CORES"]
     resources:
-        MEM_GB=config["MEMLIMIT_GB"],
+        threads=config["CORES"],
+        mem=config["MEMLIMIT_GB"],
     priority: 42
     conda:
         f"{workflow.basedir}/envs/kb.yml"
@@ -43,7 +44,8 @@ rule kbpython_nac:
             -x {params.KB_X} \
             -w {input.BC} \
             --overwrite \
-            -t {threads} {params.KB_EXTRA} \
+            -m {resources.mem} \
+            -t {resources.threads} {params.KB_EXTRA} \
             {params.FQS[0]} {params.FQS[1]} \
         2> {log.log}
         """
@@ -62,9 +64,7 @@ rule kbpython_nac_compress_outs:
         GENES="{OUTDIR}/{SAMPLE}/kbpython_nac/{RECIPE}/counts_unfiltered/cells_x_genes.genes.txt.gz",
         MAT="{OUTDIR}/{SAMPLE}/kbpython_nac/{RECIPE}/counts_unfiltered/cells_x_genes.mtx.gz",
     threads: config["CORES"]
-    run:
-        shell(
-            f"""
-            {EXEC['PIGZ']} -p{threads} {input.BCS} {input.GENES} {input.MAT}
-            """
-        )
+    shell:
+        """
+        pigz  -p{resources.threads} {input.BCS} {input.GENES} {input.MAT}
+        """

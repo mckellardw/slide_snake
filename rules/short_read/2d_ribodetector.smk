@@ -18,7 +18,8 @@ rule ribodetector:
         MIN_ALIGNSCORE=40,
     log:
         log="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/ribodetector.log",
-    threads: config["CORES"]
+    resources:
+        threads=config["CORES"],
     conda:
         f"{workflow.basedir}/envs/ribodetector.yml"
     shell:
@@ -26,7 +27,7 @@ rule ribodetector:
         READ_LEN=$(seqkit stats {input.R2_FQ} | tail -n 1 | awk '{{print $7}}')
 
         ribodetector_cpu \
-            --threads {threads} \
+            --threads {resources.threads} \
             --len  $(printf "%.0f" $READ_LEN) \
             --input {input.R2_FQ} \
             --ensure rrna \
@@ -42,15 +43,14 @@ rule ribodetector_get_noRibo_list:
         R2_FQ_NORIBO="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_R2.fq",
     output:
         NORIBO_LIST="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_readID.list",  #temp()
-    threads: 1
-    run:
-        shell(
-            f"""
-            cat {input.R2_FQ_NORIBO} \
-            | awk -f scripts/awk/fq_readIDs.awk - \
-            > {output.NORIBO_LIST}
-            """
-        )
+    resources:
+        threads=1,
+    shell:
+        """
+        cat {input.R2_FQ_NORIBO} \
+        | awk -f scripts/awk/fq_readIDs.awk - \
+        > {output.NORIBO_LIST}
+        """
 
 
 rule ribodetector_gunzip_R1:
@@ -58,13 +58,12 @@ rule ribodetector_gunzip_R1:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/{TMP}_R1.fq.gz",
     output:
         R1_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/{TMP}_R1.fq"),
-    threads: 1
-    run:
-        shell(
-            f"""
-            zcat {input.R1_FQ} > {output.R1_FQ} 
-            """
-        )
+    resources:
+        threads=1,
+    shell:
+        """
+        zcat {input.R1_FQ} > {output.R1_FQ} 
+        """
 
 
 rule ribodetector_filter_R1:
@@ -73,14 +72,14 @@ rule ribodetector_filter_R1:
         NORIBO_LIST="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_readID.list",
     output:
         R1_FQ_NORIBO="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_R1.fq",
-    threads: 1
-    run:
-        shell(
-            f"""
-            {EXEC['SEQTK']} subseq {input.R1_FQ} {input.NORIBO_LIST} \
-            > {output.R1_FQ_NORIBO}
-            """
-        )
+    resources:
+        mem="32G",
+        threads=1,
+    shell:
+        """
+        seqtk subseq {input.R1_FQ} {input.NORIBO_LIST} \
+        > {output.R1_FQ_NORIBO}
+        """
 
 
 rule ribodetector_filter_R1_internalTrim:
@@ -89,14 +88,14 @@ rule ribodetector_filter_R1_internalTrim:
         NORIBO_LIST="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_readID.list",
     output:
         R1_FQ_NORIBO="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_internalTrim_R1.fq",
-    threads: 1
-    run:
-        shell(
-            f"""
-            {EXEC['SEQTK']} subseq {input.R1_FQ} {input.NORIBO_LIST} \
-            > {output.R1_FQ_NORIBO}
-            """
-        )
+    resources:
+        mem="32G",
+        threads=1,
+    shell:
+        """
+        seqtk subseq {input.R1_FQ} {input.NORIBO_LIST} \
+        > {output.R1_FQ_NORIBO}
+        """
 
 
 rule ribodetector_filter_R1_hardTrim:
@@ -105,14 +104,14 @@ rule ribodetector_filter_R1_hardTrim:
         NORIBO_LIST="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_readID.list",
     output:
         R1_FQ_NORIBO="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_hardTrim_R1.fq",
-    threads: 1
-    run:
-        shell(
-            f"""
-            {EXEC['SEQTK']} subseq {input.R1_FQ} {input.NORIBO_LIST} \
-            > {output.R1_FQ_NORIBO}
-            """
-        )
+    resources:
+        mem="32G",
+        threads=1,
+    shell:
+        """
+        seqtk subseq {input.R1_FQ} {input.NORIBO_LIST} \
+        > {output.R1_FQ_NORIBO}
+        """
 
 
 rule ribodetector_compress_fqs:
@@ -120,10 +119,10 @@ rule ribodetector_compress_fqs:
         FQ="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/{READ}.fq",
     output:
         FQ="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/{READ}.fq.gz",
-    threads: config["CORES"]
-    run:
-        shell(
-            f"""
-            {EXEC['PIGZ']} -p{threads} {input.FQ}
-            """
-        )
+    resources:
+        mem="8G",
+        threads=config["CORES"],
+    shell:
+        """
+        pigz -p{resources.threads} {input.FQ}
+        """

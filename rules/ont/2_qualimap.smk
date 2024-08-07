@@ -8,9 +8,9 @@ rule ont_qualimap_minimap2:
         HTML="{OUTDIR}/{SAMPLE}/qualimap/ont/minimap2/{RECIPE}/qualimapReport.html",
     params:
         GENES_GTF=lambda wildcards: GTF_DICT[wildcards.SAMPLE],
-    threads: 1
     resources:
         mem="32G",
+        threads=1,
     conda:
         f"{workflow.basedir}/envs/qualimap.yml"
     shell:
@@ -36,10 +36,10 @@ rule ont_qualimap_STAR:
         TXT="{OUTDIR}/{SAMPLE}/qualimap/ont/STARsolo/{RECIPE}/rnaseq_qc_results.txt",
         HTML="{OUTDIR}/{SAMPLE}/qualimap/ont/STARsolo/{RECIPE}/qualimapReport.html",
     params:
-        GENES_GTF = lambda wildcards: GTF_DICT[wildcards.SAMPLE]
-    threads: 1
+        GENES_GTF=lambda wildcards: GTF_DICT[wildcards.SAMPLE],
     resources:
         mem="32G",
+        threads=1,
     conda:
         f"{workflow.basedir}/envs/qualimap.yml"
     shell:
@@ -62,10 +62,10 @@ rule ont_qualimap_summary2csv:
         TXT="{OUTDIR}/{SAMPLE}/qualimap/ont/{TOOL}/rnaseq_qc_results.txt",
     output:
         CSV="{OUTDIR}/{SAMPLE}/qualimap/ont/{TOOL}/rnaseq_qc_results.csv",
-    threads: 1
-    run:
-        shell(
-            f"""
-            python scripts/py/qualimap_summary2csv.py {input.TXT} {output.CSV}
-            """
-        )
+    resources:
+        mem="8G",
+        threads=1,
+    shell:
+        """
+        python scripts/py/qualimap_summary2csv.py {input.TXT} {output.CSV}
+        """

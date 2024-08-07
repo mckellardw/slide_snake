@@ -2,6 +2,7 @@
 ## Unmapped read analyses
 #############################################
 
+
 # Run fastqc on unmapped reads; switch names because of STAR weirdness
 rule fastqc_unmapped:
     input:
@@ -10,27 +11,28 @@ rule fastqc_unmapped:
     output:
         UNMAPPED1_FQ="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate1.fastq.gz",
         UNMAPPED2_FQ="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2.fastq.gz",
-        FQC_DIR=directory("{OUTDIR}/{SAMPLE}/fastqc/unmapped/{RECIPE}"),
+        fastqcDir=directory("{OUTDIR}/{SAMPLE}/fastqc/unmapped/{RECIPE}"),
     params:
         FASTQC_ADAPTERS=config["FASTQC_ADAPTERS"],
-    threads: config["CORES"]
-    run:
-        shell(
-            f"""
-            mv {input.UNMAPPED1} {input.UNMAPPED2}.fastq
-            mv {input.UNMAPPED2} {input.UNMAPPED1}.fastq
+    resources:
+        threads=config["CORES"],
+    conda:
+        f"{workflow.basedir}/envs/fastqc.yml"
+    shell:
+        """        
+        mv {input.UNMAPPED1} {input.UNMAPPED2}.fastq
+        mv {input.UNMAPPED2} {input.UNMAPPED1}.fastq
 
-            {EXEC['PIGZ']} -p{threads} -f {input.UNMAPPED1}.fastq {input.UNMAPPED2}.fastq
+        pigz -p{resources.threads} -f {input.UNMAPPED1}.fastq {input.UNMAPPED2}.fastq
 
-            mkdir -p {output.FQC_DIR}
+        mkdir -p {output.fastqcDir}
 
-            {EXEC['FASTQC']} \
-                -o {output.FQC_DIR} \
-                -t {threads} \
-                -a {params.FASTQC_ADAPTERS} \
-                {output.UNMAPPED1_FQ} {output.UNMAPPED2_FQ}
-            """
-        )
+        fastqc \
+            -o {output.fastqcDir} \
+            -t {resources.threads} \
+            -a {params.FASTQC_ADAPTERS} \
+            {output.UNMAPPED1_FQ} {output.UNMAPPED2_FQ}
+        """
 
 
 # Only BLAST R2, which contains the insert (converts .fq to .fa, then removes the .fa file)
@@ -41,13 +43,14 @@ rule blast_unmapped:
         BLAST_R2="{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/blast/Unmapped.out.mate2_blastResults.txt",
         TMP_FA=temp("{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/blast/Unmapped.out.mate2.fa"),
         TOP_FA="{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/blast/top_seqs.fa",
-    threads: config["CORES"]
     params:
         BLASTDB=config["BLASTDB"],
         TOPN=10000,
         OUTFMT="6 qseqid sseqid stitle pident length mismatch gapopen qstart qend sstart send evalue bitscore",
     log:
         log="{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/blast/blast_unmapped.log",
+    resources:
+        threads=config["CORES"],
     conda:
         f"{workflow.basedir}/envs/blast.yml"
     shell:
@@ -72,7 +75,7 @@ rule blast_unmapped:
             -out {output.BLAST_R2} \
             -outfmt '{params.OUTFMT}' \
             -max_target_seqs 5 \
-            -num_threads {threads}
+            -num_threads {resources.threads}
         """
 
 
@@ -114,13 +117,13 @@ rule blast_unmapped:
 #             f"""
 #             mkdir -p $(dirname {output.BAM1})
 #             {EXEC['BWA']} mem \
-#                 -t {threads} \
+#                 -t {resources.threads} \
 #                 {BWA_REF} \
 #                 {input.R2_FQ} \
 #             1> {output.BAM1} \
 #             2> {log.log} \
 #             {EXEC['SAMTOOLS']} sort \
-#                 -@ {threads} \
+#                 -@ {resources.threads} \
 #                 -O BAM \
 #                 {output.BAM1} \
 #             > {output.BAM2}

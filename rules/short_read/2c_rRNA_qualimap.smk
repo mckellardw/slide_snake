@@ -1,34 +1,3 @@
-# QC on STAR outputs
-## qualimap on deduplicated/aligned reads
-rule qualimapQC_rRNA_STAR:
-    input:
-        BAM="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam",
-        BAI="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam.bai",
-    output:
-        TXT="{OUTDIR}/{SAMPLE}/qualimap/rRNA/STAR/rnaseq_qc_results.txt",
-        HTML="{OUTDIR}/{SAMPLE}/qualimap/rRNA/STAR/qualimapReport.html",
-    params:
-        GENES_GTF = lambda wildcards: SAMPLE_SHEET['rRNA_gtf'][wildcards.SAMPLE]
-    threads: 1
-    resources:
-        mem="32G",
-    conda:
-        f"{workflow.basedir}/envs/qualimap.yml"
-    shell:
-        """
-        mkdir -p $(dirname {output.TXT})
-
-        qualimap rnaseq \
-            -bam {input.BAM} \
-            --sequencing-protocol strand-specific-forward \
-            --sorted \
-            -gtf {params.GENES_GTF} \
-            --java-mem-size={resources.mem} \
-            -outdir $(dirname {output.TXT}) \
-            -outformat html
-        """
-
-
 # Qualimap on bwa output
 ## qualimap on deduplicated/aligned reads
 rule qualimapQC_rRNA_bwa:
@@ -39,12 +8,12 @@ rule qualimapQC_rRNA_bwa:
         TXT="{OUTDIR}/{SAMPLE}/qualimap/rRNA/bwa/rnaseq_qc_results.txt",
         HTML="{OUTDIR}/{SAMPLE}/qualimap/rRNA/bwa/qualimapReport.html",
     params:
-        GENES_GTF = lambda wildcards: SAMPLE_SHEET['rRNA_gtf'][wildcards.SAMPLE]
+        GENES_GTF=lambda wildcards: SAMPLE_SHEET["rRNA_gtf"][wildcards.SAMPLE],
     log:
         log="{OUTDIR}/{SAMPLE}/qualimap/rRNA/bwa/rnaseq_qc.log",
-    threads: 1
     resources:
         mem="32G",
+        threads=1,
     conda:
         f"{workflow.basedir}/envs/qualimap.yml"
     shell:
@@ -63,15 +32,46 @@ rule qualimapQC_rRNA_bwa:
         """
 
 
+# QC on STAR outputs
+## qualimap on deduplicated/aligned reads
+rule qualimapQC_rRNA_STAR:
+    input:
+        BAM="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam",
+        BAI="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam.bai",
+    output:
+        TXT="{OUTDIR}/{SAMPLE}/qualimap/rRNA/STAR/rnaseq_qc_results.txt",
+        HTML="{OUTDIR}/{SAMPLE}/qualimap/rRNA/STAR/qualimapReport.html",
+    params:
+        GENES_GTF=lambda wildcards: SAMPLE_SHEET["rRNA_gtf"][wildcards.SAMPLE],
+    resources:
+        mem="32G",
+        threads=1,
+    conda:
+        f"{workflow.basedir}/envs/qualimap.yml"
+    shell:
+        """
+        mkdir -p $(dirname {output.TXT})
+
+        qualimap rnaseq \
+            -bam {input.BAM} \
+            --sequencing-protocol strand-specific-forward \
+            --sorted \
+            -gtf {params.GENES_GTF} \
+            --java-mem-size={resources.mem} \
+            -outdir $(dirname {output.TXT}) \
+            -outformat html
+        """
+
+
 rule qualimap_summary2csv_rRNA_STAR:
     input:
         TXT="{OUTDIR}/{SAMPLE}/qualimap/rRNA/{TOOL}/rnaseq_qc_results.txt",
     output:
         CSV="{OUTDIR}/{SAMPLE}/qualimap/rRNA/{TOOL}/rnaseq_qc_results.csv",
-    threads: 1
-    run:
-        shell(
-            f"""
-            python scripts/py/qualimap_summary2csv.py {input.TXT} {output.CSV}
-            """
-        )
+    resources:
+        mem="4G",
+        threads=1,
+    shell:
+        """
+        python scripts/py/qualimap_summary2csv.py {input.TXT} {output.CSV}
+        """

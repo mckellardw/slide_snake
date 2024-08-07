@@ -36,7 +36,7 @@ rule merge_formats_ONT:
                         echo "File [ {F} ] does not exist." >> {log.log}
                     fi                    
                     
-                    {EXEC['PIGZ']} -p{threads} {output.MERGED_FQ.strip('.gz')} 2>> {log.log}
+                    {EXEC['PIGZ']} -p{resources.threads} {output.MERGED_FQ.strip('.gz')} 2>> {log.log}
                     """
                 )
             else:
@@ -85,7 +85,7 @@ rule merge_formats_ONT:
 
             shell(
                 f"""
-                {EXEC['PIGZ']} -p{threads} {F_base}
+                {EXEC['PIGZ']} -p{resources.threads} {F_base}
                 """
             )
 
@@ -118,11 +118,11 @@ rule merge_formats_ONT:
                     )
                 else:
                     print(f"File type for [{F}] not supported!")
-            # end loop
+                    # end loop
 
             shell(
                 f"""
-                {EXEC['PIGZ']} -p{threads} {F_base}  2>> {log.log}
+                {EXEC['PIGZ']} -p{resources.threads} {F_base}  2>> {log.log}
                 """
             )
 
@@ -134,23 +134,23 @@ rule ont_call_adapter_scan:
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/adapter_scan.tsv",
         FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq.gz",
-    threads: config["CORES"]
     params:
         # batch_size = config["READ_STRUCTURE_BATCH_SIZE"],
         KIT="3prime",  #['3prime', '5prime', 'multiome']
-    # conda:
-    #     f"{workflow.basedir}/envs/slsn_ont_prep.yml"
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/adapter_scan.log",
     conda:
         f"{workflow.basedir}/envs/adapter_scan.yml"
+    resources:
+        mem="16G",
+        threads=1,
     shell:
         """
         python scripts/py/adapter_scan_vsearch.py \
             --kit {params.KIT} \
             --output_fastq {output.FQ} \
             --output_tsv {output.TSV} \
-            -t {threads} \
+            -t {resources.threads} \
             {input.FQ} \
         2>&1 | tee {log.log}
         """
@@ -164,15 +164,15 @@ rule ont_readIDs_by_adapter_type:
     output:
         FULL_LEN="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
         SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
-    threads: config["CORES"]
-    run:
-        shell(
-            f"""
-            python scripts/py/write_adapterscan_read_id_lists.py \
-                --tsv_file_path {input.TSV} \
-                --output_directory $(dirname {output.FULL_LEN})
-            """
-        )
+    resources:
+        mem="16G",
+        threads=config["CORES"],
+    shell:
+        """
+        python scripts/py/write_adapterscan_read_id_lists.py \
+            --tsv_file_path {input.TSV} \
+            --output_directory $(dirname {output.FULL_LEN})
+        """
 
 
 # Write lists of read IDs for each adapter type
@@ -182,7 +182,9 @@ rule ont_adapterScan_QC:
         SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
     output:
         LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/adapter_scan_results.txt",
-    threads: 1
+    resources:
+        mem="8G",
+        threads=1,
     shell:
         """
         dir_path=$(dirname {input.FULL_LEN})
@@ -203,7 +205,9 @@ rule ont_merge_scan_lists:
         SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
     output:
         LST="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/keep.txt",
-    threads: 1
+    resources:
+        mem="8G",
+        threads=1,
     shell:
         """
         cat {input.FULL_LEN} {input.SINGLE_ADAPTER1} > {output.LST}
@@ -222,7 +226,9 @@ rule ont_subset_fastq_by_adapter_type:
         # FULL_LEN = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len.fq.gz",
         # SINGLE_ADAPTER1 = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/single_adapter1.fq.gz",
         FQ_ADAPTER="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter.fq.gz",
-    threads: config["CORES"]
+    resources:
+        mem="16G",
+        threads=config["CORES"],
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/subseq_full_len.log",
     run:
@@ -238,12 +244,14 @@ rule ont_subset_fastq_by_adapter_type:
             > {output.FQ_ADAPTER.strip('.gz')} \
             2> {log.log}
                         
-            {EXEC['PIGZ']} -p{threads} {output.FQ_ADAPTER.strip('.gz')}
+            {EXEC['PIGZ']} -p{resources.threads} {output.FQ_ADAPTER.strip('.gz')}
             """
         )
 
 
 # Split reads in the poly(T) stretch and rev-comp the "R2" sequence
+##TODO: there is probably a better/faster way to split reads than on the poly(A) tail?
+##TODO: add read length bounds for R1 based on barcode construct to reduce incorrect split sites across reads
 rule ont_split_fastq_to_R1_R2:
     input:
         FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter.fq.gz",
@@ -252,18 +260,19 @@ rule ont_split_fastq_to_R1_R2:
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_R2.fq.gz",
     params:
         ADAPTER="T" * 8,
-    threads: config["CORES"]
+    resources:
+        mem="16G",
+        threads=config["CORES"],
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/read_split.log",
     run:
-        # for ADAPTER in input.ADAPTER_TYPES: #TODO- broaden to other read types, bneyond full_len
+        # for ADAPTER in input.ADAPTER_TYPES: #TODO- broaden to other read types, beyond full_len
         shell(
             f"""
-            python scripts/py/fastq_split_reads_parallelized.py \
-                --fq_in {input.FQ} \
+            python scripts/py/fastq_split_reads_parallelized.py --fq_in {input.FQ} \
                 --split_seq {params.ADAPTER} \
-                --threads {threads} \
-             2> {log.log}
+                --threads {resources.threads} \
+            2> {log.log}
             """
         )
         # --min_R1_length {} \

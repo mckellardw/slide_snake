@@ -29,9 +29,10 @@ rule STARsolo_align:
         STAR_REF=lambda w: get_STAR_ref(w),
         STAR_PARAMS=lambda w: get_STAR_extra_params(w),
         WHITELIST=lambda w: " ".join(get_whitelist(w, return_type="list")),  # space-delimited for multi-barcode
-    threads: config["CORES"]
     resources:
-        MEMLIMIT=megabytes2bytes(config["MEMLIMIT_MB"]),
+        mem=megabytes2bytes(config["MEMLIMIT_MB"]),
+        time="2:00:00",
+        threads=config["CORES"],
     # conda:
     #     f"{workflow.basedir}/envs/star.yml"
     priority: 42
@@ -40,7 +41,7 @@ rule STARsolo_align:
         mkdir -p $(dirname {output.BAM})
 
         STAR \
-            --runThreadN {threads} \
+            --runThreadN {resources.threads} \
             --outFileNamePrefix $(dirname {output.BAM})/ \
             --outSAMtype BAM SortedByCoordinate \
             --limitBAMsortRAM={resources.MEMLIMIT} \
@@ -60,6 +61,7 @@ rule STARsolo_align:
             --soloFeatures Gene GeneFull Velocyto \
             --soloMultiMappers EM
         """
+
 
 # compress outputs from STAR (count matrices, cell barcodes, and gene lists)
 rule compress_STAR_outs:
@@ -97,7 +99,8 @@ rule compress_STAR_outs:
         GENEFULLDIR=directory(
             "{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull"
         ),
-    threads: config["CORES"]
+    resources:
+        threads=config["CORES"],
     run:
         if "noTrim" in wildcards.RECIPE and "seeker" in wildcards.RECIPE:
             shell(
@@ -115,7 +118,7 @@ rule compress_STAR_outs:
 
         shell(
             f"""
-            {EXEC['PIGZ']} -p{threads} -f \
+            pigz -p{resources.threads} -f \
                 {OUTDIR}/{wildcards.SAMPLE}/STARsolo/short_read/{wildcards.RECIPE}/*/*/*/*.tsv \
                 {OUTDIR}/{wildcards.SAMPLE}/STARsolo/short_read/{wildcards.RECIPE}/*/*/*/*.mtx
             """

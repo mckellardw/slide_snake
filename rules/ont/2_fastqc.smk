@@ -68,4 +68,3 @@ rule ont_fastQC_postCutadapt:
                 -a {params.adapters} \
                 {input.FQ}
             """
-        
