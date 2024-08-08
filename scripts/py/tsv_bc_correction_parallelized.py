@@ -9,6 +9,9 @@ import editdistance as ed
 import sys
 import csv
 import argparse
+import time
+
+startTime = time.time()
 
 # Usage:
 # SlideSeq
@@ -39,6 +42,9 @@ python scripts/py/tsv_bc_correction.py \
     --threads 10
 """
 
+
+def currentTime():
+    return time.strftime("%D | %H:%M:%S", time.localtime())
 
 # Random name for temp directory
 def generate_temp_dir_name(length=16):
@@ -261,7 +267,7 @@ def process_tsv(
                 for row in reader:
                     read_count += 1
                     if verbose and read_count % 1000000 == 0:
-                        print(f"{read_count} reads processed...")
+                        print(f"{currentTime()} - {read_count} reads processed...")
 
                     read_id = row[id_column]
                     barcodes = [row[i] for i in bc_columns]
@@ -373,7 +379,7 @@ if __name__ == "__main__":
 
     # Single-threaded = verbose
     if args.threads == 1:
-        print(f"Running on {args.threads} thread...")
+        print(f"{currentTime()} - Running on {args.threads} thread...")
         print("")
         process_tsv(
             tsv_in=args.tsv_in,
@@ -390,19 +396,19 @@ if __name__ == "__main__":
 
     # Multi-threaded = not verbose
     elif args.threads > 1:
-        print(f"Running on {args.threads} threads...")
+        print(f"{currentTime()} - Running on {args.threads} threads...")
         # Source: https://superfastpython.com/multiprocessing-pool-for-loop/
         import multiprocessing
 
         print("")
-        print(f"Splitting input tsv...")
+        print(f"{currentTime()} - Splitting input tsv...")
         temp_dir = generate_temp_dir_name()
         print(f"Temporary directory: {temp_dir}")
         temp_tsvs_in = split_file(
             file_path=args.tsv_in, temp_dir=temp_dir, num_chunks=args.threads
         )
 
-        print(f"Correcting barcodes...")
+        print(f"{currentTime()} - Correcting barcodes...")
 
         temp_tsvs_out_full = [
             fn.replace(".tsv", "_corr_full.tsv") for fn in temp_tsvs_in
@@ -441,7 +447,7 @@ if __name__ == "__main__":
         #     max_hams=args.max_hams
         # )
 
-        print(f"Concatenating results...")
+        print(f"{currentTime()} - Concatenating results...")
         concatenate_files(
             filenames=temp_tsvs_out_full, output_filename=args.tsv_out_full
         )
@@ -449,9 +455,10 @@ if __name__ == "__main__":
             filenames=temp_tsvs_out_slim, output_filename=args.tsv_out_slim
         )
 
-        print(f"Removing temp files (temp_dir: `{temp_dir}`)...")
+        print(f"{currentTime()} - Removing temp files (temp_dir: `{temp_dir}`)...")
         os.system(f"rm -rf {temp_dir}") if os.path.exists(temp_dir) else None
 
-        print(f"Done!")
+        print(f"{currentTime()} - Done!")
+        print(f"Finished in {time.time() - startTime:.2f} seconds")
     else:
         print(f"Incorrect number of threads specified [{args.threads}]...")
