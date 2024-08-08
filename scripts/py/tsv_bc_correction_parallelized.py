@@ -5,7 +5,8 @@ import string
 import csv
 import argparse
 from itertools import product
-import editdistance as ed
+# import editdistance as ed
+from Levenshtein import distance
 import sys
 import csv
 import argparse
@@ -42,6 +43,7 @@ python scripts/py/tsv_bc_correction.py \
     --threads 10
 """
 
+# fast levenshtein implementation- https://github.com/rapidfuzz/Levenshtein
 
 def currentTime():
     return time.strftime("%D | %H:%M:%S", time.localtime())
@@ -69,7 +71,8 @@ def split_file(file_path, temp_dir, num_chunks):
         os.makedirs(temp_dir)
 
     # Calculate the size of each chunk (number of lines)
-    chunk_size = (file_line_count(file_path) // num_chunks) + 1
+    n_bcs = file_line_count(file_path)
+    chunk_size = (n_bcs // num_chunks) + 1
     # print(chunk_size)
 
     # Initialize an empty list to store chunk file names
@@ -96,7 +99,7 @@ def split_file(file_path, temp_dir, num_chunks):
                 line_count = 0
                 chunk_index += 1
 
-    return chunk_file_names
+    return chunk_file_names, n_bcs
 
 
 # Concatenate a list of files
@@ -203,7 +206,7 @@ def load_whitelist(whitelist, k=5):
     return wl, kmer_to_bc_index
 
 
-def calc_ed_with_whitelist(bc_uncorr, whitelist):
+def calc_leven_to_whitelist(bc_uncorr, whitelist):
     """
     Find minimum and runner-up barcode edit distance by iterating through the
     whitelist of expected barcodes.
@@ -217,19 +220,25 @@ def calc_ed_with_whitelist(bc_uncorr, whitelist):
     :rtype: str, int, int
     """
     bc_match = "X" * len(bc_uncorr)
-    bc_match_ed = len(bc_uncorr)
-    next_bc_match_ed = len(bc_uncorr)
-    for wl_bc in whitelist:
-        d = ed.eval(bc_uncorr, wl_bc)  # Use the ed module here
-        if d < bc_match_ed:
-            next_bc_match_ed = bc_match_ed
-            bc_match_ed = d
-            bc_match = wl_bc
-        elif d < next_bc_match_ed:
-            next_bc_match_ed = d
-    next_match_diff = next_bc_match_ed - bc_match_ed
+    bc_match_leven = len(bc_uncorr)
+    next_bc_match_leven = len(bc_uncorr)
 
-    return bc_match, bc_match_ed, next_match_diff
+    for wl_bc in whitelist:
+        # d = ed.eval(bc_uncorr, wl_bc)  # Use the ed module here
+        d = distance(bc_uncorr, wl_bc)
+
+        if d < bc_match_leven:
+            next_bc_match_leven = bc_match_leven
+            bc_match_leven = d
+            bc_match = wl_bc
+        elif d < next_bc_match_leven:
+            next_bc_match_leven = d
+
+        if d == 0:
+            break
+    next_match_diff = next_bc_match_leven - bc_match_leven
+
+    return bc_match, bc_match_leven, next_match_diff
 
 
 def process_tsv(
@@ -239,35 +248,33 @@ def process_tsv(
     id_column,
     bc_columns,
     concat_bcs,
-    whitelist_files,
+    # whitelist_files,
+    whitelists,
     max_hams,
     verbose=False,
+    bc_update_counter=1000000
 ):
-    # prep whitelists
-    whitelists = {}
-    for i, whitelist_file in enumerate(whitelist_files):
-        wl, kmer_to_bc_index = load_whitelist(
-            whitelist_file, k=5
-        )  # Assuming k=5 for simplicity
-        whitelists[i] = wl
+    verbose = True
+    bc_update_counter=5000
 
+    if verbose:
+        processStartTime = time.time()
+        print(f"Correcting barcode(s)..")
     # Prepare the output file
     with open(tsv_out_full, "w", newline="") as outfile_full:
         writer_full = csv.writer(outfile_full, delimiter="\t")
-        # writer.writerow(['Read_ID', 'Original_Barcode', 'Corrected_Barcode', 'Hamming_Distance'])
+        
         with open(tsv_out_slim, "w", newline="") as outfile_slim:
             writer_slim = csv.writer(outfile_slim, delimiter="\t")
-            # writer.writerow(['Read_ID    Corrected_Barcode'])
 
             read_count = 0
             with open(tsv_in, "r") as infile:
                 reader = csv.reader(infile, delimiter="\t")
-                next(reader)  # Skip header row
 
                 for row in reader:
                     read_count += 1
-                    if verbose and read_count % 1000000 == 0:
-                        print(f"{currentTime()} - {read_count} reads processed...")
+                    if verbose and read_count % bc_update_counter == 0:
+                        print(f"{time.time()-processStartTime:.2f} - {read_count} reads processed...")
 
                     read_id = row[id_column]
                     barcodes = [row[i] for i in bc_columns]
@@ -282,24 +289,36 @@ def process_tsv(
                         for i in range(len(barcodes))
                     ]
                     for barcode, whitelist, max_ham in RANGE:
-                        (
-                            corrected_bc,
-                            bc_match_ham,
-                            next_match_diff,
-                        ) = calc_ed_with_whitelist(barcode, whitelist)
-
-                        if bc_match_ham <= max_ham:
-                            # row2write.append(f"{barcode}\t{corrected_bc}\t{bc_match_ed}")
-                            row2write.extend(
-                                [barcode, corrected_bc, bc_match_ham, next_match_diff]
-                            )
+                        # quick check for perfect match
+                        if barcode == "-":
+                            continue
+                        elif barcode in whitelist:
+                            corrected_bc = barcode
+                            bc_leven = 0
+                            next_match_diff = "-"
                         else:
-                            # row2write.append(f"{barcode}\t \t{bc_match_ed}")
+                            # calculate levenshtein distance
+                            (
+                                corrected_bc,
+                                bc_leven,
+                                next_match_diff,
+                            ) = calc_leven_to_whitelist(barcode, whitelist)
+
+                        if bc_leven <= max_ham:
                             row2write.extend(
-                                [barcode, "-", bc_match_ham, next_match_diff]
+                                [barcode, corrected_bc, bc_leven, next_match_diff]
                             )
-                    writer_full.writerow(row2write)
-                    writer_slim.writerow([read_id, corrected_bc])
+                            writer_full.writerow(row2write)
+                            writer_slim.writerow([read_id, corrected_bc])
+                        else:
+                            row2write.extend(
+                                [barcode, "-", bc_leven, next_match_diff]
+                                )
+                            writer_full.writerow(row2write)
+                            # writer_slim.writerow([read_id, corrected_bc])
+    
+    if verbose:
+        print(f"{time.time()-processStartTime:.2f} - Finished correcting!")
 
 
 if __name__ == "__main__":
@@ -376,11 +395,20 @@ if __name__ == "__main__":
         f"Whitelist file(s):            {args.whitelist_files}\n"
         f"Maximum hamming distance(s):  {args.max_hams}\n"
     )
+    
+    # prep whitelists
+    whitelists = {}
+    for i, whitelist_file in enumerate(args.whitelist_files):
+        wl, kmer_to_bc_index = load_whitelist(
+            whitelist_file, k=5
+        )  # Assuming k=5 for simplicity
+        whitelists[i] = wl
 
     # Single-threaded = verbose
     if args.threads == 1:
         print(f"{currentTime()} - Running on {args.threads} thread...")
         print("")
+        
         process_tsv(
             tsv_in=args.tsv_in,
             tsv_out_full=args.tsv_out_full,
@@ -389,7 +417,8 @@ if __name__ == "__main__":
             id_column=args.id_column,
             bc_columns=args.bc_columns,
             concat_bcs=args.concat_bcs,
-            whitelist_files=args.whitelist_files,
+            # whitelist_files=args.whitelist_files,
+            whitelists=whitelists,
             max_hams=args.max_hams,
             verbose=True,
         )
@@ -404,11 +433,11 @@ if __name__ == "__main__":
         print(f"{currentTime()} - Splitting input tsv...")
         temp_dir = generate_temp_dir_name()
         print(f"Temporary directory: {temp_dir}")
-        temp_tsvs_in = split_file(
+        temp_tsvs_in, n_bcs = split_file(
             file_path=args.tsv_in, temp_dir=temp_dir, num_chunks=args.threads
         )
 
-        print(f"{currentTime()} - Correcting barcodes...")
+        print(f"{currentTime()} - Correcting {n_bcs} barcodes...")
 
         temp_tsvs_out_full = [
             fn.replace(".tsv", "_corr_full.tsv") for fn in temp_tsvs_in
@@ -423,11 +452,10 @@ if __name__ == "__main__":
                 temp_tsvs_in[i],
                 temp_tsvs_out_full[i],
                 temp_tsvs_out_slim[i],
-                # args.id_column[0],
-                args.id_column,
+                args.id_column, # args.id_column[0],
                 args.bc_columns,
                 args.concat_bcs,
-                args.whitelist_files,
+                whitelists, # args.whitelist_files,
                 args.max_hams,
             )
             for i in list(range(args.threads))
@@ -447,6 +475,7 @@ if __name__ == "__main__":
         #     max_hams=args.max_hams
         # )
 
+        print("")
         print(f"{currentTime()} - Concatenating results...")
         concatenate_files(
             filenames=temp_tsvs_out_full, output_filename=args.tsv_out_full
@@ -459,6 +488,7 @@ if __name__ == "__main__":
         os.system(f"rm -rf {temp_dir}") if os.path.exists(temp_dir) else None
 
         print(f"{currentTime()} - Done!")
+        print("")
         print(f"Finished in {time.time() - startTime:.2f} seconds")
     else:
         print(f"Incorrect number of threads specified [{args.threads}]...")
