@@ -10,7 +10,7 @@ rule ont_qualimap_minimap2:
         GENES_GTF=lambda wildcards: GTF_DICT[wildcards.SAMPLE],
     resources:
         mem="32G",
-        threads=1,
+    threads: 1
     conda:
         f"{workflow.basedir}/envs/qualimap.yml"
     shell:
@@ -39,7 +39,7 @@ rule ont_qualimap_STAR:
         GENES_GTF=lambda wildcards: GTF_DICT[wildcards.SAMPLE],
     resources:
         mem="32G",
-        threads=1,
+    threads: 1
     conda:
         f"{workflow.basedir}/envs/qualimap.yml"
     shell:
@@ -64,7 +64,7 @@ rule ont_qualimap_summary2csv:
         CSV="{OUTDIR}/{SAMPLE}/qualimap/ont/{TOOL}/rnaseq_qc_results.csv",
     resources:
         mem="8G",
-        threads=1,
+    threads: 1
     shell:
         """
         python scripts/py/qualimap_summary2csv.py {input.TXT} {output.CSV}

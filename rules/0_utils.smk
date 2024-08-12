@@ -9,14 +9,12 @@ rule index_BAM:
         BAI="{BAM}.bai",
     # wildcard_constraints:
     #     BAM=".*\.(bam)$"
-    resources:
-        threads=config["CORES"],
-    run:
-        shell(
-            f"""
-            {EXEC['SAMTOOLS']} index -@ {threads} {input.BAM}
-            """
-        )
+    # resources:
+    threads: config["CORES"]
+    shell:
+        """
+        samtools index -@ {threads} {input.BAM}
+        """
 
 
 #### Util functions ###########################

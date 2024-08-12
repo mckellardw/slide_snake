@@ -18,7 +18,7 @@ rule ont_clipBeforeSTAR:
                 -f scripts/awk/fq_clipToNBases.awk \
             > {output.FQ.strip('.gz')}
 
-            {EXEC['PIGZ']} -p{resources.threads} {output.FQ.strip('.gz')}
+            pigz -p{threads} {output.FQ.strip('.gz')}
             """
         )
 
@@ -83,8 +83,8 @@ rule ont_STARsolo_align:
             f"""
             mkdir -p $(dirname {output.BAM})
 
-            {EXEC['STAR']}long-avx2 \
-                --runThreadN {resources.threads} \
+            STARlong-avx2 \
+                --runThreadN {threads} \
                 --outFileNamePrefix $(dirname {output.BAM})/ \
                 --outSAMtype BAM SortedByCoordinate \
                 --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
@@ -157,30 +157,8 @@ rule ont_compress_STAR_outs:
 
         shell(
             f"""
-            {EXEC['PIGZ']} -p{resources.threads} -f \
+            pigz -p{threads} -f \
                 {OUTDIR}/{wildcards.SAMPLE}/STARsolo/ont/{recipe}/*/*/*/*.tsv \
                 {OUTDIR}/{wildcards.SAMPLE}/STARsolo/ont/{recipe}/*/*/*/*.mtx
             """
         )
-
-
-#
-
-
-# Index .bam output by STAR
-rule ont_indexSortedBAM:
-    input:
-        BAM="{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Aligned.sortedByCoord.out.bam",
-    output:
-        BAI="{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Aligned.sortedByCoord.out.bam.bai",
-    threads: config["CORES"]
-    # 1
-    run:
-        shell(
-            f"""
-            {EXEC['SAMTOOLS']} index -@ {resources.threads} {input.BAM}
-            """
-        )
-
-
-#

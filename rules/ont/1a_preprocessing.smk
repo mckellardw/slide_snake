@@ -29,14 +29,14 @@ rule merge_formats_ONT:
                 shell(
                     f"""
                     if [ -f {F} ]; then
-                        {EXEC['SAMTOOLS']} fastq {F} \
+                        samtools fastq {F} \
                         > {output.MERGED_FQ.strip('.gz')} \
                         2>> {log.log}
                     else
                         echo "File [ {F} ] does not exist." >> {log.log}
                     fi                    
                     
-                    {EXEC['PIGZ']} -p{resources.threads} {output.MERGED_FQ.strip('.gz')} 2>> {log.log}
+                    pigz -p{threads} {output.MERGED_FQ.strip('.gz')} 2>> {log.log}
                     """
                 )
             else:
@@ -74,7 +74,7 @@ rule merge_formats_ONT:
                 elif ".sam" in F or ".bam" in F or ".cram" in F:
                     shell(
                         f"""
-                        {EXEC['SAMTOOLS']} fastq {F} \
+                        samtools fastq {F} \
                         >> {F_base} \
                         2>> {log.log}
                         """
@@ -85,7 +85,7 @@ rule merge_formats_ONT:
 
             shell(
                 f"""
-                {EXEC['PIGZ']} -p{resources.threads} {F_base}
+                pigz -p{threads} {F_base}
                 """
             )
 
@@ -108,7 +108,7 @@ rule merge_formats_ONT:
                     shell(
                         f"""
                         if [ -f {F} ]; then
-                            {EXEC['SAMTOOLS']} fastq {F} \
+                            samtools fastq {F} \
                             >> {F_base} \
                             2>> {log.log}
                         else
@@ -122,7 +122,7 @@ rule merge_formats_ONT:
 
             shell(
                 f"""
-                {EXEC['PIGZ']} -p{resources.threads} {F_base}  2>> {log.log}
+                pigz -p{threads} {F_base}  2>> {log.log}
                 """
             )
 
@@ -143,14 +143,14 @@ rule ont_call_adapter_scan:
         f"{workflow.basedir}/envs/adapter_scan.yml"
     resources:
         mem="16G",
-        threads=1,
+    threads: 1
     shell:
         """
         python scripts/py/adapter_scan_vsearch.py \
             --kit {params.KIT} \
             --output_fastq {output.FQ} \
             --output_tsv {output.TSV} \
-            -t {resources.threads} \
+            -t {threads} \
             {input.FQ} \
         2>&1 | tee {log.log}
         """
@@ -166,7 +166,7 @@ rule ont_readIDs_by_adapter_type:
         SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
     resources:
         mem="16G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     shell:
         """
         python scripts/py/write_adapterscan_read_id_lists.py \
@@ -184,7 +184,7 @@ rule ont_adapterScan_QC:
         LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/adapter_scan_results.txt",
     resources:
         mem="8G",
-        threads=1,
+    threads: 1
     shell:
         """
         dir_path=$(dirname {input.FULL_LEN})
@@ -207,7 +207,7 @@ rule ont_merge_scan_lists:
         LST="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/keep.txt",
     resources:
         mem="8G",
-        threads=1,
+    threads: 1
     shell:
         """
         cat {input.FULL_LEN} {input.SINGLE_ADAPTER1} > {output.LST}
@@ -228,7 +228,7 @@ rule ont_subset_fastq_by_adapter_type:
         FQ_ADAPTER="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter.fq.gz",
     resources:
         mem="16G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/subseq_full_len.log",
     run:
@@ -244,7 +244,7 @@ rule ont_subset_fastq_by_adapter_type:
             > {output.FQ_ADAPTER.strip('.gz')} \
             2> {log.log}
                         
-            {EXEC['PIGZ']} -p{resources.threads} {output.FQ_ADAPTER.strip('.gz')}
+            pigz -p{threads} {output.FQ_ADAPTER.strip('.gz')}
             """
         )
 
@@ -262,7 +262,7 @@ rule ont_split_fastq_to_R1_R2:
         ADAPTER="T" * 8,
     resources:
         mem="16G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/read_split.log",
     run:
@@ -271,7 +271,7 @@ rule ont_split_fastq_to_R1_R2:
             f"""
             python scripts/py/fastq_split_reads_parallelized.py --fq_in {input.FQ} \
                 --split_seq {params.ADAPTER} \
-                --threads {resources.threads} \
+                --threads {threads} \
             2> {log.log}
             """
         )

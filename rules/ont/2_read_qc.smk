@@ -3,20 +3,20 @@ rule ont_readQC_preCutadapt:
     input:
         FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_{READ}.fq.gz",
     output:
-        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/1_preCutadapt/{READ}_qc.tsv",  #TODO compress this?
+        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/1_preCutadapt/{READ}_qc.tsv",
     params:
         CHUNK_SIZE=500000,  # number of reads to handle at a time (higher value means more mem usage)
     log:
         log="{OUTDIR}/{SAMPLE}/ont/readqc/1_preCutadapt/{READ}_qc.log",
     resources:
         mem="8G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     shell:
         """
         python scripts/py/fastq_read_qc.py \
             {input.FQ} \
             {output.TSV} \
-            --cores {resources.threads} \
+            --cores {threads} \
             --chunk_size {params.CHUNK_SIZE} \
         2>&1 | tee {log.log}
         """
@@ -34,13 +34,13 @@ rule ont_readQC_postCutadapt:
         log="{OUTDIR}/{SAMPLE}/ont/readqc/2_postCutadapt/{READ}_qc.log",
     resources:
         mem="8G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     shell:
         """
         python scripts/py/fastq_read_qc.py \
             {input.FQ} \
             {output.TSV} \
-            --cores {resources.threads} \
+            --cores {threads} \
             --chunk_size {params.CHUNK_SIZE} \
         2>&1 | tee {log.log}
         """
@@ -75,8 +75,8 @@ rule ont_readQC_bam:
         log="{OUTDIR}/{SAMPLE}/ont/readqc/3_aligned/{RECIPE}_qc.log",
     resources:
         mem="8G",
-        threads=1,
-        # threads=config["CORES"],
+    threads: 1
+    # threads=config["CORES"],
     shell:
         """
         python scripts/py/bam_read_qc.py \
@@ -96,7 +96,7 @@ rule readQC_downsample:
         TSV="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc_500000.tsv",
     resources:
         mem="4G",
-        threads=1,
+    threads: 1
     shell:
         """
         head -n 5000000 {input.TSV} > {output.TSV} 
@@ -111,7 +111,7 @@ rule ont_readQC_summaryplot:
         IMG="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc.png",
     resources:
         mem="8G",
-        threads=1,
+    threads: 1
     conda:
         f"{workflow.basedir}/envs/ggplot2.yml"
     shell:

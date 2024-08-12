@@ -7,7 +7,6 @@ rule ont_fastQC_preTrim:
     params:
         adapters=config["FASTQC_ADAPTERS"],
     threads: config["CORES"]
-    # min([config['CORES'],8]) # 8 core max
     conda:
         f"{workflow.basedir}/envs/fastqc.yml"
     shell:
@@ -31,7 +30,6 @@ rule ont_fastQC_preCutadapt:
     params:
         adapters=config["FASTQC_ADAPTERS"],
     threads: config["CORES"]
-    # min([config['CORES'],8]) # 8 core max
     conda:
         f"{workflow.basedir}/envs/fastqc.yml"
     shell:
@@ -55,7 +53,6 @@ rule ont_fastQC_postCutadapt:
     params:
         adapters=config["FASTQC_ADAPTERS"],
     threads: config["CORES"]
-    # min([config['CORES'],8]) # 8 core max
     conda:
         f"{workflow.basedir}/envs/fastqc.yml"
     shell:

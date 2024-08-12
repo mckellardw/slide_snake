@@ -17,7 +17,8 @@ rule ont_cutadapt:
         R1_LENGTH=lambda w: min(
             get_recipe_info(w, info_col="R1.finalLength", mode="list")
         )
-        + len(config["R1_PRIMER"]),  # Add R1 primer length for ONT,
+        + len(config["R1_PRIMER"]),
+        # Add R1 primer length for ONT,
         # ADAPTER=config["R1_INTERNAL_ADAPTER"],  # Curio R1 internal adapter
         ADAPTER=lambda w: get_recipe_info(w, "internal.adapter", mode="ONT"),
         ADAPTER_COUNT=4,  # number of adapters that can be trimmed from each read
@@ -36,7 +37,7 @@ rule ont_cutadapt:
         rcSEEKER_BB_ADAPTER="AGAGCCCTTGCGACTTCT",  # Reverse of the adapter between BB1 & BB2 in R1     
     resources:
         mem="16G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/cutadapt.log",
     conda:
@@ -61,7 +62,7 @@ rule ont_cutadapt:
             --pair-filter=any \
             -o {output.R1_FQ} \
             -p {output.R2_FQ} \
-            --cores {resources.threads} \
+            --cores {threads} \
             --json {output.JSON} \
             {input.R1_FQ} {input.R2_FQ} \
         1>> {log.log}
@@ -85,24 +86,22 @@ rule ont_R1_hardTrimming:
         CB2end=42,
     resources:
         mem="16G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/R1_hardTrimming.log",
-    run:
-        shell(
-            f"""
-            zcat {input.R1_FQ} \
-            | awk -v s={params.CB1end} \
-                -v S={params.CB2start} \
-                -v E={params.CB2end} \
-                -f scripts/awk/hardTrimFq.awk \
-            > {output.R1_FQ.strip('.gz')}
+    shell:
+        """
+        zcat {input.R1_FQ} \
+        | awk -v s={params.CB1end} \
+            -v S={params.CB2start} \
+            -v E={params.CB2end} \
+            -f scripts/awk/hardTrimFq.awk \
+        > {output.R1_FQ.strip('.gz')}
 
-            {EXEC['PIGZ']} -f -p{resources.threads} {output.R1_FQ.strip('.gz')}
+        pigz -f -p{threads} {output.R1_FQ.strip('.gz')}
 
-            echo "Hard trimming performed on {input.R1_FQ}" > {log.log}
-            """
-        )
+        echo "Hard trimming performed on {input.R1_FQ}" > {log.log}
+        """
 
 
 ## Internal trimming to cut out adapter sequences
@@ -125,14 +124,14 @@ rule ont_R1_internalTrim:
         MIN_ALIGN_SCORE=10,
     resources:
         mem="16G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/R1_internalTrimming.log",
     shell:
         """
         python scripts/py/fastq_internal_adapter_trim_R1.py \
             --adapter_seq {params.ADAPTER} \
-            --n_cores {resources.threads} \
+            --n_cores {threads} \
             --tmp_dir {params.TMPDIR} \
             --fq1_in {input.R1_FQ} \
             --fq1_out {output.R1_FQ} \
@@ -155,11 +154,12 @@ rule ont_cutadapt_internalTrimming:
         R1_LENGTH=lambda w: min(
             get_recipe_info(w, info_col="R1.finalLength", mode="list")
         )
-        + len(params.R1),  # Add R1 primer length for ONT,
+        + len(params.R1),
+        # Add R1 primer length for ONT,
         ADAPTER=lambda w: get_recipe_info(w, "internal.adapter", mode="ONT"),
     resources:
         mem="16G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/cutadapt_internalTrim.log",
     conda:
@@ -176,7 +176,7 @@ rule ont_cutadapt_internalTrimming:
             --pair-filter=any \
             -o {output.R1_FQ} \
             -p {output.R2_FQ} \
-            --cores {resources.threads} \
+            --cores {threads} \
             --json {output.JSON} \
             {input.R1_FQ} {input.R2_FQ} \
         1>> {log.log}

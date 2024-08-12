@@ -15,7 +15,7 @@
 #         log="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/umitools/extract.log",
 #     resources:
 #         mem="16G",
-#         threads=1,
+#         threads: 1,
 #     run:
 #         if "N" in params.BC_PATTERN:
 #             shell(
@@ -24,7 +24,7 @@
 #                 echo "Extract method:  {params.EXTRACT_METHOD}" >> {log.log}
 #                 echo "" >> {log.log}
 
-#                 {EXEC['UMITOOLS']} extract \
+#                 umi_tools extract \
 #                     --extract-method={params.EXTRACT_METHOD} \
 #                     --bc-pattern='{params.BC_PATTERN}' \
 #                     --stdin={input.FQS[0]} \
@@ -61,7 +61,7 @@ rule ont_fastq_call_bc_from_adapter:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/fastq_call_bc_from_adapter.log",
     resources:
         mem="32G",
-        threads=1,
+    threads: 1
     run:
         # if any([umi_length > 0 for umi_length in params.UMI_LENGTHS]):
         shell(
@@ -98,26 +98,45 @@ rule ont_fastq_call_bc_from_adapter:
 
 
 
-# Correct barcodes based on white lists
-rule ont_tsv_bc_correction:
+# Filter called read barcodes
+rule ont_filter_read_barcodes:
     input:
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes.tsv",
-        # WHITELIST=lambda w: get_whitelist(w, return_type="list"),
+    output:
+        TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_filtered.tsv",
+    shell:
+        """
+        cat {input.TSV} | grep -vP "\t-" > {output.TSV}
+        """
+
+
+# Correct barcodes based on white lists
+# TODO- flexible input whitelist (for independent sub-barcode correction)
+# TODO- recipe-specific barcode correction parameters (MAX_LEVEN, NEXT_MATCH_DIFF, CONCAT_BCS)
+# TODO- option for methods which don't have UMI {params.UMI_LENGTH}
+rule ont_tsv_bc_correction:
+    input:
+        TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_filtered.tsv",
+        # WHITELIST=lambda w: get_whitelist(w, return_type="list"), 
         WHITELIST="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
     output:
         TSV_SLIM="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected.tsv",
         TSV_FULL="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected_full.tsv",
     params:
         # BC_PATTERN=lambda w: get_ont_barcode_pattern(w),
-        MAX_HAM=3,  # maximum hamming distance tolerated in correction; #TODO- this should be method-spedicif
+        UMI_LENGTH=12,
+        MAX_LEVEN=3,  # maximum Levenshtein distance tolerated in correction;
+        NEXT_MATCH_DIFF=2,
+        K=5,  # kmer length for BC whitelist filtering; shorter value improves accuracy, extends runtime
         BC_COLUMNS=lambda w: " ".join(map(str, range(1, get_n_bcs(w) + 1))),
+        CONCAT_BCS=True,  # whether the sub-barcodes should be corrected together (SlideSeq) or separately (microST)
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/tsv_bc_correction.log",
     resources:
         mem="32G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     run:
-        # if any([umi_length > 0 for umi_length in params.UMI_LENGTHS]):
+        # if params.UMI_LENGTH > 0:
         shell(
             f"""
             python scripts/py/tsv_bc_correction_parallelized.py --tsv_in {input.TSV} \
@@ -125,10 +144,12 @@ rule ont_tsv_bc_correction:
                 --tsv_out_slim {output.TSV_SLIM} \
                 --id_column 0 \
                 --bc_columns {params.BC_COLUMNS} \
-                --concat_bcs True \
+                --concat_bcs {params.CONCAT_BCS} \
                 --whitelist_files {input.WHITELIST} \
-                --max_ham {params.MAX_HAM} \
-                --threads {resources.threads} \
+                --max_levens {params.MAX_LEVEN} \
+                --min_next_match_diffs {params.NEXT_MATCH_DIFF} \
+                --k {params.K} \
+                --threads {threads} \
             1> {log.log}
             """
         )

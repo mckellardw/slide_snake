@@ -11,12 +11,12 @@ rule ont_align_minimap2_genome:
         ref=config["REF_GENOME_FASTA"],
         chrom_sizes=config["REF_CHROM_SIZES"],
         bed=config["REF_GENES_BED"],
-        flags=config["RESOURCES_MM2_FLAGS"],
+        # flags=config["RESOURCES_MM2_FLAGS"],
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/minimap2.log",
     resources:
         mem="128G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     conda:
         f"{workflow.basedir}/envs/minimap2.yml"
     shell:
@@ -30,9 +30,8 @@ rule ont_align_minimap2_genome:
             -ax splice \
             -uf \
             --MD \
-            -t {resources.threads} \
-            --junc-bed {params.bed} \
-            {params.flags} {params.EXTRA_FLAGS} \
+            -t {threads} \
+            --junc-bed {params.bed} {params.EXTRA_FLAGS} \
             {params.ref} \
             {input.FQ} \
         2>> {log.log} \
@@ -50,17 +49,14 @@ rule ont_sort_compress_output:
         ref=config["REF_GENOME_FASTA"],  #TODO- sample-specific... ref_snake integration?
     resources:
         mem="16G",
-        threads=1,
-    run:
-        shell(
-            f"""
-            samtools sort \
-                --reference {params.ref} \
-                -O BAM \
-                -o {output.BAM} \
-                {input.SAM}             
-            """
-        )
+    threads: 1
+    shell:
+        """
+        samtools sort --reference {params.ref} \
+            -O BAM \
+            -o {output.BAM} \
+            {input.SAM}             
+        """
 
 
 rule ont_featureCounts:
@@ -81,7 +77,7 @@ rule ont_featureCounts:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/featureCounts.log",
     resources:
         mem="32G",
-        threads=1,  # long reads can only run single-threaded
+    threads: 1  # long reads can only run single-threaded
     conda:
         f"{workflow.basedir}/envs/minimap2.yml"
     shell:
@@ -96,7 +92,7 @@ rule ont_featureCounts:
             -D {params.MAX_TEMPLATE_LENGTH} \
             -t 'transcript' \
             -g 'transcript_id' \
-            -T {resources.threads} \
+            -T {threads} \
             -R CORE {params.EXTRA_FLAGS} \
             {input.BAM} \
         |& tee {log.log}
@@ -127,7 +123,7 @@ rule ont_featureCounts:
 #          f"{workflow.basedir}/envs/salmon.yml"
 #     shell:
 #         """
-#         salmon quant -i {input.INDEX} -l {params.LIBTYPE} -p {resources.threads} \
+#         salmon quant -i {input.INDEX} -l {params.LIBTYPE} -p {threads} \
 #         --validateMappings {params.VALIDATE_MAPPINGS} --gcBias {params.GC_BIAS} \
 #         --numGibbsSamples {params.NUM_GIBBS_SAMPLES} -o {output.QUANT} \
 #         -1 {input.BAM} 2> {log.log}
@@ -150,7 +146,7 @@ rule ont_add_featureCounts_to_bam:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_1_GN.log",
     resources:
         mem="16G",
-        threads=1,
+    threads: 1
     shell:
         """
         python scripts/py/tsv2tag.py --in_bam {input.BAM} \
@@ -178,26 +174,24 @@ rule ont_add_corrected_barcodes:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_2_CB.log",
     resources:
         mem="16G",
-        threads=1,
-    run:
-        shell(
-            f"""
-            python scripts/py/tsv2tag.py --in_bam {input.BAM} \
-                --in_tsv {input.TSV} \
-                --out_bam {output.BAM} \
-                --readIDColumn {params.READ_ID_COLUMN} \
-                --tagColumns {params.BARCODE_TSV_COLUMN} \
-                --tags {params.BARCODE_TAG} \
-            |& tee {log.log}
-            """
-        )
+    threads: 1
+    shell:
+        """
+        python scripts/py/tsv2tag.py --in_bam {input.BAM} \
+            --in_tsv {input.TSV} \
+            --out_bam {output.BAM} \
+            --readIDColumn {params.READ_ID_COLUMN} \
+            --tagColumns {params.BARCODE_TSV_COLUMN} \
+            --tags {params.BARCODE_TAG} \
+        |& tee {log.log}
+        """
 
 
 # Add UMI (UR) to barcoded & gene-tagged .bam
 rule ont_add_umis:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb.bam",
-        TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes.tsv",
+        TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_filtered.tsv",
     output:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam",
     params:
@@ -208,7 +202,7 @@ rule ont_add_umis:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_3_UR.log",
     resources:
         mem="16G",
-        threads=1,
+    threads: 1
     shell:
         """
         python scripts/py/tsv2tag.py --in_bam {input.BAM} \
@@ -234,7 +228,7 @@ rule ont_filter_bam_empty_tags:
         UMI_TAG="UR",  # uncorrected = UR; corrected = UB
     resources:
         mem="16G",
-        threads=1,
+    threads: 1
     run:
         shell(
             f"""
@@ -263,7 +257,7 @@ rule ont_umitools_count:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/umitools_count.log",
     resources:
         mem="16G",
-        threads=1,
+    threads: 1
     conda:
         f"{workflow.basedir}/envs/umi_tools.yml"
     shell:
@@ -290,7 +284,7 @@ rule ont_counts_to_sparse:
         COUNTS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/matrix.mtx.gz",
     resources:
         mem="16G",
-        threads=1,
+    threads: 1
     conda:
         f"{workflow.basedir}/envs/scanpy.yml"
     shell:
