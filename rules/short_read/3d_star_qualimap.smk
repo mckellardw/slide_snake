@@ -9,8 +9,8 @@ rule qualimapQC_STAR:
     params:
         GENES_GTF=lambda wildcards: GTF_DICT[wildcards.SAMPLE],
     resources:
-        threads=1,
         mem="32G",
+    threads: 1
     conda:
         f"{workflow.basedir}/envs/qualimap.yml"
     shell:
@@ -33,8 +33,8 @@ rule qualimap_summary2csv_STAR:
         TXT="{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/rnaseq_qc_results.txt",
     output:
         CSV="{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/rnaseq_qc_result.csv",
-    resources:
-        threads=1,
+    # resources:
+    threads: 1
     shell:
         """
         python scripts/py/qualimap_summary2csv.py {input.TXT} {output.CSV}

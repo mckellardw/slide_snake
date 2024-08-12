@@ -26,7 +26,7 @@ rule bwa_rRNA_align:
     resources:
         mem="96G",
         time="2:00:00",
-        threads=config["CORES"],
+    threads: config["CORES"]
     conda:
         f"{workflow.basedir}/envs/bwa.yml"
     shell:
@@ -34,14 +34,14 @@ rule bwa_rRNA_align:
         mkdir -p $(dirname {output.BAM1})
 
         bwa-mem2 mem \
-            -t {resources.threads} \
+            -t {threads} \
             {params.BWA_REF} \
             {input.R2_FQ} \
         1> {output.BAM1} \
         2> {log.log} \
         
         samtools sort \
-            -@ {resources.threads} \
+            -@ {threads} \
             -O BAM \
             {output.BAM1} \
         > {output.BAM2} 
@@ -68,7 +68,7 @@ rule bwa_rRNA_filter_R1:
         rRNA_LIST="{OUTDIR}/{SAMPLE}/rRNA/bwa/rRNA_readID.list",
     resources:
         mem="64G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     run:
         shell(
             f"""
@@ -90,10 +90,10 @@ rule bwa_rRNA_compress_unmapped:
         R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_R2.fq.gz",
     resources:
         mem="16G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     shell:
         """
-        pigz -p{resources.threads} {input}
+        pigz -p{threads} {input}
         """
 
 
@@ -107,7 +107,7 @@ rule bwa_rRNA_filtered_fastqc:
         adapters=config["FASTQC_ADAPTERS"],
     resources:
         mem="16G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     conda:
         f"{workflow.basedir}/envs/fastqc.yml"
     shell:
@@ -116,7 +116,7 @@ rule bwa_rRNA_filtered_fastqc:
 
         fastqc \
             -o {output.FQC_DIR} \
-            -t {resources.threads} \
+            -t {threads} \
             -a {params.adapters} \
             {input.FQ}
         """

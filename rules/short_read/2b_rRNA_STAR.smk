@@ -27,7 +27,6 @@ rule STAR_rRNA_align:
     resources:
         mem=megabytes2bytes(config["MEMLIMIT_MB"]),
         time="2:00:00",
-        threads=config["CORES"],
     threads: config["CORES"]
     run:
         shell(
@@ -35,7 +34,7 @@ rule STAR_rRNA_align:
             mkdir -p $(dirname {output.BAM})
 
             STAR \
-                --runThreadN {resources.threads} \
+                --runThreadN {threads} \
                 --outFileNamePrefix $(dirname {output.BAM})/ \
                 --outSAMtype BAM SortedByCoordinate \
                 --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
@@ -68,8 +67,7 @@ rule STAR_rRNA_compress_outs:
         GENEMAT="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Solo.out/GeneFull/raw/matrix.mtx.gz",
     params:
         GENEDIR=directory("{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Solo.out/GeneFull"),
-    resources:
-        threads=config["CORES"],
+    threads: config["CORES"]
     run:
         recipe = RECIPE_DICT[wildcards.SAMPLE]
         if "noTrim" in recipe:
@@ -90,7 +88,7 @@ rule STAR_rRNA_compress_outs:
         shell(
             f"""
             pigz \
-                -p{resources.threads} \
+                -p{threads} \
                 {params.GENEDIR}/*/*.tsv \
                 {params.GENEDIR}/*/*.mtx 
             """
@@ -105,8 +103,7 @@ rule STAR_rRNA_rename_compress_unmapped:
     output:
         FILTERED1_FQ="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/noRibo_R1.fq.gz",
         FILTERED2_FQ="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/noRibo_R2.fq.gz",
-    resources:
-        threads=config["CORES"],
+    threads: config["CORES"]
     run:
         shell(
             f"""
@@ -114,7 +111,7 @@ rule STAR_rRNA_rename_compress_unmapped:
             mv {input.UNMAPPED2} {output.FILTERED1_FQ.replace('.gz' , '')}
 
             pigz \
-                -p{resources.threads} \
+                -p{threads} \
                 {output.FILTERED2_FQ.replace('.gz' , '')} \
                 {output.FILTERED1_FQ.replace('.gz' , '')}
             """
@@ -129,8 +126,7 @@ rule STAR_rRNA_filtered_fastqc:
         FQC_DIR=directory("{OUTDIR}/{SAMPLE}/fastqc/rRNA_STAR_{READ}"),
     params:
         adapters=config["FASTQC_ADAPTERS"],
-    resources:
-        threads=config["CORES"],
+    threads: config["CORES"]
     conda:
         f"{workflow.basedir}/envs/fastqc.yml"
     shell:
@@ -139,7 +135,7 @@ rule STAR_rRNA_filtered_fastqc:
 
         fastqc \
             -o {output.FQC_DIR} \
-            -t {resources.threads} \
+            -t {threads} \
             -a {params.adapters} \
             {input.FQ}
         """

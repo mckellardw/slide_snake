@@ -13,7 +13,7 @@ rule qualimapQC_rRNA_bwa:
         log="{OUTDIR}/{SAMPLE}/qualimap/rRNA/bwa/rnaseq_qc.log",
     resources:
         mem="32G",
-        threads=1,
+    threads: 1
     conda:
         f"{workflow.basedir}/envs/qualimap.yml"
     shell:
@@ -45,7 +45,7 @@ rule qualimapQC_rRNA_STAR:
         GENES_GTF=lambda wildcards: SAMPLE_SHEET["rRNA_gtf"][wildcards.SAMPLE],
     resources:
         mem="32G",
-        threads=1,
+    threads: 1
     conda:
         f"{workflow.basedir}/envs/qualimap.yml"
     shell:
@@ -70,7 +70,7 @@ rule qualimap_summary2csv_rRNA_STAR:
         CSV="{OUTDIR}/{SAMPLE}/qualimap/rRNA/{TOOL}/rnaseq_qc_results.csv",
     resources:
         mem="4G",
-        threads=1,
+    threads: 1
     shell:
         """
         python scripts/py/qualimap_summary2csv.py {input.TXT} {output.CSV}

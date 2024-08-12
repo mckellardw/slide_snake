@@ -40,7 +40,7 @@ rule cutadapt:
         log="{OUTDIR}/{SAMPLE}/misc_logs/cutadapt1.log",
     resources:
         mem="16G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     conda:
         f"{workflow.basedir}/envs/cutadapt.yml"
     shell:
@@ -61,7 +61,7 @@ rule cutadapt:
             --pair-filter=any \
             -o {output.R1_FQ} \
             -p {output.R2_FQ} \
-            --cores {resources.threads} \
+            --cores {threads} \
             --json {output.JSON} \
             {input.R1_FQ} {input.R2_FQ} \
         1> {log.log}
@@ -103,7 +103,7 @@ rule cutadapt2:
         log="{OUTDIR}/{SAMPLE}/misc_logs/cutadapt2.log",
     resources:
         mem="16G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     conda:
         f"{workflow.basedir}/envs/cutadapt.yml"
     shell:
@@ -124,7 +124,7 @@ rule cutadapt2:
             --pair-filter=any \
             -o {output.R1_FQ} \
             -p {output.R2_FQ} \
-            --cores {resources.threads} \
+            --cores {threads} \
             --json {output.JSON} \
             {input.R1_FQ} {input.R2_FQ} \
         1> {log.log}
@@ -150,7 +150,7 @@ rule R1_hardTrimming:
         log="{OUTDIR}/{SAMPLE}/misc_logs/R1_hardTrimming.log",
     resources:
         mem="16G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     shell:
         """
         zcat {input.R1_FQ} \
@@ -160,7 +160,7 @@ rule R1_hardTrimming:
             -f scripts/awk/hardTrimFq.awk \
         > {output.R1_FQ.strip('.gz')}
 
-        {EXEC['PIGZ']} -f -p{resources.threads} {output.R1_FQ.strip('.gz')}
+        pigz -f -p{threads} {output.R1_FQ.strip('.gz')}
 
         echo "Hard trimming performed on {input.R1_FQ}" > {log.log}
         """
@@ -187,12 +187,12 @@ rule R1_internalTrimming:
         log="{OUTDIR}/{SAMPLE}/misc_logs/R1_internalTrimming.log",
     resources:
         mem="16G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     shell:
         """
         python scripts/py/fastq_internal_adapter_trim_R1.py \
             --adapter_seq {params.ADAPTER} \
-            --n_cores {resources.threads} \
+            --n_cores {threads} \
             --tmp_dir {params.TMPDIR} \
             --fq1_in {input.R1_FQ} \
             --fq1_out {output.R1_FQ} \

@@ -11,7 +11,7 @@ rule fastQC_preTrim:
         adapters=config["FASTQC_ADAPTERS"],
     resources:
         mem="16G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     conda:
         f"{workflow.basedir}/envs/fastqc.yml"
     shell:
@@ -20,7 +20,7 @@ rule fastQC_preTrim:
 
         fastqc \
             --outdir {output.fastqcDir} \
-            --threads {resources.threads} \
+            --threads {threads} \
             -a {params.adapters} \
             {input.MERGED_FQ}
         """
@@ -36,7 +36,7 @@ rule fastQC_postTrim:
         adapters=config["FASTQC_ADAPTERS"],
     resources:
         mem="16G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     conda:
         f"{workflow.basedir}/envs/fastqc.yml"
     shell:
@@ -45,7 +45,7 @@ rule fastQC_postTrim:
 
         fastqc \
             --outdir {output.fastqcDir} \
-            --threads {resources.threads} \
+            --threads {threads} \
             -a {params.adapters} \
             {input.FINAL_FQ}
         """
@@ -60,7 +60,7 @@ rule fastQC_twiceTrim:
         adapters=config["FASTQC_ADAPTERS"],
     resources:
         mem="16G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     conda:
         f"{workflow.basedir}/envs/fastqc.yml"
     shell:
@@ -69,7 +69,7 @@ rule fastQC_twiceTrim:
 
         fastqc \
             --outdir {output.fastqcDir} \
-            --threads {resources.threads} \
+            --threads {threads} \
             -a {params.adapters} \
             {input.FINAL_FQ}
         """

@@ -20,14 +20,12 @@ rule kbpython_nac:
         KB_EXTRA=lambda wildcards: RECIPE_SHEET["kb.extra"][wildcards.RECIPE],
         KB_IDX=lambda wildcards: IDX_VELO_DICT[wildcards.SAMPLE],
         KB_T2G=lambda wildcards: T2G_DICT[wildcards.SAMPLE],
-        KALLISTO=EXEC["KALLISTO"],
-        KB=EXEC["KB"],
     log:
         log="{OUTDIR}/{SAMPLE}/kbpython_nac/{RECIPE}/kbpython_nac.log",
     threads: config["CORES"]
     resources:
-        threads=config["CORES"],
         mem=config["MEMLIMIT_GB"],
+    threads: config["CORES"]
     priority: 42
     conda:
         f"{workflow.basedir}/envs/kb.yml"
@@ -35,7 +33,7 @@ rule kbpython_nac:
         """
         mkdir -p $(dirname {output.BUS})
 
-        {params.KB} count \
+        kb count \
             -i {params.KB_IDX} \
             -g {params.KB_T2G} \
             -o $(dirname {output.BUS}) \
@@ -45,7 +43,7 @@ rule kbpython_nac:
             -w {input.BC} \
             --overwrite \
             -m {resources.mem} \
-            -t {resources.threads} {params.KB_EXTRA} \
+            -t {threads} {params.KB_EXTRA} \
             {params.FQS[0]} {params.FQS[1]} \
         2> {log.log}
         """
@@ -66,5 +64,5 @@ rule kbpython_nac_compress_outs:
     threads: config["CORES"]
     shell:
         """
-        pigz  -p{resources.threads} {input.BCS} {input.GENES} {input.MAT}
+        pigz  -p{threads} {input.BCS} {input.GENES} {input.MAT}
         """

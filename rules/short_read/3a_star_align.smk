@@ -32,7 +32,7 @@ rule STARsolo_align:
     resources:
         mem=megabytes2bytes(config["MEMLIMIT_MB"]),
         time="2:00:00",
-        threads=config["CORES"],
+    threads: config["CORES"]
     # conda:
     #     f"{workflow.basedir}/envs/star.yml"
     priority: 42
@@ -41,7 +41,7 @@ rule STARsolo_align:
         mkdir -p $(dirname {output.BAM})
 
         STAR \
-            --runThreadN {resources.threads} \
+            --runThreadN {threads} \
             --outFileNamePrefix $(dirname {output.BAM})/ \
             --outSAMtype BAM SortedByCoordinate \
             --limitBAMsortRAM={resources.MEMLIMIT} \
@@ -99,8 +99,8 @@ rule compress_STAR_outs:
         GENEFULLDIR=directory(
             "{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull"
         ),
-    resources:
-        threads=config["CORES"],
+    # resources:
+    threads: config["CORES"]
     run:
         if "noTrim" in wildcards.RECIPE and "seeker" in wildcards.RECIPE:
             shell(
@@ -118,7 +118,7 @@ rule compress_STAR_outs:
 
         shell(
             f"""
-            pigz -p{resources.threads} -f \
+            pigz -p{threads} -f \
                 {OUTDIR}/{wildcards.SAMPLE}/STARsolo/short_read/{wildcards.RECIPE}/*/*/*/*.tsv \
                 {OUTDIR}/{wildcards.SAMPLE}/STARsolo/short_read/{wildcards.RECIPE}/*/*/*/*.mtx
             """

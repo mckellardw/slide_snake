@@ -18,8 +18,7 @@ rule ribodetector:
         MIN_ALIGNSCORE=40,
     log:
         log="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/ribodetector.log",
-    resources:
-        threads=config["CORES"],
+    threads: config["CORES"]
     conda:
         f"{workflow.basedir}/envs/ribodetector.yml"
     shell:
@@ -27,7 +26,7 @@ rule ribodetector:
         READ_LEN=$(seqkit stats {input.R2_FQ} | tail -n 1 | awk '{{print $7}}')
 
         ribodetector_cpu \
-            --threads {resources.threads} \
+            --threads {threads} \
             --len  $(printf "%.0f" $READ_LEN) \
             --input {input.R2_FQ} \
             --ensure rrna \
@@ -42,9 +41,8 @@ rule ribodetector_get_noRibo_list:
     input:
         R2_FQ_NORIBO="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_R2.fq",
     output:
-        NORIBO_LIST="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_readID.list",  #temp()
-    resources:
-        threads=1,
+        NORIBO_LIST=temp("{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_readID.list"),
+    threads: 1
     shell:
         """
         cat {input.R2_FQ_NORIBO} \
@@ -58,8 +56,7 @@ rule ribodetector_gunzip_R1:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/{TMP}_R1.fq.gz",
     output:
         R1_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/{TMP}_R1.fq"),
-    resources:
-        threads=1,
+    threads: 1
     shell:
         """
         zcat {input.R1_FQ} > {output.R1_FQ} 
@@ -74,7 +71,7 @@ rule ribodetector_filter_R1:
         R1_FQ_NORIBO="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_R1.fq",
     resources:
         mem="32G",
-        threads=1,
+    threads: 1
     shell:
         """
         seqtk subseq {input.R1_FQ} {input.NORIBO_LIST} \
@@ -90,7 +87,7 @@ rule ribodetector_filter_R1_internalTrim:
         R1_FQ_NORIBO="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_internalTrim_R1.fq",
     resources:
         mem="32G",
-        threads=1,
+    threads: 1
     shell:
         """
         seqtk subseq {input.R1_FQ} {input.NORIBO_LIST} \
@@ -106,7 +103,7 @@ rule ribodetector_filter_R1_hardTrim:
         R1_FQ_NORIBO="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_hardTrim_R1.fq",
     resources:
         mem="32G",
-        threads=1,
+    threads: 1
     shell:
         """
         seqtk subseq {input.R1_FQ} {input.NORIBO_LIST} \
@@ -121,8 +118,8 @@ rule ribodetector_compress_fqs:
         FQ="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/{READ}.fq.gz",
     resources:
         mem="8G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     shell:
         """
-        pigz -p{resources.threads} {input.FQ}
+        pigz -p{threads} {input.FQ}
         """
