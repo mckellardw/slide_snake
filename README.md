@@ -37,9 +37,10 @@ snakemake --cluster-config config/slurm.yaml --cluster "sbatch -p {cluster.parti
 ```
 *Note*, rule-specific resource usage found in `config/slurm.yaml`
 
-`snakemake` version 8 (using snakemake profiles):
+`snakemake` version 8:
+Make sure the [slurm plugin](https://snakemake.github.io/snakemake-plugin-catalog/plugins/executor/slurm.html) is installed first!
 ```
-snakemake -k -p --nt --use-conda --conda-frontend mamba -j 56 --profile profiles/slurm
+snakemake -k -p --nt --use-conda --conda-frontend mamba --executor slurm --workflow-profile profiles/slurm -j 24
 ```
 
 ## **Helpful links:**

@@ -229,17 +229,15 @@ rule ont_filter_bam_empty_tags:
     resources:
         mem="16G",
     threads: 1
-    run:
-        shell(
-            f"""
-            samtools view -h {input.BAM} \
-            | awk -v tag={params.CELL_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
-            | awk -v tag={params.GENE_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
-            | awk -v tag={params.UMI_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
-            | samtools view -b \
-            > {output.BAM}
-            """
-        )
+    shell:
+        """
+        samtools view -h {input.BAM} \
+        | awk -v tag={params.CELL_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
+        | awk -v tag={params.GENE_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
+        | awk -v tag={params.UMI_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
+        | samtools view -b \
+        > {output.BAM}
+        """
 
 
 # Generate count matrix w/ umi-tools
@@ -262,8 +260,7 @@ rule ont_umitools_count:
         f"{workflow.basedir}/envs/umi_tools.yml"
     shell:
         """
-        umi_tools count \
-            --extract-umi-method=tag \
+        umi_tools count --extract-umi-method=tag \
             --per-gene \
             --per-cell \
             --cell-tag={params.CELL_TAG} \

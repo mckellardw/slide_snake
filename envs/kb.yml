@@ -4,11 +4,10 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - kallisto=0.50.1
+  - bustools=0.43.2
+  - kallisto=0.51.0
   - pigz=2.8
   - pip=23.3.1
   - python=3.10.13
   - pip:
-      - bustools==0.1.0.dev2
       - kb-python==0.28.2
-      - snakemake==7.32.4
