@@ -7,13 +7,16 @@ rule ont_kallisto_lr:
         FQ=lambda w: get_fqs(w, return_type="list", mode="ONT"),
         BC="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
     output:
-        SAM_TMP="{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/",
+        BUS=temp("{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/output.bus"),
+        BUS_CORRECTED=temp("{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/output.corrected.bus"),
+        TRANSCRIPTS="{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/transcripts.txt",
+        ECMAP=temp("{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/matrix.ec"),
     params:
-        EXTRA_FLAGS=lambda wildcards: RECIPE_SHEET["minimap2.extra"][wildcards.RECIPE],
-        ref=config["REF_GENOME_FASTA"],
-        chrom_sizes=config["REF_CHROM_SIZES"],
-        bed=config["REF_GENES_BED"],
-        # flags=config["RESOURCES_MM2_FLAGS"],
+        KB_IDX=lambda wildcards: IDX_DICT[wildcards.SAMPLE],
+        KB_X=lambda wildcards: RECIPE_SHEET["kb.x"][wildcards.RECIPE],
+        KB_EXTRA=lambda wildcards: RECIPE_SHEET["kb.extra"][wildcards.RECIPE],
+        KB_T2G=lambda wildcards: T2G_DICT[wildcards.SAMPLE],
+        N_READS_SUMMARY=1000000,  # number of reads to use for summary stats
     log:
         log="{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/kallisto_lr.log",
     resources:
@@ -25,12 +28,12 @@ rule ont_kallisto_lr:
         f"""
         bash scripts/bash/kb_lr.sh \
             --outdir $(dirname {output.BUS}) \
-            --kb_idx {KB_IDX} \
+            --kb_idx {params.KB_IDX} \
             --whitelist {input.BC} \
-            --chemistry {KB_X} \
+            --chemistry {params.KB_X} \
             --log {log.log} \
-            --threads {resources.threads} \
-            --memlimit {params.mem} \
+            --threads {threads} \
+            --memlimit {resources.mem} \
             --r1fq {input.FQS[0]} \
             --r2fq {input.FQS[1]}
         """
@@ -39,15 +42,15 @@ rule ont_kallisto_lr:
 
 rule ont_bus2mat_lr:
     input:
-        BUS="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/output.corrected.bus",
-        TRANSCRIPTS="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/transcripts.txt",
-        ECMAP="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/matrix.ec",
+        BUS="{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/output.corrected.bus",
+        TRANSCRIPTS="{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/transcripts.txt",
+        ECMAP="{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/matrix.ec",
     output:
-        BCS="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.barcodes.txt",
-        GENES="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.genes.txt",
-        MAT="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.mtx",
+        BCS="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/output.barcodes.txt",
+        GENES="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/output.genes.txt",
+        MAT="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/output.mtx",
     log:
-        log="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/bustools_count.log",
+        log="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/bustools_count.log",
     threads: 1
     run:
         KB_T2G = T2G_DICT[wildcards.SAMPLE]
@@ -73,13 +76,13 @@ rule ont_bus2mat_lr:
 # gzip the count matrix, etc.
 rule compress_kb_outs:
     input:
-        BCS="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.barcodes.txt",
-        GENES="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.genes.txt",
-        MAT="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.mtx",
+        BCS="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/output.barcodes.txt",
+        GENES="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/output.genes.txt",
+        MAT="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/output.mtx",
     output:
-        BCS="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.barcodes.txt.gz",
-        GENES="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.genes.txt.gz",
-        MAT="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/raw/output.mtx.gz",
+        BCS="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/output.barcodes.txt.gz",
+        GENES="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/output.genes.txt.gz",
+        MAT="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/output.mtx.gz",
     threads: config["CORES"]
     shell:
         f"""
