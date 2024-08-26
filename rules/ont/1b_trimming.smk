@@ -33,8 +33,9 @@ rule ont_cutadapt:
         TXG_TSO="AAGCAGTGGTATCAACGCAGAGTACATGGG",  # 10x TSO - remove any polyadenylated TSOs
         rcTSO="CCCATTCACTCTGCGTTGATACCAGCTT",  # rev comp of SlideSeq TSO
         rcTXG_TSO="CCCATGTACTCTGCGTTGATACCACTGCTT",  # rev-comp of 10x TSO sequence
+        uMRT_TSO="CCCTCTCTCTCTCTTTCCTCTCTC", #ISOPCR sequence from uMRT protocol; does not contain the 4T overhang
         SEEKER_BB_LINKER="TCTTCAGCGTTCCCGAGA",  # Adapter between BB1 & BB2 in R1 
-        rcSEEKER_BB_ADAPTER="AGAGCCCTTGCGACTTCT",  # Reverse of the adapter between BB1 & BB2 in R1     
+        rcSEEKER_BB_ADAPTER="AGAGCCCTTGCGACTTCT",  # Reverse of the adapter between BB1 & BB2 in R1
     resources:
         mem="16G",
     threads: config["CORES"]
@@ -58,6 +59,7 @@ rule ont_cutadapt:
             -A POLYA_3p="{params.POLYA}X;max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
             -B TSO={params.TSO} \
             -B TXG_TSO={params.TXG_TSO} \
+            -B uMRT_TSO={params.uMRT_TSO} \
             -B SEEKER_LINKER={params.SEEKER_BB_LINKER} \
             --pair-filter=any \
             -o {output.R1_FQ} \
