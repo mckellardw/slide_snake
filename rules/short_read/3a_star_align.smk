@@ -44,15 +44,15 @@ rule STARsolo_align:
             --runThreadN {threads} \
             --outFileNamePrefix $(dirname {output.BAM})/ \
             --outSAMtype BAM SortedByCoordinate \
-            --limitBAMsortRAM={resources.MEMLIMIT} \
+            --limitBAMsortRAM={resources.mem} \
             --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
             --readFilesCommand zcat \
             --genomeDir {params.STAR_REF} \
             --readFilesIn {input.FQS[1]} {input.FQS[0]} \
             --outReadsUnmapped Fastx \
             --outSAMunmapped Within KeepPairs \
-            --soloType {params.STAR_PARAMS['STAR.soloType']} {params.STAR_PARAMS['STAR.soloUMI']} {params.STAR_PARAMS['STAR.soloCB']} {params.STAR_PARAMS['STAR.soloAdapter']} {params.STAR_PARAMS['STAR.extra']} \
-            --soloCBmatchWLtype {params.STAR_PARAMS['STAR.soloCBmatchWLtype']} \
+            --soloType {params.STAR_PARAMS['STAR_soloType']} {params.STAR_PARAMS['STAR_soloUMI']} {params.STAR_PARAMS['STAR_soloCB']} {params.STAR_PARAMS['STAR_soloAdapter']} {params.STAR_PARAMS['STAR_extra']} \
+            --soloCBmatchWLtype {params.STAR_PARAMS['STAR_soloCBmatchWLtype']} \
             --soloCBwhitelist {params.WHITELIST} \
             --soloCellFilter TopCells $(wc -l {input.WHITELIST[0]}) \
             --soloUMIfiltering MultiGeneUMI CR \

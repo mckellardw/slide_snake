@@ -265,12 +265,12 @@ def get_STAR_ref(w, mode=["genome", "rRNA"]):
 # TODO- add STAR_rRNA functinoality (no w.RECIPE accessibility)
 def get_STAR_extra_params(w):
     star_info = {
-        "STAR.soloType": "",
-        "STAR.soloUMI": "",
-        "STAR.soloCB": "",
-        "STAR.soloCBmatchWLtype": "",
-        "STAR.soloAdapter": "",
-        "STAR.extra": "--outFilterMultimapNmax 50 --outFilterMismatchNoverLmax 0.05  --outFilterMatchNmin 12  --outFilterScoreMinOverLread 0  --outFilterMatchNminOverLread 0",
+        "STAR_soloType": "",
+        "STAR_soloUMI": "",
+        "STAR_soloCB": "",
+        "STAR_soloCBmatchWLtype": "",
+        "STAR_soloAdapter": "",
+        "STAR_extra": "--outFilterMultimapNmax 50 --outFilterMismatchNoverLmax 0.05  --outFilterMatchNmin 12  --outFilterScoreMinOverLread 0  --outFilterMatchNminOverLread 0",
     }
 
     # Iterate over each key

@@ -63,12 +63,12 @@ rule ont_STARsolo_align:
         # )  # get number of bead barcodes for filtered count matrix, `--soloCellFilter`
 
         # TODO: add try catches
-        soloType = RECIPE_SHEET["STAR.soloType"][recipe]
-        soloUMI = RECIPE_SHEET["STAR.soloUMI"][recipe]
-        soloCB = RECIPE_SHEET["STAR.soloCB"][recipe]
-        soloCBmatchWLtype = RECIPE_SHEET["STAR.soloCBmatchWLtype"][recipe]
-        soloAdapter = RECIPE_SHEET["STAR.soloAdapter"][recipe]
-        extraSTAR = RECIPE_SHEET["STAR.extra"][recipe]
+        soloType = RECIPE_SHEET["STAR_soloType"][recipe]
+        soloUMI = RECIPE_SHEET["STAR_soloUMI"][recipe]
+        soloCB = RECIPE_SHEET["STAR_soloCB"][recipe]
+        soloCBmatchWLtype = RECIPE_SHEET["STAR_soloCBmatchWLtype"][recipe]
+        soloAdapter = RECIPE_SHEET["STAR_soloAdapter"][recipe]
+        extraSTAR = RECIPE_SHEET["STAR_extra"][recipe]
         # extraSTAR = "--outFilterScoreMinOverLread 0 --outFilterMatchNminOverLread 0 --outFilterMismatchNmax 100 --seedSearchLmax 30 --seedPerReadNmax 100000 --seedPerWindowNmax 100 --alignTranscriptsPerReadNmax 100000 --alignTranscriptsPerWindowNmax 10000"
 
         # Select input reads based on alignment recipe
