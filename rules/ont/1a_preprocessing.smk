@@ -1,187 +1,128 @@
 # Borrowed portions of this code from `sockeye` - https://github.com/nanoporetech/sockeye/tree/master
+
+
 # TODO- rewrite as a python script...
-rule merge_formats_ONT:
+rule ont_1a_merge_formats:
     output:
         MERGED_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz"),
     params:
         TMPDIR="{OUTDIR}/{SAMPLE}/tmp/ont",
         ONT_reads=lambda wildcards: ONT[wildcards.SAMPLE],
         CHUNK_SIZE=50,
+        OUTPUT_FORMAT="fastq",
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/merged.log",
+        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_merged.log",
     threads: config["CORES"]
-    run:
-        shell(f"mkdir -p {params.TMPDIR}")
-        # shell(f"rm -rf {params.TMPDIR}/*") # clear out tmp dir
-        shell(f"echo 'Read files:' > {log.log}")
-        for f in params.ONT_reads:
-            shell(f"echo '   {f}' >> {log.log}")
-
-        if len(params.ONT_reads) == 1 and "*" not in params.ONT_reads[0]:
-            F = params.ONT_reads[0]
-            if ".fq.gz" in F or ".fastq.gz" in F:
-                shell(
-                    f"""
-                    cp {F} {output.MERGED_FQ} 2>> {log.log}
-                    """
-                )
-            elif ".sam" in F or ".bam" in F or ".cram" in F:
-                shell(
-                    f"""
-                    if [ -f {F} ]; then
-                        samtools fastq {F} \
-                        > {output.MERGED_FQ.strip('.gz')} \
-                        2>> {log.log}
-                    else
-                        echo "File [ {F} ] does not exist." >> {log.log}
-                    fi                    
-                    
-                    pigz -p{threads} {output.MERGED_FQ.strip('.gz')} 2>> {log.log}
-                    """
-                )
-            else:
-                print(f"File type for [{F}] not supported!")
-        elif len(params.ONT_reads) == 1 and "*" in params.ONT_reads[0]:
-            import glob
-
-            F_list = glob.glob(params.ONT_reads[0])
-
-            shell(f"echo 'Regex-ed file list:' >> {log.log}")
-            for f in F_list:
-                shell(f"echo '   {f}' >> {log.log}")
-
-                # TODO- fix this so bam files can be passed individually
-                # if len(F_list) > params.CHUNK_SIZE:
-                #     shell(f"echo 'Chunking regex-ed file list...' >> {log.log}")
-                #     F_list_chunked = [
-                #         " ".join(F_list[i:i + params.CHUNK_SIZE])
-                #             for i in range(0, len(F_list),  params.CHUNK_SIZE)
-                #     ]
-                # else:
-                #     F_list_chunked = " ".join(F_list)
-
-            F_base = output.MERGED_FQ.strip(".gz")
-
-            for i, F in enumerate(F_list):  # F_list_chunked
-                if ".fq.gz" in F or ".fastq.gz" in F:
-                    shell(
-                        f"""
-                        echo "Adding {F} to output fastq" >> {log.log}
-
-                        zcat {F} >> {F_base}
-                        """
-                    )
-                elif ".sam" in F or ".bam" in F or ".cram" in F:
-                    shell(
-                        f"""
-                        samtools fastq {F} \
-                        >> {F_base} \
-                        2>> {log.log}
-                        """
-                    )
-                else:
-                    print(f"File type for [{F}] not supported!")
-                    # end for loop
-
-            shell(
-                f"""
-                pigz -p{threads} {F_base}
-                """
-            )
-
-        else:
-            F_base = output.MERGED_FQ.strip(".gz")
-            for F in params.ONT_reads:
-                if ".fq.gz" in F or ".fastq.gz" in F:
-                    shell(
-                        f"""
-                        if [ -f {F} ]; then
-                            echo "Adding {F} to output fastq" >> {log.log}
-
-                            zcat {F} >> {F_base}
-                        else
-                            echo "File [ {F} ] does not exist." >> {log.log}
-                        fi
-                        """
-                    )
-                elif ".sam" in F or ".bam" in F or ".cram" in F:
-                    shell(
-                        f"""
-                        if [ -f {F} ]; then
-                            samtools fastq {F} \
-                            >> {F_base} \
-                            2>> {log.log}
-                        else
-                            echo "File [ {F} ] does not exist." >> {log.log}
-                        fi                    
-                        """
-                    )
-                else:
-                    print(f"File type for [{F}] not supported!")
-                    # end loop
-
-            shell(
-                f"""
-                pigz -p{threads} {F_base}  2>> {log.log}
-                """
-            )
+    shell:
+        """
+        bash scripts/bash/merge_formats_ONT.sh \
+            -d "{params.TMPDIR}" \
+            -r "{params.ONT_reads}" \
+            -c "{params.CHUNK_SIZE}" \
+            -o "{output.MERGED_FQ}" \
+            -l "{log.log}" \
+            -t "{threads}"
+        """
 
 
-# borrowed from sockeye
-rule ont_call_adapter_scan:
+## Deprecated
+# rule ont_call_adapter_scan:
+#     input:
+#         FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz",
+#     output:
+#         TSV="{OUTDIR}/{SAMPLE}/ont/adapter_scan.tsv",
+#         FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq.gz",
+#     params:
+#         # batch_size = config["READ_STRUCTURE_BATCH_SIZE"],
+#         # KIT="3prime",  #['3prime', '5prime', 'multiome']
+#         KIT="uMRT",
+#     log:
+#         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/adapter_scan.log",
+#     conda:
+#         f"{workflow.basedir}/envs/adapter_scan.yml"
+#     resources:
+#         mem="16G",
+#     threads: 56
+#     shell:
+#         """
+#         python scripts/py/adapter_scan_vsearch.py \
+#             --kit {params.KIT} \
+#             --output_fastq {output.FQ} \
+#             --output_tsv {output.TSV} \
+#             -t {threads} \
+#             {input.FQ} \
+#         2>&1 | tee {log.log}
+#         """
+
+
+# borrowed/modified from sockeye (https://github.com/jang1563/sockeye - original ONT github deleted!)
+rule ont_1a_call_adapter_scan_v2:
     input:
         FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz",
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/adapter_scan.tsv",
         FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq.gz",
+        # ADAPTERS="{OUTDIR}/{SAMPLE}/ont/adapter_seqs.fasta",
     params:
-        # batch_size = config["READ_STRUCTURE_BATCH_SIZE"],
-        KIT="3prime",  #['3prime', '5prime', 'multiome']
+        BATCH_SIZE=100000,
+        ADAPTER1_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio
+        # ADAPTER2_SEQ="ATGTACTCTGCGTTGATACCACTGCTT", #TXG/Curio
+        ADAPTER2_SEQ="GAGAGAGGAAAGAGAGAGAGAGGG",  #uMRT
+        VSEARCH_MIN_ADAPTER_ID=0.7,
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/adapter_scan.log",
+        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan.log",
     conda:
         f"{workflow.basedir}/envs/adapter_scan.yml"
     resources:
         mem="16G",
-    threads: 1
+    threads: 56
     shell:
         """
-        python scripts/py/adapter_scan_vsearch.py \
-            --kit {params.KIT} \
-            --output_fastq {output.FQ} \
-            --output_tsv {output.TSV} \
-            -t {threads} \
-            {input.FQ} \
+        python scripts/py/adapter_scan_vsearch_v2.py \
+            --fq_in "{input.FQ}" \
+            --fq_out "{output.FQ}" \
+            --output_tsv "{output.TSV}" \
+            --threads {threads} \
+            --batch_size {params.BATCH_SIZE} \
+            --adapter1_seq "{params.ADAPTER1_SEQ}" \
+            --adapter2_seq "{params.ADAPTER2_SEQ}" \
+            --min_adapter_id {params.VSEARCH_MIN_ADAPTER_ID} \
         2>&1 | tee {log.log}
         """
+        # --adapters_fasta "{output.ADAPTERS}" \
 
 
 # Write lists of read IDs for each adapter type
-rule ont_readIDs_by_adapter_type:
+rule ont_1a_readIDs_by_adapter_type:
     input:
         TSV="{OUTDIR}/{SAMPLE}/ont/adapter_scan.tsv",
         FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq.gz",
     output:
-        FULL_LEN="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
-        SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
+        FULL_LEN="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",  # keep
+        SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",  # keep
+        DOUBLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/double_adapter1.txt",  # toss
+        DOUBLE_ADAPTER2="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/double_adapter2.txt",  # toss
+        NO_ADAPTERS="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/no_adapters.txt",  # toss
+        OTHER="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/other.txt",  # toss
+        SINGLE_ADAPTER2="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter2.txt",  # toss
     resources:
         mem="16G",
     threads: config["CORES"]
     shell:
         """
-        python scripts/py/write_adapterscan_read_id_lists.py \
+        python scripts/py/adapterscan_write_read_id_lists.py \
             --tsv_file_path {input.TSV} \
             --output_directory $(dirname {output.FULL_LEN})
         """
 
 
 # Write lists of read IDs for each adapter type
-rule ont_adapterScan_QC:
+rule ont_1a_adapter_scan_results:
     input:
         FULL_LEN="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
         SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
     output:
-        LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/adapter_scan_results.txt",
+        LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan_results.txt",
     resources:
         mem="8G",
     threads: 1
@@ -198,9 +139,9 @@ rule ont_adapterScan_QC:
 # merge lists of useable reads
 ## FULL_LEN = R1 sequence & TSO sequence
 ## SINGLE_ADAPTER1 = just R1 sequence - incompletely sequenced
-rule ont_merge_scan_lists:
+rule ont_1a_merge_scan_lists:
     input:
-        LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/adapter_scan_results.txt",
+        LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan_results.txt",
         FULL_LEN="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
         SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
     output:
@@ -215,7 +156,7 @@ rule ont_merge_scan_lists:
 
 
 # TODO- add more functionality for other read/adapter types to salvage imperfect reads
-rule ont_subset_fastq_by_adapter_type:
+rule ont_1a_subset_fastq_by_adapter_type:
     input:
         FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq.gz",
         LST="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/keep.txt",
@@ -225,34 +166,42 @@ rule ont_subset_fastq_by_adapter_type:
         FQ=temp("{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq"),
         # FULL_LEN = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len.fq.gz",
         # SINGLE_ADAPTER1 = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/single_adapter1.fq.gz",
-        FQ_ADAPTER="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter.fq.gz",
+        FQ_ADAPTER="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter.fq",
     resources:
         mem="16G",
-    threads: config["CORES"]
+    threads: 1
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/subseq_full_len.log",
-    run:
-        # for ADAPTER in input.ADAPTER_TYPES:
-        shell(
-            f"""
-            mkdir -p $(dirname {output.FQ})            
-            zcat {input.FQ} > {output.FQ} 
+        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_subset_fastq_by_adapter_type.log",
+    shell:
+        """
+        mkdir -p $(dirname {output.FQ})            
+        zcat {input.FQ} > {output.FQ} 
 
-            {EXEC['SEQTK']} subseq \
-                {output.FQ} \
-                {input.LST} \
-            > {output.FQ_ADAPTER.strip('.gz')} \
-            2> {log.log}
-                        
-            pigz -p{threads} {output.FQ_ADAPTER.strip('.gz')}
-            """
-        )
+        seqtk subseq \
+            {output.FQ} \
+            {input.LST} \
+        > {output.FQ_ADAPTER} \
+        2> {log.log}
+        """
 
 
-# Split reads in the poly(T) stretch and rev-comp the "R2" sequence
-##TODO: there is probably a better/faster way to split reads than on the poly(A) tail?
+rule ont_1a_compress_merged_fq:
+    input:
+        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter.fq",
+    output:
+        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter.fq.gz",
+    resources:
+        mem="8G",
+    threads: config["CORES"]
+    shell:
+        """
+        pigz -p{threads} {input.FQ}
+        """
+
+
+# Split reads in the poly(T) stretch and rev-comp the "R1" sequence
 ##TODO: add read length bounds for R1 based on barcode construct to reduce incorrect split sites across reads
-rule ont_split_fastq_to_R1_R2:
+rule ont_1a_split_fastq_to_R1_R2:
     input:
         FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter.fq.gz",
     output:
@@ -264,7 +213,7 @@ rule ont_split_fastq_to_R1_R2:
         mem="16G",
     threads: config["CORES"]
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/read_split.log",
+        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_read_split.log",
     run:
         # for ADAPTER in input.ADAPTER_TYPES: #TODO- broaden to other read types, beyond full_len
         shell(

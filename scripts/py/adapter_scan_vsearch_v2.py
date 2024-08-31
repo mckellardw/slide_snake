@@ -27,22 +27,24 @@ def parse_args():
     # Create argument parser
     parser = argparse.ArgumentParser()
 
-    # Positional mandatory arguments
-    parser.add_argument("fastq", help="FASTQ of ONT reads", type=str)
+    # Mandatory arguments
+    parser.add_argument(
+        "--fq_in", 
+        help="FASTQ of ONT reads", 
+        type=str
+    )
 
     # Optional arguments
     parser.add_argument(
-        "--output_fastq",
-        help="Output file name for (gzipped) stranded FASTQ entries \
-                        [stranded.fastq.gz]",
+        "--fq_out",
+        help="Output file name for (gzipped) stranded FASTQ entries [stranded.fastq.gz]",
         type=str,
         default="stranded.fastq.gz",
     )
 
     parser.add_argument(
         "--output_tsv",
-        help="Output file name for adapter configurations \
-                        [adapters.tsv]",
+        help="Output file name for adapter configurations [adapters.tsv]",
         type=str,
         default="adapters.tsv",
     )
@@ -59,23 +61,28 @@ def parse_args():
         default=100000,
     )
 
-    # TODO- replace this w/ adpater sequence passing
     parser.add_argument(
-        "-k",
-        "--kit",
-        help="Specify either the 10X 3' gene expression kit (3prime), the 5' \
-        gene expression kit (5prime), or the multiome kit (multiome) This \
-        determines which adapter sequences to search for in the reads \
-        [3prime]",
-        default="3prime",
+        "-f",
+        "--adapter1_seq",
+        help="Forward primer sequence (Read1). For TXG, Curio, etc. use [CTACACGACGCTCTTCCGATCT]",
+        default="CTACACGACGCTCTTCCGATCT",
+        type=str,
+    )
+
+    parser.add_argument(
+        "-r",
+        "--adapter2_seq",
+        help="Reverse complement of the primer sequence (rcTSO, minus the CCC preffix). \
+            For TXG/Curio chemistries, use [ATGTACTCTGCGTTGATACCACTGCTT] (default). \
+            For uMRT chemistries, use [GAGAGAGGAAAGAGAGAGAGAGGG]",
+        default="ATGTACTCTGCGTTGATACCACTGCTT",
         type=str,
     )
 
     parser.add_argument(
         "-i",
         "--min_adapter_id",
-        help="Minimum adapter alignment identity for VSEARCH \
-                        [0.7]",
+        help="Minimum adapter alignment identity for VSEARCH [0.7]",
         type=float,
         default=0.7,
     )
@@ -101,39 +108,11 @@ def parse_args():
         "--verbosity",
         help="logging level: <=2 logs info, <=3 logs warnings",
         type=int,
-        default=2,
+        default=3,
     )
 
     # Parse arguments
     args = parser.parse_args()
-
-    # verify kit selection
-    if (
-        (args.kit != "3prime")
-        and (args.kit != "5prime")
-        and (args.kit != "multiome")
-        and (args.kit != "uMRT")
-    ):
-        raise Exception(
-            "Invalid kit name! Specify either 3prime, 5prime or \
-        multiome."
-        )
-
-    if (args.kit == "3prime") or (args.kit == "multiome"):
-        # Read1 adapter
-        args.adapter1_seq = "CTACACGACGCTCTTCCGATCT"  # R1 seq
-        # TSO adapter
-        args.adapter2_seq = "ATGTACTCTGCGTTGATACCACTGCTT"  # rev comp TSO
-    elif args.kit == "5prime":
-        # Read1 adapter
-        args.adapter1_seq = "CTACACGACGCTCTTCCGATCT"
-        # Poly-dT RT adapter
-        args.adapter2_seq = "GTACTCTGCGTTGATACCACTGCTT"
-    elif args.kit == "uMRT":
-        # Read1 adapter
-        args.adapter1_seq = "CTACACGACGCTCTTCCGATCT"
-        # Poly-dT RT adapter
-        args.adapter2_seq = "GAGAGAGGAAAGAGAGAGAGAGGG"
 
     # Create temp dir and add that to the args object
     p = pathlib.Path(args.output_tsv)
@@ -481,7 +460,7 @@ def write_stranded_fastq(tmp_fastq, read_info, args):
 
 
 def open_fastq(fastq):
-    if args.fastq.split(".")[-1] == "gz":
+    if fastq.split(".")[-1] == "gz":
         f = gzip.open(fastq, "rt")
     else:
         f = open(fastq)
@@ -573,9 +552,9 @@ def write_output_table(tmp_tables, args):
         shutil.copy(tmp_tables[0], args.output_tsv)
 
 
-def write_output_fastq(tmp_fastqs, args):
+def write_fq_out(tmp_fastqs, args):
     """ """
-    with open(args.output_fastq, "wb") as f_out:
+    with open(args.fq_out, "wb") as f_out:
         for tmp_fastq in tmp_fastqs:
             with open(tmp_fastq, "rb") as f_:
                 shutil.copyfileobj(f_, f_out)
@@ -601,7 +580,7 @@ def write_tmp_fastx_files_for_processing(n_batches, args):
 
     # Stream through entire input FASTQ and write batched FASTQ files
     batch_id = 1
-    with pysam.FastxFile(args.fastq, "r") as f_in:
+    with pysam.FastxFile(args.fq_in, "r") as f_in:
         for i, entry in enumerate(f_in):
             # Increment batch_id after streaming through <args.batch_size> reads
             if (i > 0) & (i % args.batch_size == 0):
@@ -624,7 +603,7 @@ def main(args):
 
     # If specified batch size is > total number of reads, reduce batch size
     logging.debug("Counting reads")
-    n_reads = count_reads(args.fastq)
+    n_reads = count_reads(args.fq_in)
     args.batch_size = min(n_reads, args.batch_size)
     n_batches = int(np.ceil(n_reads / args.batch_size))
 
@@ -650,8 +629,8 @@ def main(args):
     logging.debug(f"Writing output table to {args.output_tsv}")
     write_output_table(tmp_tables, args)
 
-    logging.debug(f"Writing stranded fastq to {args.output_fastq}")
-    write_output_fastq(tmp_fastqs, args)
+    logging.debug(f"Writing stranded fastq to {args.fq_out}")
+    write_fq_out(tmp_fastqs, args)
 
 
 if __name__ == "__main__":

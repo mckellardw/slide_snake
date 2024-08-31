@@ -1,5 +1,29 @@
+# fastqc before adapter scan
+rule ont_readQC_0_rawInput:
+    input:
+        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz",
+    output:
+        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/0_rawInput/{READ}_qc.tsv",
+    params:
+        CHUNK_SIZE=500000,  # number of reads to handle at a time (higher value means more mem usage)
+    log:
+        log="{OUTDIR}/{SAMPLE}/ont/readqc/0_rawInput/{READ}_qc.log",
+    resources:
+        mem="8G",
+    threads: config["CORES"]
+    shell:
+        """
+        python scripts/py/fastq_read_qc.py \
+            {input.FQ} \
+            {output.TSV} \
+            --cores {threads} \
+            --chunk_size {params.CHUNK_SIZE} \
+        > {log.log}
+        """
+
+
 # fastqc before trimming
-rule ont_readQC_preCutadapt:
+rule ont_readQC_1_preCutadapt:
     input:
         FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_{READ}.fq.gz",
     output:
@@ -18,12 +42,12 @@ rule ont_readQC_preCutadapt:
             {output.TSV} \
             --cores {threads} \
             --chunk_size {params.CHUNK_SIZE} \
-        2>&1 | tee {log.log}
+        > {log.log}
         """
 
 
 # fastqc after cutadapt trimming
-rule ont_readQC_postCutadapt:
+rule ont_readQC_2_postCutadapt:
     input:
         FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_{READ}.fq.gz",
     output:
@@ -42,7 +66,7 @@ rule ont_readQC_postCutadapt:
             {output.TSV} \
             --cores {threads} \
             --chunk_size {params.CHUNK_SIZE} \
-        2>&1 | tee {log.log}
+        > {log.log}
         """
 
 
@@ -62,7 +86,7 @@ rule ont_readQC_postCutadapt:
 # │ cg │  Z   │ CIGAR string (only in PAF)                            │
 # │ cs │  Z   │ Difference string                                     │
 # └────┴──────┴───────────────────────────────────────────────────────┘
-rule ont_readQC_bam:
+rule ont_readQC_3_bam:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam.bai",
@@ -84,7 +108,7 @@ rule ont_readQC_bam:
             --chunk-size {params.CHUNK_SIZE} \
             --bam_file {input.BAM} \
             --tsv_file {output.TSV} \
-        2>&1 | tee {log.log}
+        > {log.log}
         """
 
 

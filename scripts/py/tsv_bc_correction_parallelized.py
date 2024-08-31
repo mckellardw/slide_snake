@@ -4,6 +4,7 @@ import csv
 import random
 import string
 import argparse
+
 # from itertools import product
 # import editdistance as ed
 from Levenshtein import distance, hamming
@@ -46,8 +47,10 @@ python scripts/py/tsv_bc_correction.py \
 
 # fast levenshtein implementation- https://github.com/rapidfuzz/Levenshtein
 
+
 def currentTime():
     return time.strftime("%D | %H:%M:%S", time.localtime())
+
 
 # Random name for temp directory
 def generate_temp_dir_name(length=16):
@@ -65,7 +68,7 @@ def file_line_count(filename):
     Get number of lines in a file
 
     Parameters:
-    - filename: 
+    - filename:
     """
     with open(filename, "r") as f:
         for i, _ in enumerate(f):
@@ -78,8 +81,8 @@ def split_file(file_path, temp_dir, num_chunks):
     Split a txt file into chunks for parallelization.
 
     Parameters:
-    - file_path: 
-    - temp_dir: 
+    - file_path:
+    - temp_dir:
     - num_chunks:
     """
     # Ensure the temporary directory exists
@@ -188,7 +191,9 @@ def split_seq_into_kmers(seq, k):
     :return: List of k-mers
     :rtype: list
     """
-    assert len(seq) >= k, f"Pick a value for k that is less than len(barcode); {k} is bigger than {seq}!"
+    assert (
+        len(seq) >= k
+    ), f"Pick a value for k that is less than len(barcode); {k} is bigger than {seq}!"
 
     kmers = []
     for i in range(0, len(seq) - k + 1):
@@ -255,9 +260,9 @@ def calc_leven_to_whitelist(bc_uncorr, whitelist, bc_len):
     k = len(list(kmer_to_bc_index.keys())[0])
 
     wl_filtered = filter_whitelist_by_kmers(
-        wl=whitelist, 
+        wl=whitelist,
         kmers=split_seq_into_kmers(bc_uncorr, k),
-        kmer_to_bc_index=kmer_to_bc_index
+        kmer_to_bc_index=kmer_to_bc_index,
     )
     # os.system(f"echo {len(wl_filtered)} >> sandbox/bcc_test/wl_filtered_len.txt")
 
@@ -293,7 +298,7 @@ def process_tsv(
     max_levens,
     min_next_match_diffs,
     verbose=False,
-    bc_update_counter=1000000
+    bc_update_counter=1000000,
 ):
     # verbose = True
     # bc_update_counter=5000
@@ -304,7 +309,7 @@ def process_tsv(
     # Prepare the output file
     with open(tsv_out_full, "w", newline="") as outfile_full:
         writer_full = csv.writer(outfile_full, delimiter="\t")
-        
+
         with open(tsv_out_slim, "w", newline="") as outfile_slim:
             writer_slim = csv.writer(outfile_slim, delimiter="\t")
 
@@ -315,7 +320,9 @@ def process_tsv(
                 for row in reader:
                     read_count += 1
                     if verbose and read_count % bc_update_counter == 0:
-                        print(f"{time.time()-processStartTime:.2f} - {read_count} reads processed...")
+                        print(
+                            f"{time.time()-processStartTime:.2f} - {read_count} reads processed..."
+                        )
 
                     read_id = row[id_column]
                     barcodes = [row[i] for i in bc_columns]
@@ -326,7 +333,12 @@ def process_tsv(
                     row2write = [read_id]  # initialize row to write in output .tsv
 
                     RANGE = [
-                        [barcodes[i], whitelists[i], max_levens[i], min_next_match_diffs[i]]
+                        [
+                            barcodes[i],
+                            whitelists[i],
+                            max_levens[i],
+                            min_next_match_diffs[i],
+                        ]
                         for i in range(len(barcodes))
                     ]
                     for barcode, whitelist, max_leven, min_next_match_diff in RANGE:
@@ -347,7 +359,9 @@ def process_tsv(
                                 corrected_bc,
                                 bc_leven,
                                 next_match_diff,
-                            ) = calc_leven_to_whitelist(barcode, whitelist, len(barcode))
+                            ) = calc_leven_to_whitelist(
+                                barcode, whitelist, len(barcode)
+                            )
 
                             # optimization...
                             # print(f"leven = {bc_leven} | {time.time() - st}")
@@ -361,18 +375,21 @@ def process_tsv(
                             )
                             writer_full.writerow(row2write)
                             writer_slim.writerow([read_id, corrected_bc])
-                        elif bc_leven <= max_leven and next_match_diff >= min_next_match_diff:
+                        elif (
+                            bc_leven <= max_leven
+                            and next_match_diff >= min_next_match_diff
+                        ):
                             row2write.extend(
                                 [barcode, corrected_bc, bc_leven, next_match_diff]
                             )
                             writer_full.writerow(row2write)
                             writer_slim.writerow([read_id, corrected_bc])
                         else:
-                            row2write.extend(
-                                [barcode, "-", bc_leven, next_match_diff]
-                                )
-                            writer_full.writerow(row2write) # only write correctable bcs to slim output
-    
+                            row2write.extend([barcode, "-", bc_leven, next_match_diff])
+                            writer_full.writerow(
+                                row2write
+                            )  # only write correctable bcs to slim output
+
     if verbose:
         print(f"{time.time()-processStartTime:.2f} - Finished correcting!")
 
@@ -448,14 +465,19 @@ if __name__ == "__main__":
     # param checks ------
     if len(args.max_levens) != len(args.bc_columns) and len(args.max_levens) == 1:
         args.max_levens = rep(val=args.max_levens[0], n=len(args.bc_columns))
-    
-    if len(args.min_next_match_diffs) != len(args.bc_columns) and len(args.min_next_match_diffs) == 1:
-        args.min_next_match_diffs = rep(val=args.min_next_match_diffs[0], n=len(args.bc_columns))
+
+    if (
+        len(args.min_next_match_diffs) != len(args.bc_columns)
+        and len(args.min_next_match_diffs) == 1
+    ):
+        args.min_next_match_diffs = rep(
+            val=args.min_next_match_diffs[0], n=len(args.bc_columns)
+        )
 
     if args.concat_bcs and len(args.whitelist_files) > 1:
         print(f"Need a merged barcode whitelist!")
         sys.exit(1)
-    
+
     # Print run settings for log files ----
     print(
         f"Input tsv:                        {args.tsv_in}\n"
@@ -470,7 +492,7 @@ if __name__ == "__main__":
         f"Second match difference(s):       {args.min_next_match_diffs}\n"
         f"Number of threads:                {args.threads}\n"
     )
-    
+
     # prep whitelists
     whitelists = {}
     kmer_to_bc_indexes = {}
@@ -478,7 +500,7 @@ if __name__ == "__main__":
         wl, kmer_to_bc_index = load_whitelist(
             whitelist_file, k=args.k
         )  # Assuming k=5 for simplicity
-        #TODO- dynamically set k based on bc length (dependent on seq error rate)
+        # TODO- dynamically set k based on bc length (dependent on seq error rate)
 
         whitelists[i] = wl
         kmer_to_bc_indexes[i] = kmer_to_bc_index
@@ -487,7 +509,7 @@ if __name__ == "__main__":
     if args.threads == 1:
         print(f"{currentTime()} - Running on {args.threads} thread...")
         print("")
-        
+
         process_tsv(
             tsv_in=args.tsv_in,
             tsv_out_full=args.tsv_out_full,
@@ -537,14 +559,13 @@ if __name__ == "__main__":
                 whitelists,
                 kmer_to_bc_indexes,
                 args.max_levens,
-                args.min_next_match_diffs
+                args.min_next_match_diffs,
             )
             for i in list(range(args.threads))
         ]
 
         with multiprocessing.Pool(args.threads) as pool:
             multi_out = pool.starmap(process_tsv, items)
-
 
         print("")
         print(f"{currentTime()} - Concatenating results...")

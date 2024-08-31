@@ -39,9 +39,9 @@
 
 # Barcode and UMI calling (custom script)
 # TODO-add option for UMI-free assay
-rule ont_fastq_call_bc_from_adapter:
+rule ont_1c_fastq_call_bc_from_adapter:
     input:
-        LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/adapter_scan_results.txt",
+        LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan_results.txt",
         FQS=lambda w: get_fqs(w, return_type="list", mode="ONT"),
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes.tsv",
@@ -58,7 +58,7 @@ rule ont_fastq_call_bc_from_adapter:
         UMI_POSITIONS=lambda w: get_recipe_info(w, "UMI.position", mode="ONT"),
         UMI_MISMATCHES=2,
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/fastq_call_bc_from_adapter.log",
+        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1c_fastq_call_bc_from_adapter.log",
     resources:
         mem="32G",
     threads: 1
@@ -99,7 +99,7 @@ rule ont_fastq_call_bc_from_adapter:
 
 
 # Filter called read barcodes
-rule ont_filter_read_barcodes:
+rule ont_1c_filter_read_barcodes:
     input:
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes.tsv",
     output:
@@ -114,7 +114,7 @@ rule ont_filter_read_barcodes:
 # TODO- flexible input whitelist (for independent sub-barcode correction)
 # TODO- recipe-specific barcode correction parameters (MAX_LEVEN, NEXT_MATCH_DIFF, CONCAT_BCS)
 # TODO- option for methods which don't have UMI {params.UMI_LENGTH}
-rule ont_tsv_bc_correction:
+rule ont_1c_tsv_bc_correction:
     input:
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_filtered.tsv",
         # WHITELIST=lambda w: get_whitelist(w, return_type="list"), 
@@ -131,7 +131,7 @@ rule ont_tsv_bc_correction:
         BC_COLUMNS=lambda w: " ".join(map(str, range(1, get_n_bcs(w) + 1))),
         CONCAT_BCS=True,  # whether the sub-barcodes should be corrected together (SlideSeq) or separately (microST)
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/tsv_bc_correction.log",
+        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1c_tsv_bc_correction.log",
     resources:
         mem="32G",
     threads: config["CORES"]
