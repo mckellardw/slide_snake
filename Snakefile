@@ -153,6 +153,7 @@ rule all:
             for TRIM in ["preCutadapt","postCutadapt","twiceCutadapt","rRNA_bwa","rRNA_STAR"] 
             for READ in ["R1","R2"] 
         ],  # fastQC results        
+        
         # # Module 2 - rRNA filtering        
         # [f"{OUTDIR}/{SAMPLE}/qualimap/rRNA/{TOOL}/{FILE}"
         #     for SAMPLE in R2_FQS.keys() 
@@ -169,7 +170,7 @@ rule all:
         #     ]
         # ),        
 
-        Module 3 - STAR alignment        
+        # Module 3 - STAR alignment        
         [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.dedup.out{STRAND}.bam.bai"
             for SAMPLE in R2_FQS.keys() 
             for RECIPE in RECIPE_DICT[SAMPLE] 
@@ -245,7 +246,7 @@ rule all:
             for SAMPLE in ONT.keys()
             for READ in ["R1","R2"]
             for RECIPE in RECIPE_ONT_DICT[SAMPLE]
-            for TRIM in [f"0_rawInput/{READ}", f"1_preCutadapt/{READ}", f"2_postCutadapt/{READ}", f"3_aligned/{RECIPE}"]
+            for TRIM in [f"0_rawInput/merged", f"1_preCutadapt/{READ}", f"2_postCutadapt/{READ}", f"3_aligned/{RECIPE}"]
             for FILE in ["tsv", "png"]
         ], # ONT readqc
 

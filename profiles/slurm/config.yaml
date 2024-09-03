@@ -24,7 +24,7 @@ set-threads:
   qualimapQC_STAR: 16
   kbpython_std: 16
   miRge3_pseudobulk: 16
-  ont_call_adapter_scan: 24
+  ont_call_adapter_scan: 56
   ont_readIDs_by_adapter_type: 24
   ont_adapterScan_QC: 1
   ont_merge_scan_lists: 1
@@ -73,9 +73,9 @@ set-resources:
   fastQC_twiceTrim:
     mem: 16G
   bwa_rRNA_filter_R1:
-    mem: 64G # Converted 64G to MB
+    mem: 64G
   bwa_rRNA_align:
-    mem: 96G # Converted 96G to MB
+    mem: 96G 
   qualimapQC_rRNA_bwa:
     mem: 32G
   ribodetector:

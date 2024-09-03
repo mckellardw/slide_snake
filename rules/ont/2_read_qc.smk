@@ -3,17 +3,17 @@ rule ont_readQC_0_rawInput:
     input:
         FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz",
     output:
-        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/0_rawInput/{READ}_qc.tsv",
+        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/0_rawInput/merged_qc.tsv",
     params:
-        CHUNK_SIZE=500000,  # number of reads to handle at a time (higher value means more mem usage)
+        CHUNK_SIZE=100000,  # number of reads to handle in each chunk
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/readqc/0_rawInput/{READ}_qc.log",
+        log="{OUTDIR}/{SAMPLE}/ont/readqc/0_rawInput/merged_qc.log",
     resources:
         mem="8G",
     threads: config["CORES"]
     shell:
         """
-        python scripts/py/fastq_read_qc.py \
+        python scripts/py/fastq_readqc.py \
             {input.FQ} \
             {output.TSV} \
             --cores {threads} \
@@ -29,7 +29,7 @@ rule ont_readQC_1_preCutadapt:
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/readqc/1_preCutadapt/{READ}_qc.tsv",
     params:
-        CHUNK_SIZE=500000,  # number of reads to handle at a time (higher value means more mem usage)
+        CHUNK_SIZE=500000,  # number of reads to handle in each chunk
     log:
         log="{OUTDIR}/{SAMPLE}/ont/readqc/1_preCutadapt/{READ}_qc.log",
     resources:
@@ -37,7 +37,7 @@ rule ont_readQC_1_preCutadapt:
     threads: config["CORES"]
     shell:
         """
-        python scripts/py/fastq_read_qc.py \
+        python scripts/py/fastq_readqc.py \
             {input.FQ} \
             {output.TSV} \
             --cores {threads} \
@@ -61,7 +61,7 @@ rule ont_readQC_2_postCutadapt:
     threads: config["CORES"]
     shell:
         """
-        python scripts/py/fastq_read_qc.py \
+        python scripts/py/fastq_readqc.py \
             {input.FQ} \
             {output.TSV} \
             --cores {threads} \
@@ -103,7 +103,7 @@ rule ont_readQC_3_bam:
     # threads=config["CORES"],
     shell:
         """
-        python scripts/py/bam_read_qc.py \
+        python scripts/py/bam_readqc.py \
             --tags {params.TAGS} \
             --chunk-size {params.CHUNK_SIZE} \
             --bam_file {input.BAM} \
@@ -118,12 +118,14 @@ rule readQC_downsample:
         TSV="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc.tsv",
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc_500000.tsv",
+    params:
+        N_READS=500001 # 500k plus header
     resources:
         mem="4G",
     threads: 1
     shell:
         """
-        head -n 5000000 {input.TSV} > {output.TSV} 
+        head -n {params.N_READS} {input.TSV} > {output.TSV} 
         """
 
 
