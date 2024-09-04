@@ -60,62 +60,65 @@ def remove_file_if_exists(file_path):
 def calculate_metrics(fastq_file, start, chunk_size=100000):
     is_compressed = fastq_file.endswith(".gz")
     metrics = []
-    read_id = ""
+    read_id = "TMP"
     offset = start * 4  # Adjust for 4 lines per read
     # print(f"Offset: {offset}")
 
     with gzip.open(fastq_file, "rt") if is_compressed else open(fastq_file, "r") as f:
-        f.seek(offset) # start at offset
+        # f.seek(offset) # start at offset
         for i, line in enumerate(f):
-            if i % 4 == 0:  # ID line
-                read_id = line.strip().replace("@", "").split(" ", 1)[0]
-            elif i % 4 == 1:  # Sequence line
-                seq = line.strip()
-                if len(seq) > 0:
-                    first_base = seq[0]
-                    last_base = seq[-1]
-                    gc_count = seq.count("G") + seq.count("C")
-                    gc_percent = round(gc_count * 100 / len(seq), 2)
-                    purine_count = seq.count("G") + seq.count("A")
-                    purine_percent = round(purine_count * 100 / len(seq), 2)
-                    homopolymer_lengths = [len(list(g)) for k, g in groupby(seq)]
-                    longest_homopolymer = max(homopolymer_lengths)
-                    homopolymer_base = seq[
-                        homopolymer_lengths.index(longest_homopolymer)
-                    ]
-                else:
-                    first_base = None
-                    last_base = None
-                    gc_percent = None
-                    purine_percent = None
-                    homopolymer_lengths = None
-                    longest_homopolymer = None
-                    homopolymer_base = None
-                # elif i % 4 == 3:  # Quality line
-                #TODO
+            # Skip to offset
+            if i >= offset:
+                if i % 4 == 0 and line.startswith("@"):  # ID line
+                    read_id = line.strip().replace("@", "").split(" ", 1)[0]
+                
+                if i % 4 == 1:  # Sequence line
+                    seq = line.strip()
+                    if len(seq) > 0:
+                        first_base = seq[0]
+                        last_base = seq[-1]
+                        gc_count = seq.count("G") + seq.count("C")
+                        gc_percent = round(gc_count * 100 / len(seq), 2)
+                        purine_count = seq.count("G") + seq.count("A")
+                        purine_percent = round(purine_count * 100 / len(seq), 2)
+                        homopolymer_lengths = [len(list(g)) for k, g in groupby(seq)]
+                        longest_homopolymer = max(homopolymer_lengths)
+                        homopolymer_base = seq[
+                            homopolymer_lengths.index(longest_homopolymer)
+                        ]
+                    else:
+                        first_base = None
+                        last_base = None
+                        gc_percent = None
+                        purine_percent = None
+                        homopolymer_lengths = None
+                        longest_homopolymer = None
+                        homopolymer_base = None
+                    # elif i % 4 == 3:  # Quality line
+                    #TODO
 
-                metrics.append(
-                    {
-                        "Read_ID": read_id,
-                        "Read_Length": len(seq),
-                        "GC_Percent": gc_percent,
-                        "Purine_Percent": purine_percent,
-                        "First_Base": first_base,
-                        "Last_Base": last_base,
-                        "Longest_Homopolymer": longest_homopolymer,
-                        "Homopolymer_Base": homopolymer_base,
-                    }
-                )
+                    metrics.append(
+                        {
+                            "Read_ID": read_id,
+                            "Read_Length": len(seq),
+                            "GC_Percent": gc_percent,
+                            "Purine_Percent": purine_percent,
+                            "First_Base": first_base,
+                            "Last_Base": last_base,
+                            "Longest_Homopolymer": longest_homopolymer,
+                            "Homopolymer_Base": homopolymer_base,
+                        }
+                    )
 
-            #TODO- use all cores, not just 1 chunk per core...
-            # if (i + 1) % chunk_size == 0: 
-                # yield metrics
-                # metrics = []
-            
-            # Exit after 1 chunk
-            if i == (offset + (4*chunk_size)):
-                print(f"Offset: {offset} to {i} -> {i-offset} lines | {(i-offset)/4} reads")
-                return metrics
+                #TODO- use all cores, not just 1 chunk per core...
+                # if (i + 1) % chunk_size == 0: 
+                    # yield metrics
+                    # metrics = []
+                
+                # Exit after 1 chunk
+                if i == (offset + (4*chunk_size)):
+                    print(f"Offset: {offset} to {i} -> {i-offset} lines | {(i-offset)/4} reads")
+                    return metrics
 
     if metrics:
         print(f"Last Offset: {offset} to {i} -> {i-offset} lines | {(i-offset)/4} reads")

@@ -67,18 +67,25 @@ custom_theme <- theme_minimal() +
     axis.text.y = element_text(angle = 0, hjust = 1)
 ) 
 
-# Function to read data and create plots
-create_plots <- function(data_file, out_file, n_reads) {
+# Function to load the data
+load_data <- function(data_file, n_reads){    
     # Read the data
     data <- read_tsv(
         data_file,
         na = c("", "NA", "None")
     )
 
-    # Donsample
+    # Downsample
     if(n_reads < nrow(data)){
         data <- data[sample(nrow(data), n_reads), ]
-    }    
+    }
+    
+    return(data)
+}
+
+
+# Function to read data and create plots
+create_plots <- function(data, data_file, out_file) {
 
     # Summary histograms (left column)
     plot.gc <- ggplot(data, aes(x = GC_Percent)) +
@@ -202,7 +209,7 @@ create_plots <- function(data_file, out_file, n_reads) {
         out_file, 
         plot = combined_plot, 
         device = device,
-        width = 180,
+        width = 240,
         height = 240,
         units = "mm",#c("in", "cm", "mm", "px"),
         dpi = 300,
@@ -211,4 +218,13 @@ create_plots <- function(data_file, out_file, n_reads) {
 }
 
 # Run the function with the provided arguments
-create_plots(opt$file, opt$out, opt$sample)
+data <- load_data(
+    opt$file, 
+    opt$sample
+)
+
+create_plots(
+    data, 
+    opt$file,
+    opt$out
+)
