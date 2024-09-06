@@ -4,7 +4,7 @@
 
 
 # Run fastqc on unmapped reads; switch names because of STAR weirdness
-rule fastqc_unmapped:
+rule ilmn_3b_fastqc_unmapped:
     input:
         UNMAPPED1="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate1",
         UNMAPPED2="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2",
@@ -36,7 +36,7 @@ rule fastqc_unmapped:
 
 
 # Only BLAST R2, which contains the insert (converts .fq to .fa, then removes the .fa file)
-rule blast_unmapped:
+rule ilmn_3b_blast_unmapped:
     input:
         UNMAPPED2_FQ="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2.fastq.gz",
     output:

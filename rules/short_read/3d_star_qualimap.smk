@@ -1,13 +1,13 @@
 # QC on STAR outputs
 ## qualimap on deduplicated/aligned reads
-rule qualimapQC_STAR:
+rule ilmn_3d_qualimapQC_STAR:
     input:
         SORTEDBAM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.out.bam",
     output:
         TXT="{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/rnaseq_qc_results.txt",
         HTML="{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/qualimapReport.html",
     params:
-        GENES_GTF=lambda wildcards: GTF_DICT[wildcards.SAMPLE],
+        GENES_GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
     resources:
         mem="32G",
     threads: 1
@@ -28,7 +28,7 @@ rule qualimapQC_STAR:
         """
 
 
-rule qualimap_summary2csv_STAR:
+rule ilmn_3d_qualimap_summary2csv_STAR:
     input:
         TXT="{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/rnaseq_qc_results.txt",
     output:

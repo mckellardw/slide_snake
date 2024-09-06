@@ -5,7 +5,7 @@
 
 
 # TODO- refactor to incorporate internal trimming options into rRNA filtering
-rule bwa_rRNA_align:
+rule ilmn_2a_bwa_rRNA_align:
     input:
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
         BC_WHITELIST="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
@@ -19,7 +19,7 @@ rule bwa_rRNA_align:
         R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_R2.fq",
     params:
         # MEMLIMIT = config['MEMLIMIT'],
-        BWA_REF=lambda w: rRNA_BWA_DICT[w.SAMPLE],
+        BWA_REF=lambda w: get_bwa_ref(w, mode="rRNA"),
         MIN_ALIGNSCORE=40,
     log:
         log="{OUTDIR}/{SAMPLE}/rRNA/bwa/bwa_mem.log",
@@ -57,7 +57,7 @@ rule bwa_rRNA_align:
         """
 
 
-rule bwa_rRNA_filter_R1:
+rule ilmn_2a_bwa_rRNA_filter_R1:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
@@ -69,19 +69,17 @@ rule bwa_rRNA_filter_R1:
     resources:
         mem="64G",
     threads: config["CORES"]
-    run:
-        shell(
-            f"""
-            cat {input.R2_FQ_BWA_FILTERED} | awk -f scripts/awk/fq_readHeader.awk - > {output.rRNA_LIST}
+    shell:
+        """
+        cat {input.R2_FQ_BWA_FILTERED} | awk -f scripts/awk/fq_readHeader.awk - > {output.rRNA_LIST}
 
-            zcat {input.R1_FQ} > {output.R1_FQ} 
-            
-            seqtk subseq {output.R1_FQ} {output.rRNA_LIST} > {output.R1_FQ_BWA_FILTERED}
-            """
-        )
+        zcat {input.R1_FQ} > {output.R1_FQ} 
+        
+        seqtk subseq {output.R1_FQ} {output.rRNA_LIST} > {output.R1_FQ_BWA_FILTERED}
+        """
 
 
-rule bwa_rRNA_compress_unmapped:
+rule ilmn_2a_bwa_rRNA_compress_unmapped:
     input:
         R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_R1.fq",
         R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_R2.fq",
@@ -98,7 +96,7 @@ rule bwa_rRNA_compress_unmapped:
 
 
 #  Run fastqc on unmapped reads;
-rule bwa_rRNA_filtered_fastqc:
+rule ilmn_2a_bwa_rRNA_filtered_fastqc:
     input:
         FQ="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_{READ}.fq.gz",
     output:

@@ -260,7 +260,7 @@ if __name__ == "__main__":
         nargs="+",
         type=int,
         required=True,
-        help="Number of mismatches allowed in the adapter sequence.",
+        help="Number of mismatches allowed in the adapter sequence for BC calling.",
     )
     parser.add_argument(
         "--umi_adapters",
@@ -293,7 +293,7 @@ if __name__ == "__main__":
         nargs="+",
         type=int,
         required=True,
-        help="Number of mismatches allowed in the adapter sequence.",
+        help="Number of mismatches allowed in the adapter sequence for UMI calling.",
     )
     args = parser.parse_args()
 

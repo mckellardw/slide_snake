@@ -5,7 +5,7 @@
 
 # TSO & homopolymer trimming
 # TODO: add "{ADAPTER};noindels" to adapter sequence trimming? - *Note- do not do this for the BB_ADAPTER
-rule cutadapt:
+rule ilmn_1b_cutadapt:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/merged_R1.fq.gz",
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/merged_R2.fq.gz",
@@ -16,7 +16,7 @@ rule cutadapt:
     params:
         RECIPE=lambda w: get_recipes(w, mode="ILMN"),
         R1_LENGTH=lambda w: min(
-            get_recipe_info(w, info_col="R1.finalLength", mode="ILMN")
+            get_recipe_info(w, info_col="R1_finalLength", mode="ILMN")
         ),
         # R1_LENGTH = 50,
         QUALITY_MIN=20,
@@ -68,7 +68,7 @@ rule cutadapt:
         """
 
 
-rule cutadapt2:
+rule ilmn_1b_cutadapt2:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz",
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz",
@@ -79,7 +79,7 @@ rule cutadapt2:
     params:
         RECIPE=lambda w: get_recipes(w, mode="ILMN"),
         R1_LENGTH=lambda w: min(
-            get_recipe_info(w, info_col="R1.finalLength", mode="ILMN")
+            get_recipe_info(w, info_col="R1_finalLength", mode="ILMN")
         ),
         # R1_LENGTH = 50,
         QUALITY_MIN=20,
@@ -133,7 +133,7 @@ rule cutadapt2:
 
 # Trimming for R1 to handle Curio adapter issues. See README for recipe details
 ## "Hard" trimming, to remove the adapter based on hard-coded base positions
-rule R1_hardTrimming:
+rule ilmn_1b_R1_hardTrimming:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
     output:
@@ -145,7 +145,7 @@ rule R1_hardTrimming:
         INTERNAL_TRIM_QC_LOG="{OUTDIR}/{SAMPLE}/internal_trim_qc.txt",
         TMPDIR="{OUTDIR}/{SAMPLE}/tmp/seqkit",
         RECIPE=lambda w: get_recipes(w, mode="ILMN"),
-        R1_LENGTH=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN"),
+        R1_LENGTH=lambda w: get_recipe_info(w, info_col="R1_finalLength", mode="ILMN"),
     log:
         log="{OUTDIR}/{SAMPLE}/misc_logs/R1_hardTrimming.log",
     resources:
@@ -167,7 +167,7 @@ rule R1_hardTrimming:
 
 
 ## Internal trimming to cut out adapter sequences (SlideSeq, DecoderSeq, microST, etc.)
-rule R1_internalTrimming:
+rule ilmn_1b_R1_internalTrimming:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
     output:
@@ -178,10 +178,10 @@ rule R1_internalTrimming:
         # CB2start=27,
         # CB2end=42,
         TMPDIR="{OUTDIR}/{SAMPLE}/tmp/seqkit",
-        ADAPTER=lambda w: get_recipe_info(w, "internal.adapter", mode="ILMN")[0],
+        ADAPTER=lambda w: get_recipe_info(w, "internal_adapter", mode="ILMN")[0],
         # RECIPE=lambda w: get_recipes(w, mode="ILMN"),
-        # R1_LENGTH=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN"),
-        BC1_LENGTH=8,  #TODO - lambda w: get_recipe_info(w, info_col="BC.length", mode="ILMN"),
+        # R1_LENGTH=lambda w: get_recipe_info(w, info_col="R1_finalLength", mode="ILMN"),
+        BC1_LENGTH=8,  #TODO - lambda w: get_recipe_info(w, info_col="BC_length", mode="ILMN"),
         MIN_ALIGN_SCORE=58,
     log:
         log="{OUTDIR}/{SAMPLE}/misc_logs/R1_internalTrimming.log",

@@ -6,7 +6,7 @@
 # Run STARsolo
 # TODO?: --twopassMode
 # WASP?
-rule STARsolo_align:
+rule ilmn_3a_STARsolo_align:
     input:
         FQS=lambda w: get_fqs(w, return_type="list", mode="ILMN"),
         WHITELIST=lambda w: get_whitelist(w, return_type="list"),
@@ -36,35 +36,36 @@ rule STARsolo_align:
     # conda:
     #     f"{workflow.basedir}/envs/star.yml"
     priority: 42
-    shell:
-        """
-        mkdir -p $(dirname {output.BAM})
+    run:
+        shell(
+            f"""
+            mkdir -p $(dirname {output.BAM})
 
-        STAR \
-            --runThreadN {threads} \
-            --outFileNamePrefix $(dirname {output.BAM})/ \
-            --outSAMtype BAM SortedByCoordinate \
-            --limitBAMsortRAM={resources.mem} \
-            --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
-            --readFilesCommand zcat \
-            --genomeDir {params.STAR_REF} \
-            --readFilesIn {input.FQS[1]} {input.FQS[0]} \
-            --outReadsUnmapped Fastx \
-            --outSAMunmapped Within KeepPairs \
-            --soloType {params.STAR_PARAMS['STAR_soloType']} {params.STAR_PARAMS['STAR_soloUMI']} {params.STAR_PARAMS['STAR_soloCB']} {params.STAR_PARAMS['STAR_soloAdapter']} {params.STAR_PARAMS['STAR_extra']} \
-            --soloCBmatchWLtype {params.STAR_PARAMS['STAR_soloCBmatchWLtype']} \
-            --soloCBwhitelist {params.WHITELIST} \
-            --soloCellFilter TopCells $(wc -l {input.WHITELIST[0]}) \
-            --soloUMIfiltering MultiGeneUMI CR \
-            --soloUMIdedup 1MM_CR \
-            --soloBarcodeReadLength 0 \
-            --soloFeatures Gene GeneFull Velocyto \
-            --soloMultiMappers EM
-        """
-
+            STAR \
+                --runThreadN {threads} \
+                --outFileNamePrefix $(dirname {output.BAM})/ \
+                --outSAMtype BAM SortedByCoordinate \
+                --limitBAMsortRAM={resources.mem} \
+                --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
+                --readFilesCommand zcat \
+                --genomeDir {params.STAR_REF} \
+                --readFilesIn {input.FQS[1]} {input.FQS[0]} \
+                --outReadsUnmapped Fastx \
+                --outSAMunmapped Within KeepPairs \
+                --soloType {params.STAR_PARAMS['STAR_soloType']} {params.STAR_PARAMS['STAR_soloUMI']} {params.STAR_PARAMS['STAR_soloCB']} {params.STAR_PARAMS['STAR_soloAdapter']} {params.STAR_PARAMS['STAR_extra']} \
+                --soloCBmatchWLtype {params.STAR_PARAMS['STAR_soloCBmatchWLtype']} \
+                --soloCBwhitelist {params.WHITELIST} \
+                --soloCellFilter TopCells $(wc -l {input.WHITELIST[0]}) \
+                --soloUMIfiltering MultiGeneUMI CR \
+                --soloUMIdedup 1MM_CR \
+                --soloBarcodeReadLength 0 \
+                --soloFeatures Gene GeneFull Velocyto \
+                --soloMultiMappers EM
+            """
+        )
 
 # compress outputs from STAR (count matrices, cell barcodes, and gene lists)
-rule compress_STAR_outs:
+rule ilmn_3a_compress_STAR_outs:
     input:
         VEL_MAT="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Velocyto/raw/spliced.mtx",
         VEL_BC="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Velocyto/raw/barcodes.tsv",

@@ -1,7 +1,7 @@
 # Remove reads that don't have a corrected spot/cell barcode with samtools, then remove duplicates w/ **umi-tools**
 ## High mem usage? Check here! https://umi-tools.readthedocs.io/en/latest/faq.html
 # TODO: dedup after strand-splitting?
-rule umitools_dedupBAM:
+rule ilmn_3c_umitools_dedupBAM:
     input:
         WHITELIST=lambda w: get_whitelist(w, return_type="list"),
         BAM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.out.bam",
@@ -27,7 +27,7 @@ rule umitools_dedupBAM:
 
 
 # Split .bam file by strand for IGV browsing
-rule strand_split_dedup_bam:
+rule ilmn_3c_strand_split_dedup_bam:
     input:
         BAM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.dedup.out.bam",
         BAI="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.dedup.out.bam.bai",

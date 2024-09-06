@@ -1,5 +1,5 @@
 # Merge .fastq files (in case more than one sesquencing run was performed)
-rule merge_fastqs:
+rule ilmn_1a_merge_fastqs:
     output:
         MERGED_R1_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/merged_R1.fq.gz"),
         MERGED_R2_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/merged_R2.fq.gz"),

@@ -4,7 +4,7 @@
 
 # TODO- refactor to incorporate internal trimming options into rRNA filtering
 ## Need to run per (used) whitelist, per sample
-rule STAR_rRNA_align:
+rule ilmn_2b_STAR_rRNA_align:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
@@ -60,7 +60,7 @@ rule STAR_rRNA_align:
 
 
 # compress outputs from STAR (count matrices, cell barcodes, and gene lists)
-rule STAR_rRNA_compress_outs:
+rule ilmn_2b_STAR_rRNA_compress_outs:
     input:
         GENEMAT="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Solo.out/GeneFull/raw/matrix.mtx",
     output:
@@ -96,7 +96,7 @@ rule STAR_rRNA_compress_outs:
 
 
 # Switch names because of STAR weirdness
-rule STAR_rRNA_rename_compress_unmapped:
+rule ilmn_2b_STAR_rRNA_rename_compress_unmapped:
     input:
         UNMAPPED1="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Unmapped.out.mate1",
         UNMAPPED2="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Unmapped.out.mate2",
@@ -119,7 +119,7 @@ rule STAR_rRNA_rename_compress_unmapped:
 
 
 #  Run fastqc on unmapped reads;
-rule STAR_rRNA_filtered_fastqc:
+rule ilmn_2b_STAR_rRNA_filtered_fastqc:
     input:
         FQ="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/noRibo_{READ}.fq.gz",
     output:

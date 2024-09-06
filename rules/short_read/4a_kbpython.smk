@@ -3,7 +3,7 @@
 ##  source: https://github.com/pachterlab/kb_python
 ##  info: https://www.kallistobus.tools/  [currently very out of date]
 #############################################
-rule kbpython_std:
+rule ilmn_4a_kbpython_std:
     input:
         FQS=lambda w: get_fqs(w, return_type="list", mode="ILMN"),
         BC="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
@@ -19,10 +19,10 @@ rule kbpython_std:
         FEATS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/genes.tsv",
         MAT="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/matrix.mtx",
     params:
-        KB_IDX=lambda wildcards: IDX_DICT[wildcards.SAMPLE],
-        KB_X=lambda wildcards: RECIPE_SHEET["kb.x"][wildcards.RECIPE],
-        KB_EXTRA=lambda wildcards: RECIPE_SHEET["kb.extra"][wildcards.RECIPE],
-        KB_T2G=lambda wildcards: T2G_DICT[wildcards.SAMPLE],
+        KB_IDX=lambda w: get_kallisto_ref(w, mode="idx"),
+        KB_T2G=lambda w: get_kallisto_ref(w, mode="t2g"),
+        KB_X=lambda w: RECIPE_SHEET["kb_x"][w.RECIPE],
+        KB_EXTRA=lambda w: RECIPE_SHEET["kb_extra"][w.RECIPE],
         N_READS_SUMMARY=1000000,  # number of reads to use for summary stats
     log:
         log="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/kbpython_std.log",
@@ -62,7 +62,7 @@ rule kbpython_std:
         # 
 
 
-rule kbpython_std_remove_suffix:
+rule ilmn_4a_kbpython_std_remove_suffix:
     input:
         BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes.tsv",
     output:

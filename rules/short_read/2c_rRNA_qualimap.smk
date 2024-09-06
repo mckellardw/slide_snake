@@ -1,6 +1,6 @@
 # Qualimap on bwa output
 ## qualimap on deduplicated/aligned reads
-rule qualimapQC_rRNA_bwa:
+rule ilmn_2c_qualimapQC_rRNA_bwa:
     input:
         BAM="{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam",
         BAI="{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam.bai",
@@ -34,7 +34,7 @@ rule qualimapQC_rRNA_bwa:
 
 # QC on STAR outputs
 ## qualimap on deduplicated/aligned reads
-rule qualimapQC_rRNA_STAR:
+rule ilmn_2c_qualimapQC_rRNA_STAR:
     input:
         BAM="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam",
         BAI="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam.bai",
@@ -63,7 +63,7 @@ rule qualimapQC_rRNA_STAR:
         """
 
 
-rule qualimap_summary2csv_rRNA_STAR:
+rule ilmn_2c_qualimap_summary2csv_rRNA_STAR:
     input:
         TXT="{OUTDIR}/{SAMPLE}/qualimap/rRNA/{TOOL}/rnaseq_qc_results.txt",
     output:

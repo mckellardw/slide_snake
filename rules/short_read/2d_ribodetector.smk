@@ -4,7 +4,7 @@
 
 
 # TODO- refactor to incorporate internal trimming options into rRNA filtering
-rule ribodetector:
+rule ilmn_2d_ribodetector:
     input:
         # R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
@@ -37,7 +37,7 @@ rule ribodetector:
         """
 
 
-rule ribodetector_get_noRibo_list:
+rule ilmn_2d_ribodetector_get_noRibo_list:
     input:
         R2_FQ_NORIBO="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_R2.fq",
     output:
@@ -51,7 +51,7 @@ rule ribodetector_get_noRibo_list:
         """
 
 
-rule ribodetector_gunzip_R1:
+rule ilmn_2d_ribodetector_gunzip_R1:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/{TMP}_R1.fq.gz",
     output:
@@ -63,7 +63,7 @@ rule ribodetector_gunzip_R1:
         """
 
 
-rule ribodetector_filter_R1:
+rule ilmn_2d_ribodetector_filter_R1:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq",
         NORIBO_LIST="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_readID.list",
@@ -79,7 +79,7 @@ rule ribodetector_filter_R1:
         """
 
 
-rule ribodetector_filter_R1_internalTrim:
+rule ilmn_2d_ribodetector_filter_R1_internalTrim:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_internalTrim_R1.fq",
         NORIBO_LIST="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_readID.list",
@@ -95,7 +95,7 @@ rule ribodetector_filter_R1_internalTrim:
         """
 
 
-rule ribodetector_filter_R1_hardTrim:
+rule ilmn_2d_ribodetector_filter_R1_hardTrim:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_hardTrim_R1.fq",
         NORIBO_LIST="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_readID.list",
@@ -111,7 +111,7 @@ rule ribodetector_filter_R1_hardTrim:
         """
 
 
-rule ribodetector_compress_fqs:
+rule ilmn_2d_ribodetector_compress_fqs:
     input:
         FQ="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/{READ}.fq",
     output:
