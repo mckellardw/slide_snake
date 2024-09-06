@@ -47,15 +47,15 @@ rule ont_1c_fastq_call_bc_from_adapter:
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes.tsv",
     params:
         BC_PATTERN=lambda w: get_ont_barcode_pattern(w),
-        BC_ADAPTERS=lambda w: get_recipe_info(w, "BC.adapter", mode="ONT"),
-        BC_LENGTHS=lambda w: get_recipe_info(w, "BC.length", mode="ONT"),
-        BC_OFFSETS=lambda w: get_recipe_info(w, "BC.offset", mode="ONT"),
-        BC_POSITIONS=lambda w: get_recipe_info(w, "BC.position", mode="ONT"),
+        BC_ADAPTERS=lambda w: get_recipe_info(w, "BC_adapter", mode="ONT"),
+        BC_LENGTHS=lambda w: get_recipe_info(w, "BC_length", mode="ONT"),
+        BC_OFFSETS=lambda w: get_recipe_info(w, "BC_offset", mode="ONT"),
+        BC_POSITIONS=lambda w: get_recipe_info(w, "BC_position", mode="ONT"),
         BC_MISMATCHES=2,
-        UMI_ADAPTERS=lambda w: get_recipe_info(w, "UMI.adapter", mode="ONT"),
-        UMI_LENGTHS=lambda w: get_recipe_info(w, "UMI.length", mode="ONT"),
-        UMI_OFFSETS=lambda w: get_recipe_info(w, "UMI.offset", mode="ONT"),
-        UMI_POSITIONS=lambda w: get_recipe_info(w, "UMI.position", mode="ONT"),
+        UMI_ADAPTERS=lambda w: get_recipe_info(w, "UMI_adapter", mode="ONT"),
+        UMI_LENGTHS=lambda w: get_recipe_info(w, "UMI_length", mode="ONT"),
+        UMI_OFFSETS=lambda w: get_recipe_info(w, "UMI_offset", mode="ONT"),
+        UMI_POSITIONS=lambda w: get_recipe_info(w, "UMI_position", mode="ONT"),
         UMI_MISMATCHES=2,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1c_fastq_call_bc_from_adapter.log",
@@ -117,14 +117,13 @@ rule ont_1c_filter_read_barcodes:
 rule ont_1c_tsv_bc_correction:
     input:
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_filtered.tsv",
-        # WHITELIST=lambda w: get_whitelist(w, return_type="list"), 
         WHITELIST="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
     output:
         TSV_SLIM="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected.tsv",
         TSV_FULL="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected_full.tsv",
     params:
-        # BC_PATTERN=lambda w: get_ont_barcode_pattern(w),
-        UMI_LENGTH=12,
+        # WHITELIST=lambda w: get_whitelist(w, return_type="list"), 
+        UMI_LENGTH=lambda w: get_recipe_info(w, "UMI_length", mode="ONT"),
         MAX_LEVEN=3,  # maximum Levenshtein distance tolerated in correction;
         NEXT_MATCH_DIFF=2,
         K=5,  # kmer length for BC whitelist filtering; shorter value improves accuracy, extends runtime

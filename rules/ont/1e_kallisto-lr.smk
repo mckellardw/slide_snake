@@ -2,7 +2,7 @@
 # github: https://github.com/COMBINE-lab/oarfish
 # documentation: 
 
-rule ont_kallisto_lr:
+rule ont_1e_kallisto_lr:
     input:
         FQ=lambda w: get_fqs(w, return_type="list", mode="ONT"),
         BC="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
@@ -13,8 +13,8 @@ rule ont_kallisto_lr:
         ECMAP=temp("{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/matrix.ec"),
     params:
         KB_IDX=lambda wildcards: IDX_DICT[wildcards.SAMPLE],
-        KB_X=lambda wildcards: RECIPE_SHEET["kb.x"][wildcards.RECIPE],
-        KB_EXTRA=lambda wildcards: RECIPE_SHEET["kb.extra"][wildcards.RECIPE],
+        KB_X=lambda wildcards: RECIPE_SHEET["kb_x"][wildcards.RECIPE],
+        KB_EXTRA=lambda wildcards: RECIPE_SHEET["kb_extra"][wildcards.RECIPE],
         KB_T2G=lambda wildcards: T2G_DICT[wildcards.SAMPLE],
         N_READS_SUMMARY=1000000,  # number of reads to use for summary stats
     log:
@@ -40,7 +40,7 @@ rule ont_kallisto_lr:
 
 
 
-rule ont_bus2mat_lr:
+rule ont_1e_bus2mat_lr:
     input:
         BUS="{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/output.corrected.bus",
         TRANSCRIPTS="{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/transcripts.txt",
@@ -74,7 +74,7 @@ rule ont_bus2mat_lr:
 
 
 # gzip the count matrix, etc.
-rule compress_kb_outs:
+rule ont_1e_compress_kb_outs:
     input:
         BCS="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/output.barcodes.txt",
         GENES="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/output.genes.txt",
@@ -85,6 +85,6 @@ rule compress_kb_outs:
         MAT="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/output.mtx.gz",
     threads: config["CORES"]
     shell:
-        f"""
+        """
         pigz -p{resources.threads} {input.BCS} {input.GENES} {input.MAT}
         """

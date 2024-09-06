@@ -2,9 +2,9 @@
 
 
 # Copy barcode map
-rule copy_barcode_map:
+rule BC_copy_barcode_map:
     input:
-        BC_MAP=lambda wildcards: BC_DICT[wildcards.SAMPLE],
+        BC_MAP=lambda wildcards: SAMPLE_SHEET["BC_map"][wildcards.SAMPLE],
     output:
         BC_MAP="{OUTDIR}/{SAMPLE}/bc/map.txt",
     # resources:
@@ -26,7 +26,7 @@ rule copy_barcode_map:
             )
 
 
-rule get_simple_whitelist:
+rule BC_get_simple_whitelist:
     input:
         BC_MAP="{OUTDIR}/{SAMPLE}/bc/map.txt",
     output:
@@ -44,7 +44,7 @@ rule get_simple_whitelist:
 # TODO- refactor to take info from recipe_sheet on barcode positions/lengths
 # TODO- refactor to take a variable number of barcodes
 # TODO- export to python script
-rule write_whitelist_variants:
+rule BC_write_whitelist_variants:
     input:
         BC_MAP="{OUTDIR}/{SAMPLE}/bc/map.txt",
     output:
@@ -136,7 +136,7 @@ rule write_whitelist_variants:
 
 
 # For Seeker - Insert the adapter sequence into the bead barcodes for easier barcode matching/alignment with STARsolo
-rule insert_adapter_into_list:
+rule BC_insert_adapter_into_list:
     input:
         BC_MAP="{OUTDIR}/{SAMPLE}/bc/map.txt",
     output:
@@ -145,8 +145,8 @@ rule insert_adapter_into_list:
         BC_ADAPTER_MAP="{OUTDIR}/{SAMPLE}/bc/map_adapter.txt",
         BC_ADAPTER_R1_MAP="{OUTDIR}/{SAMPLE}/bc/map_adapter_R1.txt",
     params:
-        ADAPTER=lambda w: get_recipe_info(w, "internal.adapter", mode="list")[0],
-        R1_PRIMER=config["R1_PRIMER"],  # R1 PCR primer (Visium & Seeker)
+        ADAPTER=lambda w: get_recipe_info(w, "internal_adapter", mode="list")[0],
+        BC_PRIMER=lambda w: get_recipe_info(w, "fwd_primer", mode="list")[0],
         recipes_to_split=["seeker", "microST", "decoder"],
     # resources:
     threads: 1
@@ -168,7 +168,7 @@ rule insert_adapter_into_list:
                     for item1, item2 in zip(bc_1, bc_2)
                 ]
                 bc_adapter_r1 = [
-                    f"{params.R1_PRIMER}{item1}{params.ADAPTER}{item2}"
+                    f"{params.BC_PRIMER}{item1}{params.ADAPTER}{item2}"
                     for item1, item2 in zip(bc_1, bc_2)
                 ]
 
@@ -182,7 +182,7 @@ rule insert_adapter_into_list:
                     for item1, item2 in zip(bc_1, bc_2)
                 ]
                 bc_adapter_r1 = [
-                    f"{params.R1_PRIMER}{item1}{params.ADAPTER}{item2}"
+                    f"{params.BC_PRIMER}{item1}{params.ADAPTER}{item2}"
                     for item1, item2 in zip(bc_1, bc_2)
                 ]
 

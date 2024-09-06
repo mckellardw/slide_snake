@@ -2,7 +2,7 @@
 ## Read trimming rules
 #############################################
 # TODO - make some params recipe-specific
-rule ont_cutadapt:
+rule ont_1b_cutadapt:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_R1.fq.gz",
         # R1_FQ_Trimmed = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len_internalTrim_R1.fq.gz",
@@ -13,14 +13,12 @@ rule ont_cutadapt:
         JSON="{OUTDIR}/{SAMPLE}/ont/misc_logs/1b_cutadapt.json",
     params:
         RECIPE=lambda w: get_recipes(w, mode="ONT"),
-        R1_PRIMER=config["R1_PRIMER"],  # R1 PCR primer (Visium & Seeker)
+        BC_PRIMER=lambda w: get_recipe_info(w, "fwd_primer", mode="list")[0],
         R1_LENGTH=lambda w: min(
-            get_recipe_info(w, info_col="R1.finalLength", mode="list")
+            get_recipe_info(w, info_col="R1_finalLength", mode="list")
         )
-        + len(config["R1_PRIMER"]),
-        # Add R1 primer length for ONT,
-        # ADAPTER=config["R1_INTERNAL_ADAPTER"],  # Curio R1 internal adapter
-        ADAPTER=lambda w: get_recipe_info(w, "internal.adapter", mode="ONT"),
+        + len(get_recipe_info(w, "fwd_primer", mode="list")[0]),
+        ADAPTER=lambda w: get_recipe_info(w, "internal_adapter", mode="ONT"),
         ADAPTER_COUNT=4,  # number of adapters that can be trimmed from each read
         QUALITY_MIN=5,  # Low Q score for ONT...
         MIN_R2_LENGTH=12,
@@ -77,7 +75,7 @@ rule ont_cutadapt:
 
 # Trimming for R1 to handle adapter issues. See README for recipe details (#TODO)
 ## "Hard" trimming, to remove the adapter based on hard-coded base positions
-rule ont_R1_hardTrimming:
+rule ont_1b_R1_hardTrimming:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_R1.fq.gz",
     output:
@@ -107,7 +105,7 @@ rule ont_R1_hardTrimming:
 
 
 ## Internal trimming to cut out adapter sequences
-rule ont_R1_internalTrim:
+rule ont_1b_R1_internalTrim:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_R1.fq.gz",
     output:
@@ -115,13 +113,13 @@ rule ont_R1_internalTrim:
         # INTERNAL_TRIM_QC_LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/1b_internal_trim_qc.txt",
     params:
         TMPDIR="{OUTDIR}/{SAMPLE}/tmp/seqkit",
-        ADAPTER=lambda w: get_recipe_info(w, info_col="internal.adapter", mode="list")[
+        ADAPTER=lambda w: get_recipe_info(w, info_col="internal_adapter", mode="list")[
             0
         ],
         # RECIPE = lambda w: get_recipes(w, mode="ONT"),
-        R1_LENGTH=lambda w: get_recipe_info(w, info_col="R1.finalLength"),
+        R1_LENGTH=lambda w: get_recipe_info(w, info_col="R1_finalLength"),
         BC1_LENGTH=lambda w: max_sum_of_entries(
-            get_recipe_info(w, info_col="BC.length", mode="ILMN")
+            get_recipe_info(w, info_col="BC_length", mode="ILMN")
         ),
         MIN_ALIGN_SCORE=10,
     resources:
@@ -143,7 +141,7 @@ rule ont_R1_internalTrim:
         """
 
 
-rule ont_cutadapt_internalTrimming:
+rule ont_1b_cutadapt_internalTrimming:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_internalTrim_R1.fq.gz",
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_R2.fq.gz",
@@ -154,11 +152,11 @@ rule ont_cutadapt_internalTrimming:
     params:
         RECIPE=lambda w: get_recipes(w, mode="ONT"),
         R1_LENGTH=lambda w: min(
-            get_recipe_info(w, info_col="R1.finalLength", mode="list")
+            get_recipe_info(w, info_col="R1_finalLength", mode="list")
         )
         + len(params.R1),
         # Add R1 primer length for ONT,
-        ADAPTER=lambda w: get_recipe_info(w, "internal.adapter", mode="ONT"),
+        ADAPTER=lambda w: get_recipe_info(w, "internal_adapter", mode="ONT"),
     resources:
         mem="16G",
     threads: config["CORES"]

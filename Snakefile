@@ -48,33 +48,12 @@ ONT = {SAMP: READ.split() for SAMP, READ in ONT.items() if READ}
 # Build dictionaries of recipes & species to use for alignment
 RECIPE_DICT = {}        # Dictionary of lists; recipes to use for each sample (short_read module)
 RECIPE_ONT_DICT = {}    # Dictionary of lists; recipes to use for each sample (ONT module)
-rRNA_STAR_DICT = {}     # Dictionary of rRNA reference genomes to use w/ STAR
-rRNA_BWA_DICT = {}      # Dictionary of rRNA reference genomes to use w/ bwa
-REF_DICT = {}           # Dictionary of reference genomes to use
-GTF_DICT = {}           # Dictionary of gene annotations (.gtf format)
-IDX_DICT = {}           # Dictionary of kallisto indices
-T2G_DICT = {}           # Dictionary of kallisto transcript-to-gene maps
-IDX_VELO_DICT = {}      # Dictionary of kallisto indices for RNA velocity
-T2G_VELO_DICT = {}      # Dictionary of kallisto transcript-to-gene maps for RNA velocity
-BC_DICT = {}            # Dictionary of bead barcode maps
-SPECIES_DICT = {}       # Dictionary of species listed for mirge3 analysis
-
 for i in range(0,SAMPLE_SHEET.shape[0]):
     tmp_sample = list(SAMPLE_SHEET["sampleID"])[i]
-    rRNA_STAR_DICT[tmp_sample] = list(SAMPLE_SHEET["STAR_rRNA_ref"])[i]
-    rRNA_BWA_DICT[tmp_sample] = list(SAMPLE_SHEET["bwa_rRNA_ref"])[i]
-    REF_DICT[tmp_sample] = list(SAMPLE_SHEET["STAR_ref"])[i]
-    GTF_DICT[tmp_sample] = list(SAMPLE_SHEET["genes_gtf"])[i]
-    BC_DICT[tmp_sample] = list(SAMPLE_SHEET["BB_map"])[i]
-    SPECIES_DICT[tmp_sample] = list(SAMPLE_SHEET["species"])[i]
 
     # short-read-specific dicts
     if tmp_sample in R2_FQS.keys():
         RECIPE_DICT[tmp_sample] = list(SAMPLE_SHEET["recipe"])[i].split()
-        IDX_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_idx"])[i]
-        T2G_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_t2g"])[i]
-        # IDX_VELO_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_idx_velo"])[i]
-        # T2G_VELO_DICT[tmp_sample] = list(SAMPLE_SHEET["kb_t2g_velo"])[i]
     
     # ONT-specific dicts
     if tmp_sample in ONT.keys():
@@ -85,7 +64,7 @@ for i in range(0,SAMPLE_SHEET.shape[0]):
 ### recipe_sheet & sample_sheet checks ######################################################################
 include: "rules/0_utils.smk" 
 check_recipe_sheet(RECIPE_SHEET, RECIPE_DICT, RECIPE_ONT_DICT)
-# check_sample_sheet(SAMPLE_SHEET)
+#TODO check_sample_sheet(SAMPLE_SHEET)
 
 ### Wildcard constraints ###############################################################
 wildcard_constraints:
@@ -197,12 +176,13 @@ rule all:
         # ], # Top BLAST results for unmapped R2 reads   
         
         # Module 4 - kallisto & bustools
-        expand( # kallisto/bustools count mats #TODO
-            "{OUTDIR}/{SAMPLE}/kb_velo/{LAYER}/output.mtx.gz",
-            OUTDIR=config["OUTDIR"],
-            LAYER=["spliced", "unspliced"],
-            SAMPLE=R2_FQS.keys()
-        ),
+        #TODO rewrite for kbpython
+        # expand( # kallisto/bustools count mats #TODO
+        #     "{OUTDIR}/{SAMPLE}/kb_velo/{LAYER}/output.mtx.gz",
+        #     OUTDIR=config["OUTDIR"],
+        #     LAYER=["spliced", "unspliced"],
+        #     SAMPLE=R2_FQS.keys()
+        # ),
 
         # Module 5 - small RNA
         # [f"{OUTDIR}/{SAMPLE}/miRge_bulk/{RECIPE}/annotation.report.html" 

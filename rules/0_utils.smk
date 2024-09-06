@@ -2,7 +2,7 @@
 
 
 # Index .bam file
-rule index_BAM:
+rule utils_index_BAM:
     input:
         BAM="{BAM}",
     output:
@@ -203,7 +203,7 @@ def get_bc_map(w, mode=["ONT", "ILMN"]):
 
 # Get number of barcodes (does not include UMIs!)
 def get_n_bcs(w):
-    bc_lengths = get_recipe_info(w, info_col="BC.length").split()
+    bc_lengths = get_recipe_info(w, info_col="BC_length").split()
     n_bcs = len(bc_lengths)
     return n_bcs
 
@@ -246,21 +246,62 @@ def get_ont_barcode_pattern(w):
     #     "(?P<cell_2>.{{6}})"+ \
     #     "(?P<umi_1>.{{7}})"
 
+def get_bwa_ref(w, mode=["genome", "rRNA"]):
+    """
+    Pull BWA info from sample sheet
+
+    w: wildcards
+    mode: which reference to pull
+    """
+    try:
+        if type(mode) is list and len(mode) > 1:  # default
+            mode = "rRNA"
+
+        if mode == "genome":
+            out = "No genome reference supported for BWA!"
+        elif mode == "rRNA":
+            out = SAMPLE_SHEET["bwa_rRNA_ref"][w.SAMPLE]
+    except Exception:
+        out = "No reference given! Check your sample sheet!"
+
+    return out
 
 def get_STAR_ref(w, mode=["genome", "rRNA"]):
+    """
+    Pull STAR info from sample sheet
+
+    w: wildcards
+    mode: which reference to pull
+    """
     try:
         if type(mode) is list and len(mode) > 1:  # default
             mode = "genome"
 
         if mode == "genome":
-            star_ref = REF_DICT[w.SAMPLE]
+            out = SAMPLE_SHEET["STAR_ref"][w.SAMPLE]
         elif mode == "rRNA":
-            star_ref = rRNA_STAR_DICT[w.SAMPLE]
+            out = SAMPLE_SHEET["STAR_rRNA_ref"][w.SAMPLE]
     except Exception:
-        star_ref = "No reference given! Check your sample sheet!"
+        out = "No reference given! Check your sample sheet!"
 
-    return star_ref
+    return out
 
+def get_kallisto_ref(w, mode=["idx", "t2g","idx_velo", "t2g_velo"]):
+    """
+    Pull kalllisto info from sample sheet
+
+    w: wildcards
+    mode: which reference to pull
+    """
+    try:
+        if mode == "idx":
+            out = SAMPLE_SHEET["kb_idx"][w.SAMPLE]
+        elif mode == "t2g":
+            out = SAMPLE_SHEET["kb_t2g"][w.SAMPLE]
+    except Exception:
+        out = "No reference given! Check your sample sheet!"
+
+    return out
 
 # TODO- add STAR_rRNA functinoality (no w.RECIPE accessibility)
 def get_STAR_extra_params(w):
@@ -481,7 +522,7 @@ def get_barcode_length(w):
     """
     Get barcode length based on the recipe(s) passed.
     """
-    bc_lengths = [RECIPE_SHEET["BC.length"][R] for R in RECIPE_DICT[w.SAMPLE]]
+    bc_lengths = [RECIPE_SHEET["BC_length"][R] for R in RECIPE_DICT[w.SAMPLE]]
     if len(bc_lengths) == 1:
         out = bc_lengths[0]
     else:
@@ -494,7 +535,7 @@ def get_umi_length(w):
     """
     Get UMI length based on the recipe(s) passed.
     """
-    umi_lengths = [RECIPE_SHEET["UMI.length"][R] for R in RECIPE_DICT[w.SAMPLE]]
+    umi_lengths = [RECIPE_SHEET["UMI_length"][R] for R in RECIPE_DICT[w.SAMPLE]]
     if len(umi_lengths) == 1:
         out = umi_lengths[0]
     else:

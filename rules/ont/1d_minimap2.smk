@@ -1,13 +1,13 @@
 # Align w/ minimap2
 ## minimap2 docs - https://lh3.github.io/minimap2/minimap2.html
-rule ont_align_minimap2_genome:
+rule ont_1d_align_minimap2_genome:
     input:
         # FQ="{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/umi_R2.fq.gz",
         FQ=lambda w: get_fqs(w, return_type="list", mode="ONT")[1],
     output:
         SAM_TMP=temp("{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tmp.sam"),
     params:
-        EXTRA_FLAGS=lambda wildcards: RECIPE_SHEET["minimap2.extra"][wildcards.RECIPE],
+        EXTRA_FLAGS=lambda wildcards: RECIPE_SHEET["minimap2_extra"][wildcards.RECIPE],
         ref=config["REF_GENOME_FASTA"],
         chrom_sizes=config["REF_CHROM_SIZES"],
         bed=config["REF_GENES_BED"],
@@ -39,7 +39,7 @@ rule ont_align_minimap2_genome:
         """
 
 
-rule ont_sort_compress_output:
+rule ont_1d_sort_compress_output:
     input:
         SAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tmp.sam",
     output:
@@ -59,7 +59,7 @@ rule ont_sort_compress_output:
         """
 
 
-rule ont_featureCounts:
+rule ont_1d_featureCounts:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam.bai",
@@ -67,8 +67,8 @@ rule ont_featureCounts:
         TSV="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam.featureCounts",
         FEAT="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/featureCounts.tsv",
     params:
-        GTF=lambda wildcards: GTF_DICT[wildcards.SAMPLE],
-        EXTRA_FLAGS=lambda wildcards: RECIPE_SHEET["featureCounts.extra"][
+        GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
+        EXTRA_FLAGS=lambda wildcards: RECIPE_SHEET["featureCounts_extra"][
             wildcards.RECIPE
         ],
         MIN_TEMPLATE_LENGTH=10,
@@ -131,7 +131,7 @@ rule ont_featureCounts:
 
 
 # Add gene tag (GN) to bam...
-rule ont_add_featureCounts_to_bam:
+rule ont_1d_add_featureCounts_to_bam:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam.bai",
@@ -160,7 +160,7 @@ rule ont_add_featureCounts_to_bam:
 
 
 # Add CB to gene-tagged .bam
-rule ont_add_corrected_barcodes:
+rule ont_1d_add_corrected_barcodes:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn.bam",
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected.tsv",
@@ -188,7 +188,7 @@ rule ont_add_corrected_barcodes:
 
 
 # Add UMI (UR) to barcoded & gene-tagged .bam
-rule ont_add_umis:
+rule ont_1d_add_umis:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb.bam",
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_filtered.tsv",
@@ -216,7 +216,7 @@ rule ont_add_umis:
 
 
 # Generate count matrix w/ umi-tools
-rule ont_filter_bam_empty_tags:
+rule ont_1d_filter_bam_empty_tags:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam",
         # BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam.bai",
@@ -241,7 +241,7 @@ rule ont_filter_bam_empty_tags:
 
 
 # Generate count matrix w/ umi-tools
-rule ont_umitools_count:
+rule ont_1d_umitools_count:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_gn_cb_ub.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_gn_cb_ub.bam.bai",
@@ -272,7 +272,7 @@ rule ont_umitools_count:
         """
 
 
-rule ont_counts_to_sparse:
+rule ont_1d_counts_to_sparse:
     input:
         COUNTS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/umitools_counts.tsv.gz",
     output:
