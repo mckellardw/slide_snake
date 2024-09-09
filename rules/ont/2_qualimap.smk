@@ -1,5 +1,5 @@
 
-rule ont_qualimap_minimap2:
+rule ont_2_qualimap_minimap2:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam.bai",
@@ -7,7 +7,7 @@ rule ont_qualimap_minimap2:
         TXT="{OUTDIR}/{SAMPLE}/qualimap/ont/minimap2/{RECIPE}/rnaseq_qc_results.txt",
         HTML="{OUTDIR}/{SAMPLE}/qualimap/ont/minimap2/{RECIPE}/qualimapReport.html",
     params:
-        GENES_GTF=lambda wildcards: GTF_DICT[wildcards.SAMPLE],
+        GENES_GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
     resources:
         mem="32G",
     threads: 1
@@ -28,7 +28,7 @@ rule ont_qualimap_minimap2:
         """
 
 
-rule ont_qualimap_STAR:
+rule ont_2_qualimap_STAR:
     input:
         BAM="{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Aligned.sortedByCoord.out.bam",
         BAI="{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Aligned.sortedByCoord.out.bam.bai",
@@ -36,7 +36,7 @@ rule ont_qualimap_STAR:
         TXT="{OUTDIR}/{SAMPLE}/qualimap/ont/STARsolo/{RECIPE}/rnaseq_qc_results.txt",
         HTML="{OUTDIR}/{SAMPLE}/qualimap/ont/STARsolo/{RECIPE}/qualimapReport.html",
     params:
-        GENES_GTF=lambda wildcards: GTF_DICT[wildcards.SAMPLE],
+        GENES_GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
     resources:
         mem="32G",
     threads: 1
@@ -57,7 +57,7 @@ rule ont_qualimap_STAR:
         """
 
 
-rule ont_qualimap_summary2csv:
+rule ont_2_qualimap_summary2csv:
     input:
         TXT="{OUTDIR}/{SAMPLE}/qualimap/ont/{TOOL}/rnaseq_qc_results.txt",
     output:

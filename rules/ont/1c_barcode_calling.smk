@@ -117,18 +117,19 @@ rule ont_1c_filter_read_barcodes:
 rule ont_1c_tsv_bc_correction:
     input:
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_filtered.tsv",
-        WHITELIST="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
+        WHITELIST=lambda w: get_whitelist(w, return_type="string"),
+        # WHITELIST="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
     output:
         TSV_SLIM="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected.tsv",
         TSV_FULL="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected_full.tsv",
     params:
-        # WHITELIST=lambda w: get_whitelist(w, return_type="list"), 
+        WHITELIST=lambda w: get_whitelist(w, return_type="string"),
         UMI_LENGTH=lambda w: get_recipe_info(w, "UMI_length", mode="ONT"),
-        MAX_LEVEN=3,  # maximum Levenshtein distance tolerated in correction;
-        NEXT_MATCH_DIFF=2,
+        MAX_LEVEN=lambda w: get_recipe_info(w, "BC_max_ED", mode="ONT"),  # maximum Levenshtein distance tolerated in correction;
+        NEXT_MATCH_DIFF=lambda w: get_recipe_info(w, "BC_min_ED_diff", mode="ONT"),
         K=5,  # kmer length for BC whitelist filtering; shorter value improves accuracy, extends runtime
         BC_COLUMNS=lambda w: " ".join(map(str, range(1, get_n_bcs(w) + 1))),
-        CONCAT_BCS=True,  # whether the sub-barcodes should be corrected together (SlideSeq) or separately (microST)
+        CONCAT_BCS=lambda w: not get_recipe_info(w, "BC_independent", mode="ONT"),  # whether the sub-barcodes should be corrected together (SlideSeq) or separately (microST)
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1c_tsv_bc_correction.log",
     resources:

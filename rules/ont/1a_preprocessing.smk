@@ -65,9 +65,11 @@ rule ont_1a_call_adapter_scan_v2:
         # ADAPTERS="{OUTDIR}/{SAMPLE}/ont/adapter_seqs.fasta",
     params:
         BATCH_SIZE=100000,
-        ADAPTER1_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio
+        # ADAPTER1_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio
+        ADAPTER1_SEQ=lambda w: get_recipe_info(w, "fwd_primer"),
         # ADAPTER2_SEQ="ATGTACTCTGCGTTGATACCACTGCTT", #TXG/Curio
-        ADAPTER2_SEQ="GAGAGAGGAAAGAGAGAGAGAGGG",  #uMRT
+        # ADAPTER2_SEQ="GAGAGAGGAAAGAGAGAGAGAGGG",  #uMRT
+        ADAPTER2_SEQ=lambda w: get_recipe_info(w, "rev_primer"),
         VSEARCH_MIN_ADAPTER_ID=0.7,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan.log",
@@ -100,11 +102,11 @@ rule ont_1a_readIDs_by_adapter_type:
     output:
         FULL_LEN="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",  # keep
         SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",  # keep
-        DOUBLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/double_adapter1.txt",  # toss
-        DOUBLE_ADAPTER2="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/double_adapter2.txt",  # toss
-        NO_ADAPTERS="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/no_adapters.txt",  # toss
-        OTHER="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/other.txt",  # toss
-        SINGLE_ADAPTER2="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter2.txt",  # toss
+        # DOUBLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/double_adapter1.txt",  # toss
+        # DOUBLE_ADAPTER2="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/double_adapter2.txt",  # toss
+        # NO_ADAPTERS="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/no_adapters.txt",  # toss
+        # OTHER="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/other.txt",  # toss
+        # SINGLE_ADAPTER2="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter2.txt",  # toss
     resources:
         mem="16G",
     threads: config["CORES"]
