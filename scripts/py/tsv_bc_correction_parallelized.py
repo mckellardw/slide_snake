@@ -45,11 +45,89 @@ python scripts/py/tsv_bc_correction.py \
     --threads 56
 """
 
+## microST
+"""
+TODO
+"""
+
 # fast levenshtein implementation- https://github.com/rapidfuzz/Levenshtein
 
 
 def currentTime():
     return time.strftime("%D | %H:%M:%S", time.localtime())
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Correct barcodes in a TSV file.")
+    parser.add_argument(
+        "--tsv_in", required=True, help="Path to the input TSV file."
+    )
+    parser.add_argument(
+        "--tsv_out_full",
+        required=True,
+        help="Path to the output TSV file. Columns contain ['Read_ID', 'Original_Barcode', 'Corrected_Barcode', 'Hamming_Distance']",
+    )
+    parser.add_argument(
+        "--tsv_out_slim",
+        required=True,
+        help="Path to output TSV file which only contains the read ID and final BC. Columns contain ['Read_ID', 'Corrected_Barcode']",
+    )
+    parser.add_argument(
+        "--whitelist_files",
+        nargs="+",
+        required=True,
+        help="Space-separated list of whitelist file paths.",
+    )
+    parser.add_argument(
+        "--id_column",
+        nargs="+",
+        type=int,
+        default=0,
+        help="Column in .tsv corresponding to the read IDs (default: 0).",
+    )
+    parser.add_argument(
+        "--bc_columns",
+        nargs="+",
+        type=int,
+        required=True,
+        help="Columns in .tsv corresponding to the uncorrected barcodes.",
+    )
+    parser.add_argument(
+        "--concat_bcs",
+        type=bool,
+        default=False,
+        help="Columns in .tsv corresponding to the uncorrected barcodes.",
+    )
+    parser.add_argument(
+        "--max_levens",
+        nargs="+",
+        type=int,
+        default=3,
+        help="Maximum Levenshtein distance for correction; higher value will give looser correction. Space-delimited list for multiple barcode values (default: 3).",
+    )
+    parser.add_argument(
+        "--min_next_match_diffs",
+        nargs="+",
+        type=int,
+        default=1,
+        help="Maximum difference between first and second closest matches for correction; higher value will retain more ambiguous matches. Space-delimited list for multiple barcode values (default: 1).",
+    )
+    parser.add_argument(
+        "--k",
+        type=int,
+        default=5,
+        help="K value to index/filter whitelist (default: 5).",
+    )
+    parser.add_argument(
+        "--threads",
+        type=int,
+        default=1,
+        help="Number of threads to use (default: 1).",
+    )
+
+    args = parser.parse_args()
+
+    return args
 
 
 # Random name for temp directory
@@ -193,7 +271,7 @@ def split_seq_into_kmers(seq, k):
     """
     assert (
         len(seq) >= k
-    ), f"Pick a value for k that is less than len(barcode); {k} is bigger than {seq}!"
+    ), f"Pick a value for k that is less than len(barcode); [{k}] is bigger than [{seq}]!"
 
     kmers = []
     for i in range(0, len(seq) - k + 1):
@@ -252,7 +330,7 @@ def calc_leven_to_whitelist(bc_uncorr, whitelist, bc_len):
         distance between the top match and the next closest match
     :rtype: str, int, int
     """
-    bc_corr = "X" * bc_len
+    bc_corr = "-"
     bc_corr_leven = bc_len
     next_bc_corr_leven = bc_len
 
@@ -300,6 +378,8 @@ def process_tsv(
     verbose=False,
     bc_update_counter=1000000,
 ):
+    null_bc_string="-"
+
     # verbose = True
     # bc_update_counter=5000
 
@@ -341,18 +421,21 @@ def process_tsv(
                         ]
                         for i in range(len(barcodes))
                     ]
+
+                    concat_corrected_bc = [] # used for slim list for simple .bam tagging
                     for barcode, whitelist, max_leven, min_next_match_diff in RANGE:
                         st = time.time()
 
                         # skip reads w/ missing bc
-                        # if barcode == "-":
+                        # if barcode == null_bc_string:
                         #     continue
 
                         # quick check for perfect match
                         if barcode in whitelist:
                             corrected_bc = barcode
+                            concat_corrected_bc.append(barcode)
                             bc_leven = 0
-                            next_match_diff = "-"
+                            next_match_diff = "N"
                         else:
                             # calculate Levenshtein distance
                             (
@@ -362,19 +445,17 @@ def process_tsv(
                             ) = calc_leven_to_whitelist(
                                 barcode, whitelist, len(barcode)
                             )
+                            concat_corrected_bc.append(corrected_bc)
 
                             # optimization...
                             # print(f"leven = {bc_leven} | {time.time() - st}")
                             k = len(list(kmer_to_bc_index.keys())[0])
-                            # os.system(f"echo {time.time() - st} >> sandbox/bcc_test_1MM/lev_time_{random.choice(string.digits)}.txt")
-
+                            
                         # Write output(s)
                         if bc_leven == 0:
                             row2write.extend(
                                 [barcode, corrected_bc, bc_leven, next_match_diff]
                             )
-                            writer_full.writerow(row2write)
-                            writer_slim.writerow([read_id, corrected_bc])
                         elif (
                             bc_leven <= max_leven
                             and next_match_diff >= min_next_match_diff
@@ -382,85 +463,23 @@ def process_tsv(
                             row2write.extend(
                                 [barcode, corrected_bc, bc_leven, next_match_diff]
                             )
-                            writer_full.writerow(row2write)
-                            writer_slim.writerow([read_id, corrected_bc])
                         else:
-                            row2write.extend([barcode, "-", bc_leven, next_match_diff])
-                            writer_full.writerow(
-                                row2write
-                            )  # only write correctable bcs to slim output
+                            row2write.extend([barcode, null_bc_string, bc_leven, next_match_diff])
+
+                    # end row-wise BC correction
+                    if null_bc_string in concat_corrected_bc:
+                        # only write fully correctable bcs to slim output
+                        writer_full.writerow(row2write)
+                    else:
+                        writer_full.writerow(row2write)
+                        writer_slim.writerow([read_id, "".join(concat_corrected_bc)])
 
     if verbose:
         print(f"{time.time()-processStartTime:.2f} - Finished correcting!")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Correct barcodes in a TSV file.")
-    parser.add_argument("--tsv_in", required=True, help="Path to the input TSV file.")
-    parser.add_argument(
-        "--tsv_out_full",
-        required=True,
-        help="Path to the output TSV file. Columns contain ['Read_ID', 'Original_Barcode', 'Corrected_Barcode', 'Hamming_Distance']",
-    )
-    parser.add_argument(
-        "--tsv_out_slim",
-        required=True,
-        help="Path to output TSV file which only contains the read ID and final BC. Columns contain ['Read_ID', 'Corrected_Barcode']",
-    )
-    parser.add_argument(
-        "--whitelist_files",
-        nargs="+",
-        required=True,
-        help="Space-separated list of whitelist file paths.",
-    )
-    parser.add_argument(
-        "--id_column",
-        nargs="+",
-        type=int,
-        default=0,
-        help="Column in .tsv corresponding to the read IDs (default: 0).",
-    )
-    parser.add_argument(
-        "--bc_columns",
-        nargs="+",
-        type=int,
-        required=True,
-        help="Columns in .tsv corresponding to the uncorrected barcodes.",
-    )
-    parser.add_argument(
-        "--concat_bcs",
-        type=bool,
-        default=True,
-        help="Columns in .tsv corresponding to the uncorrected barcodes.",
-    )
-    parser.add_argument(
-        "--max_levens",
-        nargs="+",
-        type=int,
-        default=3,
-        help="Maximum Levenshtein distance for correction; higher value will give looser correction. Space-delimited list for multiple barcode values (default: 3).",
-    )
-    parser.add_argument(
-        "--min_next_match_diffs",
-        nargs="+",
-        type=int,
-        default=1,
-        help="Maximum difference between first and second closest matches for correction; higher value will retain more ambiguous matches. Space-delimited list for multiple barcode values (default: 1).",
-    )
-    parser.add_argument(
-        "--k",
-        type=int,
-        default=5,
-        help="K value to index/filter whitelist (default: 5).",
-    )
-    parser.add_argument(
-        "--threads",
-        type=int,
-        default=1,
-        help="Number of threads to use (default: 1).",
-    )
-
-    args = parser.parse_args()
+    args = parse_args()
 
     # param checks ------
     if len(args.max_levens) != len(args.bc_columns) and len(args.max_levens) == 1:
@@ -474,11 +493,8 @@ if __name__ == "__main__":
             val=args.min_next_match_diffs[0], n=len(args.bc_columns)
         )
 
-    if args.concat_bcs and len(args.whitelist_files) > 1:
-        print(f"Need a merged barcode whitelist!")
-        sys.exit(1)
-
     # Print run settings for log files ----
+    args.concat_bcs = False
     print(
         f"Input tsv:                        {args.tsv_in}\n"
         f"Output tsv (Full Info):           {args.tsv_out_full}\n"
@@ -493,6 +509,10 @@ if __name__ == "__main__":
         f"Number of threads:                {args.threads}\n"
     )
 
+    if args.concat_bcs and len(list(args.whitelist_files)) > 1:
+        print(f"Need a merged barcode whitelist!")
+        sys.exit(1)
+
     # prep whitelists
     whitelists = {}
     kmer_to_bc_indexes = {}
@@ -500,7 +520,7 @@ if __name__ == "__main__":
         wl, kmer_to_bc_index = load_whitelist(
             whitelist_file, k=args.k
         )  # Assuming k=5 for simplicity
-        # TODO- dynamically set k based on bc length (dependent on seq error rate)
+        # TODO- auto set k based on bc length (dependent on seq error rate)
 
         whitelists[i] = wl
         kmer_to_bc_indexes[i] = kmer_to_bc_index
@@ -520,7 +540,7 @@ if __name__ == "__main__":
             whitelists=whitelists,
             kmer_to_bc_indexes=kmer_to_bc_indexes,
             max_levens=args.max_levens,
-            min_next_match_diffs=min_next_match_diffs,
+            min_next_match_diffs=args.min_next_match_diffs,
             verbose=True,
         )
 

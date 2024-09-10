@@ -15,26 +15,28 @@ python scripts/py/fastq_readqc.py \
     --chunk_size 1000
 """
 
+
 def count_reads_in_fastq(fastq_file):
     """
     Count the number of reads in a gzipped FASTQ file.
-    
+
     Args:
     fastq_file (str): Path to the gzipped FASTQ file.
-    
+
     Returns:
     int: Number of reads in the FASTQ file.
     """
     is_compressed = fastq_file.endswith(".gz")
     line_count = 0
-    
+
     with gzip.open(fastq_file, "rt") if is_compressed else open(fastq_file, "r") as f:
         # Can't use '@' to count lines in these b/c ONT used '@' in their Q scores...... DUMB
         for line in f:
             line_count += 1
-    
+
     read_count = line_count // 4
     return read_count
+
 
 def remove_file_if_exists(file_path):
     """
@@ -49,13 +51,18 @@ def remove_file_if_exists(file_path):
     if os.path.exists(file_path):
         try:
             os.remove(file_path)
-            print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Removed old output file [{file_path}]...")
+            print(
+                f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Removed old output file [{file_path}]..."
+            )
             return True
         except OSError as e:
-            print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Error: {e.strerror}. Unable to remove '{file_path}'.")
+            print(
+                f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Error: {e.strerror}. Unable to remove '{file_path}'."
+            )
             return False
     else:
         return False
+
 
 def calculate_metrics(fastq_file, start, chunk_size=100000):
     is_compressed = fastq_file.endswith(".gz")
@@ -71,7 +78,7 @@ def calculate_metrics(fastq_file, start, chunk_size=100000):
             if i >= offset:
                 if i % 4 == 0 and line.startswith("@"):  # ID line
                     read_id = line.strip().replace("@", "").split(" ", 1)[0]
-                
+
                 if i % 4 == 1:  # Sequence line
                     seq = line.strip()
                     if len(seq) > 0:
@@ -95,7 +102,7 @@ def calculate_metrics(fastq_file, start, chunk_size=100000):
                         longest_homopolymer = None
                         homopolymer_base = None
                     # elif i % 4 == 3:  # Quality line
-                    #TODO
+                    # TODO
 
                     metrics.append(
                         {
@@ -110,18 +117,22 @@ def calculate_metrics(fastq_file, start, chunk_size=100000):
                         }
                     )
 
-                #TODO- use all cores, not just 1 chunk per core...
-                # if (i + 1) % chunk_size == 0: 
-                    # yield metrics
-                    # metrics = []
-                
+                # TODO- use all cores, not just 1 chunk per core...
+                # if (i + 1) % chunk_size == 0:
+                # yield metrics
+                # metrics = []
+
                 # Exit after 1 chunk
-                if i == (offset + (4*chunk_size)):
-                    print(f"Offset: {offset} to {i} -> {i-offset} lines | {(i-offset)/4} reads")
+                if i == (offset + (4 * chunk_size)):
+                    print(
+                        f"Offset: {offset} to {i} -> {i-offset} lines | {(i-offset)/4} reads"
+                    )
                     return metrics
 
     if metrics:
-        print(f"Last Offset: {offset} to {i} -> {i-offset} lines | {(i-offset)/4} reads")
+        print(
+            f"Last Offset: {offset} to {i} -> {i-offset} lines | {(i-offset)/4} reads"
+        )
         yield metrics
 
 
@@ -145,12 +156,16 @@ def process_reads(fastq_file, tsv_file, chunk_size=100000, cores=1):
     # Determine the number of chunks to process
     print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Counting reads...")
     total_reads = count_reads_in_fastq(fastq_file)
-    print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | {total_reads} total reads found...")
+    print(
+        f"{time.strftime('%D - %H:%M:%S', time.localtime())} | {total_reads} total reads found..."
+    )
 
     total_chunks = (
         total_reads + chunk_size - 1
     ) // chunk_size  # Round up to cover all reads
-    print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Calculating across {total_chunks} chunks...")
+    print(
+        f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Calculating across {total_chunks} chunks..."
+    )
 
     with ProcessPoolExecutor(max_workers=cores) as executor:
         futures = [
@@ -163,10 +178,13 @@ def process_reads(fastq_file, tsv_file, chunk_size=100000, cores=1):
             try:
                 result = future.result()
                 completed_chunks += 1
-                print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Completed chunks {completed_chunks}/{total_chunks}")
+                print(
+                    f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Completed chunks {completed_chunks}/{total_chunks}"
+                )
             except Exception as e:
-                print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Error in chunk: {str(e)}")
-
+                print(
+                    f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Error in chunk: {str(e)}"
+                )
 
 
 def main(fastq_file, tsv_file, cores, chunk_size):
@@ -174,13 +192,15 @@ def main(fastq_file, tsv_file, cores, chunk_size):
     output_dir = os.path.dirname(tsv_file)
     if len(output_dir) > 0 and not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    
+
     output_removed = remove_file_if_exists(tsv_file)
-        
-    print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Processing reads across {cores} cores...")
+
+    print(
+        f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Processing reads across {cores} cores..."
+    )
 
     process_reads(fastq_file, tsv_file, chunk_size, cores)
-    
+
     print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Done!")
 
 

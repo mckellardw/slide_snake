@@ -28,11 +28,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     # Mandatory arguments
-    parser.add_argument(
-        "--fq_in", 
-        help="FASTQ of ONT reads", 
-        type=str
-    )
+    parser.add_argument("--fq_in", help="FASTQ of ONT reads", type=str)
 
     # Optional arguments
     parser.add_argument(

@@ -1,7 +1,7 @@
 # Borrowed portions of this code from `sockeye` - https://github.com/nanoporetech/sockeye/tree/master
 
 
-# TODO- rewrite as a python script...
+# Merge all the input files into a .fastq
 rule ont_1a_merge_formats:
     output:
         MERGED_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz"),
@@ -24,34 +24,18 @@ rule ont_1a_merge_formats:
             -t "{threads}"
         """
 
-
-## Deprecated
-# rule ont_call_adapter_scan:
+#TODO
+# Remove super short reads that likely do not have a barcode...
+# rule ont_1a_length_filter:
 #     input:
-#         FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz",
-#     output:
-#         TSV="{OUTDIR}/{SAMPLE}/ont/adapter_scan.tsv",
-#         FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq.gz",
+#         MERGED_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz",
+#     input:
+#         MERGED_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_filtered.fq.gz",
 #     params:
-#         # batch_size = config["READ_STRUCTURE_BATCH_SIZE"],
-#         # KIT="3prime",  #['3prime', '5prime', 'multiome']
-#         KIT="uMRT",
-#     log:
-#         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/adapter_scan.log",
-#     conda:
-#         f"{workflow.basedir}/envs/adapter_scan.yml"
-#     resources:
-#         mem="16G",
-#     threads: 56
+#         MIN_LENGTH=50,
+#     threads: config["CORES"]
 #     shell:
 #         """
-#         python scripts/py/adapter_scan_vsearch.py \
-#             --kit {params.KIT} \
-#             --output_fastq {output.FQ} \
-#             --output_tsv {output.TSV} \
-#             -t {threads} \
-#             {input.FQ} \
-#         2>&1 | tee {log.log}
 #         """
 
 
@@ -209,8 +193,10 @@ rule ont_1a_split_fastq_to_R1_R2:
     output:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_R1.fq.gz",
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_R2.fq.gz",
+        AMBIG_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_ambiguous.fq.gz",
     params:
-        ADAPTER="T" * 8,
+        ANCHOR_SEQ=lambda w: get_recipe_info(w, "fwd_primer"),
+        SPLIT_SEQ="T" * 8,
     resources:
         mem="16G",
     threads: config["CORES"]
@@ -220,7 +206,7 @@ rule ont_1a_split_fastq_to_R1_R2:
         # for ADAPTER in input.ADAPTER_TYPES: #TODO- broaden to other read types, beyond full_len
         shell(
             f"""
-            python scripts/py/fastq_split_reads_parallelized.py --fq_in {input.FQ} \
+            python scripts/py/fastq_split_reads_parallelized_v2.py --fq_in {input.FQ} \
                 --split_seq {params.ADAPTER} \
                 --threads {threads} \
             2> {log.log}

@@ -1,42 +1,3 @@
-# Get cell/spot/bead barcodes & UMIs
-##DEPRECATED
-# rule ont_umitools_extract:
-#     input:
-#         LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/adapter_scan_results.txt",
-#         FQS=lambda w: get_fqs(w, return_type="list", mode="ONT"),
-#     output:
-#         R1_FQ="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/umitools/umi_R1.fq.gz",
-#         R2_FQ="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/umitools/umi_R2.fq.gz",
-#     params:
-#         WHITELIST=lambda w: get_whitelist(w),
-#         BC_PATTERN=lambda w: get_ont_barcode_pattern(w),
-#         EXTRACT_METHOD="string",
-#     log:
-#         log="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/umitools/extract.log",
-#     resources:
-#         mem="16G",
-#         threads: 1,
-#     run:
-#         if "N" in params.BC_PATTERN:
-#             shell(
-#                 f"""
-#                 echo "Barcode pattern: '{params.BC_PATTERN}'" > {log.log}
-#                 echo "Extract method:  {params.EXTRACT_METHOD}" >> {log.log}
-#                 echo "" >> {log.log}
-
-#                 umi_tools extract \
-#                     --extract-method={params.EXTRACT_METHOD} \
-#                     --bc-pattern='{params.BC_PATTERN}' \
-#                     --stdin={input.FQS[0]} \
-#                     --read2-in={input.FQS[1]} \
-#                     --stdout={output.R1_FQ} \
-#                     --read2-out={output.R2_FQ} \
-#                     --log2stderr \
-#                 2>&1 | tee {log.log}
-#                 """
-#             )
-
-
 # Barcode and UMI calling (custom script)
 # TODO-add option for UMI-free assay
 rule ont_1c_fastq_call_bc_from_adapter:
@@ -67,7 +28,7 @@ rule ont_1c_fastq_call_bc_from_adapter:
         shell(
             f"""
             mkdir -p $(dirname {log.log})
-            python scripts/py/fastq_call_bc_umi_from_adapter.py --fq_in {input.FQS[0]} \
+            python scripts/py/fastq_call_bc_umi_from_adapter_v2.py --fq_in {input.FQS[0]} \
                 --tsv_out {output.TSV} \
                 --bc_adapters {params.BC_ADAPTERS} \
                 --bc_lengths {params.BC_LENGTHS} \
@@ -79,6 +40,7 @@ rule ont_1c_fastq_call_bc_from_adapter:
                 --umi_offsets {params.UMI_OFFSETS} \
                 --umi_positions {params.UMI_POSITIONS} \
                 --umi_mismatches {params.UMI_MISMATCHES} \
+                --threads {threads} \
             1> {log.log}
             """
         )
@@ -117,19 +79,19 @@ rule ont_1c_filter_read_barcodes:
 rule ont_1c_tsv_bc_correction:
     input:
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_filtered.tsv",
-        WHITELIST=lambda w: get_whitelist(w, return_type="string"),
+        WHITELIST=lambda w: get_whitelist(w, return_type="list", mode="recipe"),
         # WHITELIST="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
     output:
         TSV_SLIM="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected.tsv",
         TSV_FULL="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected_full.tsv",
     params:
-        WHITELIST=lambda w: get_whitelist(w, return_type="string"),
+        # WHITELIST=lambda w: get_whitelist(w, return_type="string"),
         UMI_LENGTH=lambda w: get_recipe_info(w, "UMI_length", mode="ONT"),
         MAX_LEVEN=lambda w: get_recipe_info(w, "BC_max_ED", mode="ONT"),  # maximum Levenshtein distance tolerated in correction;
         NEXT_MATCH_DIFF=lambda w: get_recipe_info(w, "BC_min_ED_diff", mode="ONT"),
         K=5,  # kmer length for BC whitelist filtering; shorter value improves accuracy, extends runtime
         BC_COLUMNS=lambda w: " ".join(map(str, range(1, get_n_bcs(w) + 1))),
-        CONCAT_BCS=lambda w: not get_recipe_info(w, "BC_independent", mode="ONT"),  # whether the sub-barcodes should be corrected together (SlideSeq) or separately (microST)
+        CONCAT_BCS=lambda w: get_recipe_info(w, "BC_concat", mode="ONT"),  # whether the sub-barcodes should be corrected together (SlideSeq) or separately (microST)
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1c_tsv_bc_correction.log",
     resources:
@@ -145,7 +107,7 @@ rule ont_1c_tsv_bc_correction:
                 --id_column 0 \
                 --bc_columns {params.BC_COLUMNS} \
                 --concat_bcs {params.CONCAT_BCS} \
-                --whitelist_files {input.WHITELIST} \
+                --whitelist_files {' '.join(input.WHITELIST)} \
                 --max_levens {params.MAX_LEVEN} \
                 --min_next_match_diffs {params.NEXT_MATCH_DIFF} \
                 --k {params.K} \
