@@ -21,9 +21,6 @@ TMPDIR = config["TMPDIR"]
 OUTDIR = config["OUTDIR"]
 
 
-### Executables ########################################################################
-EXEC = config["EXEC"]
-
 ### Variables and references ###########################################################
 SAMPLE_SHEET = pd.read_csv(
     config["SAMPLE_SHEET_PATH"], 
@@ -216,11 +213,11 @@ rule all:
                 ]
         ], # ONT outputs
 
-        [f"{OUTDIR}/{SAMPLE}/fastqc/{TRIM}"
-            for SAMPLE in ONT.keys()
-            for READ in ["R1","R2"]
-            for TRIM in ["ont_preAdapterScan",f"ont_preCutadapt_{READ}",f"ont_postCutadapt_{READ}"]
-        ], # ONT fastqc - not really useful...
+        # [f"{OUTDIR}/{SAMPLE}/fastqc/{TRIM}"
+        #     for SAMPLE in ONT.keys()
+        #     for READ in ["R1","R2"]
+        #     for TRIM in ["ont_preAdapterScan",f"ont_preCutadapt_{READ}",f"ont_postCutadapt_{READ}"]
+        # ], # ONT fastqc - not really useful, but I coded it out...
 
         [f"{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}_qc.{FILE}"
             for SAMPLE in ONT.keys()
@@ -240,8 +237,7 @@ rule all:
         # [f"{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/{FILE}" 
         #     for SAMPLE in ONT.keys() 
         #     for RECIPE in RECIPE_DICT[SAMPLE]
-        #     for FILE in [
-        #         ]
+        #     for FILE in [ ]
         # ], # ONT outputs
 
         ### DEPRECATED ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

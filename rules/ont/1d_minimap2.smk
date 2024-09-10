@@ -7,11 +7,13 @@ rule ont_1d_align_minimap2_genome:
     output:
         SAM_TMP=temp("{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tmp.sam"),
     params:
-        EXTRA_FLAGS=lambda wildcards: RECIPE_SHEET["minimap2_extra"][wildcards.RECIPE],
-        ref=config["REF_GENOME_FASTA"],
-        chrom_sizes=config["REF_CHROM_SIZES"],
-        bed=config["REF_GENES_BED"],
+        EXTRA_FLAGS=lambda wildcards: RECIPE_SHEET["mm2_extra"][wildcards.RECIPE],
+        # ref=config["REF_GENOME_FASTA"],
+        # chrom_sizes=config["REF_CHROM_SIZES"],
+        # bed=config["REF_GENES_BED"],
         # flags=config["RESOURCES_MM2_FLAGS"],
+        REF=lambda wildcards: SAMPLE_SHEET["mm2_fa"][wildcards.SAMPLE],
+        JUNC_BED=lambda wildcards: SAMPLE_SHEET["mm2_junc_bed"][wildcards.SAMPLE],
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/minimap2.log",
     resources:
@@ -31,8 +33,8 @@ rule ont_1d_align_minimap2_genome:
             -uf \
             --MD \
             -t {threads} \
-            --junc-bed {params.bed} {params.EXTRA_FLAGS} \
-            {params.ref} \
+            --junc-bed {params.JUNC_BED} {params.EXTRA_FLAGS} \
+            {params.REF} \
             {input.FQ} \
         2>> {log.log} \
         > {output.SAM_TMP}

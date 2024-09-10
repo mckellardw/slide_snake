@@ -16,7 +16,7 @@ mamba activate slide_snake
 ```
 
 ### How to set up a run:
-  1. Install and ensure that the executable paths are functioning (see "EXEC" in `configs/config.yaml`)
+  1. Install and ensure that the executable paths are functioning
   2. Build a sample sheet, containing details on each sample you would like to analyze. Be sure to add the path to the `SAMPLE_SHEET_PATH` variable in `configs/config.yaml`.
       - Fill out the file paths for the input .fastqs (can pass multiple sequencing runs, illumina and/or ONT data), reference genomes, etc. 
       - Add the recipe(s) for each sample, separated by spaces. 
