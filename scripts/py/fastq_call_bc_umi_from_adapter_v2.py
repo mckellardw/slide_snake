@@ -40,6 +40,22 @@ python scripts/py/fastq_call_bc_umi_from_adapter_v2.py \
     --umi_mismatches 2 
 """
 
+# microST
+"""
+python scripts/py/fastq_call_bc_umi_from_adapter_v2.py \
+    --fq_in out/E095_A_sub/tmp/ont/cut_R1.fq.gz \
+    --tsv_out out/E095_A_sub/ont/barcodes_umis/microST_ssv1_matchLinker_total/read_barcodes.tsv \
+    --bc_adapters TGATGCCACACTGA TGATGCCACACTGA \
+    --bc_lengths 10 10 \
+    --bc_offsets 0 0 \
+    --bc_positions left right \
+    --bc_mismatches 2 \
+    --umi_adapters CTACACGACGCTCTTCCGATCT \
+    --umi_lengths 12 \
+    --umi_offsets 0 \
+    --umi_positions right \
+    --umi_mismatches 2 
+"""
 
 def currentTime():
     return time.strftime("%D | %H:%M:%S", time.localtime())
@@ -150,6 +166,12 @@ def align_sequences(read, adapter, aligner, mismatches):
 def init_aligner():
     # TODO- these params need to be better optimized...
     aligner = Align.PairwiseAligner()
+    # aligner.mode = "local"  # Use 'local' for local alignment
+    # aligner.match_score = 4  # Match score
+    # aligner.mismatch_score = -0.5  # Mismatch score
+    # aligner.open_gap_score = -6  # Gap opening penalty
+    # aligner.extend_gap_score = -6  # Gap extension penalty
+
     aligner.mode = "local"  # Use 'local' for local alignment
     aligner.match_score = 4  # Match score
     aligner.mismatch_score = -0.5  # Mismatch score
@@ -179,6 +201,7 @@ def main(
     umi_mismatches,
 ):
     null_bc_string="-"
+
     bc_match_count = 0
     bc_missing_count = 0
     no_bc_count = 0
@@ -215,9 +238,9 @@ def main(
                     )
                     # if alignment.score < 45: #debug
                     #     print(alignment)
-                    # print(alignment.score)
+                    #     print(alignment.score)
                     if alignment is not None:
-                        if alignment.score > 3 * len(adapter):
+                        if alignment.score > 2 * len(adapter):
                             start = alignment.aligned[0][0][0]
                             end = alignment.aligned[0][0][1]
                             if position == "left":

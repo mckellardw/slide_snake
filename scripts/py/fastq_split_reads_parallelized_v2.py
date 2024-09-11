@@ -10,6 +10,24 @@ from Bio import Align
 
 # import string
 
+
+# Usage:
+# SlideSeq
+""" 
+
+"""
+
+# Visium
+""" 
+python scripts/py/fastq_split_reads_parallelized_v2.py \
+
+"""
+
+# microST
+"""
+
+"""
+
 # Create a translation table mapping 'ACTG' to 'TGAC'
 tab = str.maketrans("ACTG", "TGAC")
 
@@ -48,13 +66,13 @@ def parse_args():
         help="Maximum scan distance from the 3' end of the anchor alignment",
     )
     parser.add_argument(
-        "--threads", type=int, default=1, help="Number of threads to use."
-    )
-    parser.add_argument(
         "--max_errors",
         type=int,
         default=2,
         help="The maximum allowed error rate for the anchor sequence matching.",
+    )
+    parser.add_argument(
+        "--threads", type=int, default=1, help="Number of threads to use."
     )
 
     args = parser.parse_args()
