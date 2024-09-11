@@ -48,13 +48,13 @@ rule ont_1d_sort_compress_output:
         # BAM_UNSORT_TMP=temp("{OUTDIR}/{SAMPLE}/ont/tmp_unsort.sam"),
         BAM=temp("{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam"),
     params:
-        ref=config["REF_GENOME_FASTA"],  #TODO- sample-specific... ref_snake integration?
+        REF=lambda wildcards: SAMPLE_SHEET["mm2_fa"][wildcards.SAMPLE],
     resources:
         mem="16G",
     threads: 1
     shell:
         """
-        samtools sort --reference {params.ref} \
+        samtools sort --reference {params.REF} \
             -O BAM \
             -o {output.BAM} \
             {input.SAM}             

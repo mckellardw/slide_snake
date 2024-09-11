@@ -24,7 +24,8 @@ rule ont_1a_merge_formats:
             -t "{threads}"
         """
 
-#TODO
+
+# TODO
 # Remove super short reads that likely do not have a barcode...
 # rule ont_1a_length_filter:
 #     input:
@@ -49,11 +50,11 @@ rule ont_1a_call_adapter_scan_v2:
         # ADAPTERS="{OUTDIR}/{SAMPLE}/ont/adapter_seqs.fasta",
     params:
         BATCH_SIZE=100000,
-        # ADAPTER1_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio
-        ADAPTER1_SEQ=lambda w: get_recipe_info(w, "fwd_primer"),
-        # ADAPTER2_SEQ="ATGTACTCTGCGTTGATACCACTGCTT", #TXG/Curio
+        ADAPTER1_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio
+        # ADAPTER1_SEQ=lambda w: get_recipe_info(w, "fwd_primer"),
+        ADAPTER2_SEQ="ATGTACTCTGCGTTGATACCACTGCTT", #TXG/Curio
         # ADAPTER2_SEQ="GAGAGAGGAAAGAGAGAGAGAGGG",  #uMRT
-        ADAPTER2_SEQ=lambda w: get_recipe_info(w, "rev_primer"),
+        # ADAPTER2_SEQ=lambda w: get_recipe_info(w, "rev_primer"),
         VSEARCH_MIN_ADAPTER_ID=0.7,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan.log",
@@ -73,7 +74,7 @@ rule ont_1a_call_adapter_scan_v2:
             --adapter1_seq "{params.ADAPTER1_SEQ}" \
             --adapter2_seq "{params.ADAPTER2_SEQ}" \
             --min_adapter_id {params.VSEARCH_MIN_ADAPTER_ID} \
-        2>&1 | tee {log.log}
+        1> {log.log}
         """
         # --adapters_fasta "{output.ADAPTERS}" \
 
@@ -93,7 +94,7 @@ rule ont_1a_readIDs_by_adapter_type:
         # SINGLE_ADAPTER2="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter2.txt",  # toss
     resources:
         mem="16G",
-    threads: config["CORES"]
+    threads: 1
     shell:
         """
         python scripts/py/adapterscan_write_read_id_lists.py \
@@ -195,8 +196,11 @@ rule ont_1a_split_fastq_to_R1_R2:
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_R2.fq.gz",
         AMBIG_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_ambiguous.fq.gz",
     params:
-        ANCHOR_SEQ=lambda w: get_recipe_info(w, "fwd_primer"),
+        # ANCHOR_SEQ=lambda w: get_recipe_info(w, "fwd_primer"),
+        ANCHOR_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio
         SPLIT_SEQ="T" * 8,
+        SPLIT_OFFSET=28,
+        MAX_OFFSET=200,
     resources:
         mem="16G",
     threads: config["CORES"]
@@ -207,7 +211,10 @@ rule ont_1a_split_fastq_to_R1_R2:
         shell(
             f"""
             python scripts/py/fastq_split_reads_parallelized_v2.py --fq_in {input.FQ} \
-                --split_seq {params.ADAPTER} \
+                --anchor_seq {params.ANCHOR_SEQ} \
+                --split_seq {params.SPLIT_SEQ} \
+                --split_offset {params.SPLIT_OFFSET} \
+                --max_offset {params.MAX_OFFSET} \
                 --threads {threads} \
             2> {log.log}
             """
