@@ -39,6 +39,25 @@ rule ont_1a_merge_formats:
 #         """
 #         """
 
+# Remove super short reads that likely do not have a barcode...
+# rule ont_1a_pychopper:
+#     input:
+#         MERGED_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz",
+#     input:
+#         MERGED_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_chopped.fq.gz",
+#     params:
+#         MIN_LENGTH=100,
+    # log:
+    #     log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_pychopper.log",
+    # conda:
+    #     f"{workflow.basedir}/envs/pychopper.yml"
+    # resources:
+    #     mem="16G",
+    # threads: 56
+#     shell:
+#         """
+#         """
+
 
 # borrowed/modified from sockeye (https://github.com/jang1563/sockeye - original ONT github deleted!)
 rule ont_1a_call_adapter_scan_v2:
@@ -153,7 +172,7 @@ rule ont_1a_subset_fastq_by_adapter_type:
         FQ=temp("{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq"),
         # FULL_LEN = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len.fq.gz",
         # SINGLE_ADAPTER1 = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/single_adapter1.fq.gz",
-        FQ_ADAPTER="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter.fq",
+        FQ_ADAPTER="{OUTDIR}/{SAMPLE}/tmp/ont/merged_adapter.fq",
     resources:
         mem="16G",
     threads: 1
@@ -174,9 +193,9 @@ rule ont_1a_subset_fastq_by_adapter_type:
 
 rule ont_1a_compress_merged_fq:
     input:
-        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter.fq",
+        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_adapter.fq",
     output:
-        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter.fq.gz",
+        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_adapter.fq.gz",
     resources:
         mem="8G",
     threads: config["CORES"]
@@ -190,16 +209,16 @@ rule ont_1a_compress_merged_fq:
 ##TODO: add read length bounds for R1 based on barcode construct to reduce incorrect split sites across reads
 rule ont_1a_split_fastq_to_R1_R2:
     input:
-        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter.fq.gz",
+        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_adapter.fq.gz",
     output:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_R1.fq.gz",
-        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_R2.fq.gz",
-        AMBIG_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_ambiguous.fq.gz",
+        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_adapter_R1.fq.gz",
+        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_adapter_R2.fq.gz",
+        AMBIG_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_adapter_ambiguous.fq.gz",
     params:
         # ANCHOR_SEQ=lambda w: get_recipe_info(w, "fwd_primer"),
         ANCHOR_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio
         SPLIT_SEQ="T" * 8,
-        SPLIT_OFFSET=28,
+        SPLIT_OFFSET=0, # offset from 3' end of split seq on which to split
         MAX_OFFSET=200,
     resources:
         mem="16G",
@@ -210,13 +229,13 @@ rule ont_1a_split_fastq_to_R1_R2:
         # for ADAPTER in input.ADAPTER_TYPES: #TODO- broaden to other read types, beyond full_len
         shell(
             f"""
-            python scripts/py/fastq_split_reads_parallelized_v2.py --fq_in {input.FQ} \
+            python scripts/py/fastq_split_reads_parallelized_v3.py --fq_in {input.FQ} \
                 --anchor_seq {params.ANCHOR_SEQ} \
                 --split_seq {params.SPLIT_SEQ} \
                 --split_offset {params.SPLIT_OFFSET} \
                 --max_offset {params.MAX_OFFSET} \
                 --threads {threads} \
-            2> {log.log}
+            1> {log.log}
             """
         )
         # --min_R1_length {} \

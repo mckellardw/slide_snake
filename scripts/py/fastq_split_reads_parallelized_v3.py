@@ -4,12 +4,7 @@ import argparse
 import pysam
 import os
 import time
-
-# import gzip
-from Bio import Align
-
-# import string
-
+import parasail
 
 # Usage:
 # SlideSeq
@@ -19,7 +14,7 @@ from Bio import Align
 
 # Visium
 """ 
-python scripts/py/fastq_split_reads_parallelized_v2.py \
+python scripts/py/fastq_split_reads_parallelized_v3.py \
 
 """
 
@@ -86,8 +81,6 @@ def reverse_complement(seq):
     return seq.translate(tab)[::-1]
 
 
-
-import parasail
 def align_parasail(read, adapter, mismatches, verbose=False):
     """
     Align sequences using parasail (Smith-Waterman local alignment)
@@ -97,7 +90,6 @@ def align_parasail(read, adapter, mismatches, verbose=False):
     # Create a simple identity matrix (match = 1, mismatch = 0)
     matrix = parasail.matrix_create(alphabet="ACGT", match=1, mismatch=0)
     alignment = parasail.sw(s1=adapter, s2=read, open=1, extend=1, matrix=matrix)
-    print(alignment.score)
 
     # Check if alignment meets the minimum score threshold based on mismatches
     if alignment.score >= (len(adapter) - mismatches):
@@ -142,14 +134,8 @@ def find_and_split_reads(
     read_counter = 0
     too_short_counter = 0  # filtered b/c too short counter
     unaligned_counter = 0
+    missing_split_counter = 0
     # update_count=1000000 # how often to print updates [for debugging]
-
-    aligner = Align.PairwiseAligner()
-    aligner.mode = "local"  # Use 'local' for local alignment
-    aligner.match_score = 4  # Match score
-    aligner.mismatch_score = -0.5  # Mismatch score
-    aligner.open_gap_score = -6  # Gap opening penalty
-    aligner.extend_gap_score = -6  # Gap extension penalty
 
     with pysam.FastxFile(fq_in) as input_fastq, open(
         f"{output_prefix}_R1.fq", mode="w"
@@ -159,39 +145,42 @@ def find_and_split_reads(
 
         for read in input_fastq:
             # Align anchor sequence
-            anchor_alignments = aligner.align(read.sequence, anchor_seq)
-            if not anchor_alignments:
+            # anchor_alignments = aligner.align(read.sequence, anchor_seq)
+            anchor_score, anchor_start, anchor_end = align_parasail(
+                        read=read.sequence,
+                        adapter=anchor_seq, 
+                        mismatches=max_errors
+                    )
+            if anchor_score is None:
                 # write to ambiguous.fq
                 unaligned_counter += 1
                 output_ambiguous.write(
                     f"@{read.name}\n{read.sequence}\n+\n{read.quality}\n"
                 )
                 continue
-
-            best_anchor_alignment = anchor_alignments[0]
-            anchor_end = best_anchor_alignment.aligned[0][0][1]
 
             # Scan for split sequence
             scan_start = min(0, anchor_end)
             scan_end = max(len(read.sequence), anchor_end + max_offset)
             scan_region = read.sequence[scan_start:scan_end]
 
-            split_alignments = aligner.align(scan_region, split_seq)
-            if not split_alignments:
+            # split_alignments = aligner.align(scan_region, split_seq)
+            split_score, split_start, split_end = align_parasail(
+                        read=scan_region,
+                        adapter=split_seq, 
+                        mismatches=max_errors
+                    )
+            
+            if split_score is None:
                 # write to ambiguous.fq
-                unaligned_counter += 1
+                missing_split_counter += 1
                 output_ambiguous.write(
                     f"@{read.name}\n{read.sequence}\n+\n{read.quality}\n"
                 )
                 continue
 
-            best_split_alignment = split_alignments[0]
-            split_start = scan_start + best_split_alignment.aligned[0][0][0]
-            split_end = scan_start + best_split_alignment.aligned[0][0][1]
-
             # Apply split offset
-            # split_point = split_end + split_offset
-            split_point = split_end
+            split_point = scan_start + split_end + split_offset
 
             # Split the read
             part1_sequence = read.sequence[:split_point]
@@ -222,11 +211,12 @@ def find_and_split_reads(
             #     print(f"{currentTime()} - {read_counter} reads processed")
 
         print(
-            f"{read_counter} reads written to {output_prefix}_R1.fq and {output_prefix}_R2.fq.\n"
-            f"{too_short_counter} reads removed (shorter than {min_read_length} bases).\n"
-            f"{unaligned_counter} reads removed (anchor/split sequences not found).\n"
+            f"Reads successfully split & written: {read_counter}\n"
+            f"Reads removed:\n"
+            f"  Too short:                 {too_short_counter}\n"
+            f"  Anchor sequence not found: {unaligned_counter}\n"
+            f"  Split sequence not found:  {missing_split_counter}\n"
         )
-
 
 if __name__ == "__main__":
     args = parse_args()

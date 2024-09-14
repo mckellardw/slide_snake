@@ -190,7 +190,7 @@ rule ilmn_1b_R1_internalTrimming:
     threads: config["CORES"]
     shell:
         """
-        python scripts/py/fastq_internal_adapter_trim_R1.py \
+        python scripts/py/fastq_internal_adapter_trim_R1_v2.py \
             --adapter_seq {params.ADAPTER} \
             --n_cores {threads} \
             --tmp_dir {params.TMPDIR} \

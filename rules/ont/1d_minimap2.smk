@@ -28,13 +28,12 @@ rule ont_1d_align_minimap2_genome:
         echo "Extra flags: {params.EXTRA_FLAGS}" > {log.log} 
         echo "" >> {log.log} 
 
-        minimap2 \
-            -ax splice \
+        minimap2 -ax splice \
             -uf \
             --MD \
             -t {threads} \
-            --junc-bed {params.JUNC_BED} {params.EXTRA_FLAGS} \
-            {params.REF} \
+            --junc-bed {params.JUNC_BED} \
+            {params.EXTRA_FLAGS} {params.REF} \
             {input.FQ} \
         2>> {log.log} \
         > {output.SAM_TMP}

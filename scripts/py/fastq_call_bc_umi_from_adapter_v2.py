@@ -20,7 +20,8 @@ python scripts/py/fastq_call_bc_umi_from_adapter_v2.py \
     --umi_lengths 7 \
     --umi_offsets 6 \
     --umi_positions right \
-    --umi_mismatches 2 
+    --umi_mismatches 2 \
+    --threads 1
 """
 
 # Visium
@@ -37,7 +38,8 @@ python scripts/py/fastq_call_bc_umi_from_adapter_v2.py \
     --umi_lengths 12 \
     --umi_offsets 16 \
     --umi_positions right \
-    --umi_mismatches 2 
+    --umi_mismatches 2 \
+    --threads 1
 """
 
 # microST
@@ -54,7 +56,8 @@ python scripts/py/fastq_call_bc_umi_from_adapter_v2.py \
     --umi_lengths 12 \
     --umi_offsets 0 \
     --umi_positions right \
-    --umi_mismatches 2 
+    --umi_mismatches 2 \
+    --threads 1
 """
 
 def currentTime():
@@ -154,7 +157,11 @@ def align_sequences(read, adapter, aligner, mismatches):
     # Get best alignment
     alignment = alignments[0] if alignments else None
 
-    return alignment
+    start = alignment.aligned[0][0][0]
+    end = alignment.aligned[0][0][1]
+
+    # return alignment
+    return [alignment.score, start, end]
     # for a in alignments:
     #     print(a.score)
     #     if a.score >= (len(adapter_seq) - mismatches):
@@ -166,11 +173,6 @@ def align_sequences(read, adapter, aligner, mismatches):
 def init_aligner():
     # TODO- these params need to be better optimized...
     aligner = Align.PairwiseAligner()
-    # aligner.mode = "local"  # Use 'local' for local alignment
-    # aligner.match_score = 4  # Match score
-    # aligner.mismatch_score = -0.5  # Mismatch score
-    # aligner.open_gap_score = -6  # Gap opening penalty
-    # aligner.extend_gap_score = -6  # Gap extension penalty
 
     aligner.mode = "local"  # Use 'local' for local alignment
     aligner.match_score = 4  # Match score
@@ -180,6 +182,33 @@ def init_aligner():
 
     return aligner
 
+
+import parasail
+def align_parasail(read, adapter, mismatches, verbose=False):
+    """
+    Align sequences using parasail (Smith-Waterman local alignment)
+    - source: https://github.com/jeffdaily/parasail-python
+    """
+    
+    # Create a simple identity matrix (match = 1, mismatch = 0)
+    matrix = parasail.matrix_create(alphabet="ACGT", match=1, mismatch=0)
+    alignment = parasail.sw(s1=adapter, s2=read, open=1, extend=1, matrix=matrix)
+    # print(alignment.score)
+
+    # Check if alignment meets the minimum score threshold based on mismatches
+    if alignment.score >= (len(adapter) - mismatches):
+        # if verbose:
+        #     # Print additional information when verbose mode is enabled
+        #     print(f"Alignment Score: {alignment.score}")
+        #     print(f"Start Position (Read): {alignment.end_query - alignment.end_ref}")
+        #     print(f"End Position (Read): {alignment.end_query}")
+        #     print(f"Aligned Sequences:\n{alignment.traceback.query}\n{alignment.traceback.comp}\n{alignment.traceback.ref}")
+        
+        # return alignment
+        start = alignment.end_ref-len(adapter)+1
+        end = alignment.end_ref+1
+        return alignment.score, start, end
+    return None, None, None
 
 # Simple python version of R rep() function
 def rep(val, n):
@@ -233,38 +262,45 @@ def main(
                     elif len(read.sequence) < length:
                         continue
 
-                    alignment = align_sequences(
-                        Seq(read.sequence), Seq(adapter), aligner, mismatches
-                    )
-                    # if alignment.score < 45: #debug
-                    #     print(alignment)
-                    #     print(alignment.score)
-                    if alignment is not None:
-                        if alignment.score > 2 * len(adapter):
-                            start = alignment.aligned[0][0][0]
-                            end = alignment.aligned[0][0][1]
-                            if position == "left":
-                                bc_seq = read.sequence[
-                                    (start - offset - length) : (start - offset)
-                                ]
-                            elif position == "right":
-                                bc_seq = read.sequence[
-                                    (end + offset) : (end + offset + length)
-                                ]
-                            else:
-                                print(
-                                    f"Incorrect barcode position [{position}] specified!"
-                                )
+                    ## biopython
+                    # [align_score, start, end]  = align_sequences(
+                    #     Seq(read.sequence), Seq(adapter), aligner, mismatches
+                    # )
 
-                            # Don't write partial barcodes
-                            if len(bc_seq) == length:
-                                bc_to_write.append(bc_seq)
-                            else:
-                                bc_to_write.append(null_bc_string)
+                    align_score, start, end = align_parasail(
+                        read=read.sequence,
+                        adapter=adapter, 
+                        mismatches=mismatches
+                    )
+                    # if align_score < 45: #debug
+                    # print(alignment)
+                    # print(align_score)
+                    # print(read.sequence[start:end])
+
+                    if align_score is not None:
+                        # if align_score > 2 * len(adapter):
+                        if position == "left":
+                            bc_seq = read.sequence[
+                                (start - offset - length) : (start - offset)
+                            ]
+                        elif position == "right":
+                            bc_seq = read.sequence[
+                                (end + offset) : (end + offset + length)
+                            ]
+                        else:
+                            print(
+                                f"Incorrect barcode position [{position}] specified!"
+                            )
+
+                        # Don't write partial barcodes
+                        if len(bc_seq) == length:
+                            bc_to_write.append(bc_seq)
                         else:
                             bc_to_write.append(null_bc_string)
                     else:
                         bc_to_write.append(null_bc_string)
+                    # else:
+                    #     bc_to_write.append(null_bc_string)
                 # end BC alignment
 
                 # Write barcode to file
@@ -275,13 +311,17 @@ def main(
                     # Proceed w/ UMI alignment
                     umi_to_write = []
                     for adapter, position, length, offset, mismatches in UMI_RANGES:
-                        alignment = align_sequences(
-                            Seq(read.sequence), Seq(adapter), aligner, mismatches
+                        # [align_score, start, end] = align_sequences(
+                        #     Seq(read.sequence), Seq(adapter), aligner, mismatches
+                        # )
+                        align_score, start, end = align_parasail(
+                            read=read.sequence,
+                            adapter=adapter, 
+                            mismatches=mismatches
                         )
-
-                        if alignment.score > 2 * len(adapter):
-                            start = alignment.aligned[0][0][0]
-                            end = alignment.aligned[0][0][1]
+                        
+                        # if align_score > 2 * len(adapter):
+                        if align_score is not None:
                             if position == "left":
                                 umi_seq = read.sequence[
                                     (start - offset - length) : (start - offset)
@@ -323,6 +363,10 @@ def main(
             # end fq iterator
         # end tsv open
     # end fq open
+    
+    print("")
+    print(f"{currentTime()} - {read_count} total reads processed.")
+
     return (
         bc_match_count,
         bc_missing_count,

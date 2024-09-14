@@ -4,9 +4,8 @@
 # TODO - make some params recipe-specific
 rule ont_1b_cutadapt:
     input:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_R1.fq.gz",
-        # R1_FQ_Trimmed = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len_internalTrim_R1.fq.gz",
-        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_R2.fq.gz",
+        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_adapter_R1.fq.gz",
+        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_adapter_R2.fq.gz",
     output:
         R1_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/ont/cut_R1.fq.gz"),
         R2_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/ont/cut_R2.fq.gz"),
@@ -31,9 +30,11 @@ rule ont_1b_cutadapt:
         TXG_TSO="AAGCAGTGGTATCAACGCAGAGTACATGGG",  # 10x TSO - remove any polyadenylated TSOs
         rcTSO="CCCATTCACTCTGCGTTGATACCAGCTT",  # rev comp of SlideSeq TSO
         rcTXG_TSO="CCCATGTACTCTGCGTTGATACCACTGCTT",  # rev-comp of 10x TSO sequence
-        uMRT_TSO="CCCTCTCTCTCTCTTTCCTCTCTC", #ISOPCR sequence from uMRT protocol; does not contain the 4T overhang
+        uMRT_TSO="CCCTCTCTCTCTCTTTCCTCTCTC",  #ISOPCR sequence from uMRT protocol; does not contain the 4T overhang
         SEEKER_BB_LINKER="TCTTCAGCGTTCCCGAGA",  # Adapter between BB1 & BB2 in R1 
         rcSEEKER_BB_ADAPTER="AGAGCCCTTGCGACTTCT",  # Reverse of the adapter between BB1 & BB2 in R1
+        VNP="ACTTGCCTGTCGCTCTATCTTCTTTTT",
+        SSP="TTTCTGTTGGTGCTGATATTGCT",
     resources:
         mem="16G",
     threads: config["CORES"]
@@ -129,7 +130,7 @@ rule ont_1b_R1_internalTrim:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1b_R1_internalTrimming.log",
     shell:
         """
-        python scripts/py/fastq_internal_adapter_trim_R1.py \
+        python scripts/py/fastq_internal_adapter_trim_R1_v2.py \
             --adapter_seq {params.ADAPTER} \
             --n_cores {threads} \
             --tmp_dir {params.TMPDIR} \
