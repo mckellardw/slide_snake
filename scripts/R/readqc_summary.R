@@ -17,16 +17,21 @@ option_list <- list(
     ),
     make_option(
         c("-o", "--out"),
-        type = "character", default = "combined_plot.png", help = "Output file name for the combined plot [default= %default]",
+        type = "character", 
+        default = "combined_plot.png",
+        help = "Output file name for the combined plot [default= %default]",
         metavar = "character"
     ),
     make_option(
         c("-s", "--sample"),
-        type = "integer", default = 1000000, help = "Number of reads to downsample [default= %default]",
+        type = "integer", 
+        default = 1000000, 
+        help = "Number of reads to downsample [default= %default]",
         metavar = "integer"
     )
 )
 
+## Example input:
 # Read_ID Read_Length     GC_Percent      First_Base      Last_Base       Longest_Homopolymer     Homopolymer_Base
 # @67ae57cf-e0ec-438f-a07b-45f7dbe312e0_0 14      42.86   A       C       2       A
 # @d918b6df-d6f4-4431-acf4-11fb944b9b40_0 155     57.42   G       T       4       T
@@ -38,11 +43,11 @@ option_list <- list(
 # @d95e1228-0ea6-4fc6-ba70-b38040715b30_0 92      50.0    G       C       4       C
 # @8eec0f77-78d0-4a62-a64b-0b82914d86b1_0 155     57.42   G       T       4       T
 
-# Parse the command-line arguments
+# Parse the command-line arguments --------------------------------------------
 opt_parser <- OptionParser(option_list = option_list)
 opt <- parse_args(opt_parser)
 
-# Check if the input file is provided
+# Check if the input file is provided --------------------------------------------
 if (is.null(opt$file)) {
     print_help(opt_parser)
     stop("Input file must be supplied.\n", call. = FALSE)
@@ -70,31 +75,32 @@ custom_theme <- theme_minimal() +
 # Function to load the data
 load_data <- function(data_file, n_reads){    
     # Read the data
-    data <- read_tsv(
+    df <- read_tsv(
         data_file,
-        na = c("", "NA", "None")
+        na = c("", "NA", "None"),
+        n_max=n_reads
     )
 
     # Downsample
-    if(n_reads < nrow(data)){
-        data <- data[sample(nrow(data), n_reads), ]
+    if(n_reads < nrow(df)){
+        df <- df[sample(nrow(df), n_reads), ]
     }
     
-    return(data)
+    return(df)
 }
 
 
-# Function to read data and create plots
-create_plots <- function(data, data_file, out_file) {
+# Function to read data and create plots --------------------------------------------
+create_plots <- function(df, data_file, out_file) {
 
     # Summary histograms (left column)
-    plot.gc <- ggplot(data, aes(x = GC_Percent)) +
+    plot.gc <- ggplot(df, aes(x = GC_Percent)) +
         geom_histogram(binwidth = 1, fill = "red", alpha = 0.5) +
         custom_theme +
         scale_y_continuous(labels = label_scientific()) +
         ggtitle("GC Percentage Distribution")
 
-    plot.readLength <- ggplot(data, aes(x = Read_Length)) +
+    plot.readLength <- ggplot(df, aes(x = Read_Length)) +
         geom_histogram(
             binwidth = 50, fill = "blue", alpha = 0.5
         ) +
@@ -109,7 +115,7 @@ create_plots <- function(data, data_file, out_file) {
         ggtitle("Read Length Distribution")
 
     plot.homoploymer <- ggplot(
-            data, aes(x = Longest_Homopolymer/Read_Length)
+            df, aes(x = Longest_Homopolymer/Read_Length)
         ) +
         geom_histogram(
             aes(
@@ -127,7 +133,7 @@ create_plots <- function(data, data_file, out_file) {
 
     # Summary scatter plots (right column)
     scatter.gc <- ggplot(
-        data, 
+        df, 
         aes(
             x = Read_Length,
             y = GC_Percent
@@ -144,7 +150,7 @@ create_plots <- function(data, data_file, out_file) {
 
     
     plot.readLength.zoom <- ggplot(
-            data, 
+            df, 
             aes(x = Read_Length)
         ) +
         geom_histogram(
@@ -162,7 +168,7 @@ create_plots <- function(data, data_file, out_file) {
 
     
     vln.homopolymer <- ggplot(
-            data, 
+            df, 
             aes(
                 x = Homopolymer_Base,
                 y = Longest_Homopolymer,
@@ -217,14 +223,14 @@ create_plots <- function(data, data_file, out_file) {
     )
 }
 
-# Run the function with the provided arguments
-data <- load_data(
+# Run the function with the provided arguments --------------------------------------------
+df <- load_data(
     opt$file, 
     opt$sample
 )
 
 create_plots(
-    data, 
+    df, 
     opt$file,
     opt$out
 )

@@ -113,9 +113,9 @@ rule ilmn_2d_ribodetector_filter_R1_hardTrim:
 
 rule ilmn_2d_ribodetector_compress_fqs:
     input:
-        FQ="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/{READ}.fq",
+        FQ="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_{READ}.fq",
     output:
-        FQ="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/{READ}.fq.gz",
+        FQ="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_{READ}.fq.gz",
     resources:
         mem="8G",
     threads: config["CORES"]

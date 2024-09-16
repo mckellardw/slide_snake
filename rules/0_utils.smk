@@ -61,9 +61,9 @@ def get_fqs(w, return_type=["list", "dict"], mode=["ONT", "ILMN"]):
                 R2 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/ribodetector/noRibo_R2.fq.gz"
 
                 if "internalTrim" in w.RECIPE:
-                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/ribodetector/noRibo_internalTrim_R1.fq.gz"
+                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/ribodetector/noRibo_internalTrim_R1.fq.gz"
                 if "hardTrim" in w.RECIPE:
-                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/ribodetector/noRibo_hardTrim_R1.fq.gz"
+                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/ribodetector/noRibo_hardTrim_R1.fq.gz"
             else:  # just trimmed .fq's
                 R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_R1.fq.gz"
                 R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_R2.fq.gz"
@@ -246,6 +246,7 @@ def get_ont_barcode_pattern(w):
     #     "(?P<cell_2>.{{6}})"+ \
     #     "(?P<umi_1>.{{7}})"
 
+
 def get_bwa_ref(w, mode=["genome", "rRNA"]):
     """
     Pull BWA info from sample sheet
@@ -265,6 +266,7 @@ def get_bwa_ref(w, mode=["genome", "rRNA"]):
         out = "No reference given! Check your sample sheet!"
 
     return out
+
 
 def get_STAR_ref(w, mode=["genome", "rRNA"]):
     """
@@ -286,7 +288,8 @@ def get_STAR_ref(w, mode=["genome", "rRNA"]):
 
     return out
 
-def get_kallisto_ref(w, mode=["idx", "t2g","idx_velo", "t2g_velo"]):
+
+def get_kallisto_ref(w, mode=["idx", "t2g", "idx_velo", "t2g_velo"]):
     """
     Pull kalllisto info from sample sheet
 
@@ -302,6 +305,7 @@ def get_kallisto_ref(w, mode=["idx", "t2g","idx_velo", "t2g_velo"]):
         out = "No reference given! Check your sample sheet!"
 
     return out
+
 
 # TODO- add STAR_rRNA functinoality (no w.RECIPE accessibility)
 def get_STAR_extra_params(w):

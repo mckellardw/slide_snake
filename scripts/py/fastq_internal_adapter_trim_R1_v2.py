@@ -252,5 +252,7 @@ if __name__ == "__main__":
     print(f"Output fastq:                       {args.fq1_out}")
     print(f"Minimum adapter start position:     {args.min_adapter_start_pos}")
     print(f"Minimum adapter alignment score:    {args.min_align_score}")
+    print(f"{currentTime()} - Run starting...")
 
     main(args)
+    print(f"{currentTime()} - Run complete.")
