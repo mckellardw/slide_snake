@@ -25,7 +25,9 @@ rule ont_1d_align_minimap2_genome:
         """
         mkdir -p $(dirname {output.SAM_TMP})
 
-        echo "Extra flags: {params.EXTRA_FLAGS}" > {log.log} 
+        echo "Genome reference:   {params.REF}" > {log.log} 
+        echo "Junction reference: {params.REF}" >> {log.log} 
+        echo "Extra flags:        {params.EXTRA_FLAGS}" >> {log.log} 
         echo "" >> {log.log} 
 
         minimap2 -ax splice \

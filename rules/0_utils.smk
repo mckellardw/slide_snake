@@ -105,10 +105,18 @@ def get_whitelist(w, return_type=None, mode=["recipe", "all_used", "all"]):
     try:
         if "matchLinker" in w.RECIPE:
             if return_type == "list":
-                whitelist = [
-                    f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_1.txt",
-                    f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_2.txt",
-                ]
+                if RECIPE_SHEET["BC_concat"][w.RECIPE]:
+                    # Barcode constructs where positional barcodes are NOT independent (must be concatenated)
+                    whitelist = [
+                        f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_1.txt",
+                        f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_2.txt",
+                    ]
+                else:
+                    # Barcode constructs where positional barcodes ARE independent (shorter white list)
+                    whitelist = [
+                        f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_uniq_1.txt",
+                        f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_uniq_2.txt",
+                    ]
             else:
                 whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_1.txt {w.OUTDIR}/{w.SAMPLE}/bc/whitelist_2.txt"
         elif "internalTrim" in w.RECIPE:
