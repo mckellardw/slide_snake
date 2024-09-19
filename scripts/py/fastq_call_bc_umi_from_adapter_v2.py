@@ -1,7 +1,6 @@
 import argparse
 import pysam
-from Bio import Align
-from Bio.Seq import Seq
+import parasail
 import time
 import os
 
@@ -59,6 +58,7 @@ python scripts/py/fastq_call_bc_umi_from_adapter_v2.py \
     --umi_mismatches 2 \
     --threads 1
 """
+
 
 def currentTime():
     return time.strftime("%D | %H:%M:%S", time.localtime())
@@ -149,52 +149,22 @@ def parse_args():
     return args
 
 
-# Align adapter to read, return alignment
-#TODO- incorporate mismatch rate...
-def align_sequences(read, adapter, aligner, mismatches):
-    alignments = aligner.align(read, adapter)
-
-    # Get best alignment
-    alignment = alignments[0] if alignments else None
-
-    start = alignment.aligned[0][0][0]
-    end = alignment.aligned[0][0][1]
-
-    # return alignment
-    return [alignment.score, start, end]
-    # for a in alignments:
-    #     print(a.score)
-    #     if a.score >= (len(adapter_seq) - mismatches):
-    #         return a
-    # return None
-
-
-# Set up aligner
-def init_aligner():
-    # TODO- these params need to be better optimized...
-    aligner = Align.PairwiseAligner()
-
-    aligner.mode = "local"  # Use 'local' for local alignment
-    aligner.match_score = 4  # Match score
-    aligner.mismatch_score = -0.5  # Mismatch score
-    aligner.open_gap_score = -6  # Gap opening penalty
-    aligner.extend_gap_score = -6  # Gap extension penalty
-
-    return aligner
-
-
-import parasail
 def align_parasail(read, adapter, mismatches, verbose=False):
     """
     Align sequences using parasail (Smith-Waterman local alignment)
     - source: https://github.com/jeffdaily/parasail-python
     """
-    
+
     # Create a simple identity matrix (match = 1, mismatch = 0)
     matrix = parasail.matrix_create(alphabet="ACGT", match=1, mismatch=0)
-    alignment = parasail.sw(s1=adapter, s2=read, open=1, extend=1, matrix=matrix)
-    # print(alignment.score)
-
+    alignment = parasail.sw(
+        s1=adapter, 
+        s2=read, 
+        open=1, 
+        extend=1, 
+        matrix=matrix
+    )
+    
     # Check if alignment meets the minimum score threshold based on mismatches
     if alignment.score >= (len(adapter) - mismatches):
         # if verbose:
@@ -203,12 +173,17 @@ def align_parasail(read, adapter, mismatches, verbose=False):
         #     print(f"Start Position (Read): {alignment.end_query - alignment.end_ref}")
         #     print(f"End Position (Read): {alignment.end_query}")
         #     print(f"Aligned Sequences:\n{alignment.traceback.query}\n{alignment.traceback.comp}\n{alignment.traceback.ref}")
-        
-        # return alignment
-        start = alignment.end_ref-len(adapter)+1
-        end = alignment.end_ref+1
+
+        # return alignment info
+        start = alignment.end_ref - len(adapter) + 1
+        end = alignment.end_ref + 1
         return alignment.score, start, end
+    
+    start = alignment.end_ref - len(adapter) + 1
+    end = alignment.end_ref + 1
+    print(f"{alignment.score} | {read}")
     return None, None, None
+
 
 # Simple python version of R rep() function
 def rep(val, n):
@@ -229,7 +204,7 @@ def main(
     umi_offsets,
     umi_mismatches,
 ):
-    null_bc_string="-"
+    null_bc_string = "-"
 
     bc_match_count = 0
     bc_missing_count = 0
@@ -238,9 +213,6 @@ def main(
     umi_missing_count = 0
     no_umi_count = 0
     read_count = 0
-
-    # Set up aligner
-    aligner = init_aligner()
 
     BC_RANGES = list(
         zip(bc_adapters, bc_positions, bc_lengths, bc_offsets, bc_mismatches)
@@ -262,13 +234,8 @@ def main(
                     elif len(read.sequence) < length:
                         continue
 
-                    ## biopython
-                    # [align_score, start, end]  = align_sequences(
-                    #     Seq(read.sequence), Seq(adapter), aligner, mismatches
-                    # )
-
                     align_score, start, end = align_parasail(
-                        read=read.sequence,
+                        read=read.sequence, 
                         adapter=adapter, 
                         mismatches=mismatches
                     )
@@ -288,9 +255,7 @@ def main(
                                 (end + offset) : (end + offset + length)
                             ]
                         else:
-                            print(
-                                f"Incorrect barcode position [{position}] specified!"
-                            )
+                            print(f"Incorrect barcode position [{position}] specified!")
 
                         # Don't write partial barcodes
                         if len(bc_seq) == length:
@@ -299,8 +264,6 @@ def main(
                             bc_to_write.append(null_bc_string)
                     else:
                         bc_to_write.append(null_bc_string)
-                    # else:
-                    #     bc_to_write.append(null_bc_string)
                 # end BC alignment
 
                 # Write barcode to file
@@ -315,11 +278,9 @@ def main(
                         #     Seq(read.sequence), Seq(adapter), aligner, mismatches
                         # )
                         align_score, start, end = align_parasail(
-                            read=read.sequence,
-                            adapter=adapter, 
-                            mismatches=mismatches
+                            read=read.sequence, adapter=adapter, mismatches=mismatches
                         )
-                        
+
                         # if align_score > 2 * len(adapter):
                         if align_score is not None:
                             if position == "left":
@@ -363,7 +324,7 @@ def main(
             # end fq iterator
         # end tsv open
     # end fq open
-    
+
     print("")
     print(f"{currentTime()} - {read_count} total reads processed.")
 
@@ -426,7 +387,7 @@ if __name__ == "__main__":
         # # Split .fq file into {n_core} chunks
         # os.system(
         #     # Custom script to split .fq w/ sed in parallel
-        #     f""" 
+        #     f"""
         #     python scripts/py/splitNfqs.py {args.fq_in} {args.threads} {args.threads}
         #     """
         # )

@@ -60,6 +60,7 @@ def parse_args():
 
     return args
 
+
 def init_aligner():
     # Useful resource: https://www.bioinformaticscrashcourse.com/10.1_Alignment.html
     # Curio data alignment parameters:
@@ -75,23 +76,23 @@ def init_aligner():
     return aligner
 
 
-
 def align_parasail(read, adapter, min_align_score=58, verbose=False):
     """
     Align sequences using parasail (Smith-Waterman local alignment)
     - source: https://github.com/jeffdaily/parasail-python
     """
-    
+
     # Create a simple identity matrix (match = 1, mismatch = 0)
     matrix = parasail.matrix_create(alphabet="ACGT", match=4, mismatch=-0.5)
     alignment = parasail.sw(s1=adapter, s2=read, open=-6, extend=-6, matrix=matrix)
 
     # Check if alignment meets the minimum score threshold based on mismatches
     if alignment.score <= min_align_score:
-        start = alignment.end_ref-len(adapter)+1
-        end = alignment.end_ref+1
+        start = alignment.end_ref - len(adapter) + 1
+        end = alignment.end_ref + 1
         return alignment.score, start, end
     return None, None, None
+
 
 # Function to run internal trimming on a single .fq.gz file
 def trim_fq(fq_in, fq_out, adapter_seq, min_adapter_start_pos, min_align_score):
@@ -108,7 +109,6 @@ def trim_fq(fq_in, fq_out, adapter_seq, min_adapter_start_pos, min_align_score):
     else:
         fq_iterator = FastqGeneralIterator(open(fq_in, "r"))
 
-
     for title, seq, qual in fq_iterator:
         read_count += 1
 
@@ -124,9 +124,7 @@ def trim_fq(fq_in, fq_out, adapter_seq, min_adapter_start_pos, min_align_score):
 
         # Perform pairwise alignment to find the sequence with allowed score
         align_score, start, end = align_parasail(
-            read=read.sequence,
-            adapter=adapter_seq, 
-            min_align_score=min_align_score
+            read=read.sequence, adapter=adapter_seq, min_align_score=min_align_score
         )
 
         # Acount for reads with deletions in `BC_1`
@@ -244,7 +242,7 @@ def main(args):
 
 
 if __name__ == "__main__":
-    args = parse_args()   
+    args = parse_args()
 
     # Run params
     print(f"Adapter sequence:                   {args.adapter_seq}")

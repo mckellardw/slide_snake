@@ -59,13 +59,11 @@ def currentTime():
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Correct barcodes in a TSV file.")
-    parser.add_argument(
-        "--tsv_in", required=True, help="Path to the input TSV file."
-    )
+    parser.add_argument("--tsv_in", required=True, help="Path to the input TSV file.")
     parser.add_argument(
         "--tsv_out_full",
         required=True,
-        help="Path to the output TSV file. Columns contain ['Read_ID', 'Original_Barcode', 'Corrected_Barcode', 'Hamming_Distance']",
+        help="Path to the output TSV file. Columns don't have titles, but contain ['Read_ID', 'Original_Barcode_1', 'Corrected_Barcode_1', 'Edit_Distance_1',, 'Original_Barcode_2', 'Corrected_Barcode_2', 'Edit_Distance_2', etc.]",
     )
     parser.add_argument(
         "--tsv_out_slim",
@@ -342,12 +340,11 @@ def calc_leven_to_whitelist(bc_uncorr, whitelist, bc_len):
         kmers=split_seq_into_kmers(bc_uncorr, k),
         kmer_to_bc_index=kmer_to_bc_index,
     )
-    # os.system(f"echo {len(wl_filtered)} >> sandbox/bcc_test/wl_filtered_len.txt")
 
     for wl_bc in wl_filtered:
         # d = ed.eval(bc_uncorr, wl_bc)  # Use the ed module here
-        d = distance(bc_uncorr, wl_bc)
-        # d = hamming(bc_uncorr, wl_bc)
+        # d = distance(bc_uncorr, wl_bc) # levenshtein-python is much faster
+        d = hamming(bc_uncorr, wl_bc)
 
         if d < bc_corr_leven:
             next_bc_corr_leven = bc_corr_leven
@@ -378,7 +375,7 @@ def process_tsv(
     verbose=False,
     bc_update_counter=1000000,
 ):
-    null_bc_string="-"
+    null_bc_string = "-"
 
     # verbose = True
     # bc_update_counter=5000
@@ -422,7 +419,9 @@ def process_tsv(
                         for i in range(len(barcodes))
                     ]
 
-                    concat_corrected_bc = [] # used for slim list for simple .bam tagging
+                    concat_corrected_bc = (
+                        []
+                    )  # used for slim list for simple .bam tagging
                     for barcode, whitelist, max_leven, min_next_match_diff in RANGE:
                         st = time.time()
 
@@ -443,14 +442,12 @@ def process_tsv(
                                 bc_leven,
                                 next_match_diff,
                             ) = calc_leven_to_whitelist(
-                                barcode, whitelist, len(barcode)
+                                bc_uncorr=barcode, whitelist=whitelist, bc_len=len(barcode)
                             )
                             concat_corrected_bc.append(corrected_bc)
 
-                            # optimization...
-                            # print(f"leven = {bc_leven} | {time.time() - st}")
                             k = len(list(kmer_to_bc_index.keys())[0])
-                            
+
                         # Write output(s)
                         if bc_leven == 0:
                             row2write.extend(
@@ -464,7 +461,9 @@ def process_tsv(
                                 [barcode, corrected_bc, bc_leven, next_match_diff]
                             )
                         else:
-                            row2write.extend([barcode, null_bc_string, bc_leven, next_match_diff])
+                            row2write.extend(
+                                [barcode, null_bc_string, bc_leven, next_match_diff]
+                            )
 
                     # end row-wise BC correction
                     if null_bc_string in concat_corrected_bc:
@@ -523,6 +522,7 @@ if __name__ == "__main__":
         # TODO- auto set k based on bc length (dependent on seq error rate)
 
         whitelists[i] = wl
+        print(len(wl))
         kmer_to_bc_indexes[i] = kmer_to_bc_index
 
     # Single-threaded = verbose

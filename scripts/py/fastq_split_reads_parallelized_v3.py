@@ -86,7 +86,7 @@ def align_parasail(read, adapter, mismatches, verbose=False):
     Align sequences using parasail (Smith-Waterman local alignment)
     - source: https://github.com/jeffdaily/parasail-python
     """
-    
+
     # Create a simple identity matrix (match = 1, mismatch = 0)
     matrix = parasail.matrix_create(alphabet="ACGT", match=1, mismatch=0)
     alignment = parasail.sw(s1=adapter, s2=read, open=1, extend=1, matrix=matrix)
@@ -99,12 +99,13 @@ def align_parasail(read, adapter, mismatches, verbose=False):
         #     print(f"Start Position (Read): {alignment.end_query - alignment.end_ref}")
         #     print(f"End Position (Read): {alignment.end_query}")
         #     print(f"Aligned Sequences:\n{alignment.traceback.query}\n{alignment.traceback.comp}\n{alignment.traceback.ref}")
-        
+
         # return alignment
-        start = alignment.end_ref-len(adapter)+1
-        end = alignment.end_ref+1
+        start = alignment.end_ref - len(adapter) + 1
+        end = alignment.end_ref + 1
         return alignment.score, start, end
     return None, None, None
+
 
 def find_and_split_reads(
     fq_in,
@@ -147,10 +148,8 @@ def find_and_split_reads(
             # Align anchor sequence
             # anchor_alignments = aligner.align(read.sequence, anchor_seq)
             anchor_score, anchor_start, anchor_end = align_parasail(
-                        read=read.sequence,
-                        adapter=anchor_seq, 
-                        mismatches=max_errors
-                    )
+                read=read.sequence, adapter=anchor_seq, mismatches=max_errors
+            )
             if anchor_score is None:
                 # write to ambiguous.fq
                 unaligned_counter += 1
@@ -166,11 +165,9 @@ def find_and_split_reads(
 
             # split_alignments = aligner.align(scan_region, split_seq)
             split_score, split_start, split_end = align_parasail(
-                        read=scan_region,
-                        adapter=split_seq, 
-                        mismatches=max_errors
-                    )
-            
+                read=scan_region, adapter=split_seq, mismatches=max_errors
+            )
+
             if split_score is None:
                 # write to ambiguous.fq
                 missing_split_counter += 1
@@ -217,6 +214,7 @@ def find_and_split_reads(
             f"  Anchor sequence not found: {unaligned_counter}\n"
             f"  Split sequence not found:  {missing_split_counter}\n"
         )
+
 
 if __name__ == "__main__":
     args = parse_args()
