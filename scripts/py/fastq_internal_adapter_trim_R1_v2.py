@@ -25,7 +25,6 @@ import os
 import gzip
 
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
-from Bio import Align
 
 import parasail
 
@@ -60,20 +59,6 @@ def parse_args():
 
     return args
 
-
-def init_aligner():
-    # Useful resource: https://www.bioinformaticscrashcourse.com/10.1_Alignment.html
-    # Curio data alignment parameters:
-    ## match score = 4, mismatch = -0.5
-    ## gap opening = -6, gap extension = -6
-    aligner = Align.PairwiseAligner()
-    aligner.mode = "local"  # Use 'local' for local alignment
-    aligner.match_score = 4  # Match score
-    aligner.mismatch_score = -0.5  # Mismatch score
-    aligner.open_gap_score = -6  # Gap opening penalty
-    aligner.extend_gap_score = -6  # Gap extension penalty
-
-    return aligner
 
 
 def align_parasail(read, adapter, min_align_score=58, verbose=False):
@@ -112,16 +97,6 @@ def trim_fq(fq_in, fq_out, adapter_seq, min_adapter_start_pos, min_align_score):
     for title, seq, qual in fq_iterator:
         read_count += 1
 
-        # For troubleshooting:
-        # if (
-        #     alignments[0].score < 60
-        # ):  # and alignments[0].score > 55:# and alignments[0].start > 9:
-        #     print(alignments[0])
-        #     print(alignment.score)
-        #     print(alignment.aligned[0][0][0])
-        #     print(pairwise2.format_alignment(*alignments[0]))
-        #     print(seq[0:8]+seq[alignments[0].end:])
-
         # Perform pairwise alignment to find the sequence with allowed score
         align_score, start, end = align_parasail(
             read=read.sequence, adapter=adapter_seq, min_align_score=min_align_score
@@ -153,7 +128,6 @@ def trim_fq(fq_in, fq_out, adapter_seq, min_adapter_start_pos, min_align_score):
 
         # Write to new .fq.gz file
         out_handle.write(f"@{title}\n{seq_out}\n+\n{qual_out}\n")
-
     out_handle.close()
 
     return [read_count, ins_count, del_count, no_adapter_count]

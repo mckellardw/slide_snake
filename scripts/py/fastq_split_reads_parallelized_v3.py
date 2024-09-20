@@ -287,7 +287,7 @@ if __name__ == "__main__":
         with multiprocessing.Pool(args.threads) as pool:
             multi_out = pool.starmap(find_and_split_reads, items)
 
-        # Merge and compress chunked/trimmed fastqs
+        # Merge chunked/trimmed fastqs
         os.system(
             f"""
             cat {' '.join(chunked_fqs_out_R1)} > {args.fq_in.replace('.fq.gz','_R1.fq')}
@@ -299,7 +299,10 @@ if __name__ == "__main__":
         if os.path.isfile(args.fq_in.replace(".fq.gz", "_R2.fq.gz")):
             os.system(
                 f"""
-                rm {' '.join(chunked_fqs_in)} {' '.join(chunked_fqs_out_R1)} {' '.join(chunked_fqs_out_R2)} {' '.join(chunked_fqs_out_ambiguous)}
+                rm {' '.join(chunked_fqs_in)} 
+                rm {' '.join(chunked_fqs_out_R1)} 
+                rm {' '.join(chunked_fqs_out_R2)} 
+                rm {' '.join(chunked_fqs_out_ambiguous)}
                 """
             )
     else:
