@@ -119,132 +119,129 @@ include: "rules/ont/2_fastqc.smk"
 ## scanpy stuff
 include: "rules/6a_scanpy_init.smk"
 
-### target rule(s) #####################################################################
+
+### Build targets #################################################################################
+### short-read targets ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Module 1 - trimming & QC
+ilmn_fastqc = [f"{OUTDIR}/{SAMPLE}/fastqc/{TRIM}_{READ}"
+    for SAMPLE in R2_FQS.keys()
+    for TRIM in ["preCutadapt","postCutadapt","twiceCutadapt"] #,"rRNA_bwa","rRNA_STAR"
+    for READ in ["R1","R2"] 
+]  # fastQC results        
+
+# Module 2 - rRNA filtering        
+ilmn_rRNA_qualimap = [f"{OUTDIR}/{SAMPLE}/qualimap/rRNA/{TOOL}/{FILE}"
+    for SAMPLE in R2_FQS.keys() 
+    for TOOL in ["bwa"] #,"STAR"
+    for FILE in ["qualimapReport.html","rnaseq_qc_results.csv"] 
+] # alignment QC with qualimap [rRNA alignments]
+
+# Module 3 - STAR alignment        
+ilmn_STAR_dedup_bams = [f"{OUTDIR}/{SAMPLE}/{REF}/short_read/{RECIPE}/Aligned.sortedByCoord.{STEP}out{STRAND}.bam.bai"
+        for SAMPLE in R2_FQS.keys() 
+        for REF in ["STARsolo"]
+        for RECIPE in RECIPE_DICT[SAMPLE] 
+        for STEP in ["", "dedup."]
+        for STRAND in ["", ".fwd", ".rev"]
+    ] # deduped and/or strand-split, umi_tools deduplicated .bam 
+
+ilmn_STAR_counts = [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.mtx.gz" 
+    for SAMPLE in R2_FQS.keys() 
+    for RECIPE in RECIPE_DICT[SAMPLE]
+    for SOLO in ["Gene","GeneFull"]
+    for ALGO in ["UniqueAndMult-EM","matrix"]
+] # STAR count mats 
+
+ilmn_STAR_dedup_qualimap = [f"{OUTDIR}/{SAMPLE}/qualimap/{TOOL}/{RECIPE}/{FILE}"
+    for SAMPLE in R2_FQS.keys() 
+    for RECIPE in RECIPE_DICT[SAMPLE] 
+    for TOOL in ["STAR"]
+    for FILE in ["qualimapReport.html","rnaseq_qc_result.csv"] 
+] # alignment QC with qualimap | requires deduped input! 
+
+ilmn_STAR_unmapped_fastqc = [f"{OUTDIR}/{SAMPLE}/fastqc/unmapped/{RECIPE}" 
+    for SAMPLE in R2_FQS.keys() 
+    for RECIPE in RECIPE_DICT[SAMPLE]
+] #fastQC results for unmapped reads
+
+# Module 4 - kallisto & bustools
+##
+
+# Module 5 - small RNA
+ilmn_mirge_bulk = [f"{OUTDIR}/{SAMPLE}/miRge_bulk/{RECIPE}/annotation.report.html" 
+    for SAMPLE in R2_FQS.keys() 
+    for RECIPE in RECIPE_DICT[SAMPLE] 
+] # miRge3.0 pseudobulk analysis
+
+# Module 6 - anndata/scanpy
+ilmn_STAR_h5ad = [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.h5ad" 
+    for SAMPLE in R2_FQS.keys() 
+    for RECIPE in RECIPE_DICT[SAMPLE] 
+    for SOLO in ["Gene","GeneFull"]
+    for ALGO in ["UniqueAndMult-EM","matrix"]
+] # anndata files (with spatial info) - STAR 
+
+ilmn_kb_h5ad = [f"{OUTDIR}/{SAMPLE}/kbpython_{KB}/{RECIPE}/counts_unfiltered/output.h5ad" 
+    for SAMPLE in R2_FQS.keys() 
+    for RECIPE in RECIPE_DICT[SAMPLE] 
+    for KB in ["std"] #TODO "nac", "tcc" 
+] # anndata files (with spatial info) - kallisto 
+
+
+### ONT targets ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ont_minimap = [f"{OUTDIR}/{SAMPLE}/ont/{FILE}" 
+    for SAMPLE in ONT.keys() 
+    for RECIPE in RECIPE_ONT_DICT[SAMPLE]
+    for FILE in [
+            f"minimap2/{RECIPE}/sorted_gn_cb.bam",
+            f"barcodes_umis/{RECIPE}/read_barcodes_corrected.tsv", #_corrected
+            f"minimap2/{RECIPE}/raw/output.h5ad",
+        ]
+] # ONT outputs
+
+ont_fastqc = [f"{OUTDIR}/{SAMPLE}/fastqc/{TRIM}"
+    for SAMPLE in ONT.keys()
+    for READ in ["R1","R2"]
+    for TRIM in ["ont_preAdapterScan", f"ont_preCutadapt_{READ}", f"ont_postCutadapt_{READ}"]
+] # ONT fastqc - not really useful, but I coded it out...
+
+ont_readqc = [f"{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}_qc.{FILE}"
+    for SAMPLE in ONT.keys()
+    for READ in ["R1","R2"]
+    for RECIPE in RECIPE_ONT_DICT[SAMPLE]
+    for TRIM in [f"0_rawInput/merged", f"1_preCutadapt/{READ}", f"2_postCutadapt/{READ}", f"3_aligned/{RECIPE}"]
+    for FILE in ["tsv", "png"]
+] # ONT readqc
+
+ont_qualimap = [f"{OUTDIR}/{SAMPLE}/qualimap/ont/{TOOL}/{RECIPE}/{FILE}"
+    for SAMPLE in ONT.keys() 
+    for RECIPE in RECIPE_ONT_DICT[SAMPLE]
+    for TOOL in ["minimap2",]# f"STARsolo/{RECIPE}"
+    for FILE in ["qualimapReport.html", "rnaseq_qc_results.csv"] 
+], # alignment QC with qualimap
+
+
+#ont_kb = [f"{OUTDIR}/{SAMPLE}/ont/kb/{RECIPE}/{FILE}" 
+#     for SAMPLE in ONT.keys() 
+#     for RECIPE in RECIPE_DICT[SAMPLE]
+#     for FILE in [ ]
+# ], # ONT outputs
+
+
+### Target rule #################################################################################
 rule all:
     input:
-        ### short-read targets ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Module 1 - trimming & QC
-        [f"{OUTDIR}/{SAMPLE}/fastqc/{TRIM}_{READ}"
-            for SAMPLE in R2_FQS.keys()
-            for TRIM in ["preCutadapt","postCutadapt","twiceCutadapt","rRNA_bwa","rRNA_STAR"] 
-            for READ in ["R1","R2"] 
-        ],  # fastQC results        
-        
-        # # Module 2 - rRNA filtering        
-        # [f"{OUTDIR}/{SAMPLE}/qualimap/rRNA/{TOOL}/{FILE}"
-        #     for SAMPLE in R2_FQS.keys() 
-        #     for TOOL in ["bwa","STAR"]
-        #     for FILE in ["qualimapReport.html","rnaseq_qc_results.csv"] 
-        # ], # alignment QC with qualimap [rRNA alignments]
-        # expand( #STAR count mats - rRNA
-        #     "{OUTDIR}/{SAMPLE}/rRNA/{ALIGNER}/raw/matrix.mtx.gz",
-        #     OUTDIR=config["OUTDIR"],
-        #     SAMPLE=R2_FQS.keys(),
-        #     ALIGNER=[
-        #         "STARsolo/Solo.out/GeneFull"
-        #         # "bwa" #TODO
-        #     ]
-        # ),        
+        ont_minimap,
+        ont_readqc,
+        ont_qualimap,
+        # ont_fastqc,
 
-        # Module 3 - STAR alignment        
-        [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.dedup.out{STRAND}.bam.bai"
-            for SAMPLE in R2_FQS.keys() 
-            for RECIPE in RECIPE_DICT[SAMPLE] 
-            for STRAND in ["", ".fwd", ".rev"]
-        ], # deduped and/or strand-split, umi_tools deduplicated .bam #TODO- REF=["STARsolo_rRNA", "STARsolo"]
-        [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx.gz" 
-            for SAMPLE in R2_FQS.keys() 
-            for RECIPE in RECIPE_DICT[SAMPLE]
-        ], # STAR count mats             
-        [f"{OUTDIR}/{SAMPLE}/qualimap/{TOOL}/{RECIPE}/{FILE}"
-            for SAMPLE in R2_FQS.keys() 
-            for RECIPE in RECIPE_DICT[SAMPLE] 
-            for TOOL in ["STAR"]
-            for FILE in ["qualimapReport.html","rnaseq_qc_result.csv"] 
-        ], # alignment QC with qualimap | requires deduped input!    
-
-        [f"{OUTDIR}/{SAMPLE}/fastqc/unmapped/{RECIPE}" 
-            for SAMPLE in R2_FQS.keys() 
-            for RECIPE in RECIPE_DICT[SAMPLE]
-        ], #fastQC results for unmapped reads
-        # [f"{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/blast/Unmapped.out.mate2_blastResults.txt"
-        #     for SAMPLE in R2_FQS.keys()
-        #     for RECIPE in RECIPE_DICT[SAMPLE]
-        # ], # Top BLAST results for unmapped R2 reads   
-        
-        # Module 4 - kallisto & bustools
-        #TODO rewrite for kbpython
-        # expand( # kallisto/bustools count mats #TODO
-        #     "{OUTDIR}/{SAMPLE}/kb_velo/{LAYER}/output.mtx.gz",
-        #     OUTDIR=config["OUTDIR"],
-        #     LAYER=["spliced", "unspliced"],
-        #     SAMPLE=R2_FQS.keys()
-        # ),
-
-        # Module 5 - small RNA
-        # [f"{OUTDIR}/{SAMPLE}/miRge_bulk/{RECIPE}/annotation.report.html" 
-        #     for SAMPLE in R2_FQS.keys() 
-        #     for RECIPE in RECIPE_DICT[SAMPLE] 
-        # ], # miRge3.0 pseudobulk analysis
-
-        # Module 6 - anndata/scanpy
-        [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.h5ad" 
-            for SAMPLE in R2_FQS.keys() 
-            for RECIPE in RECIPE_DICT[SAMPLE] 
-            for SOLO in ["Gene","GeneFull"]
-            for ALGO in ["UniqueAndMult-EM","matrix"]
-        ], # anndata files (with spatial info) - STAR 
-        [f"{OUTDIR}/{SAMPLE}/kbpython_{KB}/{RECIPE}/counts_unfiltered/output.h5ad" 
-            for SAMPLE in R2_FQS.keys() 
-            for RECIPE in RECIPE_DICT[SAMPLE] 
-            for KB in ["std"] #TODO "nac", "tcc" 
-        ], # anndata files (with spatial info) - kallisto 
-
-        
-        ### ONT targets ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        [f"{OUTDIR}/{SAMPLE}/ont/{FILE}" 
-            for SAMPLE in ONT.keys() 
-            for RECIPE in RECIPE_ONT_DICT[SAMPLE]
-            for FILE in [
-                    f"minimap2/{RECIPE}/sorted.bam",
-                    f"minimap2/{RECIPE}/sorted_gn_cb.bam",
-                    f"barcodes_umis/{RECIPE}/read_barcodes_corrected.tsv", #_corrected
-                    f"minimap2/{RECIPE}/raw/output.h5ad",
-                ]
-        ], # ONT outputs
-
-        # [f"{OUTDIR}/{SAMPLE}/fastqc/{TRIM}"
-        #     for SAMPLE in ONT.keys()
-        #     for READ in ["R1","R2"]
-        #     for TRIM in ["ont_preAdapterScan",f"ont_preCutadapt_{READ}",f"ont_postCutadapt_{READ}"]
-        # ], # ONT fastqc - not really useful, but I coded it out...
-
-        [f"{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}_qc.{FILE}"
-            for SAMPLE in ONT.keys()
-            for READ in ["R1","R2"]
-            for RECIPE in RECIPE_ONT_DICT[SAMPLE]
-            for TRIM in [f"0_rawInput/merged", f"1_preCutadapt/{READ}", f"2_postCutadapt/{READ}", f"3_aligned/{RECIPE}"]
-            for FILE in ["tsv", "png"]
-        ], # ONT readqc
-
-        [f"{OUTDIR}/{SAMPLE}/qualimap/ont/{TOOL}/{RECIPE}/{FILE}"
-            for SAMPLE in ONT.keys() 
-            for RECIPE in RECIPE_ONT_DICT[SAMPLE]
-            for TOOL in ["minimap2",]# f"STARsolo/{RECIPE}"
-            for FILE in ["qualimapReport.html","rnaseq_qc_results.csv"] 
-        ], # alignment QC with qualimap
-
-        # [f"{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/{FILE}" 
-        #     for SAMPLE in ONT.keys() 
-        #     for RECIPE in RECIPE_DICT[SAMPLE]
-        #     for FILE in [ ]
-        # ], # ONT outputs
-
-        ### DEPRECATED ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # [f"{OUTDIR}/{SAMPLE}/{KB}/{RECIPE}/raw/output.h5ad" 
-        #     for SAMPLE in R2_FQS.keys() 
-        #     for RECIPE in RECIPE_DICT[SAMPLE] 
-        #     for KB in ["kb"] # "kb_velo", "kb_nuc" 
-        # ], 
-#end
-
+        # ilmn_fastqc
+        # ilmn_rRNA_qualimap
+        # ilmn_STAR_dedup_bams
+        # ilmn_STAR_counts
+        # ilmn_STAR_dedup_qualimap
+        # ilmn_STAR_unmapped_fastqc
+        # ilmn_mirge_bulk
+        # ilmn_STAR_h5ad
+        # ilmn_kb_h5ad
