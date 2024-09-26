@@ -24,8 +24,7 @@ import sys
 import os
 import gzip
 
-from Bio.SeqIO.QualityIO import FastqGeneralIterator
-
+import pysam
 import parasail
 
 
@@ -87,48 +86,43 @@ def trim_fq(fq_in, fq_out, adapter_seq, min_adapter_start_pos, min_align_score):
     del_count = 0  # Deletion counter for BC_1
     no_adapter_count = 0  # Tally of reads that are removed b/c missing adapter
 
-    out_handle = open(fq_out, "w")
+    with gzip.open(fq_out, "wt") as out_handle:
+        # Open the FASTQ file using pysam
+        with pysam.FastxFile(fq_in) as fq:
+            for read in fq:
+                read_count += 1
+                
+                # Perform pairwise alignment to find the sequence with allowed score
+                align_score, start, end = align_parasail(
+                    read=read.sequence, adapter=adapter_seq, min_align_score=min_align_score
+                )
 
-    if fq_in.endswith(".gz"):
-        fq_iterator = FastqGeneralIterator(gzip.open(fq_in, "rt"))
-    else:
-        fq_iterator = FastqGeneralIterator(open(fq_in, "r"))
+                # Account for reads with deletions in `BC_1`
+                if start < min_adapter_start_pos:  # Deletion in BC_1
+                    offset = min_adapter_start_pos - start
+                    seq_out = "N" * offset + read.sequence[start:min_adapter_start_pos] + read.sequence[end:]
+                    qual_out = "!" * offset + read.quality[start:min_adapter_start_pos] + read.quality[end:]
 
-    for title, seq, qual in fq_iterator:
-        read_count += 1
+                    del_count += 1
+                else:
+                    if start > min_adapter_start_pos:  # Insertion in BC_1
+                        ins_count += 1
 
-        # Perform pairwise alignment to find the sequence with allowed score
-        align_score, start, end = align_parasail(
-            read=read.sequence, adapter=adapter_seq, min_align_score=min_align_score
-        )
+                    ## Trim the base closest to adapter
+                    seq_out = read.sequence[0:min_adapter_start_pos] + read.sequence[end:]
+                    qual_out = read.quality[0:min_adapter_start_pos] + read.quality[end:]
 
-        # Acount for reads with deletions in `BC_1`
-        if start < min_adapter_start_pos:  # Deletion in BC_1
-            offset = min_adapter_start_pos - start
-            seq_out = "N" * offset + seq[start:min_adapter_start_pos] + seq[end:]
-            qual_out = "!" * offset + qual[start:min_adapter_start_pos] + qual[end:]
+                # Broken read; erase R1 and add `N` with qval=0 ('!')
+                # Alignment score cutoff was determined by spot-checking ~100 bead barcodes, based on predicted adapter location
+                # Seeker recommendation is min_align_score=58
+                # TODO fix hardcode '22'
+                if len(seq_out) < 22 or align_score < min_align_score:
+                    seq_out = "N"
+                    qual_out = "!"
+                    no_adapter_count += 1
 
-            del_count += 1
-        else:
-            if start > min_adapter_start_pos:  # Insertion in BC_1
-                ins_count += 1
-
-            ## Trim the base closest to adapter
-            seq_out = seq[0:min_adapter_start_pos] + seq[end:]
-            qual_out = qual[0:min_adapter_start_pos] + qual[end:]
-
-        # Broken read; erase R1 and add `N` with qval=0 ('!')
-        # Alignment score cuttoff was determined by spot-checking ~100 bead barcodes, based on predicted adapter location
-        # Seeker recommendation is min_align_score=58
-        # TODO fix hardcode '22'
-        if len(seq_out) < 22 or alignment.score < min_align_score:
-            seq_out = "N"
-            qual_out = "!"
-            no_adapter_count += 1
-
-        # Write to new .fq.gz file
-        out_handle.write(f"@{title}\n{seq_out}\n+\n{qual_out}\n")
-    out_handle.close()
+                # Write to new .fq.gz file
+                out_handle.write(f"@{read.name}\n{seq_out}\n+\n{qual_out}\n")
 
     return [read_count, ins_count, del_count, no_adapter_count]
 
