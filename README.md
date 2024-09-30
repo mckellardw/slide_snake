@@ -15,6 +15,11 @@ mamba env create --name slide_snake --file=envs/slide_snake.yml
 mamba activate slide_snake
 ```
 
+```
+mamba env create --name slsn --file=envs/slsn.yml
+mamba activate slsn
+```
+
 ### How to set up a run:
   1. Install and ensure that the executable paths are functioning
   2. Build a sample sheet, containing details on each sample you would like to analyze. Be sure to add the path to the `SAMPLE_SHEET_PATH` variable in `configs/config.yaml`.
@@ -46,4 +51,7 @@ snakemake -k -p --nt --use-conda --conda-frontend mamba --executor slurm --workf
 ## **Helpful links:**
 - [Barcode download from Curio](https://curiobioscience.com/support/barcode/)
 - Extract DNB barcode whitelist for StereoSeq with [ST_BarcodeMap](https://github.com/STOmics/ST_BarcodeMap) 
-  - Use the "mask format change" code mentioned in the `README`
+  - Use the "mask format change" code mentioned in the `README`; example:
+  ```
+  ST_BarcodeMap-0.0.1 --in B01807A3.barcodeToPos.h5 --out B01807A3.barcodeToPos.txt --action 3 --thread 24
+  ```

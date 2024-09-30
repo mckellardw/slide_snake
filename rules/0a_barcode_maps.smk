@@ -55,7 +55,7 @@ rule BC_write_whitelist_variants:
         BC_UNIQ_2="{OUTDIR}/{SAMPLE}/bc/whitelist_uniq_2.txt",  # Barcode #2, unique values
         BC_US="{OUTDIR}/{SAMPLE}/bc/whitelist_underscore.txt",  # Barcode With Underscore for STAR
     params:
-        BC_LENGTHS=lambda w: get_recipe_info(w, info_col="BC_length")
+        BC_LENGTHS=lambda w: get_recipe_info(w, info_col="BC_length"),
     # resources:
     threads: 1
     run:
@@ -65,7 +65,7 @@ rule BC_write_whitelist_variants:
         bc_map = pd.read_csv(input.BC_MAP, sep="\t", header=None)
 
         # split into multiple whitelists for separated barcodes
-        #TODO- fix this code... Needs to be abstracted!
+        # TODO- fix this code... Needs to be abstracted!
         if "seeker" in recipes:
             bc_1 = [bc[:8] for bc in list(bc_map[0])]
             bc_2 = [bc[8:] for bc in list(bc_map[0])]

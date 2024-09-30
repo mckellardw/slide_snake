@@ -47,13 +47,13 @@ rule ont_1a_merge_formats:
 #         MERGED_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_chopped.fq.gz",
 #     params:
 #         MIN_LENGTH=100,
-    # log:
-    #     log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_pychopper.log",
-    # conda:
-    #     f"{workflow.basedir}/envs/pychopper.yml"
-    # resources:
-    #     mem="16G",
-    # threads: 56
+#     log:
+#         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_pychopper.log",
+#     conda:
+#         f"{workflow.basedir}/envs/pychopper.yml"
+#     resources:
+#         mem="16G",
+#     threads: 56
 #     shell:
 #         """
 #         """
@@ -71,7 +71,7 @@ rule ont_1a_call_adapter_scan_v2:
         BATCH_SIZE=100000,
         ADAPTER1_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio
         # ADAPTER1_SEQ=lambda w: get_recipe_info(w, "fwd_primer"),
-        ADAPTER2_SEQ="ATGTACTCTGCGTTGATACCACTGCTT", #TXG/Curio
+        ADAPTER2_SEQ="ATGTACTCTGCGTTGATACCACTGCTT",  #TXG/Curio
         # ADAPTER2_SEQ="GAGAGAGGAAAGAGAGAGAGAGGG",  #uMRT
         # ADAPTER2_SEQ=lambda w: get_recipe_info(w, "rev_primer"),
         VSEARCH_MIN_ADAPTER_ID=0.7,
@@ -191,6 +191,7 @@ rule ont_1a_subset_fastq_by_adapter_type:
         """
 
 
+# Compress the merged fastq
 rule ont_1a_compress_merged_fq:
     input:
         FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_adapter.fq",
@@ -218,25 +219,22 @@ rule ont_1a_split_fastq_to_R1_R2:
         # ANCHOR_SEQ=lambda w: get_recipe_info(w, "fwd_primer"),
         ANCHOR_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio
         SPLIT_SEQ="T" * 8,
-        SPLIT_OFFSET=0, # offset from 3' end of split seq on which to split
+        SPLIT_OFFSET=0,  # offset from 3' end of split seq on which to split
         MAX_OFFSET=200,
     resources:
         mem="16G",
     threads: config["CORES"]
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_read_split.log",
-    run:
-        # for ADAPTER in input.ADAPTER_TYPES: #TODO- broaden to other read types, beyond full_len
-        shell(
-            f"""
-            python scripts/py/fastq_split_reads_parallelized_v3.py --fq_in {input.FQ} \
-                --anchor_seq {params.ANCHOR_SEQ} \
-                --split_seq {params.SPLIT_SEQ} \
-                --split_offset {params.SPLIT_OFFSET} \
-                --max_offset {params.MAX_OFFSET} \
-                --threads {threads} \
-            1> {log.log}
-            """
-        )
-        # --min_R1_length {} \
-        # --max_R1_length {} \
+    conda:
+        f"{workflow.basedir}/envs/parasail.yml"
+    shell:
+        """
+        python scripts/py/fastq_split_reads_parallelized_v3.py --fq_in {input.FQ} \
+            --anchor_seq {params.ANCHOR_SEQ} \
+            --split_seq {params.SPLIT_SEQ} \
+            --split_offset {params.SPLIT_OFFSET} \
+            --max_offset {params.MAX_OFFSET} \
+            --threads {threads} \
+        1> {log.log}
+        """

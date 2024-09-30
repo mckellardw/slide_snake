@@ -44,13 +44,7 @@ def get_fqs(w, return_type=["list", "dict"], mode=["ONT", "ILMN"]):
     # get file paths
     try:
         if mode == "ILMN":
-            if "rRNA.STAR" in w.RECIPE:  # Use trimmed & STAR-rRNA-filtered .fq's
-                R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/STARsolo/noRibo_R1.fq.gz"
-                R2 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/STARsolo/noRibo_R2.fq.gz"
-
-                # TODO - update to match ribodetector style
-
-            elif "rRNA.bwa" in w.RECIPE:  # Use trimmed & bwa-rRNA-filtered .fq's
+            if "rRNA.bwa" in w.RECIPE:  # Use trimmed & bwa-rRNA-filtered .fq's
                 R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/bwa/noRibo_R1.fq.gz"
                 R2 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/bwa/noRibo_R2.fq.gz"
 
@@ -211,48 +205,14 @@ def get_bc_map(w, mode=["ONT", "ILMN"]):
 
 # Get number of barcodes (does not include UMIs!)
 def get_n_bcs(w):
+    """
+    Get the number of barcode positions
+
+    w: wildcards
+    """
     bc_lengths = get_recipe_info(w, info_col="BC_length").split()
     n_bcs = len(bc_lengths)
     return n_bcs
-
-
-# TODO move these values to recipe_sheet - also write better code than this...
-def get_ont_barcode_pattern(w):
-    ## SlideSeq/Seeker: R1="C"*22 | BC1="C"*8 | Linker="C"*18 | BC2="C"*6 | UMI="N"* 7
-    try:
-        if "stomics" in w.RECIPE:
-            BC_PATTERN = "C" * 25 + "N" * 10
-        elif "visium" in w.RECIPE:
-            BC_PATTERN = "C" * 16 + "N" * 12
-        elif "microST_ligation" in w.RECIPE:
-            BC_PATTERN = "C" * 34
-        elif "microST_klenow_v1" in w.RECIPE:
-            BC_PATTERN = "C" * 34 + "N" * 12
-        elif "seeker" in w.RECIPE and "matchLinker" in w.RECIPE:
-            BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
-        elif "seeker" in w.RECIPE and "internalTrim" in w.RECIPE:
-            BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
-        elif "seeker" in w.RECIPE and "adapterInsert" in w.RECIPE:
-            BC_PATTERN = "C" * 8 + "C" * 18 + "C" * 6 + "N" * 7
-        else:
-            BC_PATTERN = "C" * 16 + "N" * 12
-    except Exception:
-        BC_PATTERN = "C" * 16 + "N" * 12
-
-    # return barcode pattern
-    return BC_PATTERN
-
-    # BC_PATTERN="(?P<discard_1>CTACACGACGCTCTTCCGATCT)"+ \
-    #     "(?P<cell_1>.{{8}})"+ \
-    #     "(?P<discard_2>TCTTCAGCGTTCCCGAGA)"+ \
-    #     "(?P<cell_2>.{{6}})"+ \
-    #     "(?P<umi_1>.{{7}})"
-
-    # BC_PATTERN="(?P<discard_1>XXXXXXXXXXXXXXXXXXXXXXX)"+ \
-    #     "(?P<cell_1>.{{8}})"+ \
-    #     "(?P<discard_2>XXXXXXXXXXXXXXXXXX)"+ \
-    #     "(?P<cell_2>.{{6}})"+ \
-    #     "(?P<umi_1>.{{7}})"
 
 
 def get_bwa_ref(w, mode=["genome", "rRNA"]):
@@ -276,7 +236,7 @@ def get_bwa_ref(w, mode=["genome", "rRNA"]):
     return out
 
 
-def get_STAR_ref(w, mode=["genome", "rRNA"]):
+def get_STAR_ref(w, mode=["genome"]):
     """
     Pull STAR info from sample sheet
 
@@ -289,8 +249,8 @@ def get_STAR_ref(w, mode=["genome", "rRNA"]):
 
         if mode == "genome":
             out = SAMPLE_SHEET["STAR_ref"][w.SAMPLE]
-        elif mode == "rRNA":
-            out = SAMPLE_SHEET["STAR_rRNA_ref"][w.SAMPLE]
+        else:
+            print(f"Don't know what to do for mode [{mode}]")
     except Exception:
         out = "No reference given! Check your sample sheet!"
 
@@ -331,7 +291,7 @@ def get_STAR_extra_params(w):
         try:
             star_info[key] = RECIPE_SHEET[key][w.RECIPE]
         except Exception:
-            # values for rRNA/default
+            # values for default
             recipe = get_recipes(w, mode=f"concatenate")
 
             if "stomics" in recipe:

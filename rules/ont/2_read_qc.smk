@@ -119,7 +119,7 @@ rule readQC_downsample:
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc_500000.tsv",
     params:
-        N_READS=500001 # 500k plus header
+        N_READS=500001,  # 500k plus header
     resources:
         mem="4G",
     threads: 1

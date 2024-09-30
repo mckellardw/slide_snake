@@ -7,7 +7,6 @@ rule ont_1c_fastq_call_bc_from_adapter:
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes.tsv",
     params:
-        BC_PATTERN=lambda w: get_ont_barcode_pattern(w),
         BC_ADAPTERS=lambda w: get_recipe_info(w, "BC_adapter", mode="ONT"),
         BC_LENGTHS=lambda w: get_recipe_info(w, "BC_length", mode="ONT"),
         BC_OFFSETS=lambda w: get_recipe_info(w, "BC_offset", mode="ONT"),
@@ -20,44 +19,29 @@ rule ont_1c_fastq_call_bc_from_adapter:
         UMI_MISMATCHES=2,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1c_fastq_call_bc_from_adapter.log",
+    conda:
+        f"{workflow.basedir}/envs/parasail.yml"
     resources:
         mem="32G",
     threads: 1
     run:
-        # if any([umi_length > 0 for umi_length in params.UMI_LENGTHS]):
-        shell(
-            f"""
-            mkdir -p $(dirname {log.log})
-            python scripts/py/fastq_call_bc_umi_from_adapter_v2.py --fq_in {input.FQS[0]} \
-                --tsv_out {output.TSV} \
-                --bc_adapters {params.BC_ADAPTERS} \
-                --bc_lengths {params.BC_LENGTHS} \
-                --bc_offsets {params.BC_OFFSETS} \
-                --bc_positions {params.BC_POSITIONS} \
-                --bc_mismatches {params.BC_MISMATCHES} \
-                --umi_adapters {params.UMI_ADAPTERS} \
-                --umi_lengths {params.UMI_LENGTHS} \
-                --umi_offsets {params.UMI_OFFSETS} \
-                --umi_positions {params.UMI_POSITIONS} \
-                --umi_mismatches {params.UMI_MISMATCHES} \
-                --threads {threads} \
-            1> {log.log}
-            """
-        )
-        # else:
-        #     shell(
-        #         f"""
-        #         python scripts/py/fastq_call_bc_from_adapter.py \
-        #             --fq_in {input.FQS[0]} \
-        #             --tsv_out {output.TSV} \
-        #             --adapters {params.BC_ADAPTERS} \
-        #             --barcode_lengths {params.BC_LENGTHS} \
-        #             --barcode_positions {params.BC_POSITIONS}  \
-        #             --mismatches {params.BC_MISMATCHES}
-        #         2>&1 | tee {log.log}
-        #         """
-        #     )
-
+        """
+        mkdir -p $(dirname {log.log})
+        python scripts/py/fastq_call_bc_umi_from_adapter_v2.py --fq_in {input.FQS[0]} \
+            --tsv_out {output.TSV} \
+            --bc_adapters {params.BC_ADAPTERS} \
+            --bc_lengths {params.BC_LENGTHS} \
+            --bc_offsets {params.BC_OFFSETS} \
+            --bc_positions {params.BC_POSITIONS} \
+            --bc_mismatches {params.BC_MISMATCHES} \
+            --umi_adapters {params.UMI_ADAPTERS} \
+            --umi_lengths {params.UMI_LENGTHS} \
+            --umi_offsets {params.UMI_OFFSETS} \
+            --umi_positions {params.UMI_POSITIONS} \
+            --umi_mismatches {params.UMI_MISMATCHES} \
+            --threads {threads} \
+        1> {log.log}
+        """
 
 
 # Filter called read barcodes
@@ -73,9 +57,6 @@ rule ont_1c_filter_read_barcodes:
 
 
 # Correct barcodes based on white lists
-# TODO- flexible input whitelist (for independent sub-barcode correction)
-# TODO- recipe-specific barcode correction parameters (MAX_LEVEN, NEXT_MATCH_DIFF, CONCAT_BCS)
-# TODO- option for methods which don't have UMI {params.UMI_LENGTH}
 rule ont_1c_tsv_bc_correction:
     input:
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_filtered.tsv",
@@ -85,8 +66,6 @@ rule ont_1c_tsv_bc_correction:
         TSV_SLIM="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected.tsv",
         TSV_FULL="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected_full.tsv",
     params:
-        # WHITELIST=lambda w: get_whitelist(w, return_type="string"),
-        UMI_LENGTH=lambda w: get_recipe_info(w, "UMI_length", mode="ONT"),
         MAX_LEVEN=lambda w: get_recipe_info(w, "BC_max_ED", mode="ONT"),  # maximum Levenshtein distance tolerated in correction;
         NEXT_MATCH_DIFF=lambda w: get_recipe_info(w, "BC_min_ED_diff", mode="ONT"),
         K=5,  # kmer length for BC whitelist filtering; shorter value improves accuracy, extends runtime
@@ -94,30 +73,23 @@ rule ont_1c_tsv_bc_correction:
         CONCAT_BCS=lambda w: get_recipe_info(w, "BC_concat", mode="ONT"),  # whether the sub-barcodes should be corrected together (SlideSeq) or separately (microST)
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1c_tsv_bc_correction.log",
+    conda:
+        f"{workflow.basedir}/envs/parasail.yml"
     resources:
         mem="32G",
     threads: config["CORES"]
     run:
-        # if params.UMI_LENGTH > 0:
-        shell(
-            f"""
-            python scripts/py/tsv_bc_correction_parallelized.py --tsv_in {input.TSV} \
-                --tsv_out_full {output.TSV_FULL} \
-                --tsv_out_slim {output.TSV_SLIM} \
-                --id_column 0 \
-                --bc_columns {params.BC_COLUMNS} \
-                --concat_bcs {params.CONCAT_BCS} \
-                --whitelist_files {' '.join(input.WHITELIST)} \
-                --max_levens {params.MAX_LEVEN} \
-                --min_next_match_diffs {params.NEXT_MATCH_DIFF} \
-                --k {params.K} \
-                --threads {threads} \
-            1> {log.log}
-            """
-        )
-        # else: # no UMI
-        #     shell(
-        #         f"""
-        #         TODO
-        #         """
-        #     )
+        """
+        python scripts/py/tsv_bc_correction_parallelized.py --tsv_in {input.TSV} \
+            --tsv_out_full {output.TSV_FULL} \
+            --tsv_out_slim {output.TSV_SLIM} \
+            --id_column 0 \
+            --bc_columns {params.BC_COLUMNS} \
+            --concat_bcs {params.CONCAT_BCS} \
+            --whitelist_files {' '.join(input.WHITELIST)} \
+            --max_levens {params.MAX_LEVEN} \
+            --min_next_match_diffs {params.NEXT_MATCH_DIFF} \
+            --k {params.K} \
+            --threads {threads} \
+        1> {log.log}
+        """

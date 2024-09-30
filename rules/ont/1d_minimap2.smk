@@ -42,6 +42,7 @@ rule ont_1d_align_minimap2_genome:
         """
 
 
+# Sort and compresss minimap2 output
 rule ont_1d_sort_compress_output:
     input:
         SAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tmp.sam",
@@ -62,6 +63,7 @@ rule ont_1d_sort_compress_output:
         """
 
 
+# Assign feature (transcript ID) to each alignment
 rule ont_1d_featureCounts:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam",
@@ -275,6 +277,7 @@ rule ont_1d_umitools_count:
         """
 
 
+# Convert long-format counts from umi_tools to market-matrix format (.mtx)
 rule ont_1d_counts_to_sparse:
     input:
         COUNTS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/umitools_counts.tsv.gz",

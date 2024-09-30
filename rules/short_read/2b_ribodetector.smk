@@ -3,6 +3,7 @@
 ## Paper: https://doi.org/10.1093/nar/gkac112
 
 
+# Run ribodetector on preprocessed reads
 # TODO- refactor to incorporate internal trimming options into rRNA filtering
 rule ilmn_2d_ribodetector:
     input:
@@ -37,6 +38,7 @@ rule ilmn_2d_ribodetector:
         """
 
 
+# Get list of read IDs to keep ("no ribo") from the output R2 file
 rule ilmn_2d_ribodetector_get_noRibo_list:
     input:
         R2_FQ_NORIBO="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_R2.fq",
@@ -51,6 +53,7 @@ rule ilmn_2d_ribodetector_get_noRibo_list:
         """
 
 
+# Temporarily decompress R1 fastq...
 rule ilmn_2d_ribodetector_gunzip_R1:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/{TMP}_R1.fq.gz",
@@ -63,6 +66,7 @@ rule ilmn_2d_ribodetector_gunzip_R1:
         """
 
 
+# Keep only reads which do NOT contain rRNA sequences
 rule ilmn_2d_ribodetector_filter_R1:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq",
@@ -79,6 +83,7 @@ rule ilmn_2d_ribodetector_filter_R1:
         """
 
 
+# Internally trimmed reads
 rule ilmn_2d_ribodetector_filter_R1_internalTrim:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_internalTrim_R1.fq",
@@ -95,6 +100,7 @@ rule ilmn_2d_ribodetector_filter_R1_internalTrim:
         """
 
 
+# Hard-trimmed reads
 rule ilmn_2d_ribodetector_filter_R1_hardTrim:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_hardTrim_R1.fq",
@@ -111,6 +117,7 @@ rule ilmn_2d_ribodetector_filter_R1_hardTrim:
         """
 
 
+# Compress all the R1 files
 rule ilmn_2d_ribodetector_compress_fqs:
     input:
         FQ="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_{READ}.fq",

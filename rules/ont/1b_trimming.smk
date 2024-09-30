@@ -128,6 +128,8 @@ rule ont_1b_R1_internalTrim:
     threads: config["CORES"]
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1b_R1_internalTrimming.log",
+    conda:
+        f"{workflow.basedir}/envs/parasail.yml"
     shell:
         """
         python scripts/py/fastq_internal_adapter_trim_R1_v2.py \
