@@ -157,14 +157,8 @@ def align_parasail(read, adapter, mismatches, verbose=False):
 
     # Create a simple identity matrix (match = 1, mismatch = 0)
     matrix = parasail.matrix_create(alphabet="ACGT", match=1, mismatch=0)
-    alignment = parasail.sw(
-        s1=adapter, 
-        s2=read, 
-        open=1, 
-        extend=1, 
-        matrix=matrix
-    )
-    
+    alignment = parasail.sw(s1=adapter, s2=read, open=1, extend=1, matrix=matrix)
+
     # Check if alignment meets the minimum score threshold based on mismatches
     if alignment.score >= (len(adapter) - mismatches):
         # if verbose:
@@ -178,7 +172,7 @@ def align_parasail(read, adapter, mismatches, verbose=False):
         start = alignment.end_ref - len(adapter) + 1
         end = alignment.end_ref + 1
         return alignment.score, start, end
-    
+
     start = alignment.end_ref - len(adapter) + 1
     end = alignment.end_ref + 1
     print(f"{alignment.score} | {read}")
@@ -235,9 +229,7 @@ def main(
                         continue
 
                     align_score, start, end = align_parasail(
-                        read=read.sequence, 
-                        adapter=adapter, 
-                        mismatches=mismatches
+                        read=read.sequence, adapter=adapter, mismatches=mismatches
                     )
                     # if align_score < 45: #debug
                     # print(alignment)

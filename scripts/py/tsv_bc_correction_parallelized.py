@@ -343,7 +343,7 @@ def calc_leven_to_whitelist(bc_uncorr, whitelist, bc_len):
 
     for wl_bc in wl_filtered:
         # d = ed.eval(bc_uncorr, wl_bc)  # Use the ed module here
-        d = distance(bc_uncorr, wl_bc) # levenshtein-python is much faster
+        d = distance(bc_uncorr, wl_bc)  # levenshtein-python is much faster
         # d = hamming(bc_uncorr, wl_bc)
 
         if d < bc_corr_leven:
@@ -442,7 +442,9 @@ def process_tsv(
                                 bc_leven,
                                 next_match_diff,
                             ) = calc_leven_to_whitelist(
-                                bc_uncorr=barcode, whitelist=whitelist, bc_len=len(barcode)
+                                bc_uncorr=barcode,
+                                whitelist=whitelist,
+                                bc_len=len(barcode),
                             )
                             concat_corrected_bc.append(corrected_bc)
 

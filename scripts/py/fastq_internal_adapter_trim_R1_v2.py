@@ -23,7 +23,7 @@ import argparse
 import sys
 import os
 import gzip
-
+import time
 import pysam
 import parasail
 
@@ -59,7 +59,6 @@ def parse_args():
     return args
 
 
-
 def align_parasail(read, adapter, min_align_score=58, verbose=False):
     """
     Align sequences using parasail (Smith-Waterman local alignment)
@@ -91,17 +90,27 @@ def trim_fq(fq_in, fq_out, adapter_seq, min_adapter_start_pos, min_align_score):
         with pysam.FastxFile(fq_in) as fq:
             for read in fq:
                 read_count += 1
-                
+
                 # Perform pairwise alignment to find the sequence with allowed score
                 align_score, start, end = align_parasail(
-                    read=read.sequence, adapter=adapter_seq, min_align_score=min_align_score
+                    read=read.sequence,
+                    adapter=adapter_seq,
+                    min_align_score=min_align_score,
                 )
 
                 # Account for reads with deletions in `BC_1`
                 if start < min_adapter_start_pos:  # Deletion in BC_1
                     offset = min_adapter_start_pos - start
-                    seq_out = "N" * offset + read.sequence[start:min_adapter_start_pos] + read.sequence[end:]
-                    qual_out = "!" * offset + read.quality[start:min_adapter_start_pos] + read.quality[end:]
+                    seq_out = (
+                        "N" * offset
+                        + read.sequence[start:min_adapter_start_pos]
+                        + read.sequence[end:]
+                    )
+                    qual_out = (
+                        "!" * offset
+                        + read.quality[start:min_adapter_start_pos]
+                        + read.quality[end:]
+                    )
 
                     del_count += 1
                 else:
@@ -109,8 +118,12 @@ def trim_fq(fq_in, fq_out, adapter_seq, min_adapter_start_pos, min_align_score):
                         ins_count += 1
 
                     ## Trim the base closest to adapter
-                    seq_out = read.sequence[0:min_adapter_start_pos] + read.sequence[end:]
-                    qual_out = read.quality[0:min_adapter_start_pos] + read.quality[end:]
+                    seq_out = (
+                        read.sequence[0:min_adapter_start_pos] + read.sequence[end:]
+                    )
+                    qual_out = (
+                        read.quality[0:min_adapter_start_pos] + read.quality[end:]
+                    )
 
                 # Broken read; erase R1 and add `N` with qval=0 ('!')
                 # Alignment score cutoff was determined by spot-checking ~100 bead barcodes, based on predicted adapter location

@@ -133,7 +133,7 @@ def find_and_split_reads(
     output_prefix = fq_in.strip(".fq.gz")
 
     read_counter = 0
-    too_short_counter = 0  # filtered b/c too short counter
+    too_short_counter = 0  # filtered b/c too short
     unaligned_counter = 0
     missing_split_counter = 0
     # update_count=1000000 # how often to print updates [for debugging]
