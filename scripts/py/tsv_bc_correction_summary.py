@@ -1,6 +1,10 @@
 import argparse
 from collections import defaultdict
 
+# Usage
+"""
+python scripts/py/tsv_bc_correction_summary.py {input.TSV_FULL} > {output.SUMMARY}
+"""
 
 def infer_barcode_count(line):
     fields = line.strip().split("\t")

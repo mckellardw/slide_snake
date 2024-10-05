@@ -78,7 +78,7 @@ def parse_args():
     )
     parser.add_argument(
         "--id_column",
-        nargs="+",
+        # nargs="+",
         type=int,
         default=0,
         help="Column in .tsv corresponding to the read IDs (default: 0).",

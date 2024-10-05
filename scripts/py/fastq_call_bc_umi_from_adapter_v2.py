@@ -175,7 +175,7 @@ def align_parasail(read, adapter, mismatches, verbose=False):
 
     start = alignment.end_ref - len(adapter) + 1
     end = alignment.end_ref + 1
-    print(f"{alignment.score} | {read}")
+    # print(f"{alignment.score} | {read}")
     return None, None, None
 
 

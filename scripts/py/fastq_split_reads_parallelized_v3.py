@@ -198,9 +198,9 @@ def find_and_split_reads(
                 read_counter += 1
             else:
                 # write to ambiguous.fq
-                output_ambiguous.write(
-                    f"@{read.name}\n{read.sequence}\n+\n{read.quality}\n"
-                )
+                # output_ambiguous.write(
+                #     f"@{read.name}\n{read.sequence}\n+\n{read.quality}\n"
+                # )
                 too_short_counter += 1
 
             # read count update [for debugging]
@@ -296,7 +296,7 @@ if __name__ == "__main__":
             """
         )
 
-        if os.path.isfile(args.fq_in.replace(".fq.gz", "_R2.fq.gz")):
+        if os.path.isfile(args.fq_in.replace(".fq.gz", "_R2.fq")):
             os.system(
                 f"""
                 rm {' '.join(chunked_fqs_in)} 

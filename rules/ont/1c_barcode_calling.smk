@@ -24,7 +24,7 @@ rule ont_1c_fastq_call_bc_from_adapter:
     resources:
         mem="32G",
     threads: 1
-    run:
+    shell:
         """
         mkdir -p $(dirname {log.log})
         python scripts/py/fastq_call_bc_umi_from_adapter_v2.py --fq_in {input.FQS[0]} \
@@ -66,6 +66,9 @@ rule ont_1c_tsv_bc_correction:
         TSV_SLIM="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected.tsv",
         TSV_FULL="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected_full.tsv",
     params:
+        WHITELIST=lambda w: " ".join(
+            get_whitelist(w, return_type="list", mode="recipe")
+        ),
         MAX_LEVEN=lambda w: get_recipe_info(w, "BC_max_ED", mode="ONT"),  # maximum Levenshtein distance tolerated in correction;
         NEXT_MATCH_DIFF=lambda w: get_recipe_info(w, "BC_min_ED_diff", mode="ONT"),
         K=5,  # kmer length for BC whitelist filtering; shorter value improves accuracy, extends runtime
@@ -78,7 +81,7 @@ rule ont_1c_tsv_bc_correction:
     resources:
         mem="32G",
     threads: config["CORES"]
-    run:
+    shell:
         """
         python scripts/py/tsv_bc_correction_parallelized.py --tsv_in {input.TSV} \
             --tsv_out_full {output.TSV_FULL} \
@@ -86,10 +89,30 @@ rule ont_1c_tsv_bc_correction:
             --id_column 0 \
             --bc_columns {params.BC_COLUMNS} \
             --concat_bcs {params.CONCAT_BCS} \
-            --whitelist_files {' '.join(input.WHITELIST)} \
+            --whitelist_files {params.WHITELIST} \
             --max_levens {params.MAX_LEVEN} \
             --min_next_match_diffs {params.NEXT_MATCH_DIFF} \
             --k {params.K} \
             --threads {threads} \
         1> {log.log}
+        """
+
+# Summary of barcode correction results
+
+rule ont_1c_summarize_bc_correction:
+    input:
+        # TSV_SLIM="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected.tsv",
+        TSV_FULL="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected_full.tsv",
+    output:
+        SUMMARY="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/bc_correction_stats.txt",
+    params:
+        N_LINES=100000 # number of lines to summarize 
+    conda:
+        f"{workflow.basedir}/envs/parasail.yml"
+    resources:
+        mem="32G",
+    threads: config["CORES"]
+    shell:
+        """
+        python scripts/py/tsv_bc_correction_summary.py {input.TSV_FULL} > {output.SUMMARY}
         """
