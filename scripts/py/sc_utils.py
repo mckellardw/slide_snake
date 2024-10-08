@@ -9,8 +9,6 @@ from scipy.sparse import issparse
 from typing import Union
 import scipy.sparse as sp
 from scipy.io import mmread
-
-import scipy.sparse as sp
 import gzip
 
 
@@ -994,3 +992,74 @@ def top_n_genes(adata, n):
     """
     sorted_genes = adata.var_names[np.argsort(adata.X.sum(axis=0))[::-1]]
     return sorted_genes[:n].tolist()
+
+
+
+def add_barcode_tally_to_anndata(tsv_path, adata, metadata_key='barcode_count', add_missing=False):
+    """
+    Reads a TSV file containing read_IDs and barcodes, tallies the barcodes,
+    and adds the counts as metadata to an AnnData object.
+    
+    Parameters:
+    -----------
+    tsv_path : str
+        Path to the TSV file containing read_IDs and barcodes
+    adata : AnnData
+        AnnData object to add the metadata to
+    metadata_key : str, optional
+        Key to use for the metadata in adata.obs (default: 'barcode_count')
+    add_missing : bool, optional
+        If True, adds missing barcodes to the AnnData object
+        If False, skips barcodes that aren't in the AnnData object (default: False)
+    
+    Returns:
+    --------
+    None (modifies adata in place)
+    """
+    # Read TSV file without header
+    df = pd.read_csv(tsv_path, sep='\t', header=None, names=['read_id', 'barcode'])
+    
+    # Count occurrences of each barcode
+    barcode_counts = df['barcode'].value_counts()
+    
+    if add_missing:
+        # Get unique barcodes from both sources
+        tsv_barcodes = set(barcode_counts.index)
+        adata_barcodes = set(adata.obs_names)
+        all_barcodes = sorted(tsv_barcodes.union(adata_barcodes))
+        
+        # Create a new AnnData with all barcodes
+        # First, create a DataFrame with zeros for all features
+        new_data = pd.DataFrame(
+            0, 
+            index=all_barcodes, 
+            columns=adata.var_names
+        )
+        
+        # Fill in the existing data
+        new_data.loc[adata.obs_names] = adata.X.toarray() if issparse(adata.X) else adata.X
+        
+        # Create new AnnData object
+        new_adata = ad.AnnData(new_data)
+        
+        # Copy over existing obs and var annotations
+        for col in adata.obs.columns:
+            new_adata.obs[col] = pd.Series(index=all_barcodes)
+            new_adata.obs.loc[adata.obs_names, col] = adata.obs[col]
+            
+        new_adata.var = adata.var.copy()
+        
+        # Update the reference to adata
+        adata = new_adata
+    
+    # Initialize counts for all cells in adata with 0
+    adata.obs[metadata_key] = 0
+    
+    # Update counts only for barcodes that exist in adata
+    existing_barcodes = barcode_counts.index.intersection(adata.obs_names)
+    adata.obs.loc[existing_barcodes, metadata_key] = barcode_counts[existing_barcodes]
+    
+    # Convert counts to integer type
+    adata.obs[metadata_key] = adata.obs[metadata_key].astype(int)
+    
+    return adata
