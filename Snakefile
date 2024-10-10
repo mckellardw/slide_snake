@@ -81,9 +81,8 @@ include: "rules/short_read/1c_fastqc.smk"
 
 ## rRNA Filtering 
 include: "rules/short_read/2a_rRNA_bwa.smk"
-include: "rules/short_read/2b_rRNA_STAR.smk"
+include: "rules/short_read/2b_ribodetector.smk"
 include: "rules/short_read/2c_rRNA_qualimap.smk"
-include: "rules/short_read/2d_ribodetector.smk"
 
 ## STAR alignment, QC, and post-processing - TODO update numbering
 include: "rules/short_read/3a_star_align.smk"
@@ -92,13 +91,14 @@ include: "rules/short_read/3c_star_dedup.smk"
 include: "rules/short_read/3d_star_qualimap.smk"
 
 ## kallisto/bustools alignment
-# include: "rules/short_read/4a_kallisto.smk"
 include: "rules/short_read/4a_kbpython.smk"
-# include: "rules/short_read/4b_kallisto_pseudobam.smk"
-# include: "rules/short_read/4c_kallisto_velo.smk"
+# include: "rules/short_read/4b_kbpython_velo.smk"
 
-## small RNA stuff
+## small RNA stuff #TODO
 # include: "rules/short_read/5_mirge.smk"
+
+## scanpy stuff
+include: "rules/short_read/6a_scanpy_init.smk"
 
 # ONT module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## preprocessing
@@ -107,17 +107,16 @@ include: "rules/ont/1b_trimming.smk"
 include: "rules/ont/1c_barcode_calling.smk"
 
 ## alignment
-include: "rules/ont/1d_minimap2.smk"
-include: "rules/ont/1d_STAR.smk"
+include: "rules/ont/1d_minimap2_genome.smk"
+include: "rules/ont/1d_minimap2_transcriptome.smk"
+# include: "rules/ont/1d_STAR.smk"
+# include: "rules/ont/1e_kallisto-lr.smk"
 
 ## QC
 include: "rules/ont/2_qualimap.smk"
 include: "rules/ont/2_read_qc.smk"
 include: "rules/ont/2_fastqc.smk"
 
-# Final outputs module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## scanpy stuff
-include: "rules/6a_scanpy_init.smk"
 
 
 ### Build targets #################################################################################
@@ -145,7 +144,7 @@ ilmn_STAR_dedup_bams = [f"{OUTDIR}/{SAMPLE}/{REF}/short_read/{RECIPE}/Aligned.so
         for STRAND in ["", ".fwd", ".rev"]
     ] # deduped and/or strand-split, umi_tools deduplicated .bam 
 
-ilmn_STAR_counts = [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.mtx.gz" 
+ilmn_STAR_counts = [f"{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.mtx.gz" 
     for SAMPLE in R2_FQS.keys() 
     for RECIPE in RECIPE_DICT[SAMPLE]
     for SOLO in ["Gene","GeneFull"]
@@ -174,7 +173,7 @@ ilmn_mirge_bulk = [f"{OUTDIR}/{SAMPLE}/miRge_bulk/{RECIPE}/annotation.report.htm
 ] # miRge3.0 pseudobulk analysis
 
 # Module 6 - anndata/scanpy
-ilmn_STAR_h5ad = [f"{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.h5ad" 
+ilmn_STAR_h5ad = [f"{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.h5ad" 
     for SAMPLE in R2_FQS.keys() 
     for RECIPE in RECIPE_DICT[SAMPLE] 
     for SOLO in ["Gene","GeneFull"]
@@ -194,8 +193,10 @@ ont_minimap = [f"{OUTDIR}/{SAMPLE}/ont/{FILE}"
     for RECIPE in RECIPE_ONT_DICT[SAMPLE]
     for FILE in [
             f"minimap2/{RECIPE}/sorted_gn_cb.bam",
-            f"barcodes_umis/{RECIPE}/read_barcodes_corrected.tsv", #_corrected
+            f"barcodes_umis/{RECIPE}/read_barcodes_corrected.tsv",
+            f"barcodes_umis/{RECIPE}/bc_correction_stats.txt",
             f"minimap2/{RECIPE}/raw/output.h5ad",
+            # f"minimap2_txome/{RECIPE}/raw/output.h5ad",
         ]
 ] # ONT outputs
 
@@ -232,16 +233,16 @@ ont_qualimap = [f"{OUTDIR}/{SAMPLE}/qualimap/ont/{TOOL}/{RECIPE}/{FILE}"
 rule all:
     input:
         ont_minimap,
-        ont_readqc,
+        # ont_readqc,
         ont_qualimap,
         # ont_fastqc,
 
-        # ilmn_fastqc
-        # ilmn_rRNA_qualimap
-        # ilmn_STAR_dedup_bams
-        # ilmn_STAR_counts
-        # ilmn_STAR_dedup_qualimap
-        # ilmn_STAR_unmapped_fastqc
-        # ilmn_mirge_bulk
-        # ilmn_STAR_h5ad
-        # ilmn_kb_h5ad
+        ilmn_fastqc,
+        # ilmn_rRNA_qualimap,
+        # ilmn_STAR_dedup_bams,
+        # ilmn_STAR_counts,
+        # ilmn_STAR_dedup_qualimap,
+        # ilmn_STAR_unmapped_fastqc,
+        # ilmn_mirge_bulk,
+        ilmn_STAR_h5ad,
+        # ilmn_kb_h5ad,

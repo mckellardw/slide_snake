@@ -8,35 +8,40 @@ default-resources:
   threads: 1
 
 set-threads:
-  merge_fastqs: 1
-  cutadapt: 8
-  cutadapt2: 8
-  R1_hardTrimming: 24
-  R1_internalTrimming: 24
-  fastQC_preTrim: 24
-  fastQC_postTrim: 24
-  fastQC_twiceTrim: 24
-  bwa_rRNA_filter_R1: 16
-  bwa_rRNA_align: 16
-  ribodetector: 16
-  STARsolo_align_rRNA: 16
-  STARsolo_align: 16
-  qualimapQC_STAR: 16
-  kbpython_std: 16
+  ilmn_1a_merge_fastqs: 1
+  ilmn_1b_cutadapt: 8
+  ilmn_1b_cutadapt2: 8
+  ilmn_1b_R1_hardTrimming: 24
+  ilmn_1b_R1_internalTrimming: 24
+  ilmn_1c_fastQC_preTrim: 24
+  ilmn_1c_fastQC_postTrim: 24
+  ilmn_1c_fastQC_twiceTrim: 24
+  ilmn_2a_bwa_rRNA_align: 16
+  ilmn_2a_bwa_rRNA_filter_R1: 16
+  ilmn_2b_ribodetector: 16
+  ilmn_3a_STARsolo_firstPass: 24
+  ilmn_3a_STARsolo_secondPass: 24
+  ilmn_3d_qualimapQC_STAR: 8
+  ilmn_4a_kbpython_std: 16
   miRge3_pseudobulk: 16
-  ont_call_adapter_scan: 56
+  ilmn_6a_cache_preQC_h5ad_STAR: 1
+  ont_1a_call_adapter_scan_v2: 56
   ont_readIDs_by_adapter_type: 24
   ont_adapterScan_QC: 1
   ont_merge_scan_lists: 1
   ont_subset_fastq_by_adapter_type: 24
   ont_split_fastq_to_R1_R2: 16
-  ont_cutadapt: 24
-  ont_R1_hardTrimming: 24
-  ont_R1_internalTrim: 24
+  ont_1a_subset_fastq_by_adapter_type: 1
+  ont_1a_compress_merged_fq: 8
+  ont_1a_split_fastq_to_R1_R2: 24
+  ont_1b_cutadapt: 24
+  ont_1b_R1_hardTrimming: 24
+  ont_1b_R1_internalTrim: 24
   ont_cutadapt_internalTrimming: 24
-  ont_fastq_call_bc_from_adapter: 1
-  ont_tsv_bc_correction: 24
-  ont_align_minimap2_genome: 16
+  ont_1c_tsv_bc_correction: 24
+  ont_1c_fastq_call_bc_from_adapter: 1
+  ont_1c_filter_read_barcodes: 1
+  ont_1d_align_minimap2_genome: 16
   ont_sort_compress_output: 1
   ont_featureCounts: 1
   ont_add_featureCounts_to_bam: 1
@@ -56,47 +61,47 @@ set-threads:
   ont_readQC_summaryplot: 16
 
 set-resources:
-  merge_fastqs:
+  ilmn_1a_merge_fastqs:
     mem: 16G # Converted 16G to MB
-  cutadapt:
+  ilmn_1b_cutadapt:
     mem: 16G
-  cutadapt2:
+  ilmn_1b_cutadapt2:
     mem: 16G
-  R1_hardTrimming:
+  ilmn_1b_R1_hardTrimming:
     mem: 16G
-  R1_internalTrimming:
+  ilmn_1b_R1_internalTrimming:
     mem: 16G
-  fastQC_preTrim:
+  ilmn_1c_fastQC_preTrim:
     mem: 16G
-  fastQC_postTrim:
+  ilmn_1c_fastQC_postTrim:
     mem: 16G
-  fastQC_twiceTrim:
+  ilmn_1c_fastQC_twiceTrim:
     mem: 16G
-  bwa_rRNA_filter_R1:
-    mem: 64G
-  bwa_rRNA_align:
+  ilmn_2a_bwa_rRNA_align:
     mem: 96G 
-  qualimapQC_rRNA_bwa:
+  ilmn_2a_bwa_rRNA_filter_R1:
+    mem: 64G
+  ilmn_2a_qualimapQC_rRNA_bwa:
     mem: 32G
-  ribodetector:
+  ilmn_2b_ribodetector:
     mem: 16G
-  ribodetector_filter_R1:
+  ilmn_2b_ribodetector_filter_R1:
     mem: 32G
-  ribodetector_filter_R1_internalTrim:
+  ilmn_2b_ribodetector_filter_R1_internalTrim:
     mem: 32G
-  ribodetector_filter_R1_hardTrim:
+  ilmn_2b_ribodetector_filter_R1_hardTrim:
     mem: 32G
-  STARsolo_align_rRNA:
+  ilmn_3a_STARsolo_firstPass:
     mem: 256G
-  STARsolo_align:
+  ilmn_3a_STARsolo_secondPass:
     mem: 256
   qualimapQC_STAR:
     mem: 32G
-  kbpython_std:
+  ilmn_4a_kbpython_std:
     mem: 256
   miRge3_pseudobulk:
     mem: 256
-  cache_preQC_h5ad_STAR:
+  ilmn_6a_cache_preQC_h5ad_STAR:
     mem: 32G
   ont_call_adapter_scan:
     mem: 16G

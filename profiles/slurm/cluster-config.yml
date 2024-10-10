@@ -12,104 +12,99 @@ __default__:
 # rule-specific
 # rules/short_read/ ~~~~~~~~~~~~~
 ## 1a_mergefqs.smk
-merge_fastqs:
+ilmn_1a_merge_fastqs:
     threads: 1
     mem: 16G
 
+
 ## 1b_trimming.smk
-cutadapt:
+ilmn_1b_cutadapt:
     threads: 8
     mem: 16G
 
-cutadapt2:
+ilmn_1b_cutadapt2:
     threads: 8
     mem: 16G
 
-R1_hardTrimming:
+ilmn_1b_R1_hardTrimming:
     threads: 24
     mem: 16G
 
-R1_internalTrimming:
+ilmn_1b_R1_internalTrimming:
     threads: 24
     mem: 16G
+
 
 ## 1c_fastqc.smk
-fastQC_preTrim:
+ilmn_1c_fastQC_preTrim:
     threads: 24
     mem: 16G
 
-fastQC_postTrim:
+ilmn_1c_fastQC_postTrim:
     threads: 24
     mem: 16G
 
-fastQC_twiceTrim:
+ilmn_1c_fastQC_twiceTrim:
     threads: 24
     mem: 16G
 
 ## 2a_rRNA_bwa.smk
-bwa_rRNA_align:
+ilmn_2a_bwa_rRNA_align:
     threads: 16
     time: 2:00:00
     mem: 96G
 
-bwa_rRNA_filter_R1:
+ilmn_2a_bwa_rRNA_filter_R1:
     mem: 64G
 
 
-## 2b_rRNA_STAR.smk
-STAR_rRNA_align:
-    threads: 16
-    time: 2:00:00
-    mem_mb: 256000
-
-STAR_rRNA_compress_outs:
-    threads: 16
-
-STAR_rRNA_rename_compress_unmapped:
-    threads: 16
-    
-STAR_rRNA_filtered_fastqc:
-    threads: 16
-    
-## 2c_rRNA_qualimap.smk
-qualimapQC_rRNA_bwa:
-    mem: 32G
-
-qualimapQC_rRNA_STAR:
-    mem: 32G
-
-qualimap_summary2csv_rRNA_STAR:
-    mem: 4G
-
-## 2d_ribodetector.smk
-ribodetector:
+## 2b_ribodetector.smk
+ilmn_2b_ribodetector:
     threads: 16
     mem: 16G
 
-ribodetector_get_noRibo_list:
+ilmn_2b_ribodetector_get_noRibo_list:
     threads: 1
     mem: 4G
 
-ribodetector_gunzip_R1:
+ilmn_2b_ribodetector_gunzip_R1:
     threads: 1
     mem: 4G
 
-ribodetector_filter_R1:
+ilmn_2b_ribodetector_filter_R1:
     mem: 32G
 
-ribodetector_filter_R1_internalTrim:
+ilmn_2b_ribodetector_filter_R1_internalTrim:
     mem: 32G
 
-ribodetector_filter_R1_hardTrim:
+ilmn_2b_ribodetector_filter_R1_hardTrim:
     mem: 32G
 
-ribodetector_gunzip_R1:
+ilmn_2b_ribodetector_gunzip_R1:
     threads: 24
     mem: 8G
 
+
+## 2c_rRNA_qualimap.smk
+ilmn_2c_qualimapQC_rRNA_bwa:
+    mem: 32G
+
+ilmn_2c_qualimapQC_rRNA_STAR:
+    mem: 32G
+
+ilmn_2c_qualimap_summary2csv_rRNA_STAR:
+    mem: 4G
+
+
 ## 3a_star_align.smk
-STARsolo_align:
-    threads: 16
+ilmn_3a_STARsolo_firstPass:
+    threads: 24
+    time: 2:00:00
+    mem: 64G
+    mem_mb: 256000
+
+ilmn_3a_STARsolo_secondPass:
+    threads: 24
     time: 2:00:00
     mem: 256G
     mem_mb: 256000
@@ -119,11 +114,11 @@ STARsolo_align:
 ## 3c_star_dedup.smk
 
 ## 3d_star_qualimap.smk
-qualimapQC_STAR:
+ilmn_3d_qualimapQC_STAR:
     mem: 32G
 
-# 4 ~~~~~~~~~~~~~~~
-kbpython_std:
+## 4a_kbpython.smk
+ilmn_4a_kbpython_std:
     threads: 16
     time: 2:00:00
     mem: 256G
