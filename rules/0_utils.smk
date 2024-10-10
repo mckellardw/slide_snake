@@ -236,7 +236,7 @@ def get_bwa_ref(w, mode=["genome", "rRNA"]):
     return out
 
 
-def get_STAR_ref(w, mode=["genome"]):
+def get_STAR_ref(w, mode="genome"):
     """
     Pull STAR info from sample sheet
 

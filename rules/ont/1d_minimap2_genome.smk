@@ -2,16 +2,11 @@
 ## minimap2 docs - https://lh3.github.io/minimap2/minimap2.html
 rule ont_1d_align_minimap2_genome:
     input:
-        # FQ="{OUTDIR}/{SAMPLE}/ont/umitools/{RECIPE}/umi_R2.fq.gz",
         FQ=lambda w: get_fqs(w, return_type="list", mode="ONT")[1],
     output:
         SAM_TMP=temp("{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tmp.sam"),
     params:
         EXTRA_FLAGS=lambda wildcards: RECIPE_SHEET["mm2_extra"][wildcards.RECIPE],
-        # ref=config["REF_GENOME_FASTA"],
-        # chrom_sizes=config["REF_CHROM_SIZES"],
-        # bed=config["REF_GENES_BED"],
-        # flags=config["RESOURCES_MM2_FLAGS"],
         REF=lambda wildcards: SAMPLE_SHEET["mm2_fa"][wildcards.SAMPLE],
         JUNC_BED=lambda wildcards: SAMPLE_SHEET["mm2_junc_bed"][wildcards.SAMPLE],
     log:
@@ -47,7 +42,6 @@ rule ont_1d_sort_compress_output:
     input:
         SAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tmp.sam",
     output:
-        # BAM_UNSORT_TMP=temp("{OUTDIR}/{SAMPLE}/ont/tmp_unsort.sam"),
         BAM=temp("{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam"),
     params:
         REF=lambda wildcards: SAMPLE_SHEET["mm2_fa"][wildcards.SAMPLE],
@@ -95,14 +89,16 @@ rule ont_1d_featureCounts:
             -f \
             -d {params.MIN_TEMPLATE_LENGTH} \
             -D {params.MAX_TEMPLATE_LENGTH} \
-            -t 'transcript' \
-            -g 'transcript_id' \
+            -t 'gene' \
+            -g 'gene_id' \
             -T {threads} \
             -R CORE {params.EXTRA_FLAGS} \
             {input.BAM} \
         |& tee {log.log}
         """
 
+            # -t 'transcript' \
+            # -g 'transcript_id' \
 
 # --donotsort \
 # −−sortReadsByCoordinates \
@@ -149,6 +145,8 @@ rule ont_1d_add_featureCounts_to_bam:
         TAG_COLUMN=3,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_1_GN.log",
+    conda:
+        f"{workflow.basedir}/envs/parasail.yml"
     resources:
         mem="16G",
     threads: 1
@@ -177,6 +175,8 @@ rule ont_1d_add_corrected_barcodes:
         BARCODE_TSV_COLUMN=1,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_2_CB.log",
+    conda:
+        f"{workflow.basedir}/envs/parasail.yml"
     resources:
         mem="16G",
     threads: 1
@@ -205,6 +205,8 @@ rule ont_1d_add_umis:
         UMI_TAG="UR",  # uncorrected UMI
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_3_UR.log",
+    conda:
+        f"{workflow.basedir}/envs/parasail.yml"
     resources:
         mem="16G",
     threads: 1
@@ -294,4 +296,33 @@ rule ont_1d_counts_to_sparse:
         """
         mkdir -p $(dirname {output.COUNTS})
         python scripts/py/long2mtx.py {input.COUNTS} $(dirname {output.COUNTS})
+        """
+
+
+# make anndata object with spatial coordinates
+rule ont_cache_preQC_h5ad_minimap2:
+    input:
+        BCS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/barcodes.tsv.gz",
+        FEATS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/features.tsv.gz",
+        MAT="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/matrix.mtx.gz",
+        BC_map=lambda w: get_bc_map(w, mode="ONT"),
+        # BC_map="{OUTDIR}/{SAMPLE}/bc/map_underscore.txt",
+    output:
+        H5AD="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/output.h5ad",
+    log:
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/cache.log",
+    threads: 1
+    conda:
+        f"{workflow.basedir}/envs/scanpy.yml"
+    shell:
+        """
+        python scripts/py/cache_mtx_to_h5ad.py \
+            --mat_in {input.MAT} \
+            --feat_in {input.FEATS} \
+            --bc_in {input.BCS} \
+            --bc_map {input.BC_map} \
+            --ad_out {output.H5AD} \
+            --feat_col 0 \
+            --remove_zero_features \
+        1> {log.log}
         """

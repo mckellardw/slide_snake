@@ -2,19 +2,19 @@
 ## Removes barcodes for which there are no molecules detected [`--remove_zero_features`]
 rule cache_preQC_h5ad_STAR:
     input:
-        BCS="{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/barcodes.tsv.gz",
-        FEATS="{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/features.tsv.gz",
-        MAT="{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.mtx.gz",
+        BCS="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/barcodes.tsv.gz",
+        FEATS="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/features.tsv.gz",
+        MAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.mtx.gz",
         BC_map=lambda w: get_bc_map(w, mode="ILMN"),
         # BC_map="{OUTDIR}/{SAMPLE}/bc/map_underscore.txt",
     output:
-        H5AD="{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.h5ad",
+        H5AD="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.h5ad",
     params:
         var_names="gene_symbols",  # scanpy.read_10x_mtx()
         # BC_map = lambda w: get_bc_map(w, mode="ILMN")
     threads: 1
     log:
-        log="{OUTDIR}/{SAMPLE}/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}_cache.log",
+        log="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}_cache.log",
     conda:
         f"{workflow.basedir}/envs/scanpy.yml"
     shell:
@@ -117,30 +117,3 @@ rule cache_preQC_h5ad_kbpython_std:
 #             --remove_zero_features
 #         """
 
-
-rule ont_cache_preQC_h5ad_minimap2:
-    input:
-        BCS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/barcodes.tsv.gz",
-        FEATS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/features.tsv.gz",
-        MAT="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/matrix.mtx.gz",
-        BC_map=lambda w: get_bc_map(w, mode="ONT"),
-        # BC_map="{OUTDIR}/{SAMPLE}/bc/map_underscore.txt",
-    output:
-        H5AD="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/output.h5ad",
-    log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/cache.log",
-    threads: 1
-    conda:
-        f"{workflow.basedir}/envs/scanpy.yml"
-    shell:
-        """
-        python scripts/py/cache_mtx_to_h5ad.py \
-            --mat_in {input.MAT} \
-            --feat_in {input.FEATS} \
-            --bc_in {input.BCS} \
-            --bc_map {input.BC_map} \
-            --ad_out {output.H5AD} \
-            --feat_col 0 \
-            --remove_zero_features \
-        1> {log.log}
-        """

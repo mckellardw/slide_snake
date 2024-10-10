@@ -4,5 +4,5 @@ channels:
   - conda-forge
 dependencies:
   - bustools=0.43.2
-  - kallisto=0.51.0
+  - kallisto=0.51.1
   - pigz=2.8
