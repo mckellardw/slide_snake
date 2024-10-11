@@ -7,18 +7,17 @@
 # TODO- refactor to incorporate internal trimming options into rRNA filtering
 rule ilmn_2b_ribodetector:
     input:
-        # R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
-        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
+        # R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R1.fq.gz",
+        R2_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R2.fq.gz",
     output:
-        # R1_FQ="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_R1.fq",
-        R2_FQ="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_R2.fq",
-        # RIBO_R1_FQ="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_R1.fq",
-        RIBO_R2_FQ="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/yesRibo_R2.fq",
+        # R1_FQ="{OUTDIR}/{SAMPLE}/short_read/rRNA/ribodetector/noRibo_R1.fq",
+        R2_FQ="{OUTDIR}/{SAMPLE}/short_read/rRNA/ribodetector/noRibo_R2.fq",
+        # RIBO_R1_FQ="{OUTDIR}/{SAMPLE}/short_read/rRNA/ribodetector/noRibo_R1.fq",
+        RIBO_R2_FQ="{OUTDIR}/{SAMPLE}/short_read/rRNA/ribodetector/yesRibo_R2.fq",
     params:
         CHUNK_SIZE=2048,
-        MIN_ALIGNSCORE=40,
     log:
-        log="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/ribodetector.log",
+        log="{OUTDIR}/{SAMPLE}/short_read/rRNA/ribodetector/ribodetector.log",
     threads: config["CORES"]
     conda:
         f"{workflow.basedir}/envs/ribodetector.yml"
@@ -41,9 +40,9 @@ rule ilmn_2b_ribodetector:
 # Get list of read IDs to keep ("no ribo") from the output R2 file
 rule ilmn_2b_ribodetector_get_noRibo_list:
     input:
-        R2_FQ_NORIBO="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_R2.fq",
+        R2_FQ_NORIBO="{OUTDIR}/{SAMPLE}/short_read/rRNA/ribodetector/noRibo_R2.fq",
     output:
-        NORIBO_LIST=temp("{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_readID.list"),
+        NORIBO_LIST=temp("{OUTDIR}/{SAMPLE}/short_read/rRNA/ribodetector/noRibo_readID.list"),
     threads: 1
     shell:
         """
@@ -56,9 +55,9 @@ rule ilmn_2b_ribodetector_get_noRibo_list:
 # Temporarily decompress R1 fastq...
 rule ilmn_2b_ribodetector_gunzip_R1:
     input:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/{TMP}_R1.fq.gz",
+        R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/{TMP}_R1.fq.gz",
     output:
-        R1_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/{TMP}_R1.fq"),
+        R1_FQ=temp("{OUTDIR}/{SAMPLE}/short_read/tmp/{TMP}_R1.fq"),
     threads: 1
     shell:
         """
@@ -69,10 +68,10 @@ rule ilmn_2b_ribodetector_gunzip_R1:
 # Keep only reads which do NOT contain rRNA sequences
 rule ilmn_2b_ribodetector_filter_R1:
     input:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq",
-        NORIBO_LIST="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_readID.list",
+        R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R1.fq",
+        NORIBO_LIST="{OUTDIR}/{SAMPLE}/short_read/rRNA/ribodetector/noRibo_readID.list",
     output:
-        R1_FQ_NORIBO="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_R1.fq",
+        R1_FQ_NORIBO="{OUTDIR}/{SAMPLE}/short_read/rRNA/ribodetector/noRibo_R1.fq",
     resources:
         mem="32G",
     threads: 1
@@ -86,10 +85,10 @@ rule ilmn_2b_ribodetector_filter_R1:
 # Internally trimmed reads
 rule ilmn_2b_ribodetector_filter_R1_internalTrim:
     input:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_internalTrim_R1.fq",
-        NORIBO_LIST="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_readID.list",
+        R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_internalTrim_R1.fq",
+        NORIBO_LIST="{OUTDIR}/{SAMPLE}/short_read/rRNA/ribodetector/noRibo_readID.list",
     output:
-        R1_FQ_NORIBO="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_internalTrim_R1.fq",
+        R1_FQ_NORIBO="{OUTDIR}/{SAMPLE}/short_read/rRNA/ribodetector/noRibo_internalTrim_R1.fq",
     resources:
         mem="32G",
     threads: 1
@@ -103,10 +102,10 @@ rule ilmn_2b_ribodetector_filter_R1_internalTrim:
 # Hard-trimmed reads
 rule ilmn_2b_ribodetector_filter_R1_hardTrim:
     input:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_hardTrim_R1.fq",
-        NORIBO_LIST="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_readID.list",
+        R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_hardTrim_R1.fq",
+        NORIBO_LIST="{OUTDIR}/{SAMPLE}/short_read/rRNA/ribodetector/noRibo_readID.list",
     output:
-        R1_FQ_NORIBO="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_hardTrim_R1.fq",
+        R1_FQ_NORIBO="{OUTDIR}/{SAMPLE}/short_read/rRNA/ribodetector/noRibo_hardTrim_R1.fq",
     resources:
         mem="32G",
     threads: 1
@@ -120,9 +119,9 @@ rule ilmn_2b_ribodetector_filter_R1_hardTrim:
 # Compress all the R1 files
 rule ilmn_2b_ribodetector_compress_fqs:
     input:
-        FQ="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_{READ}.fq",
+        FQ="{OUTDIR}/{SAMPLE}/short_read/rRNA/ribodetector/noRibo_{READ}.fq",
     output:
-        FQ="{OUTDIR}/{SAMPLE}/rRNA/ribodetector/noRibo_{READ}.fq.gz",
+        FQ="{OUTDIR}/{SAMPLE}/short_read/rRNA/ribodetector/noRibo_{READ}.fq.gz",
     resources:
         mem="8G",
     threads: config["CORES"]

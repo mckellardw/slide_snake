@@ -1,7 +1,7 @@
 # fastqc before adapter scan
 rule ont_readQC_0_rawInput:
     input:
-        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz",
+        FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged.fq.gz",
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/readqc/0_rawInput/merged_qc.tsv",
     params:
@@ -25,7 +25,7 @@ rule ont_readQC_0_rawInput:
 # fastqc before trimming
 rule ont_readQC_1_preCutadapt:
     input:
-        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_adapter_{READ}.fq.gz",
+        FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_adapter_{READ}.fq.gz",
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/readqc/1_preCutadapt/{READ}_qc.tsv",
     params:
@@ -49,7 +49,7 @@ rule ont_readQC_1_preCutadapt:
 # fastqc after cutadapt trimming
 rule ont_readQC_2_postCutadapt:
     input:
-        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_{READ}.fq.gz",
+        FQ="{OUTDIR}/{SAMPLE}/ont/tmp/cut_{READ}.fq.gz",
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/readqc/2_postCutadapt/{READ}_qc.tsv",
     params:

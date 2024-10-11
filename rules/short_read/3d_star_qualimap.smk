@@ -4,8 +4,8 @@ rule ilmn_3d_qualimapQC_STAR:
     input:
         SORTEDBAM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.out.bam",
     output:
-        TXT="{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/rnaseq_qc_results.txt",
-        HTML="{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/qualimapReport.html",
+        TXT="{OUTDIR}/{SAMPLE}/short_read/qualimap/STAR/{RECIPE}/rnaseq_qc_results.txt",
+        HTML="{OUTDIR}/{SAMPLE}/short_read/qualimap/STAR/{RECIPE}/qualimapReport.html",
     params:
         GENES_GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
     resources:
@@ -30,10 +30,9 @@ rule ilmn_3d_qualimapQC_STAR:
 
 rule ilmn_3d_qualimap_summary2csv_STAR:
     input:
-        TXT="{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/rnaseq_qc_results.txt",
+        TXT="{OUTDIR}/{SAMPLE}/short_read/qualimap/STAR/{RECIPE}/rnaseq_qc_results.txt",
     output:
-        CSV="{OUTDIR}/{SAMPLE}/qualimap/STAR/{RECIPE}/rnaseq_qc_result.csv",
-    # resources:
+        CSV="{OUTDIR}/{SAMPLE}/short_read/qualimap/STAR/{RECIPE}/rnaseq_qc_result.csv",
     threads: 1
     shell:
         """

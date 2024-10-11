@@ -2,8 +2,8 @@
 ## qualimap on deduplicated/aligned reads
 rule ilmn_2c_qualimapQC_rRNA_bwa:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam",
-        BAI="{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam.bai",
+        BAM="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/aligned_sorted.bam",
+        BAI="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/aligned_sorted.bam.bai",
     output:
         TXT="{OUTDIR}/{SAMPLE}/qualimap/rRNA/bwa/rnaseq_qc_results.txt",
         HTML="{OUTDIR}/{SAMPLE}/qualimap/rRNA/bwa/qualimapReport.html",
@@ -32,42 +32,12 @@ rule ilmn_2c_qualimapQC_rRNA_bwa:
         """
 
 
-# QC on STAR outputs
-## qualimap on deduplicated/aligned reads
-rule ilmn_2c_qualimapQC_rRNA_STAR:
-    input:
-        BAM="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam",
-        BAI="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/Aligned.sortedByCoord.out.bam.bai",
-    output:
-        TXT="{OUTDIR}/{SAMPLE}/qualimap/rRNA/STAR/rnaseq_qc_results.txt",
-        HTML="{OUTDIR}/{SAMPLE}/qualimap/rRNA/STAR/qualimapReport.html",
-    params:
-        GENES_GTF=lambda wildcards: SAMPLE_SHEET["rRNA_gtf"][wildcards.SAMPLE],
-    resources:
-        mem="32G",
-    threads: 1
-    conda:
-        f"{workflow.basedir}/envs/qualimap.yml"
-    shell:
-        """
-        mkdir -p $(dirname {output.TXT})
-
-        qualimap rnaseq \
-            -bam {input.BAM} \
-            --sequencing-protocol strand-specific-forward \
-            --sorted \
-            -gtf {params.GENES_GTF} \
-            --java-mem-size={resources.mem} \
-            -outdir $(dirname {output.TXT}) \
-            -outformat html
-        """
-
-
+# Convert qualimap summary to readable .csv
 rule ilmn_2c_qualimap_summary2csv_rRNA_STAR:
     input:
-        TXT="{OUTDIR}/{SAMPLE}/qualimap/rRNA/{TOOL}/rnaseq_qc_results.txt",
+        TXT="{OUTDIR}/{SAMPLE}/short_read/qualimap/rRNA/{TOOL}/rnaseq_qc_results.txt",
     output:
-        CSV="{OUTDIR}/{SAMPLE}/qualimap/rRNA/{TOOL}/rnaseq_qc_results.csv",
+        CSV="{OUTDIR}/{SAMPLE}/short_read/qualimap/rRNA/{TOOL}/rnaseq_qc_results.csv",
     resources:
         mem="4G",
     threads: 1

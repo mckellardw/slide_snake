@@ -4,11 +4,11 @@
 # TODO - make some params recipe-specific
 rule ont_1b_cutadapt:
     input:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_adapter_R1.fq.gz",
-        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_adapter_R2.fq.gz",
+        R1_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_adapter_R1.fq.gz",
+        R2_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_adapter_R2.fq.gz",
     output:
-        R1_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/ont/cut_R1.fq.gz"),
-        R2_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/ont/cut_R2.fq.gz"),
+        R1_FQ=temp("{OUTDIR}/{SAMPLE}/ont/tmp/cut_R1.fq.gz"),
+        R2_FQ=temp("{OUTDIR}/{SAMPLE}/ont/tmp/cut_R2.fq.gz"),
         JSON="{OUTDIR}/{SAMPLE}/ont/misc_logs/1b_cutadapt.json",
     params:
         RECIPE=lambda w: get_recipes(w, mode="ONT"),
@@ -78,9 +78,9 @@ rule ont_1b_cutadapt:
 ## "Hard" trimming, to remove the adapter based on hard-coded base positions
 rule ont_1b_R1_hardTrimming:
     input:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_R1.fq.gz",
+        R1_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/cut_R1.fq.gz",
     output:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_hardTrim_R1.fq.gz",
+        R1_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/cut_hardTrim_R1.fq.gz",
     params:
         CB1end=8,  #TODO- move to config? or recipe_sheet?
         CB2start=27,
@@ -108,9 +108,9 @@ rule ont_1b_R1_hardTrimming:
 ## Internal trimming to cut out adapter sequences
 rule ont_1b_R1_internalTrim:
     input:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_R1.fq.gz",
+        R1_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/cut_R1.fq.gz",
     output:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_internalTrim_R1.fq.gz",
+        R1_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/cut_internalTrim_R1.fq.gz",
         # INTERNAL_TRIM_QC_LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/1b_internal_trim_qc.txt",
     params:
         TMPDIR="{OUTDIR}/{SAMPLE}/tmp/seqkit",
@@ -146,11 +146,11 @@ rule ont_1b_R1_internalTrim:
 
 rule ont_1b_cutadapt_internalTrimming:
     input:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_internalTrim_R1.fq.gz",
-        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_R2.fq.gz",
+        R1_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/cut_internalTrim_R1.fq.gz",
+        R2_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/cut_R2.fq.gz",
     output:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/twiceCut_internalTrim_R1.fq.gz",
-        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/twiceCut_internalTrim_R2.fq.gz",
+        R1_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/twiceCut_internalTrim_R1.fq.gz",
+        R2_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/twiceCut_internalTrim_R2.fq.gz",
         JSON="{OUTDIR}/{SAMPLE}/ont/misc_logs/1b_cutadapt_internalTrim.json",
     params:
         RECIPE=lambda w: get_recipes(w, mode="ONT"),

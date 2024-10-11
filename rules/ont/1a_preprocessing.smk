@@ -4,9 +4,9 @@
 # Merge all the input files into a .fastq
 rule ont_1a_merge_formats:
     output:
-        MERGED_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz"),
+        MERGED_FQ=temp("{OUTDIR}/{SAMPLE}/ont/tmp/merged.fq.gz"),
     params:
-        TMPDIR="{OUTDIR}/{SAMPLE}/tmp/ont",
+        TMPDIR="{OUTDIR}/{SAMPLE}/ont/tmp",
         ONT_reads=lambda wildcards: ONT[wildcards.SAMPLE],
         CHUNK_SIZE=50,
         OUTPUT_FORMAT="fastq",
@@ -29,9 +29,9 @@ rule ont_1a_merge_formats:
 # Remove super short reads that likely do not have a barcode...
 # rule ont_1a_length_filter:
 #     input:
-#         MERGED_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz",
+#         MERGED_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged.fq.gz",
 #     input:
-#         MERGED_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_filtered.fq.gz",
+#         MERGED_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_filtered.fq.gz",
 #     params:
 #         MIN_LENGTH=50,
 #     threads: config["CORES"]
@@ -42,9 +42,9 @@ rule ont_1a_merge_formats:
 # Remove super short reads that likely do not have a barcode...
 # rule ont_1a_pychopper:
 #     input:
-#         MERGED_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz",
+#         MERGED_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged.fq.gz",
 #     input:
-#         MERGED_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_chopped.fq.gz",
+#         MERGED_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_chopped.fq.gz",
 #     params:
 #         MIN_LENGTH=100,
 #     log:
@@ -62,10 +62,10 @@ rule ont_1a_merge_formats:
 # borrowed/modified from sockeye (https://github.com/jang1563/sockeye - original ONT github deleted!)
 rule ont_1a_call_adapter_scan_v2:
     input:
-        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged.fq.gz",
+        FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged.fq.gz",
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/adapter_scan.tsv",
-        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq.gz",
+        FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_stranded.fq.gz",
         # ADAPTERS="{OUTDIR}/{SAMPLE}/ont/adapter_seqs.fasta",
     params:
         BATCH_SIZE=100000,
@@ -102,7 +102,7 @@ rule ont_1a_call_adapter_scan_v2:
 rule ont_1a_readIDs_by_adapter_type:
     input:
         TSV="{OUTDIR}/{SAMPLE}/ont/adapter_scan.tsv",
-        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq.gz",
+        FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_stranded.fq.gz",
     output:
         FULL_LEN="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",  # keep
         SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",  # keep
@@ -164,15 +164,15 @@ rule ont_1a_merge_scan_lists:
 # TODO- add more functionality for other read/adapter types to salvage imperfect reads
 rule ont_1a_subset_fastq_by_adapter_type:
     input:
-        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq.gz",
+        FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_stranded.fq.gz",
         LST="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/keep.txt",
         # FULL_LEN = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
         # SINGLE_ADAPTER1 = "{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
     output:
-        FQ=temp("{OUTDIR}/{SAMPLE}/tmp/ont/merged_stranded.fq"),
-        # FULL_LEN = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/full_len.fq.gz",
-        # SINGLE_ADAPTER1 = "{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/single_adapter1.fq.gz",
-        FQ_ADAPTER="{OUTDIR}/{SAMPLE}/tmp/ont/merged_adapter.fq",
+        FQ=temp("{OUTDIR}/{SAMPLE}/ont/tmp/merged_stranded.fq"),
+        # FULL_LEN = "{OUTDIR}/{SAMPLE}/ont/tmp/adapter_scan_readids/full_len.fq.gz",
+        # SINGLE_ADAPTER1 = "{OUTDIR}/{SAMPLE}/ont/tmp/adapter_scan_readids/single_adapter1.fq.gz",
+        FQ_ADAPTER="{OUTDIR}/{SAMPLE}/ont/tmp/merged_adapter.fq",
     resources:
         mem="16G",
     threads: 1
@@ -194,9 +194,9 @@ rule ont_1a_subset_fastq_by_adapter_type:
 # Compress the merged fastq
 rule ont_1a_compress_merged_fq:
     input:
-        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_adapter.fq",
+        FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_adapter.fq",
     output:
-        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_adapter.fq.gz",
+        FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_adapter.fq.gz",
     resources:
         mem="8G",
     threads: config["CORES"]
@@ -210,11 +210,11 @@ rule ont_1a_compress_merged_fq:
 ##TODO: add read length bounds for R1 based on barcode construct to reduce incorrect split sites across reads
 rule ont_1a_split_fastq_to_R1_R2:
     input:
-        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_adapter.fq.gz",
+        FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_adapter.fq.gz",
     output:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_adapter_R1.fq.gz",
-        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_adapter_R2.fq.gz",
-        AMBIG_FQ="{OUTDIR}/{SAMPLE}/tmp/ont/merged_adapter_ambiguous.fq.gz",
+        R1_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_adapter_R1.fq.gz",
+        R2_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_adapter_R2.fq.gz",
+        AMBIG_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_adapter_ambiguous.fq.gz",
     params:
         # ANCHOR_SEQ=lambda w: get_recipe_info(w, "fwd_primer"),
         ANCHOR_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio

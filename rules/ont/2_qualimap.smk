@@ -4,8 +4,8 @@ rule ont_2_qualimap_minimap2:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam.bai",
     output:
-        TXT="{OUTDIR}/{SAMPLE}/qualimap/ont/minimap2/{RECIPE}/rnaseq_qc_results.txt",
-        HTML="{OUTDIR}/{SAMPLE}/qualimap/ont/minimap2/{RECIPE}/qualimapReport.html",
+        TXT="{OUTDIR}/{SAMPLE}/ont/qualimap/minimap2/{RECIPE}/rnaseq_qc_results.txt",
+        HTML="{OUTDIR}/{SAMPLE}/ont/qualimap/minimap2/{RECIPE}/qualimapReport.html",
     params:
         GENES_GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
     resources:
@@ -33,8 +33,8 @@ rule ont_2_qualimap_STAR:
         BAM="{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Aligned.sortedByCoord.out.bam",
         BAI="{OUTDIR}/{SAMPLE}/STARsolo/ont/{RECIPE}/Aligned.sortedByCoord.out.bam.bai",
     output:
-        TXT="{OUTDIR}/{SAMPLE}/qualimap/ont/STARsolo/{RECIPE}/rnaseq_qc_results.txt",
-        HTML="{OUTDIR}/{SAMPLE}/qualimap/ont/STARsolo/{RECIPE}/qualimapReport.html",
+        TXT="{OUTDIR}/{SAMPLE}/ont/qualimap/STARsolo/{RECIPE}/rnaseq_qc_results.txt",
+        HTML="{OUTDIR}/{SAMPLE}/ont/qualimap/STARsolo/{RECIPE}/qualimapReport.html",
     params:
         GENES_GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
     resources:
@@ -59,9 +59,9 @@ rule ont_2_qualimap_STAR:
 
 rule ont_2_qualimap_summary2csv:
     input:
-        TXT="{OUTDIR}/{SAMPLE}/qualimap/ont/{TOOL}/rnaseq_qc_results.txt",
+        TXT="{OUTDIR}/{SAMPLE}/ont/qualimap/{TOOL}/rnaseq_qc_results.txt",
     output:
-        CSV="{OUTDIR}/{SAMPLE}/qualimap/ont/{TOOL}/rnaseq_qc_results.csv",
+        CSV="{OUTDIR}/{SAMPLE}/ont/qualimap/{TOOL}/rnaseq_qc_results.csv",
     resources:
         mem="8G",
     threads: 1

@@ -8,16 +8,16 @@ rule ilmn_4a_kbpython_std:
         FQS=lambda w: get_fqs(w, return_type="list", mode="ILMN"),
         BC="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
     output:
-        BUS=temp("{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/output.bus"),
-        # BUS_CORRECTED = temp('{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/output.corrected.bus'),
-        # TRANSCRIPTS = '{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/transcripts.txt',
-        ECMAP=temp("{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/matrix.ec"),
-        # BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.barcodes.txt",
-        # FEATS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.genes.txt",
-        # MAT="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.mtx",        
-        BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes.tsv",
-        FEATS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/genes.tsv",
-        MAT="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/matrix.mtx",
+        BUS=temp("{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/output.bus"),
+        # BUS_CORRECTED = temp('{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/output.corrected.bus'),
+        # TRANSCRIPTS = '{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/transcripts.txt',
+        ECMAP=temp("{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/matrix.ec"),
+        # BCS="{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.barcodes.txt",
+        # FEATS="{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.genes.txt",
+        # MAT="{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.mtx",        
+        BCS="{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes.tsv",
+        FEATS="{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/genes.tsv",
+        MAT="{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/matrix.mtx",
     params:
         KB_IDX=lambda w: get_kallisto_ref(w, mode="idx"),
         KB_T2G=lambda w: get_kallisto_ref(w, mode="t2g"),
@@ -25,7 +25,7 @@ rule ilmn_4a_kbpython_std:
         KB_EXTRA=lambda w: RECIPE_SHEET["kb_extra"][w.RECIPE],
         N_READS_SUMMARY=1000000,  # number of reads to use for summary stats
     log:
-        log="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/kbpython_std.log",
+        log="{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/kbpython_std.log",
     resources:
         mem=config["MEMLIMIT_GB"],
     threads: config["CORES"]
@@ -64,12 +64,11 @@ rule ilmn_4a_kbpython_std:
 
 rule ilmn_4a_kbpython_std_remove_suffix:
     input:
-        BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes.tsv",
+        BCS="{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes.tsv",
     output:
-        BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes_noSuffix.tsv",
+        BCS="{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes_noSuffix.tsv",
     params:
         SUFFIX="-1",
-    # resources:
     threads: 1
     shell:
         """
@@ -80,22 +79,21 @@ rule ilmn_4a_kbpython_std_remove_suffix:
 # # gzip the count matrix, etc.
 rule kbpython_std_compress_outs:
     input:
-        # BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.barcodes.txt",
-        # FEATS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.genes.txt",
-        # MAT="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.mtx",
-        BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes.tsv",
-        BCS2="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes_noSuffix.tsv",
-        FEATS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/genes.tsv",
-        MAT="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/matrix.mtx",
+        # BCS="{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.barcodes.txt",
+        # FEATS="{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.genes.txt",
+        # MAT="{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.mtx",
+        BCS="{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes.tsv",
+        BCS2="{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes_noSuffix.tsv",
+        FEATS="{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/genes.tsv",
+        MAT="{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/matrix.mtx",
     output:
-        # BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.barcodes.txt.gz",
-        # FEATS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.genes.txt.gz",
-        # MAT="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.mtx.gz",
-        BCS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes.tsv.gz",
-        BCS2="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes_noSuffix.tsv.gz",
-        FEATS="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/genes.tsv.gz",
-        MAT="{OUTDIR}/{SAMPLE}/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/matrix.mtx.gz",
-    # resources:
+        # BCS="{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.barcodes.txt.gz",
+        # FEATS="{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.genes.txt.gz",
+        # MAT="{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/counts_unfiltered/cells_x_genes.mtx.gz",
+        BCS="{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes.tsv.gz",
+        BCS2="{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes_noSuffix.tsv.gz",
+        FEATS="{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/genes.tsv.gz",
+        MAT="{OUTDIR}/{SAMPLE}//short_read/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/matrix.mtx.gz",
     threads: config["CORES"]
     shell:
         """

@@ -6,99 +6,203 @@
 # Run STARsolo
 # TODO?: --twopassMode
 # WASP?
-rule ilmn_3a_STARsolo_align:
+# rule ilmn_3a_STARsolo_align:
+#     input:
+#         FQS=lambda w: get_fqs(w, return_type="list", mode="ILMN"),
+#         WHITELIST=lambda w: get_whitelist(w, return_type="list"),
+#     output:
+#         BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.bam",  #TODO: add temp()
+#         UNMAPPED1="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Unmapped.out.mate1",
+#         UNMAPPED2="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Unmapped.out.mate2",
+#         VEL_MAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/spliced.mtx",
+#         VEL_BC="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/barcodes.tsv",
+#         VEL_FEAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/features.tsv",
+#         GENE_MAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/matrix.mtx",
+#         GENE_MAT_EM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/UniqueAndMult-EM.mtx",
+#         GENE_BC="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/barcodes.tsv",
+#         GENE_FEAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/features.tsv",
+#         GENEFULL_MAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx",
+#         GENEFULL_MAT_EM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx",
+#         GENEFULL_BC="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv",
+#         GENEFULL_FEAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/features.tsv",
+#     params:
+#         STAR_REF=lambda w: get_STAR_ref(w),
+#         STAR_PARAMS=lambda w: get_STAR_extra_params(w),
+#         WHITELIST=lambda w: " ".join(get_whitelist(w, return_type="list")),  # space-delimited for multi-barcode
+#     resources:
+#         mem=megabytes2bytes(config["MEMLIMIT_MB"]),
+#         time="2:00:00",
+#     threads: config["CORES"]
+#     # conda:
+#     #     f"{workflow.basedir}/envs/star.yml"
+#     priority: 42
+#     run:
+#         shell(
+#             f"""
+#             mkdir -p $(dirname {output.BAM})
+
+#             STAR \
+#                 --runThreadN {threads} \
+#                 --outFileNamePrefix $(dirname {output.BAM})/ \
+#                 --outSAMtype BAM SortedByCoordinate \
+#                 --limitBAMsortRAM={resources.mem} \
+#                 --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
+#                 --readFilesCommand zcat \
+#                 --genomeDir {params.STAR_REF} \
+#                 --readFilesIn {input.FQS[1]} {input.FQS[0]} \
+#                 --outReadsUnmapped Fastx \
+#                 --outSAMunmapped Within KeepPairs \
+#                 --soloType {params.STAR_PARAMS['STAR_soloType']} {params.STAR_PARAMS['STAR_soloUMI']} {params.STAR_PARAMS['STAR_soloCB']} {params.STAR_PARAMS['STAR_soloAdapter']} {params.STAR_PARAMS['STAR_extra']} \
+#                 --soloCBmatchWLtype {params.STAR_PARAMS['STAR_soloCBmatchWLtype']} \
+#                 --soloCBwhitelist {params.WHITELIST} \
+#                 --soloCellFilter TopCells $(wc -l {input.WHITELIST[0]}) \
+#                 --soloUMIfiltering MultiGeneUMI CR \
+#                 --soloUMIdedup 1MM_CR \
+#                 --soloBarcodeReadLength 0 \
+#                 --soloFeatures Gene GeneFull Velocyto \
+#                 --soloMultiMappers EM
+#             """
+#         )
+
+
+
+# First pass of STAR alignment
+#TODO: add temp()
+rule ilmn_3a_STARsolo_firstPass:
     input:
         FQS=lambda w: get_fqs(w, return_type="list", mode="ILMN"),
-        WHITELIST=lambda w: get_whitelist(w, return_type="list"),
     output:
-        BAM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.out.bam",  #TODO: add temp()
-        UNMAPPED1="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate1",
-        UNMAPPED2="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2",
-        VEL_MAT="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Velocyto/raw/spliced.mtx",
-        VEL_BC="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Velocyto/raw/barcodes.tsv",
-        VEL_FEAT="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Velocyto/raw/features.tsv",
-        GENE_MAT="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Gene/raw/matrix.mtx",
-        GENE_MAT_EM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Gene/raw/UniqueAndMult-EM.mtx",
-        GENE_BC="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Gene/raw/barcodes.tsv",
-        GENE_FEAT="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Gene/raw/features.tsv",
-        GENEFULL_MAT="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx",
-        GENEFULL_MAT_EM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx",
-        GENEFULL_BC="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv",
-        GENEFULL_FEAT="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/features.tsv",
+        SJ="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/firstPass/_STARpass1/SJ.out.tab",
     params:
         STAR_REF=lambda w: get_STAR_ref(w),
         STAR_PARAMS=lambda w: get_STAR_extra_params(w),
+        STAR_EXTRA=lambda w: get_STAR_extra_params(w)['STAR_extra'],
         WHITELIST=lambda w: " ".join(get_whitelist(w, return_type="list")),  # space-delimited for multi-barcode
+    log:
+        log="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/firstPass/pass1.log"
     resources:
         mem=megabytes2bytes(config["MEMLIMIT_MB"]),
         time="2:00:00",
     threads: config["CORES"]
-    # conda:
-    #     f"{workflow.basedir}/envs/star.yml"
+    conda:
+        f"{workflow.basedir}/envs/star.yml"
     priority: 42
-    run:
-        shell(
-            f"""
-            mkdir -p $(dirname {output.BAM})
+    shell:
+        """
+        mkdir -p $(dirname {output.SJ})
 
-            STAR \
-                --runThreadN {threads} \
-                --outFileNamePrefix $(dirname {output.BAM})/ \
-                --outSAMtype BAM SortedByCoordinate \
-                --limitBAMsortRAM={resources.mem} \
-                --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
-                --readFilesCommand zcat \
-                --genomeDir {params.STAR_REF} \
-                --readFilesIn {input.FQS[1]} {input.FQS[0]} \
-                --outReadsUnmapped Fastx \
-                --outSAMunmapped Within KeepPairs \
-                --soloType {params.STAR_PARAMS['STAR_soloType']} {params.STAR_PARAMS['STAR_soloUMI']} {params.STAR_PARAMS['STAR_soloCB']} {params.STAR_PARAMS['STAR_soloAdapter']} {params.STAR_PARAMS['STAR_extra']} \
-                --soloCBmatchWLtype {params.STAR_PARAMS['STAR_soloCBmatchWLtype']} \
-                --soloCBwhitelist {params.WHITELIST} \
-                --soloCellFilter TopCells $(wc -l {input.WHITELIST[0]}) \
-                --soloUMIfiltering MultiGeneUMI CR \
-                --soloUMIdedup 1MM_CR \
-                --soloBarcodeReadLength 0 \
-                --soloFeatures Gene GeneFull Velocyto \
-                --soloMultiMappers EM
-            """
-        )
+        STAR --runThreadN {threads} \
+            --outFileNamePrefix $(dirname {output.SJ})/ \
+            --genomeDir {params.STAR_REF} \
+            --readFilesCommand zcat \
+            --readFilesIn {input.FQS[1]} \
+            --outSAMtype BAM Unsorted {params.STAR_EXTRA} \
+            --twopassMode Basic \
+        2> {log.log}
+        """
+
+
+# Second pass of STAR alignment; includes barcode calling, etc.
+rule ilmn_3a_STARsolo_secondPass:
+    input:
+        FQS=lambda w: get_fqs(w, return_type="list", mode="ILMN"),
+        WHITELIST=lambda w: get_whitelist(w, return_type="list"),
+        SJ="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/firstPass/_STARpass1/SJ.out.tab",
+    output:
+        BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.bam",
+        UNMAPPED1="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Unmapped.out.mate1",
+        UNMAPPED2="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Unmapped.out.mate2",
+        VEL_MAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/spliced.mtx",
+        VEL_BC="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/barcodes.tsv",
+        VEL_FEAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/features.tsv",
+        GENE_MAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/matrix.mtx",
+        GENE_MAT_EM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/UniqueAndMult-EM.mtx",
+        GENE_BC="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/barcodes.tsv",
+        GENE_FEAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/features.tsv",
+        GENEFULL_MAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx",
+        GENEFULL_MAT_EM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx",
+        GENEFULL_BC="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv",
+        GENEFULL_FEAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/features.tsv",
+    params:
+        STAR_REF=lambda w: get_STAR_ref(w),
+        # STAR_PARAMS=lambda w: get_STAR_extra_params(w),
+        STAR_PARAMS=lambda w: " ".join(get_STAR_extra_params(w).values()),
+        STAR_soloCBmatchWLtype=lambda w: get_recipe_info(w, "STAR_soloCBmatchWLtype"),
+        WHITELIST=lambda w: " ".join(get_whitelist(w, return_type="list")),  # space-delimited for multi-barcode
+        FQS=lambda w: " ".join(reversed(get_fqs(w, return_type="list", mode="ILMN"))),
+        N_CELLS=lambda w: get_n_cells(w),
+    log:
+        log="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/pass2.log"
+    resources:
+        # mem=megabytes2bytes(config["MEMLIMIT_MB"]),
+        mem=config["MEMLIMIT"],
+        time="2:00:00",
+    threads: config["CORES"]
+    conda:
+        f"{workflow.basedir}/envs/star.yml"
+    priority: 42
+    shell:
+        """
+        mkdir -p $(dirname {output.BAM})
+
+        STAR --readFilesCommand zcat --readFilesIn {params.FQS} \
+            --genomeDir {params.STAR_REF} \
+            --runThreadN {threads} \
+            --limitBAMsortRAM={resources.mem} \
+            --outFileNamePrefix $(dirname {output.BAM})/ \
+            --outSAMtype BAM SortedByCoordinate \
+            --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
+            --outReadsUnmapped Fastx --outSAMunmapped Within KeepPairs \
+            --soloType {params.STAR_PARAMS} \
+            --soloCBmatchWLtype {params.STAR_soloCBmatchWLtype} \
+            --soloCBwhitelist {params.WHITELIST} \
+            --soloCellFilter TopCells {params.N_CELLS} \
+            --soloUMIfiltering MultiGeneUMI CR \
+            --soloUMIdedup 1MM_CR \
+            --soloBarcodeReadLength 0 \
+            --soloFeatures Gene GeneFull Velocyto \
+            --soloMultiMappers EM \
+            --sjdbFileChrStartEnd {input.SJ} \
+        2> {log.log}
+        """
+# --soloType {params.STAR_PARAMS['STAR_soloType']} {params.STAR_PARAMS['STAR_soloUMI']} {params.STAR_PARAMS['STAR_soloCB']} {params.STAR_PARAMS['STAR_soloAdapter']} {params.STAR_PARAMS['STAR_extra']} \
+
 
 # compress outputs from STAR (count matrices, cell barcodes, and gene lists)
 rule ilmn_3a_compress_STAR_outs:
     input:
-        VEL_MAT="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Velocyto/raw/spliced.mtx",
-        VEL_BC="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Velocyto/raw/barcodes.tsv",
-        VEL_FEAT="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Velocyto/raw/features.tsv",
-        GENE_MAT="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Gene/raw/matrix.mtx",
-        GENE_MAT_EM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Gene/raw/UniqueAndMult-EM.mtx",
-        GENE_BC="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Gene/raw/barcodes.tsv",
-        GENE_FEAT="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Gene/raw/features.tsv",
-        GENEFULL_MAT="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx",
-        GENEFULL_MAT_EM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx",
-        GENEFULL_BC="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv",
-        GENEFULL_FEAT="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/features.tsv",
+        VEL_MAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/spliced.mtx",
+        VEL_BC="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/barcodes.tsv",
+        VEL_FEAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/features.tsv",
+        GENE_MAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/matrix.mtx",
+        GENE_MAT_EM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/UniqueAndMult-EM.mtx",
+        GENE_BC="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/barcodes.tsv",
+        GENE_FEAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/features.tsv",
+        GENEFULL_MAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx",
+        GENEFULL_MAT_EM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx",
+        GENEFULL_BC="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv",
+        GENEFULL_FEAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/features.tsv",
     output:
-        VEL_MAT="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Velocyto/raw/spliced.mtx.gz",
-        VEL_BC="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Velocyto/raw/barcodes.tsv.gz",
-        VEL_FEAT="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Velocyto/raw/features.tsv.gz",
-        GENE_MAT="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Gene/raw/matrix.mtx.gz",
-        GENE_MAT_EM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Gene/raw/UniqueAndMult-EM.mtx.gz",
-        GENE_BC="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Gene/raw/barcodes.tsv.gz",
-        GENE_FEAT="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Gene/raw/features.tsv.gz",
-        GENEFULL_MAT="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx.gz",
-        GENEFULL_MAT_EM="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx.gz",
-        GENEFULL_BC="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv.gz",
-        GENEFULL_FEAT="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/features.tsv.gz",
+        VEL_MAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/spliced.mtx.gz",
+        VEL_BC="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/barcodes.tsv.gz",
+        VEL_FEAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/features.tsv.gz",
+        GENE_MAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/matrix.mtx.gz",
+        GENE_MAT_EM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/UniqueAndMult-EM.mtx.gz",
+        GENE_BC="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/barcodes.tsv.gz",
+        GENE_FEAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/features.tsv.gz",
+        GENEFULL_MAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx.gz",
+        GENEFULL_MAT_EM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx.gz",
+        GENEFULL_BC="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv.gz",
+        GENEFULL_FEAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/features.tsv.gz",
     params:
         VELDIR=directory(
-            "{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Velocyto"
+            "{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto"
         ),
         GENEDIR=directory(
-            "{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Gene"
+            "{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene"
         ),
         GENEFULLDIR=directory(
-            "{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull"
+            "{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull"
         ),
     # resources:
     threads: config["CORES"]
@@ -120,8 +224,8 @@ rule ilmn_3a_compress_STAR_outs:
         shell(
             f"""
             pigz -p{threads} -f \
-                {OUTDIR}/{wildcards.SAMPLE}/STARsolo/short_read/{wildcards.RECIPE}/*/*/*/*.tsv \
-                {OUTDIR}/{wildcards.SAMPLE}/STARsolo/short_read/{wildcards.RECIPE}/*/*/*/*.mtx
+                {OUTDIR}/{wildcards.SAMPLE}/short_read/STARsolo/{wildcards.RECIPE}/*/*/*/*.tsv \
+                {OUTDIR}/{wildcards.SAMPLE}/short_read/STARsolo/{wildcards.RECIPE}/*/*/*/*.mtx
             """
         )
 
@@ -130,36 +234,36 @@ rule ilmn_3a_compress_STAR_outs:
 # rule multiqc_STAR:
 #     input:
 #         expand(
-#             "{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Aligned.sortedByCoord.out.bam",
+#             "{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.bam",
 #             SAMPLE=SAMPLES, RECIPE=RECIPES),
-#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate1",
+#         expand("{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Unmapped.out.mate1",
 #                SAMPLE=SAMPLES, RECIPE=RECIPES),
-#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2",
+#         expand("{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Unmapped.out.mate2",
 #                SAMPLE=SAMPLES, RECIPE=RECIPES),
-#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Velocyto/raw/spliced.mtx",
+#         expand("{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/spliced.mtx",
 #                SAMPLE=SAMPLES, RECIPE=RECIPES),
-#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Velocyto/raw/barcodes.tsv",
+#         expand("{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/barcodes.tsv",
 #                SAMPLE=SAMPLES, RECIPE=RECIPES),
-#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Velocyto/raw/features.tsv",
+#         expand("{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/features.tsv",
 #                SAMPLE=SAMPLES, RECIPE=RECIPES),
-#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Gene/raw/matrix.mtx",
+#         expand("{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/matrix.mtx",
 #                SAMPLE=SAMPLES, RECIPE=RECIPES),
-#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Gene/raw/UniqueAndMult-EM.mtx",
+#         expand("{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/UniqueAndMult-EM.mtx",
 #                SAMPLE=SAMPLES, RECIPE=RECIPES),
-#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Gene/raw/barcodes.tsv",
+#         expand("{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/barcodes.tsv",
 #                SAMPLE=SAMPLES, RECIPE=RECIPES),
-#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/Gene/raw/features.tsv",
+#         expand("{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/features.tsv",
 #                SAMPLE=SAMPLES, RECIPE=RECIPES),
-#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx",
+#         expand("{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx",
 #                SAMPLE=SAMPLES, RECIPE=RECIPES),
-#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx",
+#         expand("{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx",
 #                SAMPLE=SAMPLES, RECIPE=RECIPES),
-#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv",
+#         expand("{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv",
 #                SAMPLE=SAMPLES, RECIPE=RECIPES),
-#         expand("{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Solo.out/GeneFull/raw/features.tsv",
+#         expand("{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/features.tsv",
 #                SAMPLE=SAMPLES, RECIPE=RECIPES)
 #     output:
-#         REPORT = "{OUTDIR}/{SAMPLE}/STARsolo/short_read/multiqc_report.html"
+#         REPORT = "{OUTDIR}/{SAMPLE}/short_read/STARsolo/multiqc_report.html"
 #     params:
 #         config['MEMLIMIT']
 #     threads:

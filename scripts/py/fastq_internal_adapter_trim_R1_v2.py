@@ -66,15 +66,13 @@ def align_parasail(read, adapter, min_align_score=58, verbose=False):
     """
 
     # Create a simple identity matrix (match = 1, mismatch = 0)
-    matrix = parasail.matrix_create(alphabet="ACGT", match=4, mismatch=-0.5)
-    alignment = parasail.sw(s1=adapter, s2=read, open=-6, extend=-6, matrix=matrix)
+    matrix = parasail.matrix_create(alphabet="ACGT", match=4, mismatch=1) # mismatch=-0.5
+    alignment = parasail.sw(s1=adapter, s2=read, open=6, extend=6, matrix=matrix)
 
-    # Check if alignment meets the minimum score threshold based on mismatches
-    if alignment.score <= min_align_score:
-        start = alignment.end_ref - len(adapter) + 1
-        end = alignment.end_ref + 1
-        return alignment.score, start, end
-    return None, None, None
+    start = alignment.end_ref - len(adapter) + 1
+    end = alignment.end_ref + 1
+    return alignment.score, start, end
+    # return None, None, None
 
 
 # Function to run internal trimming on a single .fq.gz file
@@ -99,37 +97,39 @@ def trim_fq(fq_in, fq_out, adapter_seq, min_adapter_start_pos, min_align_score):
                 )
 
                 # Account for reads with deletions in `BC_1`
-                if start < min_adapter_start_pos:  # Deletion in BC_1
-                    offset = min_adapter_start_pos - start
-                    seq_out = (
-                        "N" * offset
-                        + read.sequence[start:min_adapter_start_pos]
-                        + read.sequence[end:]
-                    )
-                    qual_out = (
-                        "!" * offset
-                        + read.quality[start:min_adapter_start_pos]
-                        + read.quality[end:]
-                    )
+                
+                # Check if alignment meets the minimum score threshold based on mismatches
+                if align_score >= min_align_score:
+                    if start < min_adapter_start_pos:  # Deletion in BC_1
+                        offset = min_adapter_start_pos - start
+                        seq_out = (
+                            "N" * offset
+                            + read.sequence[start:min_adapter_start_pos]
+                            + read.sequence[end:]
+                        )
+                        qual_out = (
+                            "!" * offset
+                            + read.quality[start:min_adapter_start_pos]
+                            + read.quality[end:]
+                        )
 
-                    del_count += 1
+                        del_count += 1
+                    else:
+                        if start > min_adapter_start_pos:  # Insertion in BC_1
+                            ins_count += 1
+
+                        ## Trim the base closest to adapter
+                        seq_out = (
+                            read.sequence[0:min_adapter_start_pos] + read.sequence[end:]
+                        )
+                        qual_out = (
+                            read.quality[0:min_adapter_start_pos] + read.quality[end:]
+                        )
                 else:
-                    if start > min_adapter_start_pos:  # Insertion in BC_1
-                        ins_count += 1
-
-                    ## Trim the base closest to adapter
-                    seq_out = (
-                        read.sequence[0:min_adapter_start_pos] + read.sequence[end:]
-                    )
-                    qual_out = (
-                        read.quality[0:min_adapter_start_pos] + read.quality[end:]
-                    )
-
-                # Broken read; erase R1 and add `N` with qval=0 ('!')
-                # Alignment score cutoff was determined by spot-checking ~100 bead barcodes, based on predicted adapter location
-                # Seeker recommendation is min_align_score=58
-                # TODO fix hardcode '22'
-                if len(seq_out) < 22 or align_score < min_align_score:
+                    # Broken read; erase R1 and add `N` with qval=0 ('!')
+                    # Alignment score cutoff was determined by manually checking ~100 reads, based on predicted adapter location
+                    # Seeker recommendation is min_align_score=58
+                    # TODO fix hardcode '22'
                     seq_out = "N"
                     qual_out = "!"
                     no_adapter_count += 1

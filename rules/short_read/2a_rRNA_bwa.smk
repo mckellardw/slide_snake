@@ -7,22 +7,18 @@
 # TODO- refactor to incorporate internal trimming options into rRNA filtering
 rule ilmn_2a_bwa_rRNA_align:
     input:
-        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
-        BC_WHITELIST="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
-        BC_1="{OUTDIR}/{SAMPLE}/bc/whitelist_1.txt",
-        BC_2="{OUTDIR}/{SAMPLE}/bc/whitelist_2.txt",
-        BC_ADAPTER="{OUTDIR}/{SAMPLE}/bc/whitelist_adapter.txt",
+        R2_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R2.fq.gz",
     output:
-        BAM1=temp("{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned.bam"),
-        BAM2="{OUTDIR}/{SAMPLE}/rRNA/bwa/aligned_sorted.bam",
-        # R1_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_R1.fq',
-        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_R2.fq",
+        BAM1=temp("{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/aligned.bam"),
+        BAM2="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/aligned_sorted.bam",
+        # R1_FQ_BWA_FILTERED  = '{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/noRibo_R1.fq',
+        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/noRibo_R2.fq",
     params:
         # MEMLIMIT = config['MEMLIMIT'],
         BWA_REF=lambda w: get_bwa_ref(w, mode="rRNA"),
         MIN_ALIGNSCORE=40,
     log:
-        log="{OUTDIR}/{SAMPLE}/rRNA/bwa/bwa_mem.log",
+        log="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/bwa_mem.log",
     resources:
         mem="96G",
         time="2:00:00",
@@ -59,13 +55,13 @@ rule ilmn_2a_bwa_rRNA_align:
 
 rule ilmn_2a_bwa_rRNA_filter_R1:
     input:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
-        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
-        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_R2.fq",
+        R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R1.fq.gz",
+        R2_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R2.fq.gz",
+        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/noRibo_R2.fq",
     output:
-        R1_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq"),
-        R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_R1.fq",
-        rRNA_LIST="{OUTDIR}/{SAMPLE}/rRNA/bwa/rRNA_readID.list",
+        R1_FQ=temp("{OUTDIR}/{SAMPLE}/short_read/tmp/cut_R1.fq"),
+        R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/noRibo_R1.fq",
+        rRNA_LIST="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_readID.list",
     resources:
         mem="64G",
     threads: config["CORES"]
@@ -81,11 +77,11 @@ rule ilmn_2a_bwa_rRNA_filter_R1:
 
 rule ilmn_2a_bwa_rRNA_compress_unmapped:
     input:
-        R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_R1.fq",
-        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_R2.fq",
+        R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/noRibo_R1.fq",
+        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/noRibo_R2.fq",
     output:
-        R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_R1.fq.gz",
-        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_R2.fq.gz",
+        R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/noRibo_R1.fq.gz",
+        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/noRibo_R2.fq.gz",
     resources:
         mem="16G",
     threads: config["CORES"]
@@ -98,7 +94,7 @@ rule ilmn_2a_bwa_rRNA_compress_unmapped:
 #  Run fastqc on unmapped reads;
 rule ilmn_2a_bwa_rRNA_filtered_fastqc:
     input:
-        FQ="{OUTDIR}/{SAMPLE}/rRNA/bwa/noRibo_{READ}.fq.gz",
+        FQ="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/noRibo_{READ}.fq.gz",
     output:
         FQC_DIR=directory("{OUTDIR}/{SAMPLE}/fastqc/rRNA_bwa_{READ}"),
     params:

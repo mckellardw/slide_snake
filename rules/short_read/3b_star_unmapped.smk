@@ -11,7 +11,7 @@ rule ilmn_3b_fastqc_unmapped:
     output:
         UNMAPPED1_FQ="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate1.fastq.gz",
         UNMAPPED2_FQ="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2.fastq.gz",
-        fastqcDir=directory("{OUTDIR}/{SAMPLE}/fastqc/unmapped/{RECIPE}"),
+        fastqcDir=directory("{OUTDIR}/{SAMPLE}/short_read/fastqc/unmapped/{RECIPE}"),
     params:
         FASTQC_ADAPTERS=config["FASTQC_ADAPTERS"],
     # resources:

@@ -122,21 +122,21 @@ include: "rules/ont/2_fastqc.smk"
 ### Build targets #################################################################################
 ### short-read targets ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Module 1 - trimming & QC
-ilmn_fastqc = [f"{OUTDIR}/{SAMPLE}/fastqc/{TRIM}_{READ}"
+ilmn_fastqc = [f"{OUTDIR}/{SAMPLE}/short_read/fastqc/{TRIM}_{READ}"
     for SAMPLE in R2_FQS.keys()
     for TRIM in ["preCutadapt","postCutadapt","twiceCutadapt"] #,"rRNA_bwa","rRNA_STAR"
     for READ in ["R1","R2"] 
 ]  # fastQC results        
 
 # Module 2 - rRNA filtering        
-ilmn_rRNA_qualimap = [f"{OUTDIR}/{SAMPLE}/qualimap/rRNA/{TOOL}/{FILE}"
+ilmn_rRNA_qualimap = [f"{OUTDIR}/{SAMPLE}/short_read/qualimap/rRNA/{TOOL}/{FILE}"
     for SAMPLE in R2_FQS.keys() 
     for TOOL in ["bwa"] #,"STAR"
     for FILE in ["qualimapReport.html","rnaseq_qc_results.csv"] 
 ] # alignment QC with qualimap [rRNA alignments]
 
 # Module 3 - STAR alignment        
-ilmn_STAR_dedup_bams = [f"{OUTDIR}/{SAMPLE}/{REF}/short_read/{RECIPE}/Aligned.sortedByCoord.{STEP}out{STRAND}.bam.bai"
+ilmn_STAR_dedup_bams = [f"{OUTDIR}/{SAMPLE}/short_read/{REF}/short_read/{RECIPE}/Aligned.sortedByCoord.{STEP}out{STRAND}.bam.bai"
         for SAMPLE in R2_FQS.keys() 
         for REF in ["STARsolo"]
         for RECIPE in RECIPE_DICT[SAMPLE] 
@@ -151,14 +151,14 @@ ilmn_STAR_counts = [f"{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{S
     for ALGO in ["UniqueAndMult-EM","matrix"]
 ] # STAR count mats 
 
-ilmn_STAR_dedup_qualimap = [f"{OUTDIR}/{SAMPLE}/qualimap/{TOOL}/{RECIPE}/{FILE}"
+ilmn_STAR_dedup_qualimap = [f"{OUTDIR}/{SAMPLE}/short_read/qualimap/{TOOL}/{RECIPE}/{FILE}"
     for SAMPLE in R2_FQS.keys() 
     for RECIPE in RECIPE_DICT[SAMPLE] 
     for TOOL in ["STAR"]
     for FILE in ["qualimapReport.html","rnaseq_qc_result.csv"] 
 ] # alignment QC with qualimap | requires deduped input! 
 
-ilmn_STAR_unmapped_fastqc = [f"{OUTDIR}/{SAMPLE}/fastqc/unmapped/{RECIPE}" 
+ilmn_STAR_unmapped_fastqc = [f"{OUTDIR}/{SAMPLE}/short_read/fastqc/unmapped/{RECIPE}" 
     for SAMPLE in R2_FQS.keys() 
     for RECIPE in RECIPE_DICT[SAMPLE]
 ] #fastQC results for unmapped reads
@@ -180,7 +180,7 @@ ilmn_STAR_h5ad = [f"{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOL
     for ALGO in ["UniqueAndMult-EM","matrix"]
 ] # anndata files (with spatial info) - STAR 
 
-ilmn_kb_h5ad = [f"{OUTDIR}/{SAMPLE}/kbpython_{KB}/{RECIPE}/counts_unfiltered/output.h5ad" 
+ilmn_kb_h5ad = [f"{OUTDIR}/{SAMPLE}/short_read/kbpython_{KB}/{RECIPE}/counts_unfiltered/output.h5ad" 
     for SAMPLE in R2_FQS.keys() 
     for RECIPE in RECIPE_DICT[SAMPLE] 
     for KB in ["std"] #TODO "nac", "tcc" 
@@ -200,7 +200,7 @@ ont_minimap = [f"{OUTDIR}/{SAMPLE}/ont/{FILE}"
         ]
 ] # ONT outputs
 
-ont_fastqc = [f"{OUTDIR}/{SAMPLE}/fastqc/{TRIM}"
+ont_fastqc = [f"{OUTDIR}/{SAMPLE}/ont/fastqc/{TRIM}"
     for SAMPLE in ONT.keys()
     for READ in ["R1","R2"]
     for TRIM in ["ont_preAdapterScan", f"ont_preCutadapt_{READ}", f"ont_postCutadapt_{READ}"]
@@ -214,13 +214,12 @@ ont_readqc = [f"{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}_qc.{FILE}"
     for FILE in ["tsv", "png"]
 ] # ONT readqc
 
-ont_qualimap = [f"{OUTDIR}/{SAMPLE}/qualimap/ont/{TOOL}/{RECIPE}/{FILE}"
+ont_qualimap = [f"{OUTDIR}/{SAMPLE}/ont/qualimap/{TOOL}/{RECIPE}/{FILE}"
     for SAMPLE in ONT.keys() 
     for RECIPE in RECIPE_ONT_DICT[SAMPLE]
-    for TOOL in ["minimap2",]# f"STARsolo/{RECIPE}"
+    for TOOL in ["minimap2",]
     for FILE in ["qualimapReport.html", "rnaseq_qc_results.csv"] 
 ], # alignment QC with qualimap
-
 
 #ont_kb = [f"{OUTDIR}/{SAMPLE}/ont/kb/{RECIPE}/{FILE}" 
 #     for SAMPLE in ONT.keys() 

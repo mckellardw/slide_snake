@@ -375,10 +375,14 @@ def process_tsv(
     verbose=False,
     bc_update_counter=1000000,
 ):
+    """
+    #TODO
+    """
     null_bc_string = "-"
 
     # verbose = True
     # bc_update_counter=5000
+    n_corrected=0
 
     if verbose:
         processStartTime = time.time()
@@ -472,9 +476,11 @@ def process_tsv(
                         # only write fully correctable bcs to slim output
                         writer_full.writerow(row2write)
                     else:
+                        n_corrected+=1
                         writer_full.writerow(row2write)
                         writer_slim.writerow([read_id, "".join(concat_corrected_bc)])
-
+    if n_corrected == 0:
+        print(f"WARNING - NO BARCODES MATCHED THE WHITELIST")
     if verbose:
         print(f"{time.time()-processStartTime:.2f} - Finished correcting!")
 
@@ -524,7 +530,6 @@ if __name__ == "__main__":
         # TODO- auto set k based on bc length (dependent on seq error rate)
 
         whitelists[i] = wl
-        print(len(wl))
         kmer_to_bc_indexes[i] = kmer_to_bc_index
 
     # Single-threaded = verbose

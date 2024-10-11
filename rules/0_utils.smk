@@ -45,45 +45,45 @@ def get_fqs(w, return_type=["list", "dict"], mode=["ONT", "ILMN"]):
     try:
         if mode == "ILMN":
             if "rRNA.bwa" in w.RECIPE:  # Use trimmed & bwa-rRNA-filtered .fq's
-                R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/bwa/noRibo_R1.fq.gz"
-                R2 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/bwa/noRibo_R2.fq.gz"
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/bwa/noRibo_R1.fq.gz"
+                R2 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/bwa/noRibo_R2.fq.gz"
 
                 # TODO - update to match ribodetector style
 
             elif "ribodetector" in w.RECIPE:
-                R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/ribodetector/noRibo_R1.fq.gz"
-                R2 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/ribodetector/noRibo_R2.fq.gz"
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/ribodetector/noRibo_R1.fq.gz"
+                R2 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/ribodetector/noRibo_R2.fq.gz"
 
                 if "internalTrim" in w.RECIPE:
-                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/ribodetector/noRibo_internalTrim_R1.fq.gz"
+                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/ribodetector/noRibo_internalTrim_R1.fq.gz"
                 if "hardTrim" in w.RECIPE:
-                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/ribodetector/noRibo_hardTrim_R1.fq.gz"
+                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/ribodetector/noRibo_hardTrim_R1.fq.gz"
             else:  # just trimmed .fq's
-                R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_R1.fq.gz"
-                R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_R2.fq.gz"
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/tmp/twiceCut_R1.fq.gz"
+                R2 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/tmp/twiceCut_R2.fq.gz"
 
                 if "internalTrim" in w.RECIPE:
-                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_internalTrim_R1.fq.gz"
+                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/tmp/twiceCut_internalTrim_R1.fq.gz"
                 if "hardTrim" in w.RECIPE:
-                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_hardTrim_R1.fq.gz"
+                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/tmp/twiceCut_hardTrim_R1.fq.gz"
         elif mode == "ONT":
-            R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_R2.fq.gz"
+            R2 = f"{w.OUTDIR}/{w.SAMPLE}/ont/tmp/cut_R2.fq.gz"
             if "internalTrim" in w.RECIPE:
-                R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_internalTrim_R1.fq.gz"
-                R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/twiceCut_internalTrim_R2.fq.gz"
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/ont/tmp/cut_internalTrim_R1.fq.gz"
+                R2 = f"{w.OUTDIR}/{w.SAMPLE}/ont/tmp/twiceCut_internalTrim_R2.fq.gz"
             elif "hardTrim" in w.RECIPE:
-                R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_hardTrim_R1.fq.gz"
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/ont/tmp/cut_hardTrim_R1.fq.gz"
             else:
-                R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_R1.fq.gz"
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/ont/tmp/cut_R1.fq.gz"
         else:
             print("get_fqs(): `mode` not found")
     except Exception:
         if mode == "ILMN":
-            R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_R1.fq.gz"
-            R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_R2.fq.gz"
+            R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/tmp/twiceCut_R1.fq.gz"
+            R2 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/tmp/twiceCut_R2.fq.gz"
         elif mode == "ONT":
-            R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_R1.fq.gz"
-            R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_R2.fq.gz"
+            R1 = f"{w.OUTDIR}/{w.SAMPLE}/ont/tmp/cut_R1.fq.gz"
+            R2 = f"{w.OUTDIR}/{w.SAMPLE}/ont/tmp/cut_R2.fq.gz"
         else:
             print("get_fqs(): `mode` not found")
 
@@ -202,6 +202,17 @@ def get_bc_map(w, mode=["ONT", "ILMN"]):
     # return whitelist path(s)
     return bc_map
 
+# Get number of barcodes (does not include UMIs!)
+def get_n_cells(w):
+    """
+    Get the number of cells/spots/beads/whatever
+
+    w: wildcards
+    """
+    whitelist_path = get_whitelist(w, return_type="list")[0]
+    n_bcs = count_lines_in_file(whitelist_path)
+    
+    return n_bcs
 
 # Get number of barcodes (does not include UMIs!)
 def get_n_bcs(w):
@@ -281,7 +292,6 @@ def get_STAR_extra_params(w):
         "STAR_soloType": "",
         "STAR_soloUMI": "",
         "STAR_soloCB": "",
-        "STAR_soloCBmatchWLtype": "",
         "STAR_soloAdapter": "",
         "STAR_extra": "--outFilterMultimapNmax 50 --outFilterMismatchNoverLmax 0.05  --outFilterMatchNmin 12  --outFilterScoreMinOverLread 0  --outFilterMatchNminOverLread 0",
     }
@@ -387,9 +397,13 @@ def get_recipe_info(w, info_col, mode=["ONT", "ILMN", "list"]):
         return [RECIPE_SHEET[info_col][x] for x in recipe]
 
 
+def count_lines_in_file(file_path):
+    with open(file_path, 'r') as file:
+        return sum(1 for _ in file)
+
+
 # Convert a megabyte value (str) to bytes [int]
 def megabytes2bytes(mb):
-    # mb_int = int(''.join(filter(str.isdigit, mb)))
     bytes_out = mb * 1024 * 1024
     return bytes_out
 
@@ -452,69 +466,3 @@ def max_sum_of_entries(lst):
 
     return max_sum
 
-
-# def unlist(*args, unique=False):
-#     result = []
-#     for arg in args:
-#         if isinstance(arg, (list, dict)):
-#             if isinstance(arg, list):
-#                 result.extend(unlist(arg))
-#             elif isinstance(arg, dict):
-#                 result.extend(unlist(list(arg.values())))
-#         else:
-#             result.append(arg)
-
-#     if unique:
-#         result = list(set(result))  # Convert to set to remove duplicates, then back to list
-
-#     return result
-
-# def unlist(*args, unique=False):
-#     def process_item(item):
-#         if isinstance(item, (list, dict)):
-#             if isinstance(item, list):
-#                 yield from unlist(item, unique=unique)
-#             elif isinstance(item, dict):
-#                 yield from unlist(list(item.values()), unique=unique)
-#         else:
-#             yield item
-
-#     result = []
-#     for arg in args:
-#         result.extend(process_item(arg))
-
-#     if unique:
-#         result = list(set(result))  # Convert to set to remove duplicates, then back to list
-
-#     return result
-
-
-########## TO BE DEPRECATED ########################################################
-def get_barcode_length(w):
-    """
-    Get barcode length based on the recipe(s) passed.
-    """
-    bc_lengths = [RECIPE_SHEET["BC_length"][R] for R in RECIPE_DICT[w.SAMPLE]]
-    if len(bc_lengths) == 1:
-        out = bc_lengths[0]
-    else:
-        # TODO: there is probably a better way to handle multi-recipe than this
-        out = max(set(bc_lengths), key=bc_lengths.count)  # return mode
-    return out
-
-
-def get_umi_length(w):
-    """
-    Get UMI length based on the recipe(s) passed.
-    """
-    umi_lengths = [RECIPE_SHEET["UMI_length"][R] for R in RECIPE_DICT[w.SAMPLE]]
-    if len(umi_lengths) == 1:
-        out = umi_lengths[0]
-    else:
-        # TODO: there is probably a better way to handle multi-recipe than this
-        out = max(set(umi_lengths), key=umi_lengths.count)  # return mode
-    return out
-
-
-def get_split_ont_align_mem_gb(wildcards, threads):
-    return config["RESOURCES_MM2_MEM_GB"] / threads
