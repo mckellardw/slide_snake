@@ -94,13 +94,13 @@ set-resources:
   ilmn_3a_STARsolo_firstPass:
     mem: 256G
   ilmn_3a_STARsolo_secondPass:
-    mem: 256
+    mem: 256G
   qualimapQC_STAR:
     mem: 32G
   ilmn_4a_kbpython_std:
-    mem: 256
+    mem: 256G
   miRge3_pseudobulk:
-    mem: 256
+    mem: 256G
   ilmn_6a_cache_preQC_h5ad_STAR:
     mem: 32G
   ont_call_adapter_scan:
