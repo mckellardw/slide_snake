@@ -2,9 +2,6 @@
 # VASAseq implementation - https://github.com/anna-alemany/VASAseq/blob/main/mapping/ribo-bwamem.sh
 # Align to rRNA ref w/ `bwa mem` for cleaner/faster rRNA filtering
 ##TODO incorporate VASAseq style "long"/short read handling with multiple align steps
-
-
-# TODO- refactor to incorporate internal trimming options into rRNA filtering
 rule ilmn_2a_bwa_rRNA_align:
     input:
         R2_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R2.fq.gz",
@@ -53,6 +50,7 @@ rule ilmn_2a_bwa_rRNA_align:
         """
 
 
+# Filter R1 according to bwa alignment results
 rule ilmn_2a_bwa_rRNA_filter_R1:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R1.fq.gz",
@@ -73,15 +71,19 @@ rule ilmn_2a_bwa_rRNA_filter_R1:
         
         seqtk subseq {output.R1_FQ} {output.rRNA_LIST} > {output.R1_FQ_BWA_FILTERED}
         """
+        #  zcat {input.R1_FQ} | seqtk subseq - {output.rRNA_LIST} > {output.R1_FQ_BWA_FILTERED}
 
 
+# Compress previous outputs
 rule ilmn_2a_bwa_rRNA_compress_unmapped:
     input:
         R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/noRibo_R1.fq",
         R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/noRibo_R2.fq",
+        rRNA_LIST="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_readID.list",
     output:
         R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/noRibo_R1.fq.gz",
         R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/noRibo_R2.fq.gz",
+        rRNA_LIST="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_readID.list.gz",
     resources:
         mem="16G",
     threads: config["CORES"]

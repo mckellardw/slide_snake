@@ -65,9 +65,8 @@
 #         )
 
 
-
 # First pass of STAR alignment
-#TODO: add temp()
+# TODO: add temp()
 rule ilmn_3a_STARsolo_firstPass:
     input:
         FQS=lambda w: get_fqs(w, return_type="list", mode="ILMN"),
@@ -76,10 +75,10 @@ rule ilmn_3a_STARsolo_firstPass:
     params:
         STAR_REF=lambda w: get_STAR_ref(w),
         STAR_PARAMS=lambda w: get_STAR_extra_params(w),
-        STAR_EXTRA=lambda w: get_STAR_extra_params(w)['STAR_extra'],
+        STAR_EXTRA=lambda w: get_STAR_extra_params(w)["STAR_extra"],
         WHITELIST=lambda w: " ".join(get_whitelist(w, return_type="list")),  # space-delimited for multi-barcode
     log:
-        log="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/firstPass/pass1.log"
+        err="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/firstPass/pass1.err",
     resources:
         mem=megabytes2bytes(config["MEMLIMIT_MB"]),
         time="2:00:00",
@@ -98,7 +97,7 @@ rule ilmn_3a_STARsolo_firstPass:
             --readFilesIn {input.FQS[1]} \
             --outSAMtype BAM Unsorted {params.STAR_EXTRA} \
             --twopassMode Basic \
-        2> {log.log}
+        2> {log.err}
         """
 
 
@@ -110,29 +109,83 @@ rule ilmn_3a_STARsolo_secondPass:
         SJ="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/firstPass/_STARpass1/SJ.out.tab",
     output:
         BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.bam",
-        UNMAPPED1="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Unmapped.out.mate1",
-        UNMAPPED2="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Unmapped.out.mate2",
-        VEL_MAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/spliced.mtx",
-        VEL_BC="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/barcodes.tsv",
-        VEL_FEAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/features.tsv",
-        GENE_MAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/matrix.mtx",
-        GENE_MAT_EM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/UniqueAndMult-EM.mtx",
-        GENE_BC="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/barcodes.tsv",
-        GENE_FEAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/features.tsv",
-        GENEFULL_MAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx",
-        GENEFULL_MAT_EM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx",
-        GENEFULL_BC="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv",
-        GENEFULL_FEAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/features.tsv",
+        UNMAPPED=[
+            f"{{OUTDIR}}/{{SAMPLE}}/short_read/STARsolo/{{RECIPE}}/Unmapped.out.mate{READ}"
+            for READ in [1, 2]
+        ],
+        VEL=[
+            f"{{OUTDIR}}/{{SAMPLE}}/short_read/STARsolo/{{RECIPE}}/Solo.out/Velocyto/raw/{FILE}"
+            for FILE in ["spliced.mtx", "barcodes.tsv", "features.tsv"]
+        ],
+        GENE=[
+            f"{{OUTDIR}}/{{SAMPLE}}/short_read/STARsolo/{{RECIPE}}/Solo.out/Gene/raw/{FILE}"
+            for FILE in [
+                "matrix.mtx",
+                "UniqueAndMult-EM.mtx",
+                "barcodes.tsv",
+                "features.tsv",
+            ]
+        ],
+        GENEFULL=[
+            f"{{OUTDIR}}/{{SAMPLE}}/short_read/STARsolo/{{RECIPE}}/Solo.out/GeneFull/raw/{FILE}"
+            for FILE in [
+                "matrix.mtx",
+                "UniqueAndMult-EM.mtx",
+                "barcodes.tsv",
+                "features.tsv",
+            ]
+        ],
+        # UNMAPPED=expand(
+        #     "{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Unmapped.out.mate{mate}",
+        #     mate=[1, 2],
+        # ),
+        # VEL=expand(
+        #     "{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/{file}",
+        #     file=["spliced.mtx", "barcodes.tsv", "features.tsv"],
+        # ),
+        # GENE=expand(
+        #     "{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/{file}",
+        #     file=[
+        #         "matrix.mtx",
+        #         "UniqueAndMult-EM.mtx",
+        #         "barcodes.tsv",
+        #         "features.tsv",
+        #     ],
+        # ),
+        # GENEFULL=expand(
+        #     "{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/{file}",
+        #     file=[
+        #         "matrix.mtx",
+        #         "UniqueAndMult-EM.mtx",
+        #         "barcodes.tsv",
+        #         "features.tsv",
+        #     ],
+        # ),
+        # UNMAPPED1="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Unmapped.out.mate1",
+        # UNMAPPED2="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Unmapped.out.mate2",
+        # VEL_MAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/spliced.mtx",
+        # VEL_BC="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/barcodes.tsv",
+        # VEL_FEAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/features.tsv",
+        # GENE_MAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/matrix.mtx",
+        # GENE_MAT_EM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/UniqueAndMult-EM.mtx",
+        # GENE_BC="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/barcodes.tsv",
+        # GENE_FEAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/features.tsv",
+        # GENEFULL_MAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx",
+        # GENEFULL_MAT_EM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx",
+        # GENEFULL_BC="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv",
+        # GENEFULL_FEAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/features.tsv",
     params:
+        WHITELIST=lambda w: " ".join(get_whitelist(w, return_type="list")),  # space-delimited for multi-barcode
+        FQS=lambda w: " ".join(reversed(get_fqs(w, return_type="list", mode="ILMN"))),
+        N_CELLS=lambda w: get_n_cells(w),
         STAR_REF=lambda w: get_STAR_ref(w),
         # STAR_PARAMS=lambda w: get_STAR_extra_params(w),
         STAR_PARAMS=lambda w: " ".join(get_STAR_extra_params(w).values()),
         STAR_soloCBmatchWLtype=lambda w: get_recipe_info(w, "STAR_soloCBmatchWLtype"),
-        WHITELIST=lambda w: " ".join(get_whitelist(w, return_type="list")),  # space-delimited for multi-barcode
-        FQS=lambda w: " ".join(reversed(get_fqs(w, return_type="list", mode="ILMN"))),
-        N_CELLS=lambda w: get_n_cells(w),
+        outBAMsortingBinsN=100,  # default: 50; increase to save mem usage
+        outBAMsortingThreadN=4,  # default: min(6,–runThreadN); reduce to save mem
     log:
-        log="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/pass2.log"
+        err="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/pass2.err",
     resources:
         # mem=megabytes2bytes(config["MEMLIMIT_MB"]),
         mem=config["MEMLIMIT"],
@@ -149,6 +202,8 @@ rule ilmn_3a_STARsolo_secondPass:
             --genomeDir {params.STAR_REF} \
             --runThreadN {threads} \
             --limitBAMsortRAM={resources.mem} \
+            --outBAMsortingBinsN {params.outBAMsortingBinsN} \
+            --outBAMsortingThreadN {params.outBAMsortingThreadN} \
             --outFileNamePrefix $(dirname {output.BAM})/ \
             --outSAMtype BAM SortedByCoordinate \
             --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM \
@@ -163,8 +218,11 @@ rule ilmn_3a_STARsolo_secondPass:
             --soloFeatures Gene GeneFull Velocyto \
             --soloMultiMappers EM \
             --sjdbFileChrStartEnd {input.SJ} \
-        2> {log.log}
+        2> {log.err}
         """
+
+
+#
 # --soloType {params.STAR_PARAMS['STAR_soloType']} {params.STAR_PARAMS['STAR_soloUMI']} {params.STAR_PARAMS['STAR_soloCB']} {params.STAR_PARAMS['STAR_soloAdapter']} {params.STAR_PARAMS['STAR_extra']} \
 
 

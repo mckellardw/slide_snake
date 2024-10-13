@@ -83,7 +83,7 @@ def trim_fq(fq_in, fq_out, adapter_seq, min_adapter_start_pos, min_align_score):
     del_count = 0  # Deletion counter for BC_1
     no_adapter_count = 0  # Tally of reads that are removed b/c missing adapter
 
-    with gzip.open(fq_out, "wt") as out_handle:
+    with open(fq_out, "w") as out_handle:
         # Open the FASTQ file using pysam
         with pysam.FastxFile(fq_in) as fq:
             for read in fq:
@@ -203,7 +203,7 @@ def main(args):
         print(f"Deletion count in BC_1:   {del_count:,}")
         print(f"Reads missing adapter: {no_adapter_count:,}")
     else:
-        out = trim_fq(args.fq1_in, args.fq1_out, True)
+        out = trim_fq(args.fq1_in, args.fq1_out.replace('.gz',''), True)
 
         read_count, ins_count, del_count, no_adapter_count = out
 

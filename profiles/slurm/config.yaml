@@ -92,9 +92,11 @@ set-resources:
   ilmn_2b_ribodetector_filter_R1_hardTrim:
     mem: 32G
   ilmn_3a_STARsolo_firstPass:
-    mem: 256G
+    mem: 128000000000
+    mem_mb: 128000
   ilmn_3a_STARsolo_secondPass:
-    mem: 256G
+    mem: 128000000000
+    mem_mb: 128000
   qualimapQC_STAR:
     mem: 32G
   ilmn_4a_kbpython_std:
