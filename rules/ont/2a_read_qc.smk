@@ -1,5 +1,5 @@
 # fastqc before adapter scan
-rule ont_readQC_0_rawInput:
+rule ont_2a_readQC_0_rawInput:
     input:
         FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged.fq.gz",
     output:
@@ -23,7 +23,7 @@ rule ont_readQC_0_rawInput:
 
 
 # fastqc before trimming
-rule ont_readQC_1_preCutadapt:
+rule ont_2a_readQC_1_preCutadapt:
     input:
         FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_adapter_{READ}.fq.gz",
     output:
@@ -47,7 +47,7 @@ rule ont_readQC_1_preCutadapt:
 
 
 # fastqc after cutadapt trimming
-rule ont_readQC_2_postCutadapt:
+rule ont_2a_readQC_2_postCutadapt:
     input:
         FQ="{OUTDIR}/{SAMPLE}/ont/tmp/cut_{READ}.fq.gz",
     output:
@@ -86,7 +86,7 @@ rule ont_readQC_2_postCutadapt:
 # │ cg │  Z   │ CIGAR string (only in PAF)                            │
 # │ cs │  Z   │ Difference string                                     │
 # └────┴──────┴───────────────────────────────────────────────────────┘
-rule ont_readQC_3_bam:
+rule ont_2a_readQC_3_bam:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam.bai",
@@ -113,7 +113,7 @@ rule ont_readQC_3_bam:
 
 
 # Grab the first million reads...
-rule readQC_downsample:
+rule ont_2a_readQC_downsample:
     input:
         TSV="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc.tsv",
     output:
@@ -130,7 +130,7 @@ rule readQC_downsample:
 
 
 # Summary plot
-rule ont_readQC_summaryplot:
+rule ont_2a_readQC_summaryplot:
     input:
         TSV="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc_500000.tsv",
     output:

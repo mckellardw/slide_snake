@@ -560,6 +560,10 @@ if __name__ == "__main__":
         print("")
         print(f"{currentTime()} - Splitting input tsv...")
         temp_dir = generate_temp_dir_name()
+        
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
+            
         print(f"Temporary directory: {temp_dir}")
         temp_tsvs_in, n_bcs = split_file(
             file_path=args.tsv_in, temp_dir=temp_dir, num_chunks=args.threads

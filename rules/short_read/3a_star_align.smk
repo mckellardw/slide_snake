@@ -4,7 +4,6 @@
 # Make output directory, align fastqs, and generate raw/filtered feature/cell-barcode matrices
 #   Info for STARsolo command line paramaters: https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md
 # Run STARsolo
-# TODO?: --twopassMode
 # WASP?
 # rule ilmn_3a_STARsolo_align:
 #     input:
@@ -135,45 +134,6 @@ rule ilmn_3a_STARsolo_secondPass:
                 "features.tsv",
             ]
         ],
-        # UNMAPPED=expand(
-        #     "{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Unmapped.out.mate{mate}",
-        #     mate=[1, 2],
-        # ),
-        # VEL=expand(
-        #     "{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/{file}",
-        #     file=["spliced.mtx", "barcodes.tsv", "features.tsv"],
-        # ),
-        # GENE=expand(
-        #     "{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/{file}",
-        #     file=[
-        #         "matrix.mtx",
-        #         "UniqueAndMult-EM.mtx",
-        #         "barcodes.tsv",
-        #         "features.tsv",
-        #     ],
-        # ),
-        # GENEFULL=expand(
-        #     "{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/{file}",
-        #     file=[
-        #         "matrix.mtx",
-        #         "UniqueAndMult-EM.mtx",
-        #         "barcodes.tsv",
-        #         "features.tsv",
-        #     ],
-        # ),
-        # UNMAPPED1="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Unmapped.out.mate1",
-        # UNMAPPED2="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Unmapped.out.mate2",
-        # VEL_MAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/spliced.mtx",
-        # VEL_BC="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/barcodes.tsv",
-        # VEL_FEAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Velocyto/raw/features.tsv",
-        # GENE_MAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/matrix.mtx",
-        # GENE_MAT_EM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/UniqueAndMult-EM.mtx",
-        # GENE_BC="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/barcodes.tsv",
-        # GENE_FEAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/Gene/raw/features.tsv",
-        # GENEFULL_MAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/matrix.mtx",
-        # GENEFULL_MAT_EM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/UniqueAndMult-EM.mtx",
-        # GENEFULL_BC="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/barcodes.tsv",
-        # GENEFULL_FEAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/GeneFull/raw/features.tsv",
     params:
         WHITELIST=lambda w: " ".join(get_whitelist(w, return_type="list")),  # space-delimited for multi-barcode
         FQS=lambda w: " ".join(reversed(get_fqs(w, return_type="list", mode="ILMN"))),

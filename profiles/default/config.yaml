@@ -97,11 +97,14 @@ set-resources:
   qualimapQC_STAR:
     mem: 32G
   ilmn_4a_kbpython_std:
-    mem: 256G
+    mem: 32G
+    mem_mb: 32000
   miRge3_pseudobulk:
     mem: 256G
+    mem_mb: 256000
   ilmn_6a_cache_preQC_h5ad_STAR:
-    mem: 32G
+    mem: 64G
+    mem_mb: 64000
   ont_call_adapter_scan:
     mem: 16G
   ont_readIDs_by_adapter_type:

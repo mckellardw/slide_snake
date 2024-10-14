@@ -177,7 +177,7 @@ rule ont_1a_subset_fastq_by_adapter_type:
         mem="16G",
     threads: 1
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_subset_fastq_by_adapter_type.log",
+        err="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_subset_fastq_by_adapter_type.err",
     shell:
         """
         mkdir -p $(dirname {output.FQ})            
@@ -187,7 +187,7 @@ rule ont_1a_subset_fastq_by_adapter_type:
             {output.FQ} \
             {input.LST} \
         > {output.FQ_ADAPTER} \
-        2> {log.log}
+        2> {log.err}
         """
 
 
