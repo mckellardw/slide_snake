@@ -73,17 +73,17 @@ custom_theme <- theme_minimal() +
 ) 
 
 # Function to load the data
-load_data <- function(data_file, n_reads){    
+load_data <- function(data_file, n_max=Inf){    
     # Read the data
     df <- read_tsv(
         data_file,
         na = c("", "NA", "None"),
-        n_max=n_reads
+        n_max=n_max
     )
 
     # Downsample
-    if(n_reads < nrow(df)){
-        df <- df[sample(nrow(df), n_reads), ]
+    if(n_max < nrow(df)){
+        df <- df[sample(nrow(df), n_max), ]
     }
     
     return(df)

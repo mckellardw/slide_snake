@@ -77,6 +77,7 @@ rule ont_1a_call_adapter_scan_v2:
         VSEARCH_MIN_ADAPTER_ID=0.7,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan.log",
+        err="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan.err",
     conda:
         f"{workflow.basedir}/envs/adapter_scan.yml"
     resources:
@@ -93,7 +94,8 @@ rule ont_1a_call_adapter_scan_v2:
             --adapter1_seq "{params.ADAPTER1_SEQ}" \
             --adapter2_seq "{params.ADAPTER2_SEQ}" \
             --min_adapter_id {params.VSEARCH_MIN_ADAPTER_ID} \
-        1> {log.log}
+        1> {log.log} \
+        2> {log.err}
         """
         # --adapters_fasta "{output.ADAPTERS}" \
 
@@ -139,6 +141,34 @@ rule ont_1a_adapter_scan_results:
         for file in "$dir_path"/*.txt; do
             echo "$(basename $file)"\t"$(wc -l <"$file")" >> {output.LOG}
         done
+        """
+
+# Summarize adapter_scan results
+rule ont_1a_adapter_scan_summary:
+    input:
+        TSV="{OUTDIR}/{SAMPLE}/ont/adapter_scan.tsv",
+    output:
+        CSV="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan_summary.csv",
+        PLOT="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan_summary.pdf",
+    params:
+        DEVICE="pdf"
+    log:
+        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan_summary.log",
+        err="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan_summary.err",
+    resources:
+        mem="8G",
+    threads: 1
+    conda:
+        f"{workflow.basedir}/envs/ggplot2.yml"
+    shell:
+        """
+        Rscript scripts/R/adapter_scan_summary.R \
+            -i {input.TSV} \
+            -s {output.CSV} \
+            -p {output.PLOT} \
+            -d {params.DEVICE} \
+        1> {log.log} \
+        2> {log.err}
         """
 
 
@@ -219,13 +249,14 @@ rule ont_1a_split_fastq_to_R1_R2:
         # ANCHOR_SEQ=lambda w: get_recipe_info(w, "fwd_primer"),
         ANCHOR_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio
         SPLIT_SEQ="T" * 8,
-        SPLIT_OFFSET=0,  # offset from 3' end of split seq on which to split
+        SPLIT_OFFSET=8,  # offset from 3' end of split seq on which to split
         MAX_OFFSET=200,
     resources:
         mem="16G",
     threads: config["CORES"]
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_read_split.log",
+        err="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_read_split.err",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     shell:
@@ -236,5 +267,6 @@ rule ont_1a_split_fastq_to_R1_R2:
             --split_offset {params.SPLIT_OFFSET} \
             --max_offset {params.MAX_OFFSET} \
             --threads {threads} \
-        1> {log.log}
+        1> {log.log} \
+        2> {log.err}
         """

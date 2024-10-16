@@ -89,6 +89,7 @@ dependencies:
   - r-cpp11=0.4.7
   - r-crayon=1.5.2
   - r-digest=0.6.35
+  - r-dplyr
   - r-ellipsis=0.3.2
   - r-fansi=1.0.6
   - r-farver=2.1.1
