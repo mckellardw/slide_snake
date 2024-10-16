@@ -144,6 +144,7 @@ rule ont_1b_R1_internalTrim:
         """
 
 
+# cutaddapt clean-up after internalTrimming on R1 (remove reads which didn't have adapter)
 rule ont_1b_cutadapt_internalTrimming:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/cut_internalTrim_R1.fq.gz",

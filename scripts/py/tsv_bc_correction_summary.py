@@ -83,11 +83,16 @@ def generate_stats_output(stats, hamming_tally, num_barcodes):
             f"Number of corrected barcodes: {stats[barcode_num]['corrected_barcodes']}"
         )
         output.append(
+            f"Correction efficiency: {stats[barcode_num]['corrected_barcodes']/stats[barcode_num]['total_reads']:.3f}"
+        )
+        output.append(f"")
+        output.append(
             f"Mean hamming distance of corrected barcodes: {stats[barcode_num]['mean_hamming_corrected']:.2f}"
         )
         output.append(
             f"Mean hamming distance of uncorrected barcodes: {stats[barcode_num]['mean_hamming_uncorrected']:.2f}"
         )
+        output.append(f"")
         output.append(
             f"Mean second match hamming distance of corrected barcodes: {stats[barcode_num]['mean_second_match_corrected']:.2f}"
         )

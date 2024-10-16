@@ -9,18 +9,20 @@ import parasail
 # Usage:
 # SlideSeq
 """ 
-
+python scripts/py/fastq_split_reads_parallelized_v3.py \
+TODO
 """
 
 # Visium
 """ 
 python scripts/py/fastq_split_reads_parallelized_v3.py \
-
+TODO
 """
 
 # microST
 """
-
+python scripts/py/fastq_split_reads_parallelized_v3.py \
+TODO
 """
 
 # Create a translation table mapping 'ACTG' to 'TGAC'
@@ -76,8 +78,9 @@ def parse_args():
 
 
 def reverse_complement(seq):
-    # Use the translation table to find the complement of each base
-    # and then reverse the sequence
+    """
+    Use the translation table to find the complement of each base and then reverse the sequence.
+    """
     return seq.translate(tab)[::-1]
 
 
@@ -124,8 +127,14 @@ def find_and_split_reads(
     ----------
     fq_in : str
         The path to the FASTQ file.
+    anchor_seq : str
+        The sequence to search for in the reads.
     split_seq : str
         The sequence to search for in the reads.
+    split_offset : int
+        How far to the right/3'
+    max_offset : int
+        How far away the split_seq could be compared to the anchor_seq
     max_errors : float
         The maximum allowed error rate for the sequence matching.
     """

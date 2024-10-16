@@ -120,28 +120,29 @@ set-resources:
     mem: 128000000000
     mem_mb: 128000
   ilmn_3a_STARsolo_secondPass:
-    mem: 128000000000
-    mem_mb: 128000
+    mem: 220000000000
+    mem_mb: 220000
   ilmn_3d_qualimapQC_STAR:
     mem: 32G
   ilmn_4a_kbpython_std:
-    mem: 224G
-    mem_mb: 256000
-    threads: 24
+    mem: 220G
+    mem_mb: 220000
   miRge3_pseudobulk:
     mem: 128G
     mem_mb: 128000
   ilmn_6a_cache_preQC_h5ad_STAR:
-    mem: 32G
-    mem_mb: 32000
+    mem: 64G
+    mem_mb: 64000
   ont_1a_call_adapter_scan_v2:
-    mem: 16G
-    mem_mb: 16000
+    mem: 64G
+    mem_mb: 64000
   ont_1a_readIDs_by_adapter_type:
     mem: 16G
     mem_mb: 16000
   ont_1a_adapter_scan_results:
     mem: 8G
+  ont_1a_adapter_scan_summary:
+    mem: 32G
   ont_1a_merge_scan_lists:
     mem: 16G
     mem_mb: 16000
