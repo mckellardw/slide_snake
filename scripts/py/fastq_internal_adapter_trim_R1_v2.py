@@ -66,7 +66,9 @@ def align_parasail(read, adapter, min_align_score=58, verbose=False):
     """
 
     # Create a simple identity matrix (match = 1, mismatch = 0)
-    matrix = parasail.matrix_create(alphabet="ACGT", match=4, mismatch=1) # mismatch=-0.5
+    matrix = parasail.matrix_create(
+        alphabet="ACGT", match=4, mismatch=1
+    )  # mismatch=-0.5
     alignment = parasail.sw(s1=adapter, s2=read, open=6, extend=6, matrix=matrix)
 
     start = alignment.end_ref - len(adapter) + 1
@@ -97,7 +99,7 @@ def trim_fq(fq_in, fq_out, adapter_seq, min_adapter_start_pos, min_align_score):
                 )
 
                 # Account for reads with deletions in `BC_1`
-                
+
                 # Check if alignment meets the minimum score threshold based on mismatches
                 if align_score >= min_align_score:
                     if start < min_adapter_start_pos:  # Deletion in BC_1
@@ -203,7 +205,7 @@ def main(args):
         print(f"Deletion count in BC_1:   {del_count:,}")
         print(f"Reads missing adapter: {no_adapter_count:,}")
     else:
-        out = trim_fq(args.fq1_in, args.fq1_out.replace('.gz',''), True)
+        out = trim_fq(args.fq1_in, args.fq1_out.replace(".gz", ""), True)
 
         read_count, ins_count, del_count, no_adapter_count = out
 

@@ -41,7 +41,7 @@ python scripts/py/fastq_call_bc_umi_from_adapter_v2.py \
     --threads 1
 """
 
-# microST
+# microST - single-sector
 """
 python scripts/py/fastq_call_bc_umi_from_adapter_v2.py \
     --fq_in out/E095_A_sub/tmp/ont/cut_R1.fq.gz \

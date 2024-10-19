@@ -40,10 +40,10 @@ def main(
 
     # Features
     feature_df = pd.read_csv(feat_in, sep="\t", header=None)
-    
+
     # Set the first feature column as var_names
     adata.var_names = feature_df.iloc[:, feat_cols[0]].values
-    
+
     # Add all specified feature columns to adata.var
     for i, col in enumerate(feat_cols):
         col_name = f"feature_col_{col}"
@@ -92,6 +92,7 @@ def main(
     print(f"Writing to {ad_out}")
     adata.write(ad_out)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Process spatial transcriptomics data."
@@ -114,9 +115,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--feat_cols",
         type=int,
-        nargs='+',
+        nargs="+",
         default=[1],
-        help="Feature column indices in the feature file (default: [1])"
+        help="Feature column indices in the feature file (default: [1])",
     )
     parser.add_argument(
         "--transpose",
