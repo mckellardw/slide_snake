@@ -1,7 +1,5 @@
 # Save an anndata object from market matrix input. Also adds spatial coordinates to the object
 
-# import sys
-# import gzip
 import pandas as pd
 import argparse
 from scanpy import read_mtx
@@ -26,7 +24,7 @@ def main(
     bc_in,
     bc_map,
     ad_out,
-    feat_col=1,
+    feat_cols=[1],
     transpose=True,
     remove_zero_features=False,
     verbose=True,
@@ -41,16 +39,18 @@ def main(
         adata = adata.transpose()
 
     # Features
-    # adata.var_names = pd.read_csv(feat_in, sep="\t", header=None, usecols=[feat_col], squeeze=True).values    # pandas v1.#.#
-    adata.var_names = (
-        pd.read_csv(feat_in, sep="\t", header=None, usecols=[feat_col]).squeeze().values
-    )  # pandas v2.#.#
+    feature_df = pd.read_csv(feat_in, sep="\t", header=None)
+    
+    # Set the first feature column as var_names
+    adata.var_names = feature_df.iloc[:, feat_cols[0]].values
+    
+    # Add all specified feature columns to adata.var
+    for i, col in enumerate(feat_cols):
+        col_name = f"feature_col_{col}"
+        adata.var[col_name] = feature_df.iloc[:, col].values
 
     # Barcodes
-    # adata.obs_names = pd.read_csv(bc_in, sep="\t", header=None, squeeze=True).values    # pandas v1.#.#
-    adata.obs_names = pd.read_csv(bc_in, sep="\t", header=None)[
-        0
-    ].tolist()  # pandas v2.#.#
+    adata.obs_names = pd.read_csv(bc_in, sep="\t", header=None)[0].tolist()
 
     # Add spatial location
     spatial_data = pd.read_csv(
@@ -82,7 +82,6 @@ def main(
         f"{len(common_labels)} / {len(adata.obs_names)} in output AnnData object found in barcode map..."
     )
 
-    # spatial_coord = spatial_data.loc[adata.obs_names, ['x', 'y']] #w/ out filtering for intersection
     adata.obsm["spatial"] = spatial_coord.to_numpy()
 
     # Remove observations with zero features detected
@@ -92,7 +91,6 @@ def main(
     # Write output
     print(f"Writing to {ad_out}")
     adata.write(ad_out)
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -114,10 +112,11 @@ if __name__ == "__main__":
         "--ad_out", required=True, help="Output AnnData file (h5ad format)"
     )
     parser.add_argument(
-        "--feat_col",
+        "--feat_cols",
         type=int,
-        default=1,
-        help="Feature column index in the feature file (default: 1)",
+        nargs='+',
+        default=[1],
+        help="Feature column indices in the feature file (default: [1])"
     )
     parser.add_argument(
         "--transpose",
@@ -138,7 +137,7 @@ if __name__ == "__main__":
         f"Barcodes file:                {args.bc_in}\n"
         f"Barcode map file:             {args.bc_map}\n"
         f"Output AnnData file:          {args.ad_out}\n"
-        f"Feature column index:         {args.feat_col}\n"
+        f"Feature column indices:       {args.feat_cols}\n"
         f"Transpose matrix:             {args.transpose}\n"
         f"Remove undetected features:   {args.remove_zero_features}\n"
     )
@@ -148,7 +147,7 @@ if __name__ == "__main__":
         args.bc_in,
         args.bc_map,
         args.ad_out,
-        args.feat_col,
+        args.feat_cols,
         args.transpose,
         args.remove_zero_features,
     )
