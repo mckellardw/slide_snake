@@ -94,7 +94,7 @@ def parse_args():
         "--concat_bcs",
         type=bool,
         default=False,
-        help="Columns in .tsv corresponding to the uncorrected barcodes.",
+        help="Whether or not to combine sub-barcodes prior to correction (True for SlideSeq; False for microST/dBIT)",
     )
     parser.add_argument(
         "--max_levens",
@@ -380,9 +380,8 @@ def process_tsv(
     """
     null_bc_string = "-"
 
-    # verbose = True
     # bc_update_counter=5000
-    n_corrected=0
+    n_corrected = 0
 
     if verbose:
         processStartTime = time.time()
@@ -408,30 +407,45 @@ def process_tsv(
                     read_id = row[id_column]
                     barcodes = [row[i] for i in bc_columns]
 
-                    if concat_bcs:
-                        barcodes = ["".join(barcodes)]
-
                     row2write = [read_id]  # initialize row to write in output .tsv
 
-                    RANGE = [
-                        [
-                            barcodes[i],
-                            whitelists[i],
-                            max_levens[i],
-                            min_next_match_diffs[i],
+                    if concat_bcs:
+                        barcodes = ["".join(barcodes)]
+                        RANGE = [
+                            [
+                                barcodes[0],
+                                whitelists[0],
+                                max_levens[0],
+                                min_next_match_diffs[0],
+                            ]
                         ]
-                        for i in range(len(barcodes))
-                    ]
 
-                    concat_corrected_bc = (
-                        []
-                    )  # used for slim list for simple .bam tagging
+                    else:
+                        RANGE = [
+                            [
+                                barcodes[i],
+                                whitelists[i],
+                                max_levens[i],
+                                min_next_match_diffs[i],
+                            ]
+                            for i in range(len(barcodes))
+                        ]
+
+                    # used for slim list for simple .bam tagging
+                    concat_corrected_bc = []
+
                     for barcode, whitelist, max_leven, min_next_match_diff in RANGE:
                         st = time.time()
 
                         # skip reads w/ missing bc
                         # if barcode == null_bc_string:
                         #     continue
+
+                        if len(barcode) != len(whitelist[0]):
+                            print(
+                                f"Barcode length [{len(barcode)}] does not match whitelist [{len(whitelist[0])}]"
+                            )
+                            sys.exit(1)
 
                         # quick check for perfect match
                         if barcode in whitelist:
@@ -452,7 +466,7 @@ def process_tsv(
                             )
                             concat_corrected_bc.append(corrected_bc)
 
-                            k = len(list(kmer_to_bc_index.keys())[0])
+                            # k = len(list(kmer_to_bc_index.keys())[0])
 
                         # Write output(s)
                         if bc_leven == 0:
@@ -476,7 +490,7 @@ def process_tsv(
                         # only write fully correctable bcs to slim output
                         writer_full.writerow(row2write)
                     else:
-                        n_corrected+=1
+                        n_corrected += 1
                         writer_full.writerow(row2write)
                         writer_slim.writerow([read_id, "".join(concat_corrected_bc)])
     if n_corrected == 0:
@@ -501,7 +515,6 @@ if __name__ == "__main__":
         )
 
     # Print run settings for log files ----
-    args.concat_bcs = False
     print(
         f"Input tsv:                        {args.tsv_in}\n"
         f"Output tsv (Full Info):           {args.tsv_out_full}\n"
@@ -516,17 +529,21 @@ if __name__ == "__main__":
         f"Number of threads:                {args.threads}\n"
     )
 
+    # args.concat_bcs = False
+
     if args.concat_bcs and len(list(args.whitelist_files)) > 1:
         print(f"Need a merged barcode whitelist!")
         sys.exit(1)
 
     # prep whitelists
+    if len(args.whitelist_files) != len(args.bc_columns):
+        print(f"Using this whitelist for all corrections:   {args.whitelist_files[0]}")
+        args.whitelist_files = rep(args.whitelist_files[0], len(args.bc_columns))
+
     whitelists = {}
     kmer_to_bc_indexes = {}
     for i, whitelist_file in enumerate(args.whitelist_files):
-        wl, kmer_to_bc_index = load_whitelist(
-            whitelist_file, k=args.k
-        )  # Assuming k=5 for simplicity
+        wl, kmer_to_bc_index = load_whitelist(whitelist_file, k=args.k)
         # TODO- auto set k based on bc length (dependent on seq error rate)
 
         whitelists[i] = wl
@@ -560,10 +577,10 @@ if __name__ == "__main__":
         print("")
         print(f"{currentTime()} - Splitting input tsv...")
         temp_dir = generate_temp_dir_name()
-        
+
         if not os.path.exists(temp_dir):
             os.makedirs(temp_dir)
-            
+
         print(f"Temporary directory: {temp_dir}")
         temp_tsvs_in, n_bcs = split_file(
             file_path=args.tsv_in, temp_dir=temp_dir, num_chunks=args.threads
