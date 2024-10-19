@@ -27,13 +27,12 @@ rule ilmn_6a_cache_preQC_h5ad_STAR:
             --bc_in {input.BCS} \
             --bc_map {input.BC_map} \
             --ad_out {output.H5AD} \
-            --feat_col 1 \
+            --feat_col 1 0 \
             --transpose True \
             --remove_zero_features \
         1> {log.log} \
         2> {log.err}
         """
-
 
 # kallisto/bustools outputs
 rule cache_preQC_h5ad_kbpython_std:

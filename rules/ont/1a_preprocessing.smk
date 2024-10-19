@@ -247,7 +247,8 @@ rule ont_1a_split_fastq_to_R1_R2:
         AMBIG_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_adapter_ambiguous.fq.gz",
     params:
         # ANCHOR_SEQ=lambda w: get_recipe_info(w, "fwd_primer"),
-        ANCHOR_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio
+        # ANCHOR_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio
+        ANCHOR_SEQ="ACGCTCTTCCGATCT",  #TXG/Curio
         SPLIT_SEQ="T" * 8,
         SPLIT_OFFSET=8,  # offset from 3' end of split seq on which to split
         MAX_OFFSET=200,

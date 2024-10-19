@@ -11,14 +11,19 @@ rule ont_1c_fastq_call_bc_from_adapter:
         BC_LENGTHS=lambda w: get_recipe_info(w, "BC_length", mode="ONT"),
         BC_OFFSETS=lambda w: get_recipe_info(w, "BC_offset", mode="ONT"),
         BC_POSITIONS=lambda w: get_recipe_info(w, "BC_position", mode="ONT"),
-        BC_MISMATCHES=2,
+        BC_ADAPTER_MISMATCHES=lambda w: round(
+            len(get_recipe_info(w, "BC_adapter", mode="ONT")) * 0.1
+        ),
         UMI_ADAPTERS=lambda w: get_recipe_info(w, "UMI_adapter", mode="ONT"),
         UMI_LENGTHS=lambda w: get_recipe_info(w, "UMI_length", mode="ONT"),
         UMI_OFFSETS=lambda w: get_recipe_info(w, "UMI_offset", mode="ONT"),
         UMI_POSITIONS=lambda w: get_recipe_info(w, "UMI_position", mode="ONT"),
-        UMI_MISMATCHES=2,
+        UMI_ADAPTER_MISMATCHES=lambda w: round(
+            len(get_recipe_info(w, "UMI_adapter", mode="ONT")) * 0.1
+        ),
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1c_fastq_call_bc_from_adapter.log",
+        err="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1c_fastq_call_bc_from_adapter.err",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
@@ -33,14 +38,15 @@ rule ont_1c_fastq_call_bc_from_adapter:
             --bc_lengths {params.BC_LENGTHS} \
             --bc_offsets {params.BC_OFFSETS} \
             --bc_positions {params.BC_POSITIONS} \
-            --bc_mismatches {params.BC_MISMATCHES} \
+            --bc_mismatches {params.BC_ADAPTER_MISMATCHES} \
             --umi_adapters {params.UMI_ADAPTERS} \
             --umi_lengths {params.UMI_LENGTHS} \
             --umi_offsets {params.UMI_OFFSETS} \
             --umi_positions {params.UMI_POSITIONS} \
-            --umi_mismatches {params.UMI_MISMATCHES} \
+            --umi_mismatches {params.UMI_ADAPTER_MISMATCHES} \
             --threads {threads} \
-        1> {log.log}
+        1> {log.log} \
+        2> {log.err}
         """
 
 
@@ -66,16 +72,17 @@ rule ont_1c_tsv_bc_correction:
         TSV_SLIM="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected.tsv",
         TSV_FULL="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected_full.tsv",
     params:
-        WHITELIST=lambda w: " ".join(
-            get_whitelist(w, return_type="list", mode="recipe")
-        ),
+        WHITELIST=lambda w: " ".join(get_whitelist(w, return_type="list", mode="ONT")),
         MAX_LEVEN=lambda w: get_recipe_info(w, "BC_max_ED", mode="ONT"),  # maximum Levenshtein distance tolerated in correction;
         NEXT_MATCH_DIFF=lambda w: get_recipe_info(w, "BC_min_ED_diff", mode="ONT"),
         K=5,  # kmer length for BC whitelist filtering; shorter value improves accuracy, extends runtime
         BC_COLUMNS=lambda w: " ".join(map(str, range(1, get_n_bcs(w) + 1))),
-        CONCAT_BCS=lambda w: get_recipe_info(w, "BC_concat", mode="ONT"),  # whether the sub-barcodes should be corrected together (SlideSeq) or separately (microST)
+        # CONCAT_BCS=lambda w: get_recipe_info(w, "BC_concat", mode="ONT"),  # whether the sub-barcodes should be corrected together (SlideSeq) or separately (microST)
+        # CONCAT_BCS=lambda w: RECIPE_SHEET["BC_concat"][w.RECIPE]
+        CONCAT_BCS=True,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1c_tsv_bc_correction.log",
+        err="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1c_tsv_bc_correction.err",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
@@ -83,6 +90,8 @@ rule ont_1c_tsv_bc_correction:
     threads: config["CORES"]
     shell:
         """
+        echo {params.CONCAT_BCS}
+
         python scripts/py/tsv_bc_correction_parallelized.py --tsv_in {input.TSV} \
             --tsv_out_full {output.TSV_FULL} \
             --tsv_out_slim {output.TSV_SLIM} \
@@ -94,10 +103,13 @@ rule ont_1c_tsv_bc_correction:
             --min_next_match_diffs {params.NEXT_MATCH_DIFF} \
             --k {params.K} \
             --threads {threads} \
-        1> {log.log}
+        1> {log.log} \
+        2> {log.err}
         """
 
+
 # Summary of barcode correction results
+
 
 rule ont_1c_summarize_bc_correction:
     input:
@@ -106,7 +118,7 @@ rule ont_1c_summarize_bc_correction:
     output:
         SUMMARY="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/bc_correction_stats.txt",
     params:
-        N_LINES=100000 # number of lines to summarize 
+        N_LINES=100000,  # number of lines to summarize 
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:

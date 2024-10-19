@@ -95,7 +95,7 @@ def get_fqs(w, return_type=["list", "dict"], mode=["ONT", "ILMN"]):
 
 
 # whitelist param handling for different recipes/technologies/chemistries/etc
-def get_whitelist(w, return_type=None, mode=["recipe", "all_used", "all"]):
+def get_whitelist(w, return_type=None, mode="STAR"):
     try:
         if "internalTrim" in w.RECIPE:
             if return_type == "list":
@@ -110,14 +110,18 @@ def get_whitelist(w, return_type=None, mode=["recipe", "all_used", "all"]):
         elif "matchLinker" in w.RECIPE or "seeker" in w.RECIPE:
             # Use BC_concat=True for combinatorial barcode constructs (DBIT, microST, etc)
             if return_type == "list":
-                if RECIPE_SHEET["BC_concat"][w.RECIPE]:
+                if RECIPE_SHEET["BC_concat"][w.RECIPE] and mode=="STAR":
                     # Barcode constructs where positional barcodes are NOT independent (must be concatenated)
                     whitelist = [
                         f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_1.txt",
                         f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_2.txt",
                     ]
+                elif RECIPE_SHEET["BC_concat"][w.RECIPE] and mode=="ONT":
+                    whitelist = [
+                        f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist.txt",
+                    ]
                 else:
-                    # Barcode constructs where positional barcodes ARE independent (shorter white list)
+                    # Barcode constructs where positional barcodes ARE independent
                     whitelist = [
                         f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_uniq_1.txt",
                         f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_uniq_2.txt",

@@ -7,7 +7,7 @@ rule ont_1d_genome_align_minimap2_genome:
         SAM_TMP=temp("{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tmp.sam"),
     params:
         EXTRA_FLAGS=lambda wildcards: RECIPE_SHEET["mm2_extra"][wildcards.RECIPE],
-        REF=lambda wildcards: SAMPLE_SHEET["mm2_fa"][wildcards.SAMPLE],
+        REF=lambda wildcards: SAMPLE_SHEET["genome_fa"][wildcards.SAMPLE],
         JUNC_BED=lambda wildcards: SAMPLE_SHEET["mm2_junc_bed"][wildcards.SAMPLE],
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/minimap2.log",
@@ -44,7 +44,7 @@ rule ont_1d_genome_sort_compress_output:
     output:
         BAM=temp("{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam"),
     params:
-        REF=lambda wildcards: SAMPLE_SHEET["mm2_fa"][wildcards.SAMPLE],
+        REF=lambda wildcards: SAMPLE_SHEET["genome_fa"][wildcards.SAMPLE],
     resources:
         mem="16G",
     threads: 1
