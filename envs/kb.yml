@@ -5,9 +5,11 @@ channels:
   - defaults
 dependencies:
   - bustools=0.43.2
-  - kallisto=0.51.0
+  - kallisto=0.50.1
+  - pandas=1.5.3
   - pigz=2.8
-  - pip=23.3.1
-  - python=3.10.13
+  - pip==24.2
+  - pysam=0.22.1
+  - python>=3.9,<3.13
   - pip:
       - kb-python==0.28.2

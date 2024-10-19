@@ -111,8 +111,8 @@ set-resources:
     mem: 32G
     mem_mb: 32000
   ilmn_2b_ribodetector_filter_R1_internalTrim:
-    mem: 32G
-    mem_mb: 32000
+    mem: 64G
+    mem_mb: 64000
   ilmn_2b_ribodetector_filter_R1_hardTrim:
     mem: 32G
     mem_mb: 32000
@@ -142,7 +142,7 @@ set-resources:
   ont_1a_adapter_scan_results:
     mem: 8G
   ont_1a_adapter_scan_summary:
-    mem: 32G
+    mem: 64G
   ont_1a_merge_scan_lists:
     mem: 16G
     mem_mb: 16000
