@@ -16,19 +16,20 @@ def knee_plot(
     line_width=2,
     line_color="b",
     title="Knee plot",
+    expected_num_cells=10000,
+    figsize=(10, 7),
     verbose=False,
 ):
-    import matplotlib.pyplot as plt
-
-    expected_num_cells = 10000
-
     knee = np.sort((np.array(adata.X.sum(axis=1))).flatten())[::-1]
 
-    fig, ax = plt.subplots(figsize=(10, 7))
+    if expected_num_cells > len(knee):
+        expected_num_cells = len(knee) - 1
+    fig, ax = plt.subplots(figsize=figsize)
 
     ax.loglog(range(len(knee)), knee, linewidth=line_width, color=line_color)
-    #     ax.axvline(x=knee[expected_num_cells], linewidth=3, color="k")
-    #     ax.axhline(y=expected_num_cells, linewidth=3, color="k")
+
+    ax.axvline(x=expected_num_cells, linewidth=1, color="k")
+    ax.axhline(y=knee[expected_num_cells], linewidth=1, color="k")
 
     ax.set_ylabel("UMI Counts")
     ax.set_xlabel("Ranked Barcodes")
