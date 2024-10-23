@@ -754,21 +754,19 @@ def add_mtx_as_layer(
         layer_name (str): Name of the layer to be added.
         feature_column (int): Column # for desired feature names (similar to Seurat::ReadMtx)
         transpose (bool, optional): Whether or not to transpose the matrix
-        intersect (bool, optional): Whether to consider only the intersection of observations.
-            If False, the union of observations will be used. Default is False.
+        intersect (bool, optional): Whether to consider only the intersection of observations and features.
+            If False, the union of observations and features will be used. Default is False.
         inplace (bool, optional): Whether to modify the input AnnData object in place or create a new copy.
             If True, modifications are made to the input AnnData object. If False, a new AnnData object is created
             with the added layer. Default is True.
+        verbose (bool, optional): Whether to print additional information. Default is False.
 
     Returns:
         None if inplace=True. Returns a new AnnData object with the added layer if inplace=False.
     """
     if not inplace:
-        # Create a copy of the AnnData object
         adata = adata.copy()
 
-    # Read the matrix file & convert to csr
-    # matrix = sp.load_npz(mtx_path)
     with gzip.open(mtx_path, "rb") as file_in:
         matrix = mmread(file_in)
         if transpose:
@@ -778,103 +776,65 @@ def add_mtx_as_layer(
     if verbose:
         print(f"Loaded {matrix.shape[0]} obs and {matrix.shape[1]} vars")
 
-    # Load the associated var_names and row_names from the gzipped .txt files
-    # with gzip.open(var_path, 'rt') as var_file:
-    #     var_names_mat = var_file.read().splitlines()
-    var_names_mat = (
-        pd.read_csv(
-            var_path, delimiter="\t", dtype=str, header=None, usecols=[feature_column]
-        )
-        .iloc[:, 0]
-        .tolist()
-    )
-
-    # Make sure var_names are unique
+    var_names_mat = pd.read_csv(var_path, delimiter="\t", dtype=str, header=None, usecols=[feature_column]).iloc[:, 0].tolist()
     var_names_mat = make_unique(var_names_mat)
 
     with gzip.open(obs_path, "rt") as obs_file:
         obs_names_mat = obs_file.read().splitlines()
 
-    # Filter obs names based on adata obs_names
-    # obs_names_found   = list(filter(lambda x: x in adata.obs_names, obs_names_mat))
-    # obs_names_missing = list(filter(lambda x: x not in adata.obs_names, obs_names_found))
-    obs_names_found = [obs for obs in obs_names_mat if obs in adata.obs_names]
-    obs_names_missing = [obs for obs in obs_names_mat if obs not in adata.obs_names]
+    if intersect:
+        obs_names_common = list(set(adata.obs_names) & set(obs_names_mat))
+        var_names_common = list(set(adata.var_names) & set(var_names_mat))
 
-    # var_names_found   = list(filter(lambda x: x in adata.var_names, var_names_mat))
-    # var_names_missing = list(filter(lambda x: x not in adata.var_names, var_names_found))
-    var_names_found = [var for var in var_names_mat if var in adata.var_names]
-    var_names_missing = [var for var in var_names_mat if var not in adata.var_names]
+        obs_indices_mat = [obs_names_mat.index(obs) for obs in obs_names_common]
+        var_indices_mat = [var_names_mat.index(var) for var in var_names_common]
+
+        matrix = matrix[obs_indices_mat, :][:, var_indices_mat]
+
+        obs_names_out = obs_names_common
+        var_names_out = var_names_common
+    else:
+        obs_names_out = list(set(adata.obs_names) | set(obs_names_mat))
+        var_names_out = list(set(adata.var_names) | set(var_names_mat))
 
     if verbose:
-        print(
-            f"{len(obs_names_found)}/{len(adata.obs_names)} obs from adata found, {len(obs_names_missing)} additional found"
-        )
+        print(f"Final matrix shape: {matrix.shape[0]} obs and {matrix.shape[1]} vars")
+        print(f"Intersection: {len(obs_names_out)} obs and {len(var_names_out)} vars")
 
-    if verbose:
-        print(
-            f"{len(var_names_found)}/{len(adata.var_names)} vars from adata found, {len(var_names_missing)} additional found"
-        )
+    # Create a new matrix with the correct dimensions
+    new_matrix = sp.csr_matrix((len(obs_names_out), len(var_names_out)), dtype=matrix.dtype)
 
-    # Filter the matrix and column names based on adata, add zeroes for missing **observations**
+    # Fill in the values from the original matrix
     obs_index_dict = {name: index for index, name in enumerate(obs_names_mat)}
-    obs_found_indices = [
-        obs_index_dict[obs] for obs in adata.obs_names if obs in obs_index_dict
-    ]
-
-    matrix_obs_found = matrix[obs_found_indices, :]
-    if len(obs_names_missing) > 0:
-        matrix_obs_missing = sp.csr_matrix((len(obs_names_missing), matrix.shape[1]))
-        matrix_obs_out = sp.vstack((matrix_obs_found, matrix_obs_missing))
-    else:
-        matrix_obs_out = matrix_obs_found
-
-    # Filter the matrix and column names based on adata, add zeroes for missing **features**
     var_index_dict = {name: index for index, name in enumerate(var_names_mat)}
-    var_found_indices = [
-        var_index_dict[var] for var in adata.var_names if var in var_index_dict
-    ]
 
-    matrix_var_found = matrix_obs_out[:, var_found_indices]
-    if len(var_names_missing) > 0:
-        matrix_var_missing = sp.csr_matrix(
-            (matrix_obs_out.shape[0], len(var_names_missing))
-        )
-        matrix_out = sp.hstack((matrix_var_found, matrix_var_missing))
+    for i, obs in enumerate(obs_names_out):
+        if obs in obs_index_dict:
+            orig_obs_idx = obs_index_dict[obs]
+            for j, var in enumerate(var_names_out):
+                if var in var_index_dict:
+                    orig_var_idx = var_index_dict[var]
+                    new_matrix[i, j] = matrix[orig_obs_idx, orig_var_idx]
+
+    # Update adata object
+    if intersect:
+        adata = adata[:, var_names_common]
     else:
-        matrix_out = matrix_var_found
+        # Add missing observations and variables to adata
+        missing_obs = list(set(obs_names_out) - set(adata.obs_names))
+        missing_vars = list(set(var_names_out) - set(adata.var_names))
 
-    # Add missing obs_names and var_names to the end of the current lists
-    obs_names_found += obs_names_missing
-    var_names_found += var_names_missing
+        if missing_obs:
+            adata = adata.concatenate(ad.AnnData(X=sp.csr_matrix((len(missing_obs), adata.n_vars)), obs=pd.DataFrame(index=missing_obs)), join='outer')
 
-    # Now the lengths should match, and you can safely compare the arrays
-    if not all(elem in adata.obs_names for elem in obs_names_found) or not all(
-        elem in adata.var_names for elem in var_names_found
-    ):
-        # if any(adata.obs_names != obs_names_found) or any(adata.var_names != var_names_found):
-        if verbose:
-            print(
-                f"Observation names or feature names don't match, getting the order..."
-            )
-        obs_index_dict = {name: index for index, name in enumerate(adata.obs_names)}
-        obs_indices = [obs_index_dict[obs] for obs in adata.obs_names]
+        if missing_vars:
+            adata = adata.concatenate(ad.AnnData(X=sp.csr_matrix((adata.n_obs, len(missing_vars))), var=pd.DataFrame(index=missing_vars)), join='outer', axis=1)
 
-        var_index_dict = {name: index for index, name in enumerate(adata.var_names)}
-        var_indices = [var_index_dict[var] for var in adata.var_names]
+    # Ensure the order of observations and variables matches
+    adata = adata[obs_names_out, var_names_out]
 
-        # Debugging statements
-        # print('Shape of matrix_out:', matrix_out.shape)
-        # print('Shape of adata:', adata.shape)
-        # print('Length of obs_names_found:', len(obs_names_found))
-        # print('Length of var_names_found:', len(var_names_found))
-        # print('Length of obs_indices:', len(obs_indices))
-        # print('Length of var_indices:', len(var_indices))
-
-        matrix_out = matrix_out[np.ix_(obs_indices, var_indices)]
-
-    # Create a new layer in the AnnData object
-    adata.layers[layer_name] = matrix_out
+    # Add the new layer
+    adata.layers[layer_name] = new_matrix
 
     if not inplace:
         return adata
