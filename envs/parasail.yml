@@ -1,4 +1,4 @@
-name: adapter_scan
+name: parasail
 channels:
   - bioconda
   - conda-forge
