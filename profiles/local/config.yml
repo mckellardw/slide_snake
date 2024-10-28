@@ -1,4 +1,0 @@
-cores: 4
-resources:
-  mem_mb: 8192
-  disk_mb: 10240
