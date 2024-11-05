@@ -1,0 +1,10 @@
+name: ultra
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - minimap2
+  - parasail-python
+  - pysam
+  - samtools
+  - ultra_bioinformatics=0.1

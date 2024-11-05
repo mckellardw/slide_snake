@@ -15,8 +15,13 @@ mamba env create --name slide_snake --file=envs/slide_snake.yml
 mamba activate slide_snake
 ```
 
+```
+mamba env create --name slsn --file=envs/slsn.yml
+mamba activate slsn
+```
+
 ### How to set up a run:
-  1. Install and ensure that the executable paths are functioning (see "EXEC" in `configs/config.yaml`)
+  1. Install and ensure that the executable paths are functioning
   2. Build a sample sheet, containing details on each sample you would like to analyze. Be sure to add the path to the `SAMPLE_SHEET_PATH` variable in `configs/config.yaml`.
       - Fill out the file paths for the input .fastqs (can pass multiple sequencing runs, illumina and/or ONT data), reference genomes, etc. 
       - Add the recipe(s) for each sample, separated by spaces. 
@@ -37,12 +42,16 @@ snakemake --cluster-config config/slurm.yaml --cluster "sbatch -p {cluster.parti
 ```
 *Note*, rule-specific resource usage found in `config/slurm.yaml`
 
-`snakemake` version 8 (using snakemake profiles):
+`snakemake` version 8:
+Make sure the [slurm plugin](https://snakemake.github.io/snakemake-plugin-catalog/plugins/executor/slurm.html) is installed first!
 ```
-snakemake -k -p --nt --use-conda --conda-frontend mamba -j 56 --profile profiles/slurm
+snakemake -k -p --nt --use-conda --conda-frontend mamba --executor slurm --workflow-profile profiles/slurm -j 24
 ```
 
 ## **Helpful links:**
 - [Barcode download from Curio](https://curiobioscience.com/support/barcode/)
 - Extract DNB barcode whitelist for StereoSeq with [ST_BarcodeMap](https://github.com/STOmics/ST_BarcodeMap) 
-  - Use the "mask format change" code mentioned in the `README`
+  - Use the "mask format change" code mentioned in the `README`; example:
+  ```
+  ST_BarcodeMap-0.0.1 --in B01807A3.barcodeToPos.h5 --out B01807A3.barcodeToPos.txt --action 3 --thread 24
+  ```

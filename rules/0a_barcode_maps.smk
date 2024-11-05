@@ -2,13 +2,13 @@
 
 
 # Copy barcode map
-rule copy_barcode_map:
+rule BC_copy_barcode_map:
     input:
-        BC_MAP=lambda wildcards: BC_DICT[wildcards.SAMPLE],
+        BC_MAP=lambda wildcards: SAMPLE_SHEET["BC_map"][wildcards.SAMPLE],
     output:
         BC_MAP="{OUTDIR}/{SAMPLE}/bc/map.txt",
-    resources:
-        threads=1,
+    # resources:
+    threads: 1
     run:
         if input.BC_MAP.endswith(".gz"):
             shell(
@@ -26,13 +26,13 @@ rule copy_barcode_map:
             )
 
 
-rule get_simple_whitelist:
+rule BC_get_simple_whitelist:
     input:
         BC_MAP="{OUTDIR}/{SAMPLE}/bc/map.txt",
     output:
         BC="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
-    resources:
-        threads=1,
+    # resources:
+    threads: 1
     shell:
         """
         mkdir -p $(dirname {output.BC})
@@ -43,7 +43,8 @@ rule get_simple_whitelist:
 # Split the barcodes and save whitelists
 # TODO- refactor to take info from recipe_sheet on barcode positions/lengths
 # TODO- refactor to take a variable number of barcodes
-rule write_whitelist_variants:
+# TODO- export to python script
+rule BC_write_whitelist_variants:
     input:
         BC_MAP="{OUTDIR}/{SAMPLE}/bc/map.txt",
     output:
@@ -53,8 +54,10 @@ rule write_whitelist_variants:
         BC_UNIQ_1="{OUTDIR}/{SAMPLE}/bc/whitelist_uniq_1.txt",  # barcode #1, unique values
         BC_UNIQ_2="{OUTDIR}/{SAMPLE}/bc/whitelist_uniq_2.txt",  # Barcode #2, unique values
         BC_US="{OUTDIR}/{SAMPLE}/bc/whitelist_underscore.txt",  # Barcode With Underscore for STAR
-    resources:
-        threads=1,
+    params:
+        BC_LENGTHS=lambda w: get_recipe_info(w, info_col="BC_length"),
+    # resources:
+    threads: 1
     run:
         recipes = "".join(get_recipes(wildcards, mode="list"))
 
@@ -62,6 +65,7 @@ rule write_whitelist_variants:
         bc_map = pd.read_csv(input.BC_MAP, sep="\t", header=None)
 
         # split into multiple whitelists for separated barcodes
+        # TODO- fix this code... Needs to be abstracted!
         if "seeker" in recipes:
             bc_1 = [bc[:8] for bc in list(bc_map[0])]
             bc_2 = [bc[8:] for bc in list(bc_map[0])]
@@ -134,8 +138,8 @@ rule write_whitelist_variants:
             )
 
 
-# For Seeker - Insert the adapter sequence into the bead barcodes for easier barcode matching/alignment with STARsolo
-rule insert_adapter_into_list:
+# For Seeker - Insert the adapter sequence into the bead barcodes for barcode matching/alignment
+rule BC_insert_adapter_into_list:
     input:
         BC_MAP="{OUTDIR}/{SAMPLE}/bc/map.txt",
     output:
@@ -144,11 +148,11 @@ rule insert_adapter_into_list:
         BC_ADAPTER_MAP="{OUTDIR}/{SAMPLE}/bc/map_adapter.txt",
         BC_ADAPTER_R1_MAP="{OUTDIR}/{SAMPLE}/bc/map_adapter_R1.txt",
     params:
-        ADAPTER=lambda w: get_recipe_info(w, "internal.adapter", mode="list")[0],
-        R1_PRIMER=config["R1_PRIMER"],  # R1 PCR primer (Visium & Seeker)
+        ADAPTER=lambda w: get_recipe_info(w, "internal_adapter", mode="list")[0],
+        BC_PRIMER=lambda w: get_recipe_info(w, "fwd_primer", mode="list")[0],
         recipes_to_split=["seeker", "microST", "decoder"],
-    resources:
-        threads=1,
+    # resources:
+    threads: 1
     run:
         recipes = "".join(get_recipes(wildcards, mode="list"))
 
@@ -167,7 +171,7 @@ rule insert_adapter_into_list:
                     for item1, item2 in zip(bc_1, bc_2)
                 ]
                 bc_adapter_r1 = [
-                    f"{params.R1_PRIMER}{item1}{params.ADAPTER}{item2}"
+                    f"{params.BC_PRIMER}{item1}{params.ADAPTER}{item2}"
                     for item1, item2 in zip(bc_1, bc_2)
                 ]
 
@@ -181,7 +185,7 @@ rule insert_adapter_into_list:
                     for item1, item2 in zip(bc_1, bc_2)
                 ]
                 bc_adapter_r1 = [
-                    f"{params.R1_PRIMER}{item1}{params.ADAPTER}{item2}"
+                    f"{params.BC_PRIMER}{item1}{params.ADAPTER}{item2}"
                     for item1, item2 in zip(bc_1, bc_2)
                 ]
 

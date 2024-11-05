@@ -1,15 +1,15 @@
 # Merge .fastq files (in case more than one sesquencing run was performed)
-rule merge_fastqs:
+rule ilmn_1a_merge_fastqs:
     output:
-        MERGED_R1_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/merged_R1.fq.gz"),
-        MERGED_R2_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/merged_R2.fq.gz"),
+        MERGED_R1_FQ=temp("{OUTDIR}/{SAMPLE}/short_read/tmp/merged_R1.fq.gz"),
+        MERGED_R2_FQ=temp("{OUTDIR}/{SAMPLE}/short_read/tmp/merged_R2.fq.gz"),
     params:
-        TMP_DIR="{OUTDIR}/{SAMPLE}/tmp",
+        TMP_DIR="{OUTDIR}/{SAMPLE}/short_read/tmp",
         R1_FQ=lambda wildcards: R1_FQS[wildcards.SAMPLE],
         R2_FQ=lambda wildcards: R2_FQS[wildcards.SAMPLE],
     resources:
         mem="16G",
-        threads=1,
+    threads: 1
     run:
         if (
             len(params.R1_FQ) == 1 & len(params.R2_FQ) == 1
@@ -23,6 +23,6 @@ rule merge_fastqs:
                 mkdir -p {params.TMP_DIR}
                 zcat {" ".join(params.R1_FQ)} > {params.TMP_DIR}/merged_R1.fq
                 zcat {" ".join(params.R2_FQ)} > {params.TMP_DIR}/merged_R2.fq
-                {EXEC['PIGZ']} -p {resources.threads} {params.TMP_DIR}/*.fq
+                pigz -p {threads} {params.TMP_DIR}/*.fq
                 """
             )

@@ -19,19 +19,18 @@ rule copy_fq_for_mirge:
             "{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fastq.gz"
         ),
         R2_FQ_BWA_FILTERED=temp("{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fastq.gz"),
-    run:
-        shell(
-            f"""
-            cp {input.R2_FQ} {output.R2_FQ}
-            cp {input.R2_FQ_TWICE_CUT} {output.R2_FQ_TWICE_CUT}
-            cp {input.R2_FQ_STAR_FILTERED} {output.R2_FQ_STAR_FILTERED}
-            cp {input.R2_FQ_BWA_FILTERED} {output.R2_FQ_BWA_FILTERED}
-            """
-        )
+    shell:
+        """
+        cp {input.R2_FQ} {output.R2_FQ}
+        cp {input.R2_FQ_TWICE_CUT} {output.R2_FQ_TWICE_CUT}
+        cp {input.R2_FQ_STAR_FILTERED} {output.R2_FQ_STAR_FILTERED}
+        cp {input.R2_FQ_BWA_FILTERED} {output.R2_FQ_BWA_FILTERED}
+        """
 
 
 # Source: https://mirge3.readthedocs.io/en/latest/quick_start.html
 ## Note- `--outDirNam` is a hidden argument for miRge3 that allows direct naming of the output directory
+#TODO update this code...
 rule miRge3_pseudobulk:
     input:
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R2.fastq.gz",
@@ -44,14 +43,12 @@ rule miRge3_pseudobulk:
         MIRGE_HTML="{OUTDIR}/{SAMPLE}/miRge_bulk/{RECIPE}/annotation.report.html",
     params:
         MIRGE_LIB=config["MIRGE_LIB"],
-        # SPECIES = config['SPECIES'],
+        SPECIES = lambda wildcards: SAMPLE_SHEET["species"][wildcards.SAMPLE],
         # UMIlen = config['UMIlen'],
         MEMLIMIT=config["MEMLIMIT"],
     threads: config["CORES"]
     run:
         from os import path
-
-        SPECIES = SPECIES_DICT[wildcards.SAMPLE]
 
         # recipe = RECIPE_DICT[wildcards.SAMPLE]
         recipe = wildcards.RECIPE
@@ -68,7 +65,7 @@ rule miRge3_pseudobulk:
             print("I just don't know what to do with myself...")
 
             # human-only settings
-        if SPECIES == "human":
+        if params.SPECIES == "human":
             EXTRA_FLAGS = "--tRNA-frag"
         else:
             EXTRA_FLAGS = ""
@@ -81,10 +78,10 @@ rule miRge3_pseudobulk:
             mkdir -p {output.MIRGE_DIR}
             cd {output.MIRGE_DIR}
 
-            {EXEC['MIRGE']} \
+            miRge3.0 \
                 -s {R2} \
                 -lib {MIRGE_LIB_ABS} \
-                -on {SPECIES} \
+                -on {params.SPECIES} \
                 -db mirbase \
                 --minimum-length 12 \
                 --outDirName ./ \

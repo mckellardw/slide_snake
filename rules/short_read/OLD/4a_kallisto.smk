@@ -18,13 +18,12 @@ rule kallisto_align:
         BUS_CORRECTED=temp("{OUTDIR}/{SAMPLE}/kb/{RECIPE}/output.corrected.bus"),
         TRANSCRIPTS="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/transcripts.txt",
         ECMAP=temp("{OUTDIR}/{SAMPLE}/kb/{RECIPE}/matrix.ec"),
-    params:
-        MEMLIMIT=config["MEMLIMIT_GB"],
     log:
         log="{OUTDIR}/{SAMPLE}/kb/{RECIPE}/kallisto_align.log",
-    threads: config["CORES"]
     resources:
+        threads=config["CORES"],
         mem_mb=config["MEMLIMIT_MB"],
+        mem=config["MEMLIMIT_GB"],
     priority: 42
     run:
         recipe = wildcards.RECIPE
@@ -41,8 +40,8 @@ rule kallisto_align:
                 --whitelist {input.BC} \
                 --chemistry {KB_X} \
                 --log {log.log} \
-                --threads {threads} \
-                --memlimit {params.MEMLIMIT} \
+                --threads {resources.threads} \
+                --memlimit {params.mem} \
                 --r1fq {input.FQS[0]} \
                 --r2fq {input.FQS[1]}
             """
@@ -96,6 +95,6 @@ rule compress_kb_outs:
     run:
         shell(
             f"""
-            {EXEC['PIGZ']} -p{threads} {input.BCS} {input.GENES} {input.MAT}
+            {EXEC['PIGZ']} -p{resources.threads} {input.BCS} {input.GENES} {input.MAT}
             """
         )

@@ -11,30 +11,31 @@ from anndata import AnnData
 
 # Knee plot to quality check UMI counts for single-cell data
 def knee_plot(
-    ADATA,
-    x_lim=[0, 20000],
+    adata,
+    xlim=[0, 20000],
     line_width=2,
     line_color="b",
     title="Knee plot",
+    expected_num_cells=10000,
+    figsize=(10, 7),
     verbose=False,
 ):
-    import matplotlib.pyplot as plt
+    knee = np.sort((np.array(adata.X.sum(axis=1))).flatten())[::-1]
 
-    expected_num_cells = 10000
+    if expected_num_cells > len(knee):
+        expected_num_cells = len(knee) - 1
+    fig, ax = plt.subplots(figsize=figsize)
 
-    knee = np.sort((np.array(ADATA.X.sum(axis=1))).flatten())[::-1]
+    ax.loglog(range(len(knee)), knee, linewidth=line_width, color=line_color)
 
-    fig, ax = plt.subplots(figsize=(10, 7))
+    ax.axvline(x=expected_num_cells, linewidth=1, color="k")
+    ax.axhline(y=knee[expected_num_cells], linewidth=1, color="k")
 
-    ax.loglog(knee, range(len(knee)), linewidth=line_width, color=line_color)
-    #     ax.axvline(x=knee[expected_num_cells], linewidth=3, color="k")
-    #     ax.axhline(y=expected_num_cells, linewidth=3, color="k")
-
-    ax.set_xlabel("UMI Counts")
-    ax.set_ylabel("Set of Barcodes")
+    ax.set_ylabel("UMI Counts")
+    ax.set_xlabel("Ranked Barcodes")
     ax.set_title(title)
 
-    plt.xlim(x_lim)
+    plt.xlim(xlim)
     plt.grid(True, which="both")
     plt.show()
 

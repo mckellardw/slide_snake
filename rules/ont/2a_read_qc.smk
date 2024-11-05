@@ -1,31 +1,55 @@
-# fastqc before trimming
-rule ont_readQC_preCutadapt:
+# fastqc before adapter scan
+rule ont_2a_readQC_0_rawInput:
     input:
-        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/adapter_scan_readids/merged_adapter_{READ}.fq.gz",
+        FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged.fq.gz",
     output:
-        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/1_preCutadapt/{READ}_qc.tsv",  #TODO compress this?
+        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/0_rawInput/merged_qc.tsv",
     params:
-        CHUNK_SIZE=500000,  # number of reads to handle at a time (higher value means more mem usage)
+        CHUNK_SIZE=100000,  # number of reads to handle in each chunk
+    log:
+        log="{OUTDIR}/{SAMPLE}/ont/readqc/0_rawInput/merged_qc.log",
+    resources:
+        mem="8G",
+    threads: config["CORES"]
+    shell:
+        """
+        python scripts/py/fastq_readqc.py \
+            {input.FQ} \
+            {output.TSV} \
+            --cores {threads} \
+            --chunk_size {params.CHUNK_SIZE} \
+        > {log.log}
+        """
+
+
+# fastqc before trimming
+rule ont_2a_readQC_1_preCutadapt:
+    input:
+        FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_adapter_{READ}.fq.gz",
+    output:
+        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/1_preCutadapt/{READ}_qc.tsv",
+    params:
+        CHUNK_SIZE=500000,  # number of reads to handle in each chunk
     log:
         log="{OUTDIR}/{SAMPLE}/ont/readqc/1_preCutadapt/{READ}_qc.log",
     resources:
         mem="8G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     shell:
         """
-        python scripts/py/fastq_read_qc.py \
+        python scripts/py/fastq_readqc.py \
             {input.FQ} \
             {output.TSV} \
-            --cores {resources.threads} \
+            --cores {threads} \
             --chunk_size {params.CHUNK_SIZE} \
-        2>&1 | tee {log.log}
+        > {log.log}
         """
 
 
 # fastqc after cutadapt trimming
-rule ont_readQC_postCutadapt:
+rule ont_2a_readQC_2_postCutadapt:
     input:
-        FQ="{OUTDIR}/{SAMPLE}/tmp/ont/cut_{READ}.fq.gz",
+        FQ="{OUTDIR}/{SAMPLE}/ont/tmp/cut_{READ}.fq.gz",
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/readqc/2_postCutadapt/{READ}_qc.tsv",
     params:
@@ -34,15 +58,15 @@ rule ont_readQC_postCutadapt:
         log="{OUTDIR}/{SAMPLE}/ont/readqc/2_postCutadapt/{READ}_qc.log",
     resources:
         mem="8G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     shell:
         """
-        python scripts/py/fastq_read_qc.py \
+        python scripts/py/fastq_readqc.py \
             {input.FQ} \
             {output.TSV} \
-            --cores {resources.threads} \
+            --cores {threads} \
             --chunk_size {params.CHUNK_SIZE} \
-        2>&1 | tee {log.log}
+        > {log.log}
         """
 
 
@@ -62,7 +86,7 @@ rule ont_readQC_postCutadapt:
 # │ cg │  Z   │ CIGAR string (only in PAF)                            │
 # │ cs │  Z   │ Difference string                                     │
 # └────┴──────┴───────────────────────────────────────────────────────┘
-rule ont_readQC_bam:
+rule ont_2a_readQC_3_bam:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam.bai",
@@ -75,43 +99,45 @@ rule ont_readQC_bam:
         log="{OUTDIR}/{SAMPLE}/ont/readqc/3_aligned/{RECIPE}_qc.log",
     resources:
         mem="8G",
-        threads=1,
-        # threads=config["CORES"],
+    threads: 1
+    # threads=config["CORES"],
     shell:
         """
-        python scripts/py/bam_read_qc.py \
+        python scripts/py/bam_readqc.py \
             --tags {params.TAGS} \
             --chunk-size {params.CHUNK_SIZE} \
             --bam_file {input.BAM} \
             --tsv_file {output.TSV} \
-        2>&1 | tee {log.log}
+        > {log.log}
         """
 
 
 # Grab the first million reads...
-rule readQC_downsample:
+rule ont_2a_readQC_downsample:
     input:
         TSV="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc.tsv",
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc_500000.tsv",
+    params:
+        N_READS=500001,  # 500k plus header
     resources:
         mem="4G",
-        threads=1,
+    threads: 1
     shell:
         """
-        head -n 5000000 {input.TSV} > {output.TSV} 
+        head -n {params.N_READS} {input.TSV} > {output.TSV} 
         """
 
 
 # Summary plot
-rule ont_readQC_summaryplot:
+rule ont_2a_readQC_summaryplot:
     input:
         TSV="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc_500000.tsv",
     output:
         IMG="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc.png",
     resources:
         mem="8G",
-        threads=1,
+    threads: 1
     conda:
         f"{workflow.basedir}/envs/ggplot2.yml"
     shell:

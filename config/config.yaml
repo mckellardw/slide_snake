@@ -9,10 +9,10 @@
 SAMPLE_SHEET_PATH: data/test_sample_sheet.csv # toy data
 
 # Resource parameters
-CORES: 28               # how many cores to give each process
+CORES: 56               # how many cores to give each process
 MEMLIMIT: 121916827066  # limit in bytes  
-MEMLIMIT_MB: 230000     # limit in megabytes
-MEMLIMIT_GB: 160G       # mem limit for kallisto
+MEMLIMIT_MB: 256000     # limit in megabytes
+MEMLIMIT_GB: 256G       # mem limit for kallisto
 
 # Recipe details (whitelists, barcode/UMI design, etc.)
 RECIPE_SHEET: resources/recipe_sheet.csv
@@ -21,35 +21,8 @@ RECIPE_SHEET: resources/recipe_sheet.csv
 # Important directory file paths
 ########################################################################################################
 # **Change these paths for where you want temporary (TMPDIR) and output (OUTDIR) files
-#TODO: add OUTDIR to sample sheet
 TMPDIR: tmp
 OUTDIR: out
-
-########################################################################################################
-# Executables - file paths
-########################################################################################################
-EXEC:
-  BLASTN: blastn
-  BWA: bwa-mem2
-  BOWTIE2: bowtie2
-  BUSTOOLS: bustools 
-  CUTADAPT: cutadapt 
-  FASTQC: fastqc 
-  FASTX_COLLAPSER: fastx_collapser
-  FEATURECOUNTS: featureCounts
-  K8: scripts/k8-0.2.4/k8-Linux
-  KALLISTO: kallisto
-  KB: kb
-  MIRGE: miRge3.0
-  MINIMAP2: minimap2
-  NANOQC: nanoQC
-  PIGZ: pigz
-  QUALIMAP: qualimap
-  SAMTOOLS: samtools
-  SEQTK: seqtk
-  STAR: STAR 
-  UMITOOLS: umi_tools
-  VSEARCH: vsearch
 
 ########################################################################################################
 # Resources - file paths
@@ -61,26 +34,5 @@ MIRGE_LIB: resources/miRge3_Lib
 ########################################################################################################
 # Library details
 ########################################################################################################
-R1_PRIMER: "CTACACGACGCTCTTCCGATCT" # R1 primer (used in Visium & Seeker)
-
+# R1_PRIMER: "CTACACGACGCTCTTCCGATCT" # R1 primer (used in Visium & Seeker)
 MAX_SHORT_READ_LENGTH: 34 # max read length for reads to be aligned to short RNA references
-
-########################################################################################################
-# ONT options
-########################################################################################################
-READ_STRUCTURE_BATCH_SIZE: 40000
-READ_STRUCTURE_FLAGS: ""
-
-MM2_REF: "/gpfs/commons/groups/innovation/dwm/ref_snake/out/mus_musculus/genome/minimap2"
-REF_GENOME_FASTA: "/gpfs/commons/groups/innovation/dwm/ref_snake/out/mus_musculus/raw/genome.fa"
-REF_CHROM_SIZES: "/gpfs/commons/groups/innovation/dwm/ref_snake/out/mus_musculus/raw/chrom_sizes.tsv"
-REF_GENES_BED: "/gpfs/commons/groups/innovation/dwm/ref_snake/out/mus_musculus/raw/annotations.bed"
-
-RESOURCES_MM2_MEM_GB: 6
-RESOURCES_MM2_MAX_THREADS: 12
-RESOURCES_MM2_FLAGS: "-I 4G"
-
-BARCODE_ADAPTER1_SUFF_LENGTH: 10
-# BARCODE_MIN_QUALITY: 12
-BARCODE_MAX_ED: 3
-BARCODE_MIN_ED_DIFF: 1

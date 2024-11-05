@@ -5,18 +5,18 @@
 
 # TSO & homopolymer trimming
 # TODO: add "{ADAPTER};noindels" to adapter sequence trimming? - *Note- do not do this for the BB_ADAPTER
-rule cutadapt:
+rule ilmn_1b_cutadapt:
     input:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/merged_R1.fq.gz",
-        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/merged_R2.fq.gz",
+        R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/merged_R1.fq.gz",
+        R2_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/merged_R2.fq.gz",
     output:
-        R1_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz"),
-        R2_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz"),
-        JSON="{OUTDIR}/{SAMPLE}/misc_logs/cutadapt1.json",
+        R1_FQ=temp("{OUTDIR}/{SAMPLE}/short_read/tmp/cut_R1.fq.gz"),
+        R2_FQ=temp("{OUTDIR}/{SAMPLE}/short_read/tmp/cut_R2.fq.gz"),
+        JSON="{OUTDIR}/{SAMPLE}/short_read/misc_logs/cutadapt1.json",
     params:
         RECIPE=lambda w: get_recipes(w, mode="ILMN"),
         R1_LENGTH=lambda w: min(
-            get_recipe_info(w, info_col="R1.finalLength", mode="ILMN")
+            get_recipe_info(w, info_col="R1_finalLength", mode="ILMN")
         ),
         # R1_LENGTH = 50,
         QUALITY_MIN=20,
@@ -37,10 +37,10 @@ rule cutadapt:
         SEEKER_BB_ADAPTER="TCTTCAGCGTTCCCGAGA",  # Adapter between BB1 & BB2 in R1 
         rcSEEKER_BB_ADAPTER="AGAGCCCTTGCGACTTCT",  # Reverse of the adapter between BB1 & BB2 in R1 
     log:
-        log="{OUTDIR}/{SAMPLE}/misc_logs/cutadapt1.log",
+        log="{OUTDIR}/{SAMPLE}/short_read/misc_logs/cutadapt1.log",
     resources:
         mem="16G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     conda:
         f"{workflow.basedir}/envs/cutadapt.yml"
     shell:
@@ -61,25 +61,25 @@ rule cutadapt:
             --pair-filter=any \
             -o {output.R1_FQ} \
             -p {output.R2_FQ} \
-            --cores {resources.threads} \
+            --cores {threads} \
             --json {output.JSON} \
             {input.R1_FQ} {input.R2_FQ} \
         1> {log.log}
         """
 
-
-rule cutadapt2:
+# Second round of adapter trimming
+rule ilmn_1b_cutadapt2:
     input:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R1.fq.gz",
-        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz",
+        R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/cut_R1.fq.gz",
+        R2_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/cut_R2.fq.gz",
     output:
-        R1_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz"),
-        R2_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz"),
-        JSON="{OUTDIR}/{SAMPLE}/misc_logs/cutadapt2.json",
+        R1_FQ=temp("{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R1.fq.gz"),
+        R2_FQ=temp("{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R2.fq.gz"),
+        JSON="{OUTDIR}/{SAMPLE}/short_read/misc_logs/cutadapt2.json",
     params:
         RECIPE=lambda w: get_recipes(w, mode="ILMN"),
         R1_LENGTH=lambda w: min(
-            get_recipe_info(w, info_col="R1.finalLength", mode="ILMN")
+            get_recipe_info(w, info_col="R1_finalLength", mode="ILMN")
         ),
         # R1_LENGTH = 50,
         QUALITY_MIN=20,
@@ -100,10 +100,10 @@ rule cutadapt2:
         SEEKER_BB_ADAPTER="TCTTCAGCGTTCCCGAGA",  # Adapter between BB1 & BB2 in R1 
         rcSEEKER_BB_ADAPTER="AGAGCCCTTGCGACTTCT",  # Reverse of the adapter between BB1 & BB2 in R1 
     log:
-        log="{OUTDIR}/{SAMPLE}/misc_logs/cutadapt2.log",
+        log="{OUTDIR}/{SAMPLE}/short_read/misc_logs/cutadapt2.log",
     resources:
         mem="16G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     conda:
         f"{workflow.basedir}/envs/cutadapt.yml"
     shell:
@@ -124,7 +124,7 @@ rule cutadapt2:
             --pair-filter=any \
             -o {output.R1_FQ} \
             -p {output.R2_FQ} \
-            --cores {resources.threads} \
+            --cores {threads} \
             --json {output.JSON} \
             {input.R1_FQ} {input.R2_FQ} \
         1> {log.log}
@@ -133,24 +133,24 @@ rule cutadapt2:
 
 # Trimming for R1 to handle Curio adapter issues. See README for recipe details
 ## "Hard" trimming, to remove the adapter based on hard-coded base positions
-rule R1_hardTrimming:
+rule ilmn_1b_R1_hardTrimming:
     input:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
+        R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R1.fq.gz",
     output:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_hardTrim_R1.fq.gz",  #temp()
+        R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_hardTrim_R1.fq.gz",  #temp()
     params:
         CB1end=8,  #TODO- move to config? or recipe_sheet?
         CB2start=27,
         CB2end=42,
         INTERNAL_TRIM_QC_LOG="{OUTDIR}/{SAMPLE}/internal_trim_qc.txt",
-        TMPDIR="{OUTDIR}/{SAMPLE}/tmp/seqkit",
+        TMPDIR="{OUTDIR}/{SAMPLE}/short_read/tmp/seqkit",
         RECIPE=lambda w: get_recipes(w, mode="ILMN"),
-        R1_LENGTH=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN"),
+        R1_LENGTH=lambda w: get_recipe_info(w, info_col="R1_finalLength", mode="ILMN"),
     log:
-        log="{OUTDIR}/{SAMPLE}/misc_logs/R1_hardTrimming.log",
+        log="{OUTDIR}/{SAMPLE}/short_read/misc_logs/R1_hardTrimming.log",
     resources:
         mem="16G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     shell:
         """
         zcat {input.R1_FQ} \
@@ -160,39 +160,39 @@ rule R1_hardTrimming:
             -f scripts/awk/hardTrimFq.awk \
         > {output.R1_FQ.strip('.gz')}
 
-        {EXEC['PIGZ']} -f -p{resources.threads} {output.R1_FQ.strip('.gz')}
+        pigz -f -p{threads} {output.R1_FQ.strip('.gz')}
 
         echo "Hard trimming performed on {input.R1_FQ}" > {log.log}
         """
 
 
 ## Internal trimming to cut out adapter sequences (SlideSeq, DecoderSeq, microST, etc.)
-rule R1_internalTrimming:
+rule ilmn_1b_R1_internalTrimming:
     input:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R1.fq.gz",
+        R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R1.fq.gz",
     output:
-        R1_FQ="{OUTDIR}/{SAMPLE}/tmp/twiceCut_internalTrim_R1.fq.gz",  #temp()
-        # INTERNAL_TRIM_QC_LOG="{OUTDIR}/{SAMPLE}/misc_logs/internal_trim_qc.txt",
+        R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_internalTrim_R1.fq.gz",  #temp()
+        # INTERNAL_TRIM_QC_LOG="{OUTDIR}/{SAMPLE}short_read/misc_logs/internal_trim_qc.txt",
     params:
         # CB1end=8, 
         # CB2start=27,
         # CB2end=42,
-        TMPDIR="{OUTDIR}/{SAMPLE}/tmp/seqkit",
-        ADAPTER=lambda w: get_recipe_info(w, "internal.adapter", mode="ILMN")[0],
+        TMPDIR="{OUTDIR}/{SAMPLE}/short_read/tmp/seqkit",
+        ADAPTER=lambda w: get_recipe_info(w, "internal_adapter", mode="ILMN")[0],
         # RECIPE=lambda w: get_recipes(w, mode="ILMN"),
-        # R1_LENGTH=lambda w: get_recipe_info(w, info_col="R1.finalLength", mode="ILMN"),
-        BC1_LENGTH=8,  #TODO - lambda w: get_recipe_info(w, info_col="BC.length", mode="ILMN"),
+        # R1_LENGTH=lambda w: get_recipe_info(w, info_col="R1_finalLength", mode="ILMN"),
+        BC1_LENGTH=8,  #TODO - lambda w: get_recipe_info(w, info_col="BC_length", mode="ILMN"),
         MIN_ALIGN_SCORE=58,
     log:
-        log="{OUTDIR}/{SAMPLE}/misc_logs/R1_internalTrimming.log",
+        log="{OUTDIR}/{SAMPLE}/short_read/misc_logs/R1_internalTrimming.log",
     resources:
         mem="16G",
-        threads=config["CORES"],
+    threads: config["CORES"]
     shell:
         """
-        python scripts/py/fastq_internal_adapter_trim_R1.py \
+        python scripts/py/fastq_internal_adapter_trim_R1_v2.py \
             --adapter_seq {params.ADAPTER} \
-            --n_cores {resources.threads} \
+            --n_cores {threads} \
             --tmp_dir {params.TMPDIR} \
             --fq1_in {input.R1_FQ} \
             --fq1_out {output.R1_FQ} \

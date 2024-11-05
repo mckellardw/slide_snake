@@ -4,10 +4,13 @@ The default receipe sheet is stored in `resources/recipe_sheet.csv`. Change the 
 
 ## **Recipe descriptions**:
 "Recipes" are descriptions for the alignment workflow- how to trim the barcode read, whether or not to filter out ribosomal RNA reads, additional alignment parameters, etc. One goal of `slide_snake` is to make the alignment preprocessing modular so that all of these parameters can be compared directly and rigorously. Please note the following:
-  - Multiple recipes can be passed for each sample. Include as many as you would like, each separated by a space in the sample sheet.
-  - You can also add a new recipe! Just add a new line to `resources/recipe_sheet.csv` and give it a unique name in the 1st (0th for you pythoners) column. 
-  - Recipe naming convention:
-    - Include the preprocessing steps that you want to use- i.e., including "rRNA.bwa" in the name means that rRNA filtering with bwa alignment will be done prior to genomic alignment. 
+  - Recipe names are generally written f"{platform}_{barcode_processing}_{alignment_strategy}_{rRNA_filtering}"
+    - **platform** - name of the spatial array from the commercial (visium, seeker, stomics, etc.) or in-house/custom method (decoderseq, microST, etc.)
+    - **barcode_processing** - strategy to either trim down the Read1 file or call barcodes off known adapter sequences
+    - **alignment_strategy** - default parameterization used if this is missing; for total RNA datasets, the "total" option will better accomodate multimappers, etc.
+    - **rRNA_filtering** - how to remove rRNA sequenes (bwa or ribodetector)
+  - Multiple recipes can be passed for each sample. Include as many as you would like, each separated by a space in the sample sheet. This is useful for benchmarking.
+  - You can also add a new recipe! Just add a new line to `resources/recipe_sheet.csv` and give it a unique name in the 1st (0th for you pythoners) column.
 
 ## `kallisto` technology speifications
 `kb_python` uses `ngs-tools` for tech specifications - [link](https://github.com/Lioscro/ngs-tools/tree/aa3e864e59ae78467a331f671967c93d62a6e2ad)
@@ -85,7 +88,6 @@ Because of read quality issues (indels, low Q scores, etc.) in the SlideSeq barc
 - `stomics` - Standard alignment for StereoSeq/STOmics (BGI) data
 - `stomics_total` - Total RNA alignment for StereoSeq/STOmics (BGI) data
 - `stomics_rRNA.STAR` - Standard alignment performed after filtering rRNA with STAR alignment
-- `stomics_total_rRNA.STAR` - Total RNA alignment performed after filtering rRNA with STAR alignment
 
 </details>
 
@@ -95,7 +97,6 @@ Because of read quality issues (indels, low Q scores, etc.) in the SlideSeq barc
 
 - `visium` - #description
 - `visium_total` - #description
-- `visium_total_rRNA.STAR` - #description
 
 </details>
 

@@ -9,8 +9,6 @@ from scipy.sparse import issparse
 from typing import Union
 import scipy.sparse as sp
 from scipy.io import mmread
-
-import scipy.sparse as sp
 import gzip
 
 
@@ -53,7 +51,7 @@ def npcs(ADATA, var_perc=0.95, reduction="pca"):
 def grep_genes(
     adata,
     pattern="",
-    assay=None,
+    layer=None,
     filter_pattern=None,
     sort_by="expression",
     verbose=True,
@@ -64,7 +62,7 @@ def grep_genes(
     Parameters:
     adata (anndata.AnnData): The AnnData object containing the gene expression data.
     pattern (str or list of str, optional): The pattern or patterns to search for in the gene names. Default is "".
-    assay (str, optional): The assay to use. Default is None, which uses "counts".
+    assay (str, optional): The layer to use. Default is None, which uses "counts".
     filter_pattern (str or list of str, optional): A pattern or patterns to filter out from the gene names. Default is None.
     sort_by (str, optional): How to sort the output genes. Can be "expression" (sort by total expression across all cells) or "abc" (sort alphabetically). Default is "expression".
     verbose (bool, optional): Whether to print progress messages. Default is True.
@@ -72,20 +70,20 @@ def grep_genes(
     Returns:
     list of str: The names of the genes that match the pattern and do not match the filter_pattern, sorted according to sort_by.
     """
-    if pattern == "":
-        if verbose:
-            print("Need a pattern to look for!")
-        return None
 
-    if assay is None:
-        assay = "counts"
+    if layer is not None:
+        print("WARNING: haven't implemented this yet, using `X`")
 
     genes = adata.var_names
 
     if verbose:
-        print(f"Found {len(genes)} features in the assay '{assay}'...")
+        print(f"Found {len(genes)} total features...")
 
-    if isinstance(pattern, list):
+    if pattern == "":
+        if verbose:
+            out_genes = genes
+            print("Returning all of the genes!")
+    elif isinstance(pattern, list):
         if verbose:
             print("Looking for multiple patterns in these features...")
         out_genes = [gene for gene in genes if any(pat in gene for pat in pattern)]
@@ -245,7 +243,7 @@ def export_dgea_to_csv(
 def convert_feature_names(
     adata: ad.AnnData,
     gtf_info: pd.DataFrame,
-    from_col: str = "GENEID",
+    from_col: str = "GeneID",
     to_col: str = "GeneSymbol",
     inplace: bool = True,
     verbose: bool = True,
@@ -257,7 +255,7 @@ def convert_feature_names(
     -------
     adata       -- An AnnData object which stores the gene expression data and metadata.
     gtf_info    -- A DataFrame containing the mapping from one set of feature names to another.
-    from_col    -- A string specifying the column in gtf_info to be mapped from. Default is 'GENEID'.
+    from_col    -- A string specifying the column in gtf_info to be mapped from. Default is 'GeneID'.
     to_col      -- A string specifying the column in gtf_info to be mapped to. Default is 'GeneSymbol'.
     inplace     -- A boolean specifying whether to perform the conversion inplace or return a new AnnData object. Default is True.
     verbose     -- A boolean specifying whether to print progress information. Default is True.
@@ -270,32 +268,49 @@ def convert_feature_names(
     if not inplace:
         adata = adata.copy()
 
-    # Filter gtf_info to keep only the gene names found in the anndata object
-    if from_col not in gtf_info.columns:
-        raise ValueError(f"Column {from_col} not found in gtf_info")
-    else:
-        gtf_info_filtered = gtf_info[gtf_info[from_col].isin(adata.var_names)]
+    original_shape = adata.shape
 
     if verbose:
-        num_found = len(gtf_info_filtered)
-        num_total = len(adata.var_names)
-        # fraction_found = num_found / num_total
-        print(
-            f"Fraction of adata.var_names found in gtf_info[{from_col}]: {num_found} out of {num_total}"
-        )
+        print(f"Original AnnData shape: {original_shape}")
+        print(f"Original var_names length: {len(adata.var_names)}")
+        print(f"gtf_info shape: {gtf_info.shape}")
 
+    # Check if required columns are in gtf_info
+    if from_col not in gtf_info.columns or to_col not in gtf_info.columns:
+        raise ValueError(f"Columns {from_col} and/or {to_col} not found in gtf_info")
+
+    # Create a mapping dictionary
     gene_name_mapping = dict(zip(gtf_info[from_col], gtf_info[to_col]))
 
-    adata.var[from_col] = adata.var_names
-    adata.var[to_col] = adata.var[from_col].map(gene_name_mapping)
+    # Create a new column with mapped names, keeping original names for unmapped genes
+    adata.var["original_names"] = adata.var_names
+    adata.var["new_names"] = adata.var_names.map(lambda x: gene_name_mapping.get(x, x))
 
-    adata.var.dropna(subset=[to_col], inplace=True)
-    adata.var.reset_index(drop=True, inplace=True)
+    # Count and report on mapping results
+    if verbose:
+        total_genes = len(adata.var_names)
+        mapped_genes = sum(adata.var["new_names"] != adata.var["original_names"])
+        print(f"Total genes: {total_genes}")
+        print(f"Mapped genes: {mapped_genes}")
+        print(f"Unmapped genes: {total_genes - mapped_genes}")
 
-    # mask = adata.var_names.isin(adata.var[to_col].values)
-    # adata = adata[:, mask].copy()
-    adata.var_names = adata.var[to_col]
+    # Update var_names
+    adata.var_names = adata.var["new_names"]
+
+    # Make var_names unique
     adata.var_names_make_unique()
+
+    # Clean up temporary columns
+    adata.var.drop(columns=["original_names", "new_names"], inplace=True)
+
+    if verbose:
+        print(f"Final AnnData shape: {adata.shape}")
+        print(f"Final var_names length: {len(adata.var_names)}")
+        if adata.shape != original_shape:
+            print("WARNING: AnnData shape has changed!")
+            print(
+                "Genes lost:", set(adata.var["original_names"]) - set(adata.var_names)
+            )
 
     if not inplace:
         return adata
@@ -505,13 +520,14 @@ def segment_tissues(
 # Function to add biotype % values to AnnData object
 def add_biotypes_pct(
     adata: ad.AnnData,
-    biomart: Union[None, pd.DataFrame] = None,  # DataFrame containing gene biotypes
+    biomart: pd.DataFrame,  # DataFrame containing gene biotypes
     gene_colname: str = "GeneSymbol",
     biotype_colname: str = "Biotype",
     add_as: str = "obs",  # how percent features should be added
-    prefix: str = "pct.",
+    prefix: str = "pct_",
     scale: int = 100,
     verbose: bool = True,
+    layer: str = None,  # New parameter to specify the layer
 ) -> ad.AnnData:
     """
     This function adds gene biotype percentage values to an AnnData object.
@@ -522,9 +538,10 @@ def add_biotypes_pct(
         gene_colname (str, optional): Column name in biomart DataFrame for gene identifiers. Default is "GeneSymbol".
         biotype_colname (str, optional): Column name in biomart DataFrame for biotype. Default is "Biotype".
         add_as (str, optional): Determines how percent features should be added. Default is "obs".
-        prefix (str, optional): Prefix for column names added to the AnnData object. Default is "pct.".
+        prefix (str, optional): Prefix for column names added to the AnnData object. Default is "pct_".
         scale (int, optional): Determines the scaling for the percentage. Default is 100.
         verbose (bool, optional): Determines whether to print messages during function execution. Default is True.
+        layer (str, optional): The layer in the AnnData object to use for computation. Default is None (uses .X).
 
     Returns:
         AnnData: The original AnnData object with added gene biotype percentage values.
@@ -540,10 +557,23 @@ def add_biotypes_pct(
             print("add_as='var' is not yet implemented")
         return adata
 
+    # Check if the specified layer exists
+    if layer is not None and layer not in adata.layers:
+        if verbose:
+            print(
+                f"The specified layer '{layer}' does not exist in the AnnData object. Using .X instead."
+            )
+        layer = None
+
     if verbose:
         print(f"Adding gene biotype percentage values as {add_as} ...")
+        if layer:
+            print(f"Using layer: {layer}")
+        else:
+            print("Using default expression matrix (.X)")
 
-    biotypes = biomart[biotype_colname].unique()
+    biotypes = list(biomart[biotype_colname].unique())
+    print(f"Found {len(biotypes)} biotypes..")
 
     for biotype in biotypes:
         # Subset out current gene biotype
@@ -561,9 +591,11 @@ def add_biotypes_pct(
             if add_as == "obs":
                 col_name = prefix + biotype
 
-                # Calculate the percentage
-                if issparse(adata.X):
-                    gene_pct = adata[:, tmp_feat].X.sum(axis=1) / adata.X.sum(axis=1)
+                # Calculate the percentage based on the specified layer or .X
+                if layer:
+                    gene_pct = adata[:, tmp_feat].layers[layer].sum(
+                        axis=1
+                    ) / adata.layers[layer].sum(axis=1)
                 else:
                     gene_pct = adata[:, tmp_feat].X.sum(axis=1) / adata.X.sum(axis=1)
 
@@ -722,21 +754,19 @@ def add_mtx_as_layer(
         layer_name (str): Name of the layer to be added.
         feature_column (int): Column # for desired feature names (similar to Seurat::ReadMtx)
         transpose (bool, optional): Whether or not to transpose the matrix
-        intersect (bool, optional): Whether to consider only the intersection of observations.
-            If False, the union of observations will be used. Default is False.
+        intersect (bool, optional): Whether to consider only the intersection of observations and features.
+            If False, the union of observations and features will be used. Default is False.
         inplace (bool, optional): Whether to modify the input AnnData object in place or create a new copy.
             If True, modifications are made to the input AnnData object. If False, a new AnnData object is created
             with the added layer. Default is True.
+        verbose (bool, optional): Whether to print additional information. Default is False.
 
     Returns:
         None if inplace=True. Returns a new AnnData object with the added layer if inplace=False.
     """
     if not inplace:
-        # Create a copy of the AnnData object
         adata = adata.copy()
 
-    # Read the matrix file & convert to csr
-    # matrix = sp.load_npz(mtx_path)
     with gzip.open(mtx_path, "rb") as file_in:
         matrix = mmread(file_in)
         if transpose:
@@ -746,103 +776,65 @@ def add_mtx_as_layer(
     if verbose:
         print(f"Loaded {matrix.shape[0]} obs and {matrix.shape[1]} vars")
 
-    # Load the associated var_names and row_names from the gzipped .txt files
-    # with gzip.open(var_path, 'rt') as var_file:
-    #     var_names_mat = var_file.read().splitlines()
-    var_names_mat = (
-        pd.read_csv(
-            var_path, delimiter="\t", dtype=str, header=None, usecols=[feature_column]
-        )
-        .iloc[:, 0]
-        .tolist()
-    )
-
-    # Make sure var_names are unique
+    var_names_mat = pd.read_csv(var_path, delimiter="\t", dtype=str, header=None, usecols=[feature_column]).iloc[:, 0].tolist()
     var_names_mat = make_unique(var_names_mat)
 
     with gzip.open(obs_path, "rt") as obs_file:
         obs_names_mat = obs_file.read().splitlines()
 
-    # Filter obs names based on adata obs_names
-    # obs_names_found   = list(filter(lambda x: x in adata.obs_names, obs_names_mat))
-    # obs_names_missing = list(filter(lambda x: x not in adata.obs_names, obs_names_found))
-    obs_names_found = [obs for obs in obs_names_mat if obs in adata.obs_names]
-    obs_names_missing = [obs for obs in obs_names_mat if obs not in adata.obs_names]
+    if intersect:
+        obs_names_common = list(set(adata.obs_names) & set(obs_names_mat))
+        var_names_common = list(set(adata.var_names) & set(var_names_mat))
 
-    # var_names_found   = list(filter(lambda x: x in adata.var_names, var_names_mat))
-    # var_names_missing = list(filter(lambda x: x not in adata.var_names, var_names_found))
-    var_names_found = [var for var in var_names_mat if var in adata.var_names]
-    var_names_missing = [var for var in var_names_mat if var not in adata.var_names]
+        obs_indices_mat = [obs_names_mat.index(obs) for obs in obs_names_common]
+        var_indices_mat = [var_names_mat.index(var) for var in var_names_common]
+
+        matrix = matrix[obs_indices_mat, :][:, var_indices_mat]
+
+        obs_names_out = obs_names_common
+        var_names_out = var_names_common
+    else:
+        obs_names_out = list(set(adata.obs_names) | set(obs_names_mat))
+        var_names_out = list(set(adata.var_names) | set(var_names_mat))
 
     if verbose:
-        print(
-            f"{len(obs_names_found)}/{len(adata.obs_names)} obs from adata found, {len(obs_names_missing)} additional found"
-        )
+        print(f"Final matrix shape: {matrix.shape[0]} obs and {matrix.shape[1]} vars")
+        print(f"Intersection: {len(obs_names_out)} obs and {len(var_names_out)} vars")
 
-    if verbose:
-        print(
-            f"{len(var_names_found)}/{len(adata.var_names)} vars from adata found, {len(var_names_missing)} additional found"
-        )
+    # Create a new matrix with the correct dimensions
+    new_matrix = sp.csr_matrix((len(obs_names_out), len(var_names_out)), dtype=matrix.dtype)
 
-    # Filter the matrix and column names based on adata, add zeroes for missing **observations**
+    # Fill in the values from the original matrix
     obs_index_dict = {name: index for index, name in enumerate(obs_names_mat)}
-    obs_found_indices = [
-        obs_index_dict[obs] for obs in adata.obs_names if obs in obs_index_dict
-    ]
-
-    matrix_obs_found = matrix[obs_found_indices, :]
-    if len(obs_names_missing) > 0:
-        matrix_obs_missing = sp.csr_matrix((len(obs_names_missing), matrix.shape[1]))
-        matrix_obs_out = sp.vstack((matrix_obs_found, matrix_obs_missing))
-    else:
-        matrix_obs_out = matrix_obs_found
-
-    # Filter the matrix and column names based on adata, add zeroes for missing **features**
     var_index_dict = {name: index for index, name in enumerate(var_names_mat)}
-    var_found_indices = [
-        var_index_dict[var] for var in adata.var_names if var in var_index_dict
-    ]
 
-    matrix_var_found = matrix_obs_out[:, var_found_indices]
-    if len(var_names_missing) > 0:
-        matrix_var_missing = sp.csr_matrix(
-            (matrix_obs_out.shape[0], len(var_names_missing))
-        )
-        matrix_out = sp.hstack((matrix_var_found, matrix_var_missing))
+    for i, obs in enumerate(obs_names_out):
+        if obs in obs_index_dict:
+            orig_obs_idx = obs_index_dict[obs]
+            for j, var in enumerate(var_names_out):
+                if var in var_index_dict:
+                    orig_var_idx = var_index_dict[var]
+                    new_matrix[i, j] = matrix[orig_obs_idx, orig_var_idx]
+
+    # Update adata object
+    if intersect:
+        adata = adata[:, var_names_common]
     else:
-        matrix_out = matrix_var_found
+        # Add missing observations and variables to adata
+        missing_obs = list(set(obs_names_out) - set(adata.obs_names))
+        missing_vars = list(set(var_names_out) - set(adata.var_names))
 
-    # Add missing obs_names and var_names to the end of the current lists
-    obs_names_found += obs_names_missing
-    var_names_found += var_names_missing
+        if missing_obs:
+            adata = adata.concatenate(ad.AnnData(X=sp.csr_matrix((len(missing_obs), adata.n_vars)), obs=pd.DataFrame(index=missing_obs)), join='outer')
 
-    # Now the lengths should match, and you can safely compare the arrays
-    if not all(elem in adata.obs_names for elem in obs_names_found) or not all(
-        elem in adata.var_names for elem in var_names_found
-    ):
-        # if any(adata.obs_names != obs_names_found) or any(adata.var_names != var_names_found):
-        if verbose:
-            print(
-                f"Observation names or feature names don't match, getting the order..."
-            )
-        obs_index_dict = {name: index for index, name in enumerate(adata.obs_names)}
-        obs_indices = [obs_index_dict[obs] for obs in adata.obs_names]
+        if missing_vars:
+            adata = adata.concatenate(ad.AnnData(X=sp.csr_matrix((adata.n_obs, len(missing_vars))), var=pd.DataFrame(index=missing_vars)), join='outer', axis=1)
 
-        var_index_dict = {name: index for index, name in enumerate(adata.var_names)}
-        var_indices = [var_index_dict[var] for var in adata.var_names]
+    # Ensure the order of observations and variables matches
+    adata = adata[obs_names_out, var_names_out]
 
-        # Debugging statements
-        # print('Shape of matrix_out:', matrix_out.shape)
-        # print('Shape of adata:', adata.shape)
-        # print('Length of obs_names_found:', len(obs_names_found))
-        # print('Length of var_names_found:', len(var_names_found))
-        # print('Length of obs_indices:', len(obs_indices))
-        # print('Length of var_indices:', len(var_indices))
-
-        matrix_out = matrix_out[np.ix_(obs_indices, var_indices)]
-
-    # Create a new layer in the AnnData object
-    adata.layers[layer_name] = matrix_out
+    # Add the new layer
+    adata.layers[layer_name] = new_matrix
 
     if not inplace:
         return adata
@@ -994,3 +986,73 @@ def top_n_genes(adata, n):
     """
     sorted_genes = adata.var_names[np.argsort(adata.X.sum(axis=0))[::-1]]
     return sorted_genes[:n].tolist()
+
+
+def add_barcode_tally_to_anndata(
+    tsv_path, adata, metadata_key="barcode_count", add_missing=False
+):
+    """
+    Reads a TSV file containing read_IDs and barcodes, tallies the barcodes,
+    and adds the counts as metadata to an AnnData object.
+
+    Parameters:
+    -----------
+    tsv_path : str
+        Path to the TSV file containing read_IDs and barcodes
+    adata : AnnData
+        AnnData object to add the metadata to
+    metadata_key : str, optional
+        Key to use for the metadata in adata.obs (default: 'barcode_count')
+    add_missing : bool, optional
+        If True, adds missing barcodes to the AnnData object
+        If False, skips barcodes that aren't in the AnnData object (default: False)
+
+    Returns:
+    --------
+    None (modifies adata in place)
+    """
+    # Read TSV file without header
+    df = pd.read_csv(tsv_path, sep="\t", header=None, names=["read_id", "barcode"])
+
+    # Count occurrences of each barcode
+    barcode_counts = df["barcode"].value_counts()
+
+    if add_missing:
+        # Get unique barcodes from both sources
+        tsv_barcodes = set(barcode_counts.index)
+        adata_barcodes = set(adata.obs_names)
+        all_barcodes = sorted(tsv_barcodes.union(adata_barcodes))
+
+        # Create a new AnnData with all barcodes
+        # First, create a DataFrame with zeros for all features
+        new_data = pd.DataFrame(0, index=all_barcodes, columns=adata.var_names)
+
+        # Fill in the existing data
+        new_data.loc[adata.obs_names] = (
+            adata.X.toarray() if issparse(adata.X) else adata.X
+        )
+
+        # Create new AnnData object
+        new_adata = ad.AnnData(new_data)
+
+        # Copy over existing obs and var annotations
+        for col in adata.obs.columns:
+            new_adata.obs[col] = pd.Series(index=all_barcodes)
+            new_adata.obs.loc[adata.obs_names, col] = adata.obs[col]
+
+        new_adata.var = adata.var.copy()
+
+        # Update the reference to adata
+        adata = new_adata
+
+    # Initialize counts for all cells in adata with 0
+    adata.obs[metadata_key] = 0
+
+    # Update counts only for barcodes that exist in adata
+    existing_barcodes = barcode_counts.index.intersection(adata.obs_names)
+    adata.obs.loc[existing_barcodes, metadata_key] = barcode_counts[existing_barcodes]
+
+    # Convert counts to integer type
+    adata.obs[metadata_key] = adata.obs[metadata_key].astype(int)
+
+    return adata

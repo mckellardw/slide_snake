@@ -2,21 +2,19 @@
 
 
 # Index .bam file
-rule index_BAM:
+rule utils_index_BAM:
     input:
         BAM="{BAM}",
     output:
         BAI="{BAM}.bai",
     # wildcard_constraints:
     #     BAM=".*\.(bam)$"
-    resources:
-        threads=config["CORES"],
-    run:
-        shell(
-            f"""
-            {EXEC['SAMTOOLS']} index -@ {threads} {input.BAM}
-            """
-        )
+    # resources:
+    threads: config["CORES"]
+    shell:
+        """
+        samtools index -@ {threads} {input.BAM}
+        """
 
 
 #### Util functions ###########################
@@ -46,52 +44,46 @@ def get_fqs(w, return_type=["list", "dict"], mode=["ONT", "ILMN"]):
     # get file paths
     try:
         if mode == "ILMN":
-            if "rRNA.STAR" in w.RECIPE:  # Use trimmed & STAR-rRNA-filtered .fq's
-                R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/STARsolo/noRibo_R1.fq.gz"
-                R2 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/STARsolo/noRibo_R2.fq.gz"
-
-                # TODO - update to match ribodetector style
-
-            elif "rRNA.bwa" in w.RECIPE:  # Use trimmed & bwa-rRNA-filtered .fq's
-                R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/bwa/noRibo_R1.fq.gz"
-                R2 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/bwa/noRibo_R2.fq.gz"
+            if "rRNA.bwa" in w.RECIPE:  # Use trimmed & bwa-rRNA-filtered .fq's
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/bwa/noRibo_R1.fq.gz"
+                R2 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/bwa/noRibo_R2.fq.gz"
 
                 # TODO - update to match ribodetector style
 
             elif "ribodetector" in w.RECIPE:
-                R1 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/ribodetector/noRibo_R1.fq.gz"
-                R2 = f"{w.OUTDIR}/{w.SAMPLE}/rRNA/ribodetector/noRibo_R2.fq.gz"
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/ribodetector/noRibo_R1.fq.gz"
+                R2 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/ribodetector/noRibo_R2.fq.gz"
 
                 if "internalTrim" in w.RECIPE:
-                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/ribodetector/noRibo_internalTrim_R1.fq.gz"
+                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/ribodetector/noRibo_internalTrim_R1.fq.gz"
                 if "hardTrim" in w.RECIPE:
-                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/ribodetector/noRibo_hardTrim_R1.fq.gz"
+                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/ribodetector/noRibo_hardTrim_R1.fq.gz"
             else:  # just trimmed .fq's
-                R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_R1.fq.gz"
-                R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_R2.fq.gz"
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/tmp/twiceCut_R1.fq.gz"
+                R2 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/tmp/twiceCut_R2.fq.gz"
 
                 if "internalTrim" in w.RECIPE:
-                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_internalTrim_R1.fq.gz"
+                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/tmp/twiceCut_internalTrim_R1.fq.gz"
                 if "hardTrim" in w.RECIPE:
-                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_hardTrim_R1.fq.gz"
+                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/tmp/twiceCut_hardTrim_R1.fq.gz"
         elif mode == "ONT":
-            R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_R2.fq.gz"
+            R2 = f"{w.OUTDIR}/{w.SAMPLE}/ont/tmp/cut_R2.fq.gz"
             if "internalTrim" in w.RECIPE:
-                R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_internalTrim_R1.fq.gz"
-                R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/twiceCut_internalTrim_R2.fq.gz"
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/ont/tmp/cut_internalTrim_R1.fq.gz"
+                R2 = f"{w.OUTDIR}/{w.SAMPLE}/ont/tmp/twiceCut_internalTrim_R2.fq.gz"
             elif "hardTrim" in w.RECIPE:
-                R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_hardTrim_R1.fq.gz"
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/ont/tmp/cut_hardTrim_R1.fq.gz"
             else:
-                R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_R1.fq.gz"
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/ont/tmp/cut_R1.fq.gz"
         else:
             print("get_fqs(): `mode` not found")
     except Exception:
         if mode == "ILMN":
-            R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_R1.fq.gz"
-            R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/twiceCut_R2.fq.gz"
+            R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/tmp/twiceCut_R1.fq.gz"
+            R2 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/tmp/twiceCut_R2.fq.gz"
         elif mode == "ONT":
-            R1 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_R1.fq.gz"
-            R2 = f"{w.OUTDIR}/{w.SAMPLE}/tmp/ont/cut_R2.fq.gz"
+            R1 = f"{w.OUTDIR}/{w.SAMPLE}/ont/tmp/cut_R1.fq.gz"
+            R2 = f"{w.OUTDIR}/{w.SAMPLE}/ont/tmp/cut_R2.fq.gz"
         else:
             print("get_fqs(): `mode` not found")
 
@@ -103,17 +95,9 @@ def get_fqs(w, return_type=["list", "dict"], mode=["ONT", "ILMN"]):
 
 
 # whitelist param handling for different recipes/technologies/chemistries/etc
-def get_whitelist(w, return_type=None, mode=["recipe", "all_used", "all"]):
+def get_whitelist(w, return_type=None, mode="STAR"):
     try:
-        if "matchLinker" in w.RECIPE:
-            if return_type == "list":
-                whitelist = [
-                    f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_1.txt",
-                    f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_2.txt",
-                ]
-            else:
-                whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_1.txt {w.OUTDIR}/{w.SAMPLE}/bc/whitelist_2.txt"
-        elif "internalTrim" in w.RECIPE:
+        if "internalTrim" in w.RECIPE:
             if return_type == "list":
                 whitelist = [f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist.txt"]
             else:
@@ -123,8 +107,29 @@ def get_whitelist(w, return_type=None, mode=["recipe", "all_used", "all"]):
                 whitelist = [f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_adapter.txt"]
             else:
                 whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_adapter.txt"
+        elif "matchLinker" in w.RECIPE or "seeker" in w.RECIPE:
+            # Use BC_concat=True for combinatorial barcode constructs (DBIT, microST, etc)
+            if return_type == "list":
+                if RECIPE_SHEET["BC_concat"][w.RECIPE] and mode=="STAR":
+                    # Barcode constructs where positional barcodes are NOT independent (must be concatenated)
+                    whitelist = [
+                        f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_1.txt",
+                        f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_2.txt",
+                    ]
+                elif RECIPE_SHEET["BC_concat"][w.RECIPE] and mode=="ONT":
+                    whitelist = [
+                        f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist.txt",
+                    ]
+                else:
+                    # Barcode constructs where positional barcodes ARE independent
+                    whitelist = [
+                        f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_uniq_1.txt",
+                        f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_uniq_2.txt",
+                    ]
+            else:
+                whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_1.txt {w.OUTDIR}/{w.SAMPLE}/bc/whitelist_2.txt"
         else:
-            # visium, stomics, microST
+            # default
             if return_type == "list":
                 whitelist = [f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist.txt"]
             else:
@@ -202,77 +207,98 @@ def get_bc_map(w, mode=["ONT", "ILMN"]):
     # return whitelist path(s)
     return bc_map
 
+# Get number of barcodes (does not include UMIs!)
+def get_n_cells(w):
+    """
+    Get the number of cells/spots/beads/whatever
+
+    w: wildcards
+    """
+    whitelist_path = get_whitelist(w, return_type="list")[0]
+    n_bcs = count_lines_in_file(whitelist_path)
+    
+    return n_bcs
 
 # Get number of barcodes (does not include UMIs!)
 def get_n_bcs(w):
-    bc_lengths = get_recipe_info(w, info_col="BC.length").split()
+    """
+    Get the number of barcode positions
+
+    w: wildcards
+    """
+    bc_lengths = get_recipe_info(w, info_col="BC_length").split()
     n_bcs = len(bc_lengths)
     return n_bcs
 
 
-# TODO move these values to recipe_sheet - also write better code than this...
-def get_ont_barcode_pattern(w):
-    ## SlideSeq/Seeker: R1="C"*22 | BC1="C"*8 | Linker="C"*18 | BC2="C"*6 | UMI="N"* 7
+def get_bwa_ref(w, mode=["genome", "rRNA"]):
+    """
+    Pull BWA info from sample sheet
+
+    w: wildcards
+    mode: which reference to pull
+    """
     try:
-        if "stomics" in w.RECIPE:
-            BC_PATTERN = "C" * 25 + "N" * 10
-        elif "visium" in w.RECIPE:
-            BC_PATTERN = "C" * 16 + "N" * 12
-        elif "microST_ligation" in w.RECIPE:
-            BC_PATTERN = "C" * 34
-        elif "microST_klenow_v1" in w.RECIPE:
-            BC_PATTERN = "C" * 34 + "N" * 12
-        elif "seeker" in w.RECIPE and "matchLinker" in w.RECIPE:
-            BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
-        elif "seeker" in w.RECIPE and "internalTrim" in w.RECIPE:
-            BC_PATTERN = "C" * 8 + "C" * 6 + "N" * 7
-        elif "seeker" in w.RECIPE and "adapterInsert" in w.RECIPE:
-            BC_PATTERN = "C" * 8 + "C" * 18 + "C" * 6 + "N" * 7
-        else:
-            BC_PATTERN = "C" * 16 + "N" * 12
+        if type(mode) is list and len(mode) > 1:  # default
+            mode = "rRNA"
+
+        if mode == "genome":
+            out = "No genome reference supported for BWA!"
+        elif mode == "rRNA":
+            out = SAMPLE_SHEET["bwa_rRNA_ref"][w.SAMPLE]
     except Exception:
-        BC_PATTERN = "C" * 16 + "N" * 12
+        out = "No reference given! Check your sample sheet!"
 
-    # return barcode pattern
-    return BC_PATTERN
-
-    # BC_PATTERN="(?P<discard_1>CTACACGACGCTCTTCCGATCT)"+ \
-    #     "(?P<cell_1>.{{8}})"+ \
-    #     "(?P<discard_2>TCTTCAGCGTTCCCGAGA)"+ \
-    #     "(?P<cell_2>.{{6}})"+ \
-    #     "(?P<umi_1>.{{7}})"
-
-    # BC_PATTERN="(?P<discard_1>XXXXXXXXXXXXXXXXXXXXXXX)"+ \
-    #     "(?P<cell_1>.{{8}})"+ \
-    #     "(?P<discard_2>XXXXXXXXXXXXXXXXXX)"+ \
-    #     "(?P<cell_2>.{{6}})"+ \
-    #     "(?P<umi_1>.{{7}})"
+    return out
 
 
-def get_STAR_ref(w, mode=["genome", "rRNA"]):
+def get_STAR_ref(w, mode="genome"):
+    """
+    Pull STAR info from sample sheet
+
+    w: wildcards
+    mode: which reference to pull
+    """
     try:
         if type(mode) is list and len(mode) > 1:  # default
             mode = "genome"
 
         if mode == "genome":
-            star_ref = REF_DICT[w.SAMPLE]
-        elif mode == "rRNA":
-            star_ref = rRNA_STAR_DICT[w.SAMPLE]
+            out = SAMPLE_SHEET["STAR_ref"][w.SAMPLE]
+        else:
+            print(f"Don't know what to do for mode [{mode}]")
     except Exception:
-        star_ref = "No reference given! Check your sample sheet!"
+        out = "No reference given! Check your sample sheet!"
 
-    return star_ref
+    return out
+
+
+def get_kallisto_ref(w, mode=["idx", "t2g", "idx_velo", "t2g_velo"]):
+    """
+    Pull kalllisto info from sample sheet
+
+    w: wildcards
+    mode: which reference to pull
+    """
+    try:
+        if mode == "idx":
+            out = SAMPLE_SHEET["kb_idx"][w.SAMPLE]
+        elif mode == "t2g":
+            out = SAMPLE_SHEET["kb_t2g"][w.SAMPLE]
+    except Exception:
+        out = "No reference given! Check your sample sheet!"
+
+    return out
 
 
 # TODO- add STAR_rRNA functinoality (no w.RECIPE accessibility)
 def get_STAR_extra_params(w):
     star_info = {
-        "STAR.soloType": "",
-        "STAR.soloUMI": "",
-        "STAR.soloCB": "",
-        "STAR.soloCBmatchWLtype": "",
-        "STAR.soloAdapter": "",
-        "STAR.extra": "--outFilterMultimapNmax 50 --outFilterMismatchNoverLmax 0.05  --outFilterMatchNmin 12  --outFilterScoreMinOverLread 0  --outFilterMatchNminOverLread 0",
+        "STAR_soloType": "",
+        "STAR_soloUMI": "",
+        "STAR_soloCB": "",
+        "STAR_soloAdapter": "",
+        "STAR_extra": "--outFilterMultimapNmax 50 --outFilterMismatchNoverLmax 0.05  --outFilterMatchNmin 12  --outFilterScoreMinOverLread 0  --outFilterMatchNminOverLread 0",
     }
 
     # Iterate over each key
@@ -280,7 +306,7 @@ def get_STAR_extra_params(w):
         try:
             star_info[key] = RECIPE_SHEET[key][w.RECIPE]
         except Exception:
-            # values for rRNA/default
+            # values for default
             recipe = get_recipes(w, mode=f"concatenate")
 
             if "stomics" in recipe:
@@ -376,9 +402,13 @@ def get_recipe_info(w, info_col, mode=["ONT", "ILMN", "list"]):
         return [RECIPE_SHEET[info_col][x] for x in recipe]
 
 
+def count_lines_in_file(file_path):
+    with open(file_path, 'r') as file:
+        return sum(1 for _ in file)
+
+
 # Convert a megabyte value (str) to bytes [int]
 def megabytes2bytes(mb):
-    # mb_int = int(''.join(filter(str.isdigit, mb)))
     bytes_out = mb * 1024 * 1024
     return bytes_out
 
@@ -441,69 +471,3 @@ def max_sum_of_entries(lst):
 
     return max_sum
 
-
-# def unlist(*args, unique=False):
-#     result = []
-#     for arg in args:
-#         if isinstance(arg, (list, dict)):
-#             if isinstance(arg, list):
-#                 result.extend(unlist(arg))
-#             elif isinstance(arg, dict):
-#                 result.extend(unlist(list(arg.values())))
-#         else:
-#             result.append(arg)
-
-#     if unique:
-#         result = list(set(result))  # Convert to set to remove duplicates, then back to list
-
-#     return result
-
-# def unlist(*args, unique=False):
-#     def process_item(item):
-#         if isinstance(item, (list, dict)):
-#             if isinstance(item, list):
-#                 yield from unlist(item, unique=unique)
-#             elif isinstance(item, dict):
-#                 yield from unlist(list(item.values()), unique=unique)
-#         else:
-#             yield item
-
-#     result = []
-#     for arg in args:
-#         result.extend(process_item(arg))
-
-#     if unique:
-#         result = list(set(result))  # Convert to set to remove duplicates, then back to list
-
-#     return result
-
-
-########## TO BE DEPRECATED ########################################################
-def get_barcode_length(w):
-    """
-    Get barcode length based on the recipe(s) passed.
-    """
-    bc_lengths = [RECIPE_SHEET["BC.length"][R] for R in RECIPE_DICT[w.SAMPLE]]
-    if len(bc_lengths) == 1:
-        out = bc_lengths[0]
-    else:
-        # TODO: there is probably a better way to handle multi-recipe than this
-        out = max(set(bc_lengths), key=bc_lengths.count)  # return mode
-    return out
-
-
-def get_umi_length(w):
-    """
-    Get UMI length based on the recipe(s) passed.
-    """
-    umi_lengths = [RECIPE_SHEET["UMI.length"][R] for R in RECIPE_DICT[w.SAMPLE]]
-    if len(umi_lengths) == 1:
-        out = umi_lengths[0]
-    else:
-        # TODO: there is probably a better way to handle multi-recipe than this
-        out = max(set(umi_lengths), key=umi_lengths.count)  # return mode
-    return out
-
-
-def get_split_ont_align_mem_gb(wildcards, threads):
-    return config["RESOURCES_MM2_MEM_GB"] / threads
