@@ -123,26 +123,6 @@ rule ont_1a_readIDs_by_adapter_type:
             --output_directory $(dirname {output.FULL_LEN})
         """
 
-
-# Write lists of read IDs for each adapter type
-rule ont_1a_adapter_scan_results:
-    input:
-        FULL_LEN="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
-        SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
-    output:
-        LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan_results.txt",
-    resources:
-        mem="8G",
-    threads: 1
-    shell:
-        """
-        dir_path=$(dirname {input.FULL_LEN})
-
-        for file in "$dir_path"/*.txt; do
-            echo "$(basename $file)"\t"$(wc -l <"$file")" >> {output.LOG}
-        done
-        """
-
 # Summarize adapter_scan results
 rule ont_1a_adapter_scan_summary:
     input:
@@ -177,7 +157,6 @@ rule ont_1a_adapter_scan_summary:
 ## SINGLE_ADAPTER1 = just R1 sequence - incompletely sequenced
 rule ont_1a_merge_scan_lists:
     input:
-        LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan_results.txt",
         FULL_LEN="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
         SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
     output:
