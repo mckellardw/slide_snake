@@ -78,7 +78,6 @@ def parse_args():
     )
     parser.add_argument(
         "--id_column",
-        # nargs="+",
         type=int,
         default=0,
         help="Column in .tsv corresponding to the read IDs (default: 0).",
@@ -92,8 +91,7 @@ def parse_args():
     )
     parser.add_argument(
         "--concat_bcs",
-        type=bool,
-        default=False,
+        action='store_true',
         help="Whether or not to combine sub-barcodes prior to correction (True for SlideSeq; False for microST/dBIT)",
     )
     parser.add_argument(
@@ -256,7 +254,7 @@ def filter_whitelist_by_kmers(wl, kmers, kmer_to_bc_index):
     return filt_wl
 
 
-def split_seq_into_kmers(seq, k):
+def find_kmers(seq, k):
     """
     Decompose the supplied <seq> into N=len(seq)-k+1 k-mers.
 
@@ -271,47 +269,58 @@ def split_seq_into_kmers(seq, k):
         len(seq) >= k
     ), f"Pick a value for k that is less than len(barcode); [{k}] is bigger than [{seq}]!"
 
-    kmers = []
-    for i in range(0, len(seq) - k + 1):
-        kmer = seq[i : i + k]
-        kmers.append(kmer)
-    return kmers
+    return [seq[i : i + k] for i in range(len(seq) - k + 1)]
+
+def generate_kmer_index(whitelist, k):
+    """    
+    Create dictionary mapping each k-mer to all
+    barcodes in the whitelist containing that k-mer.
+
+    :param whitelist: List of whitelisted barcodes
+    :type whitelist: str
+    :param k: k-mer length
+    :type k: int
+    :return: Dictionary mapping all k-mers to
+        indices in the whitelist corresponding to barcodes containing that k-mer
+    :rtype: list, dict
+    """    
+    kmer_to_bc_index = {}
+    for index, bc in enumerate(whitelist):
+        bc_kmers = find_kmers(bc, k)
+        for bc_kmer in bc_kmers:
+            if bc_kmer not in kmer_to_bc_index.keys():
+                kmer_to_bc_index[bc_kmer] = set([index])
+            else:
+                kmer_to_bc_index[bc_kmer].add(index)
+
+    return kmer_to_bc_index
 
 
-def load_whitelist(whitelist, k):
+
+def load_whitelist(whitelist_path, k):
     """
     Read in barcode whitelist and create dictionary mapping each k-mer to all
     barcodes in the whitelist containing that k-mer.
 
-    :param whitelist: Path to the barcode whitelist
-    :type whitelist: str
+    :param whitelist_path: Path to the barcode whitelist
+    :type whitelist_path: str
     :param k: k-mer length
     :type k: int
-    :return: List of whitelisted barcodes and dictionary mapping all k-mers to
+    :return: List of *sorted* whitelisted barcodes and dictionary mapping all k-mers to
         indices in the whitelist corresponding to barcodes containing that k-mer
     :rtype: list, dict
     """
     wl = []
-    with open(whitelist) as file:
+    with open(whitelist_path) as file:
         for line in file:
             bc = line.strip().split("-")[0]
             wl.append(bc)
 
     wl.sort()
 
-    # index whitelist...
-    kmer_to_bc_index = {}
-    for index, bc in enumerate(wl):
-        bc_kmers = split_seq_into_kmers(bc, k)
-        for bc_kmer in bc_kmers:
-            if bc_kmer not in kmer_to_bc_index.keys():
-                kmer_to_bc_index[bc_kmer] = set([index])
-            else:
-                kmer_to_bc_index[bc_kmer].add(index)
-    return wl, kmer_to_bc_index
+    return wl, generate_kmer_index(whitelist=wl, k=k)
 
-
-def calc_leven_to_whitelist(bc_uncorr, whitelist, bc_len):
+def calc_leven_to_whitelist(bc_uncorr, whitelist, bc_len, kmer_to_bc_index):
     """
     Find minimum and runner-up barcode edit distance by iterating through the
     whitelist of expected barcodes.
@@ -337,7 +346,7 @@ def calc_leven_to_whitelist(bc_uncorr, whitelist, bc_len):
 
     wl_filtered = filter_whitelist_by_kmers(
         wl=whitelist,
-        kmers=split_seq_into_kmers(bc_uncorr, k),
+        kmers=find_kmers(bc_uncorr, k),
         kmer_to_bc_index=kmer_to_bc_index,
     )
 
@@ -376,7 +385,21 @@ def process_tsv(
     bc_update_counter=1000000,
 ):
     """
-    #TODO
+    Process a TSV file to correct barcodes based on a whitelist.
+
+    Parameters:
+    - tsv_in: Path to the input TSV file.
+    - tsv_out_full: Path to the output TSV file with full information.
+    - tsv_out_slim: Path to the output TSV file with slim information.
+    - id_column: Column index for read IDs.
+    - bc_columns: List of column indices for uncorrected barcodes.
+    - concat_bcs: Boolean indicating whether to concatenate barcodes.
+    - whitelists: Dictionary of whitelists for each barcode column.
+    - kmer_to_bc_indexes: Dictionary of k-mer to barcode index mappings.
+    - max_levens: List of maximum Levenshtein distances for correction.
+    - min_next_match_diffs: List of minimum differences between first and second closest matches.
+    - verbose: Boolean indicating whether to print verbose output.
+    - bc_update_counter: Number of barcodes to process before printing an update.
     """
     null_bc_string = "-"
 
@@ -463,6 +486,7 @@ def process_tsv(
                                 bc_uncorr=barcode,
                                 whitelist=whitelist,
                                 bc_len=len(barcode),
+                                kmer_to_bc_index=kmer_to_bc_indexes[i],
                             )
                             concat_corrected_bc.append(corrected_bc)
 
@@ -528,8 +552,6 @@ if __name__ == "__main__":
         f"Second match difference(s):       {args.min_next_match_diffs}\n"
         f"Number of threads:                {args.threads}\n"
     )
-
-    # args.concat_bcs = False
 
     if args.concat_bcs and len(list(args.whitelist_files)) > 1:
         print(f"Need a merged barcode whitelist!")

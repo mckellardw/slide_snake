@@ -66,8 +66,7 @@ rule ont_1c_filter_read_barcodes:
 rule ont_1c_tsv_bc_correction:
     input:
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_filtered.tsv",
-        WHITELIST=lambda w: get_whitelist(w, return_type="list", mode="recipe"),
-        # WHITELIST="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
+        WHITELIST=lambda w: get_whitelist(w, return_type="list", mode="ONT"),
     output:
         TSV_SLIM="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected.tsv",
         TSV_FULL="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected_full.tsv",
@@ -77,9 +76,7 @@ rule ont_1c_tsv_bc_correction:
         NEXT_MATCH_DIFF=lambda w: get_recipe_info(w, "BC_min_ED_diff", mode="ONT"),
         K=5,  # kmer length for BC whitelist filtering; shorter value improves accuracy, extends runtime
         BC_COLUMNS=lambda w: " ".join(map(str, range(1, get_n_bcs(w) + 1))),
-        # CONCAT_BCS=lambda w: get_recipe_info(w, "BC_concat", mode="ONT"),  # whether the sub-barcodes should be corrected together (SlideSeq) or separately (microST)
-        # CONCAT_BCS=lambda w: RECIPE_SHEET["BC_concat"][w.RECIPE]
-        CONCAT_BCS=True,
+        CONCAT_BCS=lambda w: '--concat_bcs' if get_recipe_info(w, "BC_concat", mode="ONT") else '',  # whether the sub-barcodes should be corrected together (SlideSeq) or separately (microST)
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1c_tsv_bc_correction.log",
         err="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1c_tsv_bc_correction.err",
@@ -96,8 +93,7 @@ rule ont_1c_tsv_bc_correction:
             --tsv_out_full {output.TSV_FULL} \
             --tsv_out_slim {output.TSV_SLIM} \
             --id_column 0 \
-            --bc_columns {params.BC_COLUMNS} \
-            --concat_bcs {params.CONCAT_BCS} \
+            --bc_columns {params.BC_COLUMNS} {params.CONCAT_BCS} \
             --whitelist_files {params.WHITELIST} \
             --max_levens {params.MAX_LEVEN} \
             --min_next_match_diffs {params.NEXT_MATCH_DIFF} \
