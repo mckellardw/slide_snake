@@ -138,91 +138,83 @@ def find_and_split_reads(
     max_errors : float
         The maximum allowed error rate for the sequence matching.
     """
+    try:
+        output_prefix = fq_in.strip(".fq.gz")
 
-    output_prefix = fq_in.strip(".fq.gz")
+        read_counter = 0
+        too_short_counter = 0  # filtered b/c too short
+        unaligned_counter = 0
+        missing_split_counter = 0
 
-    read_counter = 0
-    too_short_counter = 0  # filtered b/c too short
-    unaligned_counter = 0
-    missing_split_counter = 0
-    # update_count=1000000 # how often to print updates [for debugging]
+        with pysam.FastxFile(fq_in) as input_fastq, open(
+            f"{output_prefix}_R1.fq", mode="w"
+        ) as output_fastq1, open(f"{output_prefix}_R2.fq", mode="w") as output_fastq2, open(
+            f"{output_prefix}_ambiguous.fq", mode="w"
+        ) as output_ambiguous:
 
-    with pysam.FastxFile(fq_in) as input_fastq, open(
-        f"{output_prefix}_R1.fq", mode="w"
-    ) as output_fastq1, open(f"{output_prefix}_R2.fq", mode="w") as output_fastq2, open(
-        f"{output_prefix}_ambiguous.fq", mode="w"
-    ) as output_ambiguous:
+            for read in input_fastq:
+                # Align anchor sequence
+                anchor_score, anchor_start, anchor_end = align_parasail(
+                    read=read.sequence, adapter=anchor_seq, mismatches=max_errors
+                )
+                if anchor_score is None:
+                    # write to ambiguous.fq
+                    unaligned_counter += 1
+                    output_ambiguous.write(
+                        f"@{read.name}\n{read.sequence}\n+\n{read.quality}\n"
+                    )
+                    continue
 
-        for read in input_fastq:
-            # Align anchor sequence
-            # anchor_alignments = aligner.align(read.sequence, anchor_seq)
-            anchor_score, anchor_start, anchor_end = align_parasail(
-                read=read.sequence, adapter=anchor_seq, mismatches=max_errors
+                # Scan for split sequence
+                scan_start = min(0, anchor_end)
+                scan_end = max(len(read.sequence), anchor_end + max_offset)
+                scan_region = read.sequence[scan_start:scan_end]
+
+                split_score, split_start, split_end = align_parasail(
+                    read=scan_region, adapter=split_seq, mismatches=max_errors
+                )
+
+                if split_score is None:
+                    # write to ambiguous.fq
+                    missing_split_counter += 1
+                    output_ambiguous.write(
+                        f"@{read.name}\n{read.sequence}\n+\n{read.quality}\n"
+                    )
+                    continue
+
+                # Apply split offset
+                split_point = scan_start + split_end + split_offset
+
+                # Split the read
+                part1_sequence = read.sequence[:split_point]
+                part1_quality = read.quality[:split_point]
+                part2_sequence = read.sequence[split_point:]
+                part2_quality = read.quality[split_point:]
+
+                if (
+                    len(part1_sequence) > min_read_length
+                    and len(part2_sequence) > min_read_length
+                ):
+                    output_fastq1.write(
+                        f"@{read.name}\n{part1_sequence}\n+\n{part1_quality}\n"
+                    )
+                    output_fastq2.write(
+                        f"@{read.name}\n{reverse_complement(part2_sequence)}\n+\n{part2_quality[::-1]}\n"
+                    )
+                    read_counter += 1
+                else:
+                    too_short_counter += 1
+
+            print(
+                f"Reads successfully split & written: {read_counter}\n"
+                f"Reads removed:\n"
+                f"  Too short:                 {too_short_counter}\n"
+                f"  Anchor sequence not found: {unaligned_counter}\n"
+                f"  Split sequence not found:  {missing_split_counter}\n"
             )
-            if anchor_score is None:
-                # write to ambiguous.fq
-                unaligned_counter += 1
-                output_ambiguous.write(
-                    f"@{read.name}\n{read.sequence}\n+\n{read.quality}\n"
-                )
-                continue
-
-            # Scan for split sequence
-            scan_start = min(0, anchor_end)
-            scan_end = max(len(read.sequence), anchor_end + max_offset)
-            scan_region = read.sequence[scan_start:scan_end]
-
-            # split_alignments = aligner.align(scan_region, split_seq)
-            split_score, split_start, split_end = align_parasail(
-                read=scan_region, adapter=split_seq, mismatches=max_errors
-            )
-
-            if split_score is None:
-                # write to ambiguous.fq
-                missing_split_counter += 1
-                output_ambiguous.write(
-                    f"@{read.name}\n{read.sequence}\n+\n{read.quality}\n"
-                )
-                continue
-
-            # Apply split offset
-            split_point = scan_start + split_end + split_offset
-
-            # Split the read
-            part1_sequence = read.sequence[:split_point]
-            part1_quality = read.quality[:split_point]
-            part2_sequence = read.sequence[split_point:]
-            part2_quality = read.quality[split_point:]
-
-            if (
-                len(part1_sequence) > min_read_length
-                and len(part2_sequence) > min_read_length
-            ):
-                output_fastq1.write(
-                    f"@{read.name}\n{part1_sequence}\n+\n{part1_quality}\n"
-                )
-                output_fastq2.write(
-                    f"@{read.name}\n{reverse_complement(part2_sequence)}\n+\n{part2_quality[::-1]}\n"
-                )
-                read_counter += 1
-            else:
-                # write to ambiguous.fq
-                # output_ambiguous.write(
-                #     f"@{read.name}\n{read.sequence}\n+\n{read.quality}\n"
-                # )
-                too_short_counter += 1
-
-            # read count update [for debugging]
-            # if read_counter % update_count == 0:
-            #     print(f"{currentTime()} - {read_counter} reads processed")
-
-        print(
-            f"Reads successfully split & written: {read_counter}\n"
-            f"Reads removed:\n"
-            f"  Too short:                 {too_short_counter}\n"
-            f"  Anchor sequence not found: {unaligned_counter}\n"
-            f"  Split sequence not found:  {missing_split_counter}\n"
-        )
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        raise
 
 
 if __name__ == "__main__":

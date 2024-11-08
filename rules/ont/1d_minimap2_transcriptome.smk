@@ -43,7 +43,7 @@ rule ont_1d_txome_sort_compress_output:
         # BAM_UNSORT_TMP=temp("{OUTDIR}/{SAMPLE}/ont/tmp_unsort.sam"),
         BAM=temp("{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/sorted.bam"),
     params:
-        REF=lambda wildcards: SAMPLE_SHEET["mm2_fa"][wildcards.SAMPLE],
+        REF=lambda wildcards: SAMPLE_SHEET["cdna_fa"][wildcards.SAMPLE],
     resources:
         mem="16G",
     threads: 1
