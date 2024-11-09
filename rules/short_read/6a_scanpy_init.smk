@@ -11,6 +11,7 @@ rule ilmn_6a_cache_preQC_h5ad_STAR:
         BC_map=lambda w: get_bc_map(w, mode="ILMN"),
     output:
         H5AD="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.h5ad",
+        QC_PLOTS="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.h5ad.qc_plots.png",
     params:
         var_names="gene_symbols",  # scanpy.read_10x_mtx()
     threads: 1
@@ -30,6 +31,8 @@ rule ilmn_6a_cache_preQC_h5ad_STAR:
             --feat_col 1 0 \
             --transpose True \
             --remove_zero_features \
+            --plot_qc \
+            --qc_plot_file {output.QC_PLOTS} \
         1> {log.log} \
         2> {log.err}
         """
@@ -46,6 +49,7 @@ rule cache_preQC_h5ad_kbpython_std:
         BC_map="{OUTDIR}/{SAMPLE}/bc/map_underscore.txt",
     output:
         H5AD="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/output.h5ad",
+        QC_PLOTS="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/output.h5ad.qc_plots.png",
     log:
         log="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/cache.log",
         err="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/cache.err",
@@ -65,6 +69,8 @@ rule cache_preQC_h5ad_kbpython_std:
             --feat_col 0 \
             --transpose True \
             --remove_zero_features \
+            --plot_qc \
+            --qc_plot_file {output.QC_PLOTS} \
         1> {log.log} \
         2> {log.err}
         """
@@ -99,3 +105,25 @@ rule cache_preQC_h5ad_kbpython_std:
 #             --remove_zero_features \
 #         1> {log.log}
 #         """
+
+rule plot_qc_metrics:
+    input:
+        H5AD="{OUTDIR}/{SAMPLE}/short_read/{TOOL}/{RECIPE}/counts_unfiltered/output.h5ad",
+    output:
+        TOTAL_COUNTS="{OUTDIR}/{SAMPLE}/short_read/{TOOL}/{RECIPE}/counts_unfiltered/total_counts_per_cell.png",
+        NUMBER_GENES="{OUTDIR}/{SAMPLE}/short_read/{TOOL}/{RECIPE}/counts_unfiltered/number_of_genes_per_cell.png",
+        SPATIAL_COUNTS="{OUTDIR}/{SAMPLE}/short_read/{TOOL}/{RECIPE}/counts_unfiltered/spatial_map_total_counts.png",
+        SPATIAL_GENES="{OUTDIR}/{SAMPLE}/short_read/{TOOL}/{RECIPE}/counts_unfiltered/spatial_map_number_of_genes.png",
+    log:
+        log="{OUTDIR}/{SAMPLE}/short_read/{TOOL}/{RECIPE}/counts_unfiltered/plot_qc_metrics.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/{TOOL}/{RECIPE}/counts_unfiltered/plot_qc_metrics.err",
+    conda:
+        f"{workflow.basedir}/envs/scanpy.yml"
+    shell:
+        """
+        python scripts/py/plot_qc_metrics.py \
+            --h5ad_in {input.H5AD} \
+            --output_dir {output_dir} \
+        1> {log.log} \
+        2> {log.err}
+        """

@@ -3,6 +3,7 @@ channels:
   - bioconda
   - conda-forge
 dependencies:
+  - bzip2
   - levenshtein=0.25.1
   - numpy=1.26.4
   - pandas=2.2.2

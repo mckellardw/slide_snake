@@ -4,6 +4,8 @@ import pandas as pd
 import argparse
 from scanpy import read_mtx
 from numpy import intersect1d
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # Example usage:
 """ 
@@ -17,6 +19,88 @@ python scripts/py/cache_mtx_to_h5ad.py \
     --remove_zero_features
 """
 
+def plot_qc_metrics(adata, output_file):
+    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+
+    # Plot total counts per cell
+    sns.histplot(adata.obs['n_counts'], bins=50, kde=False, ax=axes[0, 0])
+    axes[0, 0].set_xlabel('Total Counts')
+    axes[0, 0].set_ylabel('Number of Cells')
+    axes[0, 0].set_title('Total Counts per Cell')
+
+    # Plot number of genes per cell
+    sns.histplot(adata.obs['n_genes'], bins=50, kde=False, ax=axes[0, 1])
+    axes[0, 1].set_xlabel('Number of Genes')
+    axes[0, 1].set_ylabel('Number of Cells')
+    axes[0, 1].set_title('Number of Genes per Cell')
+
+    # Plot spatial coordinates colored by total counts
+    scatter = axes[1, 0].scatter(adata.obsm['spatial'][:, 0], adata.obsm['spatial'][:, 1], c=adata.obs['n_counts'], cmap='viridis')
+    fig.colorbar(scatter, ax=axes[1, 0], label='Total Counts')
+    axes[1, 0].set_xlabel('X Coordinate')
+    axes[1, 0].set_ylabel('Y Coordinate')
+    axes[1, 0].set_title('Spatial Map of Total Counts')
+
+    # Plot spatial coordinates colored by number of genes
+    scatter = axes[1, 1].scatter(adata.obsm['spatial'][:, 0], adata.obsm['spatial'][:, 1], c=adata.obs['n_genes'], cmap='viridis')
+    fig.colorbar(scatter, ax=axes[1, 1], label='Number of Genes')
+    axes[1, 1].set_xlabel('X Coordinate')
+    axes[1, 1].set_ylabel('Y Coordinate')
+    axes[1, 1].set_title('Spatial Map of Number of Genes')
+
+    plt.tight_layout()
+    plt.savefig(output_file)
+    plt.close()
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Process spatial transcriptomics data."
+    )
+    parser.add_argument(
+        "--mat_in", required=True, help="Input count matrix file (mtx format)"
+    )
+    parser.add_argument(
+        "--feat_in", required=True, help="Input feature file (tsv format)"
+    )
+    parser.add_argument(
+        "--bc_in", required=True, help="Input barcode file (txt format)"
+    )
+    parser.add_argument(
+        "--bc_map", required=True, help="Input spatial map file (tsv format)"
+    )
+    parser.add_argument(
+        "--ad_out", required=True, help="Output AnnData file (h5ad format)"
+    )
+    parser.add_argument(
+        "--feat_cols",
+        type=int,
+        nargs="+",
+        default=[1],
+        help="Feature column indices in the feature file (default: [1])",
+    )
+    parser.add_argument(
+        "--transpose",
+        type=bool,
+        default=False,
+        help="Transpose count matrix? (default: False)",
+    )
+    parser.add_argument(
+        "--remove_zero_features",
+        action="store_true",
+        help="Remove observations with zero features detected (default: False)",
+    )
+    parser.add_argument(
+        "--plot_qc",
+        action="store_true",
+        help="Plot QC metrics and save the plots (default: False)",
+    )
+    parser.add_argument(
+        "--qc_plot_file",
+        type=str,
+        default=None,
+        help="Filename for the QC plots (default: {output_dir}/qc_plots.png)",
+    )
+    return parser.parse_args()
 
 def main(
     mat_in,
@@ -28,6 +112,8 @@ def main(
     transpose=True,
     remove_zero_features=False,
     verbose=True,
+    plot_qc=False,
+    qc_plot_file=None,
 ):
     # Count matrix
     adata = read_mtx(mat_in)
@@ -88,50 +174,24 @@ def main(
     if remove_zero_features:
         adata = adata[adata.X.sum(axis=1) > 0, :]
 
+    # Calculate QC metrics
+    adata.obs['n_counts'] = adata.X.sum(axis=1)
+    adata.obs['n_genes'] = (adata.X > 0).sum(axis=1)
+
+    # Plot QC metrics if requested
+    if plot_qc:
+        output_dir = "/".join(ad_out.split("/")[:-1])
+        if qc_plot_file is None:
+            qc_plot_file = f"{output_dir}/qc_plots.png"
+        plot_qc_metrics(adata, qc_plot_file)
+
     # Write output
     print(f"Writing to {ad_out}")
     adata.write(ad_out)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Process spatial transcriptomics data."
-    )
-    parser.add_argument(
-        "--mat_in", required=True, help="Input count matrix file (mtx format)"
-    )
-    parser.add_argument(
-        "--feat_in", required=True, help="Input feature file (tsv format)"
-    )
-    parser.add_argument(
-        "--bc_in", required=True, help="Input barcode file (txt format)"
-    )
-    parser.add_argument(
-        "--bc_map", required=True, help="Input spatial map file (tsv format)"
-    )
-    parser.add_argument(
-        "--ad_out", required=True, help="Output AnnData file (h5ad format)"
-    )
-    parser.add_argument(
-        "--feat_cols",
-        type=int,
-        nargs="+",
-        default=[1],
-        help="Feature column indices in the feature file (default: [1])",
-    )
-    parser.add_argument(
-        "--transpose",
-        type=bool,
-        default=False,
-        help="Transpose count matrix? (default: False)",
-    )
-    parser.add_argument(
-        "--remove_zero_features",
-        action="store_true",
-        help="Remove observations with zero features detected (default: False)",
-    )
-
-    args = parser.parse_args()
+    args = parse_args()
     print(
         f"Matrix file:                  {args.mat_in}\n"
         f"Features/genes file:          {args.feat_in}\n"
@@ -141,6 +201,8 @@ if __name__ == "__main__":
         f"Feature column indices:       {args.feat_cols}\n"
         f"Transpose matrix:             {args.transpose}\n"
         f"Remove undetected features:   {args.remove_zero_features}\n"
+        f"Plot QC metrics:              {args.plot_qc}\n"
+        f"QC plot file:                 {args.qc_plot_file}\n"
     )
     main(
         args.mat_in,
@@ -151,4 +213,6 @@ if __name__ == "__main__":
         args.feat_cols,
         args.transpose,
         args.remove_zero_features,
+        plot_qc=args.plot_qc,
+        qc_plot_file=args.qc_plot_file,
     )
