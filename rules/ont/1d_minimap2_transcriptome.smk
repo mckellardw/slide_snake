@@ -229,6 +229,7 @@ rule ont_1d_txome_cache_preQC_h5ad_minimap2:
         # BC_map="{OUTDIR}/{SAMPLE}/bc/map_underscore.txt",
     output:
         H5AD="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/output.h5ad",
+        QC_PLOTS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/qc_plots.png",
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/cache.log",
     threads: 1
@@ -244,5 +245,7 @@ rule ont_1d_txome_cache_preQC_h5ad_minimap2:
             --ad_out {output.H5AD} \
             --feat_col 0 \
             --remove_zero_features \
+            --plot_qc \
+            --qc_plot_file {output.QC_PLOTS} \
         1> {log.log}
         """

@@ -1,14 +1,36 @@
+# Convert gtf to junction bed for minimap2 alignment
+rule ont_1d_genome_generate_junction_bed:
+    input:
+        GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE]
+    output:
+        JUNC_BED="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/junctions.bed"
+    log:
+        # log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/generate_junction_bed.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/gff2bed.err"
+    conda:
+        f"{workflow.basedir}/envs/minimap2.yml"
+    shell:
+        """
+        mkdir -p $(dirname {output.JUNC_BED})
+
+        paftools.js gff2bed \
+            -j {input.GTF} \
+        > {output.JUNC_BED} \
+        2> {log.err}
+        """
+
 # Align w/ minimap2
 ## minimap2 docs - https://lh3.github.io/minimap2/minimap2.html
 rule ont_1d_genome_align_minimap2_genome:
     input:
         FQ=lambda w: get_fqs(w, return_type="list", mode="ONT")[1],
+        JUNC_BED="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/junctions.bed"
     output:
         SAM_TMP=temp("{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tmp.sam"),
     params:
         EXTRA_FLAGS=lambda wildcards: RECIPE_SHEET["mm2_extra"][wildcards.RECIPE],
         REF=lambda wildcards: SAMPLE_SHEET["genome_fa"][wildcards.SAMPLE],
-        JUNC_BED=lambda wildcards: SAMPLE_SHEET["mm2_junc_bed"][wildcards.SAMPLE],
+        # JUNC_BED=lambda wildcards: SAMPLE_SHEET["mm2_junc_bed"][wildcards.SAMPLE],
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/minimap2.log",
     resources:
@@ -21,7 +43,6 @@ rule ont_1d_genome_align_minimap2_genome:
         mkdir -p $(dirname {output.SAM_TMP})
 
         echo "Genome reference:   {params.REF}" > {log.log} 
-        echo "Junction reference: {params.REF}" >> {log.log} 
         echo "Extra flags:        {params.EXTRA_FLAGS}" >> {log.log} 
         echo "" >> {log.log} 
 
@@ -29,7 +50,7 @@ rule ont_1d_genome_align_minimap2_genome:
             -uf \
             --MD \
             -t {threads} \
-            --junc-bed {params.JUNC_BED} \
+            --junc-bed {input.JUNC_BED} \
             {params.EXTRA_FLAGS} {params.REF} \
             {input.FQ} \
         2>> {log.log} \
@@ -259,7 +280,8 @@ rule ont_1d_genome_umitools_count:
         GENE_TAG="GN",  #GN XS
         UMI_TAG="UR",
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/umitools_count.log",
+        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1d_umitools_count.log",
+        err="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1d_minimap2_umitools_count.err",
     resources:
         mem="16G",
     threads: 1
@@ -275,7 +297,8 @@ rule ont_1d_genome_umitools_count:
             --umi-tag={params.UMI_TAG}  \
             --log={log.log} \
             -I {input.BAM} \
-            -S {output.COUNTS} 
+            -S {output.COUNTS} \
+        2> {log.err}
         """
 
 
@@ -309,8 +332,10 @@ rule ont_1d_genome_cache_preQC_h5ad_minimap2:
         # BC_map="{OUTDIR}/{SAMPLE}/bc/map_underscore.txt",
     output:
         H5AD="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/output.h5ad",
+        QC_PLOTS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/qc_plots.png",
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/cache.log",
+        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1d_minimap2_cache.log",
+        err="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1d_minimap2_cache.err",
     threads: 1
     conda:
         f"{workflow.basedir}/envs/scanpy.yml"
@@ -324,5 +349,8 @@ rule ont_1d_genome_cache_preQC_h5ad_minimap2:
             --ad_out {output.H5AD} \
             --feat_col 0 \
             --remove_zero_features \
-        1> {log.log}
+            --plot_qc \
+            --qc_plot_file {output.QC_PLOTS} \
+        1> {log.log} \
+        2> {log.err}
         """
