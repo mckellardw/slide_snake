@@ -2,9 +2,7 @@ import os
 import re
 import glob
 
-#### Utility rules ############################2
-
-
+#### Utility rules ############################
 # Index .bam file
 rule utils_index_BAM:
     input:
@@ -22,55 +20,70 @@ rule utils_index_BAM:
 
 
 #### Util functions ###########################
-
-
-
 def check_sample_sheet(SAMPLE_SHEET):
-    required_extensions = {
+    recipe_required_extensions = {
         "fastq_R1": [".fq.gz", ".fastq.gz"],
         "fastq_R2": [".fq.gz", ".fastq.gz"],
-        "ONT": [".fq.gz", ".fastq.gz", ".bam", ".cram"],
-        "STAR_ref": [""],
-        "genes_gtf": [".gtf"],
-        "kb_idx": [".idx"],
-        "kb_t2g": [".txt"],
         "bwa_rRNA_ref": [".fa.gz"],
         "rRNA_gtf": [".gtf"],
+        "STAR_ref": [""],
+        "kb_idx": [".idx"],
+        "kb_t2g": [".txt"],
+        "genes_gtf": [".gtf"]
+    }
+
+    recipe_ONT_required_extensions = {
+        "ONT": [".fq.gz", ".fastq.gz", ".bam", ".cram"],
         "genome_fa": [".fa"],
-        "mm2_junc_bed": [".bed"],
+        "genes_gtf": [".gtf"],
         "cdna_fa": [".fa"]
     }
 
     missing_files = []
     empty_fields = []
-    duplicate_samples = SAMPLE_SHEET["sampleID"].duplicated().any()
+    duplicate_samples = SAMPLE_SHEET["sampleID"].duplicated()
+    duplicate_sample_names = SAMPLE_SHEET["sampleID"][duplicate_samples].tolist()
 
     for index, row in SAMPLE_SHEET.iterrows():
         sample_id = row["sampleID"]
-        for column, exts in required_extensions.items():
-            file_paths = row[column].split()
-            if not file_paths:
-                empty_fields.append((sample_id, column))
-            for file_path in file_paths:
-                if file_path:
-                    if column == "STAR_ref" and not os.path.isdir(file_path):
-                        print(f"ERROR: {file_path} for sample {sample_id} is not a directory.")
-                        missing_files.append((sample_id, file_path))
-                    elif not any(re.search(f"{ext}$", file_path) for ext in exts):
-                        print(f"ERROR: File {file_path} for sample {sample_id} does not have the correct extension {exts}")
-                    elif not glob.glob(file_path) and not re.search(r"\{.*\}", file_path):
-                        missing_files.append((sample_id, file_path))
+
+        # Check additional requirements based on recipe
+        if row["recipe"]:
+            for column, exts in recipe_required_extensions.items():
+                file_paths = row[column].split()
+                if not file_paths:
+                    empty_fields.append((sample_id, column))
+                for file_path in file_paths:
+                    if file_path:
+                        if column == "STAR_ref" and not os.path.isdir(file_path):
+                            print(f"WARNING: {file_path} for sample {sample_id} was not found, or is not a directory.")
+                            missing_files.append((sample_id, file_path))
+                        elif not any(re.search(f"{ext}$", file_path) for ext in exts):
+                            print(f"WARNING: File {file_path} for sample {sample_id} does not have the correct extension {exts}")
+                        elif not glob.glob(file_path) and not re.search(r"\{.*\}", file_path):
+                            missing_files.append((sample_id, file_path))
+
+        if row["recipe_ONT"]:
+            for column, exts in recipe_ONT_required_extensions.items():
+                file_paths = row[column].split()
+                if not file_paths:
+                    empty_fields.append((sample_id, column))
+                for file_path in file_paths:
+                    if file_path and not any(re.search(f"{ext}$", file_path) for ext in exts):
+                        print(f"WARNING: File {file_path} for sample {sample_id} does not have the correct extension {exts}")
 
     if empty_fields:
-        print("ERROR: The following required fields are empty:")
+        print("WARNING: The following required fields are empty:")
         for sample_id, column in empty_fields:
             print(f"Sample {sample_id}: {column}")
 
-    if duplicate_samples:
-        print("ERROR: Duplicate sample IDs found in the sample sheet.")
+    if duplicate_samples.any():
+        print("WARNING: Duplicate sample IDs found in the sample sheet:")
+        for sample_id in duplicate_sample_names:
+            print(f"Sample {sample_id}")
 
     if missing_files:
-        print("ERROR: The following files are missing:")
+        print("WARNING: The following files are missing:")
         for sample_id, file_path in missing_files:
             print(f"Sample {sample_id}: {file_path}")
         raise FileNotFoundError("Some required files are missing. Please check the log for details.")
@@ -79,15 +92,18 @@ def check_sample_sheet(SAMPLE_SHEET):
 def check_recipe_sheet(RECIPE_SHEET, RECIPE_DICT, RECIPE_ONT_DICT):
     required_columns = ["whitelist", "R1_finalLength", "fwd_primer", "rev_primer", "BC_adapter", "BC_length", "BC_offset", "BC_position", "BC_max_ED", "BC_min_ED_diff", "BC_concat", "UMI_adapter", "UMI_length", "UMI_offset", "UMI_position", "internal_adapter", "STAR_soloType", "STAR_soloCBmatchWLtype", "STAR_soloCB", "STAR_soloUMI", "STAR_soloAdapter", "STAR_extra", "kb_x", "kb_extra", "featureCounts_extra", "mm2_extra"]
     missing_columns = [col for col in required_columns if col not in RECIPE_SHEET.columns]
-    duplicate_recipes = RECIPE_SHEET.index.duplicated().any()
+    duplicate_recipes = RECIPE_SHEET.index.duplicated()
+    duplicate_recipe_names = RECIPE_SHEET.index[duplicate_recipes].tolist()
 
     if missing_columns:
-        print("ERROR: The following required columns are missing from the recipe sheet:")
+        print("WARNING: The following required columns are missing from the recipe sheet:")
         for col in missing_columns:
             print(f"- {col}")
 
-    if duplicate_recipes:
-        print("ERROR: Duplicate recipes found in the recipe sheet.")
+    if duplicate_recipes.any():
+        print("WARNING: Duplicate recipes found in the recipe sheet:")
+        for recipe in duplicate_recipe_names:
+            print(f"Recipe {recipe}")
 
     RECIPES = unlist(RECIPE_DICT, unique=True) + unlist(RECIPE_ONT_DICT, unique=True)
     for RECIPE in RECIPES:
