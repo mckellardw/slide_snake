@@ -55,3 +55,4 @@ snakemake -k -p --nt --use-conda --conda-frontend mamba --executor slurm --workf
   ```
   ST_BarcodeMap-0.0.1 --in B01807A3.barcodeToPos.h5 --out B01807A3.barcodeToPos.txt --action 3 --thread 24
   ```
+- "Documentation" on `kallisto-lr` [link](https://github.com/pachterlab/kallisto/issues/456)

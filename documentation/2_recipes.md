@@ -12,6 +12,31 @@ The default receipe sheet is stored in `resources/recipe_sheet.csv`. Change the 
   - Multiple recipes can be passed for each sample. Include as many as you would like, each separated by a space in the sample sheet. This is useful for benchmarking.
   - You can also add a new recipe! Just add a new line to `resources/recipe_sheet.csv` and give it a unique name in the 1st (0th for you pythoners) column.
 
+## `STARsolo` barcode and UMI specifications
+See the STARsolo documentation [here](https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md) for details.  
+```
+soloCBposition              -
+    strings(s)              position of Cell Barcode(s) on the barcode read.
+                            Presently only works with --soloType CB_UMI_Complex, and barcodes are assumed to be on Read2.
+                            Format for each barcode: startAnchor_startPosition_endAnchor_endPosition
+                            start(end)Anchor defines the Anchor Base for the CB: 0: read start; 1: read end; 2: adapter start; 3: adapter end
+                            start(end)Position is the 0-based position with of the CB start(end) with respect to the Anchor Base
+                            String for different barcodes are separated by space.
+                            Example: inDrop (Zilionis et al, Nat. Protocols, 2017):
+                            --soloCBposition  0_0_2_-1  3_1_3_8
+
+soloUMIposition             -
+    string                  position of the UMI on the barcode read, same as soloCBposition
+                            Example: inDrop (Zilionis et al, Nat. Protocols, 2017):
+                            --soloCBposition  3_9_3_14
+
+soloAdapterSequence         -
+    string:                 adapter sequence to anchor barcodes.
+
+soloAdapterMismatchesNmax   1
+    int>0:                  maximum number of mismatches allowed in adapter sequence.
+```
+
 ## `kallisto` technology speifications
 `kb_python` uses `ngs-tools` for tech specifications - [link](https://github.com/Lioscro/ngs-tools/tree/aa3e864e59ae78467a331f671967c93d62a6e2ad)
 ```
