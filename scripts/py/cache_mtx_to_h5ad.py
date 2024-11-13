@@ -2,10 +2,9 @@
 
 import pandas as pd
 import argparse
-from scanpy import read_mtx
+from scanpy import read_mtx, pl
 from numpy import intersect1d
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 # Example usage:
 """ 
@@ -22,35 +21,31 @@ python scripts/py/cache_mtx_to_h5ad.py \
 def plot_qc_metrics(adata, output_file):
     fig, axes = plt.subplots(2, 2, figsize=(16, 12))
 
-    # Plot total counts per cell
-    sns.histplot(adata.obs['n_counts'], bins=50, kde=False, ax=axes[0, 0])
-    axes[0, 0].set_xlabel('Total Counts')
-    axes[0, 0].set_ylabel('Number of Cells')
-    axes[0, 0].set_title('Total Counts per Cell')
+    # Plot total counts per cell (knee plot)
+    sorted_counts = adata.obs['n_counts'].sort_values(ascending=False)
+    axes[0, 0].plot(range(len(sorted_counts)), sorted_counts)
+    axes[0, 0].set_xlabel('Cell Rank')
+    axes[0, 0].set_ylabel('Total Counts')
+    axes[0, 0].set_title('Knee Plot of Total Counts per Cell')
 
-    # Plot number of genes per cell
-    sns.histplot(adata.obs['n_genes'], bins=50, kde=False, ax=axes[0, 1])
-    axes[0, 1].set_xlabel('Number of Genes')
-    axes[0, 1].set_ylabel('Number of Cells')
-    axes[0, 1].set_title('Number of Genes per Cell')
+    # Plot number of genes per cell (knee plot)
+    sorted_genes = adata.obs['n_genes'].sort_values(ascending=False)
+    axes[0, 1].plot(range(len(sorted_genes)), sorted_genes)
+    axes[0, 1].set_xlabel('Cell Rank')
+    axes[0, 1].set_ylabel('Number of Genes')
+    axes[0, 1].set_title('Knee Plot of Number of Genes per Cell')
 
-    # Plot spatial coordinates colored by total counts
-    scatter = axes[1, 0].scatter(adata.obsm['spatial'][:, 0], adata.obsm['spatial'][:, 1], c=adata.obs['n_counts'], cmap='viridis')
-    fig.colorbar(scatter, ax=axes[1, 0], label='Total Counts')
-    axes[1, 0].set_xlabel('X Coordinate')
-    axes[1, 0].set_ylabel('Y Coordinate')
+    # Create spatial plots using scanpy
+    pl.embedding(adata, basis='spatial', color='n_counts', ax=axes[1, 0], show=False)
     axes[1, 0].set_title('Spatial Map of Total Counts')
 
-    # Plot spatial coordinates colored by number of genes
-    scatter = axes[1, 1].scatter(adata.obsm['spatial'][:, 0], adata.obsm['spatial'][:, 1], c=adata.obs['n_genes'], cmap='viridis')
-    fig.colorbar(scatter, ax=axes[1, 1], label='Number of Genes')
-    axes[1, 1].set_xlabel('X Coordinate')
-    axes[1, 1].set_ylabel('Y Coordinate')
+    pl.embedding(adata, basis='spatial', color='n_genes', ax=axes[1, 1], show=False)
     axes[1, 1].set_title('Spatial Map of Number of Genes')
 
     plt.tight_layout()
     plt.savefig(output_file)
     plt.close()
+    print(f"QC plots saved to {output_file}")
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -180,8 +175,8 @@ def main(
 
     # Plot QC metrics if requested
     if plot_qc:
-        output_dir = "/".join(ad_out.split("/")[:-1])
         if qc_plot_file is None:
+            output_dir = "/".join(ad_out.split("/")[:-1])
             qc_plot_file = f"{output_dir}/qc_plots.png"
         plot_qc_metrics(adata, qc_plot_file)
 
