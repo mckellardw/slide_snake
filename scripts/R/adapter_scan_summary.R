@@ -10,9 +10,21 @@ library(patchwork)
 
 # Function to load the data
 load_data <- function(data_file, n_max=Inf){    
-    # Read the data
+    # Read the data with specified column types
     df <- read_tsv(
         data_file,
+        col_types = cols(
+            readlen = col_double(),
+            start = col_double(),
+            end = col_double(),
+            fl = col_logical(),
+            stranded = col_logical(),
+            orig_strand = col_character(),
+            orig_adapter_config = col_character(),
+            adapter_config = col_character(),
+            lab = col_character(),
+            read_id = col_character()
+        ),
         na = c("", "NA", "None"),
         n_max=n_max
     )
@@ -32,7 +44,7 @@ option_list <- list(
               help="Output device for plots (pdf, png, svg) [default= %default]", metavar="DEVICE"),
   make_option(c("-v", "--verbose"), type="logical", default=TRUE, 
               help="Whether or not to print updates [default= %default]", metavar="VERBOSE"),
-  make_option(c("-n", "--nrows"), type="integer", default=Inf, 
+  make_option(c("-n", "--nrows"), type="integer", default=0, 
               help="Number of rows to read from the input file [default= %default]", metavar="NROWS")
 )
 
@@ -49,7 +61,10 @@ if (is.null(opt$input)) {
 
 # Read the TSV file
 if(verbose){message("Reading in tsv...")}
-data <- load_data(opt$input, n_max=opt$nrows)
+data <- load_data(
+  opt$input, 
+  n_max=opt$nrows
+)
 
 data$lab <- outFactor <- factor(
   x = data$lab, 

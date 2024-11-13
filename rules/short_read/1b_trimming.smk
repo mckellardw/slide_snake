@@ -188,6 +188,8 @@ rule ilmn_1b_R1_internalTrimming:
     resources:
         mem="16G",
     threads: config["CORES"]
+    conda:
+        f"{workflow.basedir}/envs/parasail.yml"
     shell:
         """
         python scripts/py/fastq_internal_adapter_trim_R1_v2.py \
