@@ -53,11 +53,11 @@ echo "Removing reads without 'CB' or 'UB' tags..."
 date 
 
 samtools view \
--h \
--@ ${CORE} \
--q 1 \
---tag-file CB:${BB} \
-${INBAM} \
+  -h \
+  -@ ${CORE} \
+  -q 1 \
+  --tag-file CB:${BB} \
+  ${INBAM} \
 | grep -v "UB:Z:-" \
 | samtools view -bS \
 > ${TMPDIR}/filter.bam
@@ -115,14 +115,14 @@ do
   samtools index -@ ${CORE} ${BAM}
 
   umi_tools dedup \
-  -I ${BAM} \
-  --extract-umi-method=tag \
-  --umi-tag=UB \
-  --cell-tag=CB \
-  --method=unique \
-  --per-cell \
-  --unmapped-reads=discard \
-  -S ${TMPDIR}/dedup_${BAM}
+    -I ${BAM} \
+    --extract-umi-method=tag \
+    --umi-tag=UB \
+    --cell-tag=CB \
+    --method=unique \
+    --per-cell \
+    --unmapped-reads=discard \
+    -S ${TMPDIR}/dedup_${BAM}
 done < ${BAMLIST}
   # --log ${LOG} \
 # --output-stats={params.OUTPUT_PREFIX} \
