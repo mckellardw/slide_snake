@@ -776,7 +776,13 @@ def add_mtx_as_layer(
     if verbose:
         print(f"Loaded {matrix.shape[0]} obs and {matrix.shape[1]} vars")
 
-    var_names_mat = pd.read_csv(var_path, delimiter="\t", dtype=str, header=None, usecols=[feature_column]).iloc[:, 0].tolist()
+    var_names_mat = (
+        pd.read_csv(
+            var_path, delimiter="\t", dtype=str, header=None, usecols=[feature_column]
+        )
+        .iloc[:, 0]
+        .tolist()
+    )
     var_names_mat = make_unique(var_names_mat)
 
     with gzip.open(obs_path, "rt") as obs_file:
@@ -802,7 +808,9 @@ def add_mtx_as_layer(
         print(f"Intersection: {len(obs_names_out)} obs and {len(var_names_out)} vars")
 
     # Create a new matrix with the correct dimensions
-    new_matrix = sp.csr_matrix((len(obs_names_out), len(var_names_out)), dtype=matrix.dtype)
+    new_matrix = sp.csr_matrix(
+        (len(obs_names_out), len(var_names_out)), dtype=matrix.dtype
+    )
 
     # Fill in the values from the original matrix
     obs_index_dict = {name: index for index, name in enumerate(obs_names_mat)}
@@ -825,10 +833,23 @@ def add_mtx_as_layer(
         missing_vars = list(set(var_names_out) - set(adata.var_names))
 
         if missing_obs:
-            adata = adata.concatenate(ad.AnnData(X=sp.csr_matrix((len(missing_obs), adata.n_vars)), obs=pd.DataFrame(index=missing_obs)), join='outer')
+            adata = adata.concatenate(
+                ad.AnnData(
+                    X=sp.csr_matrix((len(missing_obs), adata.n_vars)),
+                    obs=pd.DataFrame(index=missing_obs),
+                ),
+                join="outer",
+            )
 
         if missing_vars:
-            adata = adata.concatenate(ad.AnnData(X=sp.csr_matrix((adata.n_obs, len(missing_vars))), var=pd.DataFrame(index=missing_vars)), join='outer', axis=1)
+            adata = adata.concatenate(
+                ad.AnnData(
+                    X=sp.csr_matrix((adata.n_obs, len(missing_vars))),
+                    var=pd.DataFrame(index=missing_vars),
+                ),
+                join="outer",
+                axis=1,
+            )
 
     # Ensure the order of observations and variables matches
     adata = adata[obs_names_out, var_names_out]

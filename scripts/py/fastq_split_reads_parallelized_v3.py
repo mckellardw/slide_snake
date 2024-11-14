@@ -148,7 +148,9 @@ def find_and_split_reads(
 
         with pysam.FastxFile(fq_in) as input_fastq, open(
             f"{output_prefix}_R1.fq", mode="w"
-        ) as output_fastq1, open(f"{output_prefix}_R2.fq", mode="w") as output_fastq2, open(
+        ) as output_fastq1, open(
+            f"{output_prefix}_R2.fq", mode="w"
+        ) as output_fastq2, open(
             f"{output_prefix}_ambiguous.fq", mode="w"
         ) as output_ambiguous:
 

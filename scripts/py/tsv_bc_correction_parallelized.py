@@ -91,7 +91,7 @@ def parse_args():
     )
     parser.add_argument(
         "--concat_bcs",
-        action='store_true',
+        action="store_true",
         help="Whether or not to combine sub-barcodes prior to correction (True for SlideSeq; False for microST/dBIT)",
     )
     parser.add_argument(
@@ -271,8 +271,9 @@ def find_kmers(seq, k):
 
     return [seq[i : i + k] for i in range(len(seq) - k + 1)]
 
+
 def generate_kmer_index(whitelist, k):
-    """    
+    """
     Create dictionary mapping each k-mer to all
     barcodes in the whitelist containing that k-mer.
 
@@ -283,7 +284,7 @@ def generate_kmer_index(whitelist, k):
     :return: Dictionary mapping all k-mers to
         indices in the whitelist corresponding to barcodes containing that k-mer
     :rtype: list, dict
-    """    
+    """
     kmer_to_bc_index = {}
     for index, bc in enumerate(whitelist):
         bc_kmers = find_kmers(bc, k)
@@ -294,7 +295,6 @@ def generate_kmer_index(whitelist, k):
                 kmer_to_bc_index[bc_kmer].add(index)
 
     return kmer_to_bc_index
-
 
 
 def load_whitelist(whitelist_path, k):
@@ -319,6 +319,7 @@ def load_whitelist(whitelist_path, k):
     wl.sort()
 
     return wl, generate_kmer_index(whitelist=wl, k=k)
+
 
 def calc_leven_to_whitelist(bc_uncorr, whitelist, bc_len, kmer_to_bc_index):
     """
