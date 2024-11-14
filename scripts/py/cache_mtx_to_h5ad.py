@@ -18,34 +18,36 @@ python scripts/py/cache_mtx_to_h5ad.py \
     --remove_zero_features
 """
 
+
 def plot_qc_metrics(adata, output_file):
     fig, axes = plt.subplots(2, 2, figsize=(16, 12))
 
     # Plot total counts per cell (knee plot)
-    sorted_counts = adata.obs['n_counts'].sort_values(ascending=False)
+    sorted_counts = adata.obs["n_counts"].sort_values(ascending=False)
     axes[0, 0].plot(range(len(sorted_counts)), sorted_counts)
-    axes[0, 0].set_xlabel('Cell Rank')
-    axes[0, 0].set_ylabel('Total Counts')
-    axes[0, 0].set_title('Knee Plot of Total Counts per Cell')
+    axes[0, 0].set_xlabel("Cell Rank")
+    axes[0, 0].set_ylabel("Total Counts")
+    axes[0, 0].set_title("Knee Plot of Total Counts per Cell")
 
     # Plot number of genes per cell (knee plot)
-    sorted_genes = adata.obs['n_genes'].sort_values(ascending=False)
+    sorted_genes = adata.obs["n_genes"].sort_values(ascending=False)
     axes[0, 1].plot(range(len(sorted_genes)), sorted_genes)
-    axes[0, 1].set_xlabel('Cell Rank')
-    axes[0, 1].set_ylabel('Number of Genes')
-    axes[0, 1].set_title('Knee Plot of Number of Genes per Cell')
+    axes[0, 1].set_xlabel("Cell Rank")
+    axes[0, 1].set_ylabel("Number of Genes")
+    axes[0, 1].set_title("Knee Plot of Number of Genes per Cell")
 
     # Create spatial plots using scanpy
-    pl.embedding(adata, basis='spatial', color='n_counts', ax=axes[1, 0], show=False)
-    axes[1, 0].set_title('Spatial Map of Total Counts')
+    pl.embedding(adata, basis="spatial", color="n_counts", ax=axes[1, 0], show=False)
+    axes[1, 0].set_title("Spatial Map of Total Counts")
 
-    pl.embedding(adata, basis='spatial', color='n_genes', ax=axes[1, 1], show=False)
-    axes[1, 1].set_title('Spatial Map of Number of Genes')
+    pl.embedding(adata, basis="spatial", color="n_genes", ax=axes[1, 1], show=False)
+    axes[1, 1].set_title("Spatial Map of Number of Genes")
 
     plt.tight_layout()
     plt.savefig(output_file)
     plt.close()
     print(f"QC plots saved to {output_file}")
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -96,6 +98,7 @@ def parse_args():
         help="Filename for the QC plots (default: {output_dir}/qc_plots.png)",
     )
     return parser.parse_args()
+
 
 def main(
     mat_in,
@@ -170,8 +173,8 @@ def main(
         adata = adata[adata.X.sum(axis=1) > 0, :]
 
     # Calculate QC metrics
-    adata.obs['n_counts'] = adata.X.sum(axis=1)
-    adata.obs['n_genes'] = (adata.X > 0).sum(axis=1)
+    adata.obs["n_counts"] = adata.X.sum(axis=1)
+    adata.obs["n_genes"] = (adata.X > 0).sum(axis=1)
 
     # Plot QC metrics if requested
     if plot_qc:
