@@ -9,5 +9,4 @@ dependencies:
   - pysam=0.22.1
   - snakemake=8.16.0
   - samtools=1.20
-  - seqtk=1.4
   - snakemake-executor-plugin-slurm

@@ -10,14 +10,10 @@ rule copy_fq_for_mirge:
     input:
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz",
         R2_FQ_TWICE_CUT="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
-        R2_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fq.gz",
         R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz",
     output:
         R2_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/cut_R2.fastq.gz"),
         R2_FQ_TWICE_CUT=temp("{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fastq.gz"),
-        R2_FQ_STAR_FILTERED=temp(
-            "{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fastq.gz"
-        ),
         R2_FQ_BWA_FILTERED=temp("{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fastq.gz"),
     shell:
         """
@@ -30,7 +26,7 @@ rule copy_fq_for_mirge:
 
 # Source: https://mirge3.readthedocs.io/en/latest/quick_start.html
 ## Note- `--outDirNam` is a hidden argument for miRge3 that allows direct naming of the output directory
-#TODO update this code...
+# TODO update this code...
 rule miRge3_pseudobulk:
     input:
         R2_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R2.fastq.gz",
@@ -43,7 +39,7 @@ rule miRge3_pseudobulk:
         MIRGE_HTML="{OUTDIR}/{SAMPLE}/miRge_bulk/{RECIPE}/annotation.report.html",
     params:
         MIRGE_LIB=config["MIRGE_LIB"],
-        SPECIES = lambda wildcards: SAMPLE_SHEET["species"][wildcards.SAMPLE],
+        SPECIES=lambda wildcards: SAMPLE_SHEET["species"][wildcards.SAMPLE],
         # UMIlen = config['UMIlen'],
         MEMLIMIT=config["MEMLIMIT"],
     threads: config["CORES"]
@@ -54,9 +50,7 @@ rule miRge3_pseudobulk:
         recipe = wildcards.RECIPE
 
         # Select input reads based on alignment recipe
-        if "rRNA.STAR" in recipe:  # Use trimmed & STAR-rRNA-filtered .fq's
-            R2 = input.R2_FQ_STAR_FILTERED
-        elif "rRNA.bwa" in recipe:  # TODO Use trimmed & bwa-rRNA-filtered .fq's
+        if "rRNA.bwa" in recipe:  # TODO Use trimmed & bwa-rRNA-filtered .fq's
             R2 = input.R2_FQ_BWA_FILTERED
         elif "rRNA" not in recipe:  # just trimmed .fq's
             # R2 = input.R2_FQ

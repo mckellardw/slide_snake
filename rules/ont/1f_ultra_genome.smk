@@ -10,8 +10,8 @@
 #         FA=lambda wildcards: SAMPLE_SHEET["genome_fa"][wildcards.SAMPLE],
 #         JUNC_BED=lambda wildcards: SAMPLE_SHEET["mm2_junc_bed"][wildcards.SAMPLE],
 #     log:
-#         log="{OUTDIR}/REFERENCES/ont/ultra/{RECIPE}/ultra.log",
-#         err="{OUTDIR}/REFERENCES/ont/ultra/{RECIPE}/ultra.err",
+#         log="{OUTDIR}/REFERENCES/ont/ultra/{RECIPE}/logs/ultra.log",
+#         err="{OUTDIR}/REFERENCES/ont/ultra/{RECIPE}/logs/ultra.err",
 #     resources:
 #         mem="128G",
 #     threads: config["CORES"]
@@ -27,6 +27,7 @@
 #         1> {log.log} \
 #         2> {log.err}
 #         """
+
 
 # Sort input gtf
 ## Prevents this bug- https://github.com/ksahlin/ultra/issues/24
@@ -46,23 +47,24 @@ rule ont_1f_sort_gtf:
         """
         # sort -k1,1 -k4,4n {input.GTF} > {output.GTF}
 
+
 rule ont_1f_ultra_pipeline_genome:
     input:
         FQ=lambda w: get_fqs(w, return_type="list", mode="ONT")[1],
         GTF="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted.gtf",
     output:
         SAM=temp("{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/reads.sam"),
-        DB="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/database.db"
+        DB="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/database.db",
     params:
         EXTRA_FLAGS=lambda wildcards: RECIPE_SHEET["ultra_extra"][wildcards.RECIPE],
         FA=lambda wildcards: SAMPLE_SHEET["genome_fa"][wildcards.SAMPLE],
         # GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/ultra.log",
-        err="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/ultra.err",
+        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/ultra.log",
+        err="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/ultra.err",
     resources:
         mem="128G",
-    threads: config["CORES"]
+    # threads: config["CORES"]
     conda:
         f"{workflow.basedir}/envs/ultra.yml"
     shell:
@@ -117,7 +119,7 @@ rule ont_1f_genome_featureCounts:
         MIN_TEMPLATE_LENGTH=10,
         MAX_TEMPLATE_LENGTH=10000,
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/featureCounts.log",
+        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/featureCounts.log",
     resources:
         mem="32G",
     threads: 1  # long reads can only run single-threaded
@@ -142,7 +144,6 @@ rule ont_1f_genome_featureCounts:
         """
 
 
-
 # Add gene tag (GN) to bam...
 rule ont_1f_genome_add_featureCounts_to_bam:
     input:
@@ -156,7 +157,7 @@ rule ont_1f_genome_add_featureCounts_to_bam:
         TAG="GN",  # corrected barcode tag
         TAG_COLUMN=3,
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/tsv2tag_1_GN.log",
+        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/tsv2tag_1_GN.log",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
@@ -186,7 +187,7 @@ rule ont_1f_genome_add_corrected_barcodes:
         BARCODE_TAG="CB",  # corrected barcode
         BARCODE_TSV_COLUMN=1,
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/tsv2tag_2_CB.log",
+        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/tsv2tag_2_CB.log",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
@@ -216,7 +217,7 @@ rule ont_1f_genome_add_umis:
         UMI_TSV_COLUMN=-1,  # last column
         UMI_TAG="UR",  # uncorrected UMI
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/tsv2tag_3_UR.log",
+        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/tsv2tag_3_UR.log",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
@@ -271,7 +272,7 @@ rule ont_1f_genome_umitools_count:
         GENE_TAG="GN",  #GN XS
         UMI_TAG="UR",
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/umitools_count.log",
+        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/umitools_count.log",
     resources:
         mem="16G",
     threads: 1
@@ -323,7 +324,7 @@ rule ont_1f_genome_cache_preQC_h5ad_ultra:
         H5AD="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/raw/output.h5ad",
         QC_PLOTS="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/raw/qc_plots.png",
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/raw/cache.log",
+        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/cache.log",
     threads: 1
     conda:
         f"{workflow.basedir}/envs/scanpy.yml"

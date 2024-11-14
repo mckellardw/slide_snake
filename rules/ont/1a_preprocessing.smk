@@ -233,7 +233,7 @@ rule ont_1a_split_fastq_to_R1_R2:
         MAX_OFFSET=200,
     resources:
         mem="16G",
-    threads: config["CORES"]
+    # threads:  config["CORES"]
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_read_split.log",
         err="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_read_split.err",

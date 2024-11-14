@@ -21,7 +21,7 @@ rule utils_index_BAM:
 
 #### Util functions ###########################
 def check_sample_sheet(SAMPLE_SHEET):
-    recipe_required_extensions = {
+    short_read_requirements = {
         "fastq_R1": [".fq.gz", ".fastq.gz"],
         "fastq_R2": [".fq.gz", ".fastq.gz"],
         "bwa_rRNA_ref": [".fa.gz"],
@@ -32,7 +32,7 @@ def check_sample_sheet(SAMPLE_SHEET):
         "genes_gtf": [".gtf"]
     }
 
-    recipe_ONT_required_extensions = {
+    ONT_requirements = {
         "ONT": [".fq.gz", ".fastq.gz", ".bam", ".cram"],
         "genome_fa": [".fa"],
         "genes_gtf": [".gtf"],
@@ -49,7 +49,7 @@ def check_sample_sheet(SAMPLE_SHEET):
 
         # Check additional requirements based on recipe
         if row["recipe"]:
-            for column, exts in recipe_required_extensions.items():
+            for column, exts in short_read_requirements.items():
                 file_paths = row[column].split()
                 if not file_paths:
                     empty_fields.append((sample_id, column))
@@ -64,7 +64,7 @@ def check_sample_sheet(SAMPLE_SHEET):
                             missing_files.append((sample_id, file_path))
 
         if row["recipe_ONT"]:
-            for column, exts in recipe_ONT_required_extensions.items():
+            for column, exts in ONT_requirements.items():
                 file_paths = row[column].split()
                 if not file_paths:
                     empty_fields.append((sample_id, column))
@@ -432,7 +432,8 @@ def get_recipes(w, mode=["ONT", "ILMN", "list"]):
     - If "list" is in the mode, it returns the recipe as a list; otherwise, it returns the recipe as a space-separated string.
     - If no recipe is found, it prints a warning message and returns an empty string.
     """
-    if isinstance(mode, list) and len(mode) > 1:  # default
+    # default option
+    if isinstance(mode, list) and len(mode) > 1:  
         mode = "ONT"
 
     if "ONT" in mode:
