@@ -1,5 +1,7 @@
 # Long read (ONT) preprocessing info
 
+## Workflow Steps in `rules/ont`
+
 ## Merging
 
 ## Stranding
