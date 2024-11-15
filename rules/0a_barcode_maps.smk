@@ -128,12 +128,12 @@ rule BC_write_whitelist_variants:
         else:
             shell(
                 f"""
-                touch {output.BC_US_MAP}
+                cat {input.BC_MAP} > {output.BC_US_MAP}
                 touch {output.BC_1}
                 touch {output.BC_2}
                 touch {output.BC_UNIQ_1}
                 touch {output.BC_UNIQ_2}
-                touch {output.BC_US}
+                cat {input.BC_MAP} | cut -f1 > {output.BC_US}
                 """
             )
 

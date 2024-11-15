@@ -187,14 +187,16 @@ rule ont_1a_subset_fastq_by_adapter_type:
     threads: 1
     log:
         err="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_subset_fastq_by_adapter_type.err",
+    conda:
+        f"{workflow.basedir}/envs/seqkit.yml"
     shell:
         """
         mkdir -p $(dirname {output.FQ})            
         zcat {input.FQ} > {output.FQ} 
 
-        seqtk subseq \
+        seqkit grep \
+            -f {input.LST} \
             {output.FQ} \
-            {input.LST} \
         > {output.FQ_ADAPTER} \
         2> {log.err}
         """

@@ -50,6 +50,8 @@ def check_sample_sheet(SAMPLE_SHEET):
         # Check additional requirements based on recipe
         if row["recipe"]:
             for column, exts in short_read_requirements.items():
+                if column not in row:
+                    continue
                 file_paths = row[column].split()
                 if not file_paths:
                     empty_fields.append((sample_id, column))
@@ -65,6 +67,8 @@ def check_sample_sheet(SAMPLE_SHEET):
 
         if row["recipe_ONT"]:
             for column, exts in ONT_requirements.items():
+                if column not in row:
+                    continue
                 file_paths = row[column].split()
                 if not file_paths:
                     empty_fields.append((sample_id, column))
@@ -123,7 +127,7 @@ def get_fqs(w, return_type=["list", "dict"], mode=["ONT", "ILMN"]):
     # get file paths
     try:
         if mode == "ILMN":
-            if "rRNA.bwa" in w.RECIPE:  # Use trimmed & bwa-rRNA-filtered .fq's
+            if "rRNA-bwa" in w.RECIPE:  # Use trimmed & bwa-rRNA-filtered .fq's
                 R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/bwa/noRibo_R1.fq.gz"
                 R2 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/bwa/noRibo_R2.fq.gz"
 
