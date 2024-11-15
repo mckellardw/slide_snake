@@ -1,7 +1,7 @@
 # Filter out rRNA reads w/ bwa alignment
 # VASAseq implementation - https://github.com/anna-alemany/VASAseq/blob/main/mapping/ribo-bwamem.sh
-# Align to rRNA ref w/ `bwa mem` for cleaner/faster rRNA filtering
 ##TODO incorporate VASAseq style "long"/short read handling with multiple align steps
+# Align to rRNA ref; keep reads with low alignment score (noRibo_R2.fq)
 rule ilmn_2a_bwa_rRNA_align:
     input:
         R2_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R2.fq.gz",
@@ -36,6 +36,8 @@ rule ilmn_2a_bwa_rRNA_align:
             -O BAM \
             -o {output.BAM2} \
             {output.BAM1}
+            
+        samtools index {output.BAM2}
 
         samtools view \
             -h {output.BAM2} \
@@ -52,20 +54,21 @@ rule ilmn_2a_bwa_rRNA_get_noRibo_list:
     input:
         R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/noRibo_R2.fq",
     output:
-        rRNA_LIST=temp("{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_readID.list"),
+        NORIBO_LIST=temp("{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_readID.list"),
     threads: 1
     shell:
         """
-        cat {input.R2_FQ_BWA_FILTERED} | awk -f scripts/awk/fq_readHeader.awk - > {output.rRNA_LIST}
+        cat {input.R2_FQ_BWA_FILTERED} | awk -f scripts/awk/fq_readHeader.awk - > {output.NORIBO_LIST}
         """
+
 
 # Filter R1 reads using the generated list of read IDs
 rule ilmn_2a_bwa_rRNA_filter_R1:
     input:
-        R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_{TRIM}_R1.fq.gz",
-        rRNA_LIST="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_readID.list",
+        R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R1.fq.gz",
+        NORIBO_LIST="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_readID.list",
     output:
-        R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/noRibo_{TRIM}_R1.fq",
+        R1_FQ_NORIBO="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/noRibo_R1.fq",
     resources:
         mem="64G",
     threads: config["CORES"]
@@ -73,7 +76,25 @@ rule ilmn_2a_bwa_rRNA_filter_R1:
         f"{workflow.basedir}/envs/seqkit.yml"
     shell:
         """
-        seqkit grep -f {input.rRNA_LIST} {input.R1_FQ} -o {output.R1_FQ_BWA_FILTERED}
+        zcat {input.R1_FQ} | seqkit grep -f {input.NORIBO_LIST} -o {output.R1_FQ_NORIBO}
+        """
+
+
+# Filter R1 reads using the generated list of read IDs
+rule ilmn_2a_bwa_rRNA_filter_trimmed_R1:
+    input:
+        R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_{TRIM}_R1.fq.gz",
+        rRNA_LIST="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_readID.list",
+    output:
+        R1_FQ_NORIBO="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/noRibo_{TRIM}_R1.fq",
+    resources:
+        mem="64G",
+    threads: config["CORES"]
+    conda:
+        f"{workflow.basedir}/envs/seqkit.yml"
+    shell:
+        """
+        zcat {input.R1_FQ} | seqkit grep -f {input.NORIBO_LIST} -o {output.R1_FQ_NORIBO}
         """
 
 

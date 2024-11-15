@@ -22,6 +22,13 @@ python scripts/py/cache_mtx_to_h5ad.py \
 def plot_qc_metrics(adata, output_file):
     fig, axes = plt.subplots(2, 2, figsize=(16, 12))
 
+    # default = 120000 / num_points
+    num_points = adata.shape[0]
+    if num_points > 5000:
+        point_size = 150000 / num_points
+    else:
+        point_size = max(1, 150000 / num_points)
+
     # Plot total counts per cell (knee plot)
     sorted_counts = adata.obs["n_counts"].sort_values(ascending=False)
     axes[0, 0].plot(range(len(sorted_counts)), sorted_counts)
@@ -37,14 +44,14 @@ def plot_qc_metrics(adata, output_file):
     axes[0, 1].set_title("Knee Plot of Number of Genes per Cell")
 
     # Create spatial plots using scanpy
-    pl.embedding(adata, basis="spatial", color="n_counts", ax=axes[1, 0], show=False)
+    pl.embedding(adata, basis="spatial", color="n_counts", ax=axes[1, 0], show=False, size=point_size)
     axes[1, 0].set_title("Spatial Map of Total Counts")
 
-    pl.embedding(adata, basis="spatial", color="n_genes", ax=axes[1, 1], show=False)
+    pl.embedding(adata, basis="spatial", color="n_genes", ax=axes[1, 1], show=False, size=point_size)
     axes[1, 1].set_title("Spatial Map of Number of Genes")
 
     plt.tight_layout()
-    plt.savefig(output_file)
+    plt.savefig(output_file, dpi=400)
     plt.close()
     print(f"QC plots saved to {output_file}")
 

@@ -1,0 +1,37 @@
+########################################################################################################
+# Run settings
+########################################################################################################
+
+## ~~~~~ sample sheet ~~~~~
+### See `example_sample_sheet.csv` for details
+# SAMPLE_SHEET_PATH: data/test_sample_sheet.csv # toy data, lots of recipes
+SAMPLE_SHEET_PATH: data/test_sample_sheet_minimal.csv # toy data, just 1 recipe each
+
+# Resource parameters
+CORES: 8               # how many cores to give each process
+MEMLIMIT: 121916827066  # limit in bytes  
+MEMLIMIT_MB: 256000     # limit in megabytes
+MEMLIMIT_GB: 200G       # mem limit for kallisto
+
+# Recipe details (whitelists, barcode/UMI design, etc.)
+RECIPE_SHEET: resources/recipe_sheet.csv
+
+########################################################################################################
+# Important directory file paths
+########################################################################################################
+# **Change these paths for where you want temporary (TMPDIR) and output (OUTDIR) files
+TMPDIR: tmp
+OUTDIR: out
+
+########################################################################################################
+# Resources - file paths
+########################################################################################################
+FASTQC_ADAPTERS: resources/fastqc_adapters.txt 
+BLASTDB: /shared_data/genome_db/BLAST_NCBI # path to where the nt BLAST database is stored
+MIRGE_LIB: resources/miRge3_Lib
+
+########################################################################################################
+# Library details
+########################################################################################################
+# R1_PRIMER: "CTACACGACGCTCTTCCGATCT" # R1 primer (used in Visium & Seeker)
+MAX_SHORT_READ_LENGTH: 34 # max read length for reads to be aligned to short RNA references

@@ -28,6 +28,7 @@
 figures/**
 sandbox/**
 out/**
+out*/**
 tmp*/**
 temp*/**
 scripts/*/not_used/*
