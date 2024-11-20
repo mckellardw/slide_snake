@@ -1,9 +1,7 @@
-name: oarfish
+name: mirge3
 channels:
   - bioconda
   - conda-forge
 dependencies:
-  - minimap2=2.28
-  - oarfish==0.6.3
+  - mirge3=0.1.4
   - pigz=2.8
-  - samtools

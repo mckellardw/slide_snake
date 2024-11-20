@@ -5,7 +5,7 @@
 
 
 #TODO- remove this when miRge3 updates to allow '.fq.gz' as inputs...
-rule copy_R2_fq_for_mirge:
+rule ilmn_5a_copy_R2_fq_for_mirge:
     input:
         FQ=lambda w: get_fqs(w, return_type="list", mode="ILMN")[1],
     output:
@@ -19,7 +19,7 @@ rule copy_R2_fq_for_mirge:
 # Source: https://mirge3.readthedocs.io/en/latest/quick_start.html
 ## Note- `--outDirNam` is a hidden argument for miRge3 that allows direct naming of the output directory
 # TODO update this code...
-rule miRge3_pseudobulk:
+rule ilmn_5a_miRge3_pseudobulk:
     input:
         FQ="{OUTDIR}/{SAMPLE}/short_read/miRge_bulk/{RECIPE}/tmp/R2.fastq.gz",
     output:
@@ -36,7 +36,6 @@ rule miRge3_pseudobulk:
     shell:
         """
         mkdir -p $(dirname {output.MIRGE_HTML})
-        cd $(dirname {output.MIRGE_HTML})
 
         miRge3.0 \
             -s {input.FQ} \
@@ -44,10 +43,12 @@ rule miRge3_pseudobulk:
             -on {params.SPECIES} \
             -db mirbase \
             --minimum-length {params.MIN_LENGTH} \
-            --outDirName ./ \
+            --outDirName $(dirname {output.MIRGE_HTML}) \
             --threads {threads} \
             --minReadCounts 1 \
+            --miREC \
             --gff-out \
+            --bam-out \
             --novel-miRNA \
             --AtoI
         """
@@ -59,3 +60,5 @@ rule miRge3_pseudobulk:
         #     EXTRA_FLAGS = "--tRNA-frag"
         # else:
         #     EXTRA_FLAGS = ""
+
+# bowtie --threads 16 /gpfs/commons/groups/innovation/dwm/slide_snake/resources/miRge3_Lib/mouse/index.Libs/mouse_genome -n 1 -f -a -3 2 /gpfs/commons/groups/innovation/dwm/slide_snake/out/Mouse_Lymphnode_20um/short_read/miRge_bulk/dbit-pretrim/SeqToMap.fasta --phred64-quals
