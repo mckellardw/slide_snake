@@ -1,96 +1,64 @@
 #############################################
 ## miRge3.0 analysis
 #############################################
+#TODO- add rule to filter out longer reads for faster smRNA analysis?
 
-# TODO- add rule to filter out longer reads for faster smRNA analysis?
 
-
-# TODO- remove this when miRge3 updates to allow '.fq.gz' as inputs...
-rule copy_fq_for_mirge:
+#TODO- remove this when miRge3 updates to allow '.fq.gz' as inputs...
+rule ilmn_5a_copy_R2_fq_for_mirge:
     input:
-        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R2.fq.gz",
-        R2_FQ_TWICE_CUT="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq.gz",
-        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fq.gz",
+        FQ=lambda w: get_fqs(w, return_type="list", mode="ILMN")[1],
     output:
-        R2_FQ=temp("{OUTDIR}/{SAMPLE}/tmp/cut_R2.fastq.gz"),
-        R2_FQ_TWICE_CUT=temp("{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fastq.gz"),
-        R2_FQ_BWA_FILTERED=temp("{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fastq.gz"),
+        FQ=temp("{OUTDIR}/{SAMPLE}/short_read/miRge_bulk/{RECIPE}/tmp/R2.fastq.gz"),
     shell:
         """
-        cp {input.R2_FQ} {output.R2_FQ}
-        cp {input.R2_FQ_TWICE_CUT} {output.R2_FQ_TWICE_CUT}
-        cp {input.R2_FQ_STAR_FILTERED} {output.R2_FQ_STAR_FILTERED}
-        cp {input.R2_FQ_BWA_FILTERED} {output.R2_FQ_BWA_FILTERED}
+        cp {input.FQ} {output.FQ}
         """
 
 
 # Source: https://mirge3.readthedocs.io/en/latest/quick_start.html
 ## Note- `--outDirNam` is a hidden argument for miRge3 that allows direct naming of the output directory
 # TODO update this code...
-rule miRge3_pseudobulk:
+rule ilmn_5a_miRge3_pseudobulk:
     input:
-        R2_FQ="{OUTDIR}/{SAMPLE}/tmp/cut_R2.fastq.gz",
-        R2_FQ_TWICE_CUT="{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fastq.gz",
-        R2_FQ_STAR_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/STARsolo/final_filtered_R2.fastq.gz",
-        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/rRNA/bwa/final_filtered_R2.fastq.gz",
+        FQ="{OUTDIR}/{SAMPLE}/short_read/miRge_bulk/{RECIPE}/tmp/R2.fastq.gz",
     output:
-        # GUNZIP_R2_FQ = temp('{OUTDIR}/{SAMPLE}/tmp/twiceCut_R2.fq'),
-        MIRGE_DIR=directory("{OUTDIR}/{SAMPLE}/miRge_bulk/{RECIPE}"),
-        MIRGE_HTML="{OUTDIR}/{SAMPLE}/miRge_bulk/{RECIPE}/annotation.report.html",
+        MIRGE_HTML="{OUTDIR}/{SAMPLE}/short_read/miRge_bulk/{RECIPE}/annotation.report.html",
     params:
-        MIRGE_LIB=config["MIRGE_LIB"],
+        MIRGE_LIB=os.path.abspath(config["MIRGE_LIB"]),
         SPECIES=lambda wildcards: SAMPLE_SHEET["species"][wildcards.SAMPLE],
-        # UMIlen = config['UMIlen'],
-        MEMLIMIT=config["MEMLIMIT"],
+        MIN_LENGTH = 12,
     threads: config["CORES"]
-    run:
-        from os import path
+    resources:
+        mem="64G",
+    conda:
+        f"{workflow.basedir}/envs/mirge3.yml"
+    shell:
+        """
+        mkdir -p $(dirname {output.MIRGE_HTML})
 
-        # recipe = RECIPE_DICT[wildcards.SAMPLE]
-        recipe = wildcards.RECIPE
+        miRge3.0 \
+            -s {input.FQ} \
+            -lib {params.MIRGE_LIB} \
+            -on {params.SPECIES} \
+            -db mirbase \
+            --minimum-length {params.MIN_LENGTH} \
+            --outDirName $(dirname {output.MIRGE_HTML}) \
+            --threads {threads} \
+            --minReadCounts 1 \
+            --miREC \
+            --gff-out \
+            --bam-out \
+            --novel-miRNA \
+            --AtoI
+        """
+ 
+        #TODO- extra flags for human:
+            # --miREC {EXTRA_FLAGS}
+        #     # human-only settings
+        # if params.SPECIES == "human":
+        #     EXTRA_FLAGS = "--tRNA-frag"
+        # else:
+        #     EXTRA_FLAGS = ""
 
-        # Select input reads based on alignment recipe
-        if "rRNA.bwa" in recipe:  # TODO Use trimmed & bwa-rRNA-filtered .fq's
-            R2 = input.R2_FQ_BWA_FILTERED
-        elif "rRNA" not in recipe:  # just trimmed .fq's
-            # R2 = input.R2_FQ
-            R2 = input.R2_FQ_TWICE_CUT
-        else:
-            print("I just don't know what to do with myself...")
-
-            # human-only settings
-        if params.SPECIES == "human":
-            EXTRA_FLAGS = "--tRNA-frag"
-        else:
-            EXTRA_FLAGS = ""
-
-        MIRGE_LIB_ABS = path.abspath(params.MIRGE_LIB)
-
-        # zcat {R2} > {R2.strip('.gz')}
-        shell(
-            f"""
-            mkdir -p {output.MIRGE_DIR}
-            cd {output.MIRGE_DIR}
-
-            miRge3.0 \
-                -s {R2} \
-                -lib {MIRGE_LIB_ABS} \
-                -on {params.SPECIES} \
-                -db mirbase \
-                --minimum-length 12 \
-                --outDirName ./ \
-                --threads {threads} \
-                --minReadCounts 1 \
-                --gff-out \
-                --novel-miRNA \
-                --AtoI \
-                --miREC {EXTRA_FLAGS}
-            """
-        )
-
-
-# -a illumina \
-# -trf
-# TODO split bame across barcodes
-# TODO convert split bams to fqs
-# TODO- miRge across cells/spots/barcodes
+# bowtie --threads 16 /gpfs/commons/groups/innovation/dwm/slide_snake/resources/miRge3_Lib/mouse/index.Libs/mouse_genome -n 1 -f -a -3 2 /gpfs/commons/groups/innovation/dwm/slide_snake/out/Mouse_Lymphnode_20um/short_read/miRge_bulk/dbit-pretrim/SeqToMap.fasta --phred64-quals

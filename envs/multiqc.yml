@@ -1,7 +1,8 @@
-name: cutadapt
+name: multiqc
 channels:
   - bioconda
   - conda-forge
 dependencies:
   - cutadapt>=4.9
+  - multiqc>=1.25
   - pigz

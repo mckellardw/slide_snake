@@ -1,7 +1,7 @@
-name: cutadapt
+name: mirge3
 channels:
   - bioconda
   - conda-forge
 dependencies:
-  - cutadapt>=4.9
-  - pigz
+  - mirge3=0.1.4
+  - pigz=2.8
