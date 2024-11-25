@@ -4,7 +4,7 @@ import sys
 sys.path.insert(0, os.path.abspath('..'))
 
 project = 'slide_snake'
-author = 'Your Name'
+author = 'David McKellar'
 release = '0.1'
 
 extensions = [
