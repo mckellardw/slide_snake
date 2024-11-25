@@ -24,3 +24,6 @@ python:
       path: .
     - method: conda
       environment: envs/slsn.yml
+
+build:
+  os: ubuntu-20.04
