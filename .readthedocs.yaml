@@ -13,7 +13,7 @@ formats:
 
 # Optionally set the version of Python and other tools you require
 python:
-  version: 3.8
+  version: 3.12
   install:
     - requirements: docs/requirements.txt
     - method: pip
