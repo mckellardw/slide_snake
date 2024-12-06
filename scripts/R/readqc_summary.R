@@ -115,20 +115,17 @@ create_plots <- function(df, data_file, out_file) {
         ggtitle("Read Length Distribution")
 
     plot.homoploymer <- ggplot(
-            df, aes(x = Longest_Homopolymer/Read_Length)
+            df, aes(x = Longest_Homopolymer/Read_Length, fill=Homopolymer_Base)
         ) +
         geom_histogram(
-            aes(
-                fill=Homopolymer_Base
-            ),
             binwidth = 0.01
-            # alpha = 0.5
         ) +
         custom_theme +
         # scale_x_continuous(trans='log2') +
         xlim(0,0.25)+
         scale_y_continuous(labels = label_scientific()) +
-        ggtitle("Longest Homopolymer Fraction")
+        ggtitle("Longest Homopolymer Fraction") +
+        theme(legend.position = "bottom")
 
 
     # Summary scatter plots (right column)
@@ -180,31 +177,38 @@ create_plots <- function(df, data_file, out_file) {
         lims(y=c(0,200))+
         # scale_y_continuous(trans="log10") +
         # scale_y_log10()+
-        ggtitle("Longest Homopolymer Length")
+        ggtitle("Longest Homopolymer Length") +
+        theme(legend.position = "bottom")
 
-    # Re-size Read1 plots..
+    # Re-size Read1 and Read2 plots..
     if(grepl("R1", data_file)){
         scatter.gc <- scatter.gc + xlim(0,1000)
         
         plot.readLength.zoom <- plot.readLength.zoom + xlim(0,100)
+    } else if(grepl("R2", data_file)){
+        median_read_length <- median(df$Read_Length, na.rm = TRUE)
+        plot.readLength.zoom <- plot.readLength.zoom + xlim(0, median_read_length)
     }
 
     # Combine plots using patchwork
     combined_plot <- wrap_plots(
         wrap_plots(
             plot.gc,
-            plot.readLength,
-            plot.homoploymer,
-            ncol=1
-        ),
-         wrap_plots(
             scatter.gc,
-            plot.readLength.zoom,
-            vln.homopolymer,
-            ncol=1
+            ncol=2
         ),
-        ncol=2
-     )
+        wrap_plots(
+            plot.readLength,
+            plot.readLength.zoom,
+            ncol=2
+        ),
+        wrap_plots(
+            plot.homoploymer + theme(legend.position = "none"),
+            vln.homopolymer + theme(legend.position = "none"),
+            ncol=2
+        ),
+        ncol=1
+    ) + plot_layout(guides = "collect") & theme(legend.position = "bottom")
 
     # Infer the device from the filename extension
     device <- tools::file_ext(out_file)
