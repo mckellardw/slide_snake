@@ -21,10 +21,11 @@ set-threads:
   ilmn_2b_ribodetector: 16
   ilmn_3a_STARsolo_firstPass: 24
   ilmn_3a_STARsolo_secondPass: 24
+  ilmn_3a_compress_STAR_outs: 16
   ilmn_3d_qualimapQC_STAR: 8
   ilmn_4a_kbpython_std: 16
-  miRge3_pseudobulk: 16
-  ilmn_6a_cache_preQC_h5ad_STAR: 1
+  ilmn_5a_miRge3_pseudobulk: 4
+  ilmn_6a_cache_h5ad_STAR: 1
   ont_1a_call_adapter_scan_v2: 56
   ont_1a_readIDs_by_adapter_type: 24
   ont_1a_adapter_scan_results: 1
@@ -49,7 +50,7 @@ set-threads:
   ont_1d_genome_filter_bam_empty_tags: 1
   ont_1d_genome_umitools_count: 1
   ont_1d_genome_counts_to_sparse: 1
-  ont_1d_genome_cache_preQC_h5ad_minimap2: 1
+  ont_1d_genome_cache_h5ad_minimap2: 1
   ont_1d_transcriptome_align_minimap2_genome: 16
   ont_1d_transcriptome_sort_compress_output: 1
   ont_1d_transcriptome_featureCounts: 1
@@ -59,7 +60,17 @@ set-threads:
   ont_1d_transcriptome_filter_bam_empty_tags: 1
   ont_1d_transcriptome_umitools_count: 1
   ont_1d_transcriptome_counts_to_sparse: 1
-  ont_1d_transcriptome_cache_preQC_h5ad_minimap2: 1
+  ont_1d_transcriptome_cache_h5ad_minimap2: 1  
+  ont_1f_ultra_pipeline_genome: 16
+  ont_1f_genome_sort_compress_output: 1
+  ont_1f_genome_featureCounts: 1
+  ont_1f_genome_add_featureCounts_to_bam: 1
+  ont_1f_genome_add_corrected_barcodes: 1
+  ont_1f_genome_add_umis: 1
+  ont_1f_genome_filter_bam_empty_tags: 1
+  ont_1f_genome_umitools_count: 1
+  ont_1f_genome_counts_to_sparse: 1
+  ont_1f_genome_cache_h5ad_ultra: 1
   ont_2a_readQC_0_rawInput: 16
   ont_2a_readQC_1_preCutadapt: 16
   ont_2a_readQC_2_postCutadapt: 16
@@ -105,8 +116,8 @@ set-resources:
     mem: 32G
     mem_mb: 32000
   ilmn_2b_ribodetector:
-    mem: 16G
-    mem_mb: 16000
+    mem: 32G
+    mem_mb: 32000
   ilmn_2b_ribodetector_filter_R1:
     mem: 32G
     mem_mb: 32000
@@ -125,12 +136,15 @@ set-resources:
   ilmn_3d_qualimapQC_STAR:
     mem: 32G
   ilmn_4a_kbpython_std:
-    mem: 220G
+    mem: 180G
     mem_mb: 220000
-  miRge3_pseudobulk:
+  ilmn_5a_miRge3_pseudobulk:
     mem: 128G
     mem_mb: 128000
-  ilmn_6a_cache_preQC_h5ad_STAR:
+  ilmn_6a_cache_h5ad_STAR:
+    mem: 64G
+    mem_mb: 64000
+  ilmn_6a_cache_h5ad_kbpython_std:
     mem: 64G
     mem_mb: 64000
   ont_1a_call_adapter_scan_v2:
@@ -150,7 +164,7 @@ set-resources:
     mem: 16G
     mem_mb: 16000
   ont_1a_split_fastq_to_R1_R2:
-    mem: 8G
+    mem: 16G
   ont_1b_cutadapt:
     mem: 16G
     mem_mb: 16000
@@ -195,7 +209,7 @@ set-resources:
   ont_1d_genome_counts_to_sparse:
     mem: 16G
     mem_mb: 16000
-  ont_1d_genome_cache_preQC_h5ad_minimap2:
+  ont_1d_genome_cache_h5ad_minimap2:
     mem: 16G
     mem_mb: 16000
   ont_1d_transcriptome_align_minimap2_genome:
@@ -225,7 +239,36 @@ set-resources:
   ont_1d_transcriptome_counts_to_sparse:
     mem: 16G
     mem_mb: 16000
-  ont_1d_transcriptome_cache_preQC_h5ad_minimap2:
+  ont_1d_transcriptome_cache_h5ad_minimap2:
+    mem: 16G
+    mem_mb: 16000  
+  ont_1f_ultra_pipeline_genome:
+    mem: 128G
+    mem_mb: 128000
+  ont_1f_genome_sort_compress_output:
+    mem: 16G
+    mem_mb: 16000
+  ont_1f_genome_featureCounts:
+    mem: 32G
+  ont_1f_genome_add_featureCounts_to_bam:
+    mem: 16G
+    mem_mb: 16000
+  ont_1f_genome_add_corrected_barcodes:
+    mem: 16G
+    mem_mb: 16000
+  ont_1f_genome_add_umis:
+    mem: 16G
+    mem_mb: 16000
+  ont_1f_genome_filter_bam_empty_tags:
+    mem: 16G
+    mem_mb: 16000
+  ont_1f_genome_umitools_count:
+    mem: 16G
+    mem_mb: 16000
+  ont_1f_genome_counts_to_sparse:
+    mem: 16G
+    mem_mb: 16000
+  ont_1f_genome_cache_h5ad_ultra:
     mem: 16G
     mem_mb: 16000
   ont_2a_readQC_0_rawInput:

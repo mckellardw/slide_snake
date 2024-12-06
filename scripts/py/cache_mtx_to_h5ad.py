@@ -123,6 +123,9 @@ def main(
     # Count matrix
     adata = read_mtx(mat_in)
 
+    # Save raw counts
+    adata.raw = adata
+
     # Transpose for STAR inputs...
     if transpose:
         print("transposing count matrix...")

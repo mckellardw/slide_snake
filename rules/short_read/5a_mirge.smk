@@ -21,13 +21,19 @@ rule ilmn_5a_copy_R2_fq_for_mirge:
 # TODO update this code...
 rule ilmn_5a_miRge3_pseudobulk:
     input:
-        FQ="{OUTDIR}/{SAMPLE}/short_read/miRge_bulk/{RECIPE}/tmp/R2.fastq.gz",
+        FQ=os.path.abspath("{OUTDIR}/{SAMPLE}/short_read/miRge_bulk/{RECIPE}/tmp/R2.fastq.gz"),
     output:
-        MIRGE_HTML="{OUTDIR}/{SAMPLE}/short_read/miRge_bulk/{RECIPE}/annotation.report.html",
+        HTML="{OUTDIR}/{SAMPLE}/short_read/miRge_bulk/{RECIPE}/annotation.report.html",
+        CSV="{OUTDIR}/{SAMPLE}/short_read/miRge_bulk/{RECIPE}/annotation.report.csv",
+        VIS="{OUTDIR}/{SAMPLE}/short_read/miRge_bulk/{RECIPE}/miRge3_visualization.html",
     params:
         MIRGE_LIB=os.path.abspath(config["MIRGE_LIB"]),
         SPECIES=lambda wildcards: SAMPLE_SHEET["species"][wildcards.SAMPLE],
         MIN_LENGTH = 12,
+        MB_PER_THREAD = 128
+    log:
+        log="{OUTDIR}/{SAMPLE}/short_read/miRge_bulk/{RECIPE}/run.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/miRge_bulk/{RECIPE}/mirge3.err",
     threads: config["CORES"]
     resources:
         mem="64G",
@@ -35,7 +41,8 @@ rule ilmn_5a_miRge3_pseudobulk:
         f"{workflow.basedir}/envs/mirge3.yml"
     shell:
         """
-        mkdir -p $(dirname {output.MIRGE_HTML})
+        mkdir -p $(dirname {output.HTML})
+        cd $(dirname {output.HTML})
 
         miRge3.0 \
             -s {input.FQ} \
@@ -43,15 +50,18 @@ rule ilmn_5a_miRge3_pseudobulk:
             -on {params.SPECIES} \
             -db mirbase \
             --minimum-length {params.MIN_LENGTH} \
-            --outDirName $(dirname {output.MIRGE_HTML}) \
+            --outDirName ./ \
             --threads {threads} \
+            --chunkmbs {params.MB_PER_THREAD} \
             --minReadCounts 1 \
-            --miREC \
             --gff-out \
-            --bam-out \
-            --novel-miRNA \
-            --AtoI
+            --AtoI \
+        2> {log.err}
         """
+            # --bam-out \
+            # --novel-miRNA \
+        # 
+            # --miREC \
  
         #TODO- extra flags for human:
             # --miREC {EXTRA_FLAGS}

@@ -77,7 +77,7 @@ def calculate_metrics(fastq_file, start, chunk_size=100000):
             # Skip to offset
             if i >= offset:
                 if i % 4 == 0 and line.startswith("@"):  # ID line
-                    read_id = line.strip().replace("@", "").split(" ", 1)[0]
+                    read_id = line.strip().replace("@", "").replace("\t", "_").split(" ", 1)[0]
 
                 if i % 4 == 1:  # Sequence line
                     seq = line.strip()
