@@ -13,7 +13,7 @@ python scripts/py/tsv2tag.py \
 """
 
 
-def parse_tsv(in_tsv, readIDcolumn, tagColumns):
+def parse_tsv(in_tsv, readIDcolumn, tagColumns, exclude_values):
     """Parse the TSV file and return a dictionary mapping read IDs (keys) to bam tags (values)."""
     read_to_tags = {}
     with open(in_tsv, "r") as file:
@@ -21,19 +21,20 @@ def parse_tsv(in_tsv, readIDcolumn, tagColumns):
             line_as_list = line.strip().split("\t")
             read_id = line_as_list[readIDcolumn]
             try:
-                read_to_tags[read_id] = [
-                    line_as_list[tagColumn] for tagColumn in tagColumns
-                ]
+                tags = [line_as_list[tagColumn] for tagColumn in tagColumns]
+                if any(tag in exclude_values for tag in tags):
+                    continue
+                read_to_tags[read_id] = tags
             except:
                 continue
     return read_to_tags
 
 
 def add_tags_to_bam(
-    in_bam, in_tsv, out_bam, readIDColumn=0, tagColumns=[1], tags=["GN"]
+    in_bam, in_tsv, out_bam, readIDColumn=0, tagColumns=[1], tags=["GN"], exclude_values=["-", "NA"]
 ):
     """Add tag values from TSV to BAM and write to a new BAM file."""
-    read_to_tags = parse_tsv(in_tsv, readIDColumn, tagColumns)
+    read_to_tags = parse_tsv(in_tsv, readIDColumn, tagColumns, exclude_values)
 
     reads_yes_tags = 0
     reads_no_tags = 0
@@ -80,6 +81,12 @@ def main():
         default="GN",
         help="Tag(s) to use for gene assignment. If passing multiple tag values, separate the list with spaces. Default is 'GN'.",
     )
+    parser.add_argument(
+        "--exclude_values",
+        nargs="+",
+        default=["-", "NA"],
+        help="Tag values to exclude. Default is ['-', 'NA'].",
+    )
 
     args = parser.parse_args()
     print(
@@ -97,6 +104,7 @@ def main():
         readIDColumn=args.readIDColumn[0],
         tagColumns=list(args.tagColumns),
         tags=list(args.tags),
+        exclude_values=list(args.exclude_values),
     )
     print("")
     print(
