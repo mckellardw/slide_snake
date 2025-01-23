@@ -4,8 +4,8 @@
 # Qualimap QC on alignment outputs
 rule ont_2b_qualimap:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/{REF}/{RECIPE}/sorted_gn_cb_ub.bam",
-        BAI="{OUTDIR}/{SAMPLE}/ont/{REF}/{RECIPE}/sorted_gn_cb_ub.bam.bai",
+        BAM="{OUTDIR}/{SAMPLE}/ont/{REF}/{RECIPE}/sorted_filtered_gn_cb_ub.bam",
+        BAI="{OUTDIR}/{SAMPLE}/ont/{REF}/{RECIPE}/sorted_filtered_gn_cb_ub.bam.bai",
     output:
         TXT="{OUTDIR}/{SAMPLE}/ont/qualimap/{REF}/{RECIPE}/rnaseq_qc_results.txt",
         HTML="{OUTDIR}/{SAMPLE}/ont/qualimap/{REF}/{RECIPE}/qualimapReport.html",

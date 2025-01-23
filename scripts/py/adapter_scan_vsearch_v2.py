@@ -9,8 +9,8 @@ import subprocess
 import sys
 import tempfile
 import time
-from collections import defaultdict
-from glob import glob
+# from collections import defaultdict
+# from glob import glob
 
 import numpy as np
 import pandas as pd
@@ -20,7 +20,7 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-from tqdm import tqdm
+# from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -468,7 +468,7 @@ def open_fastq(fastq):
 def count_reads(fastq):
     number_lines = 0
     with open_fastq(fastq) as f:
-        for line in tqdm(f, unit_scale=0.25, unit=" reads"):
+        for line in f:
             number_lines += 1
     f.close()
     return number_lines / 4
@@ -531,15 +531,6 @@ def process_batch(tup):
     return stranded_tmp_fastq, tmp_table, vsearch_cols
 
 
-def init_logger(args):
-    logging.basicConfig(
-        format="%(asctime)s -- %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
-    )
-    logging_level = args.verbosity * 10
-    logging.root.setLevel(logging_level)
-    logging.root.handlers[0].addFilter(lambda x: "NumExpr" not in x.msg)
-
-
 def write_output_table(tmp_tables, args):
     """ """
     if len(tmp_tables) > 1:
@@ -596,11 +587,28 @@ def write_tmp_fastx_files_for_processing(n_batches, args):
 
 
 def main(args):
-    init_logger(args)
+    start_time = time.time()
+    print(f"Run started at: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))}")
+
     check_vsearch()
 
+    # Print run settings for log files
+    print(
+        f"Input FASTQ:                      {args.fq_in}\n"
+        f"Output FASTQ:                     {args.fq_out}\n"
+        f"Output TSV:                       {args.output_tsv}\n"
+        f"Threads:                          {args.threads}\n"
+        f"Batch size:                       {args.batch_size}\n"
+        f"Adapter1 sequence:                {args.adapter1_seq}\n"
+        f"Adapter2 sequence:                {args.adapter2_seq}\n"
+        f"Minimum adapter identity:         {args.min_adapter_id}\n"
+        f"Only strand full length:          {args.only_strand_full_length}\n"
+        f"Adapters FASTA:                   {args.adapters_fasta}\n"
+        f"Verbosity:                        {args.verbosity}\n"
+    )
+
     # If specified batch size is > total number of reads, reduce batch size
-    logging.debug("Counting reads")
+    print("Counting reads")
     n_reads = count_reads(args.fq_in)
     args.batch_size = min(n_reads, args.batch_size)
     n_batches = int(np.ceil(n_reads / args.batch_size))
@@ -612,23 +620,27 @@ def main(args):
 
     fastq_fns = write_tmp_fastx_files_for_processing(n_batches, args)
 
-    logging.info("Processing {} batches of {} reads".format(n_batches, args.batch_size))
+    print(f"Processing {n_batches} batches of {args.batch_size} reads")
     func_args = []
     for batch_id, fn in fastq_fns.items():
         func_args.append((fn, args))
 
     with multiprocessing.Pool(args.threads) as p:
-        r = list(tqdm(p.imap(process_batch, func_args), total=n_batches))
+        r = list(p.imap(process_batch, func_args))
 
     tmp_fastqs, tmp_tables, vsearch_cols = zip(*r)
     vsearch_cols = vsearch_cols[0]
 
     # Merge temp tables and fastqs then clean up
-    logging.debug(f"Writing output table to {args.output_tsv}")
+    print(f"Writing output table to {args.output_tsv}")
     write_output_table(tmp_tables, args)
 
-    logging.debug(f"Writing stranded fastq to {args.fq_out}")
+    print(f"Writing stranded fastq to {args.fq_out}")
     write_fq_out(tmp_fastqs, args)
+
+    end_time = time.time()
+    print(f"Run finished at: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))}")
+    print(f"Total run time: {end_time - start_time:.2f} seconds")
 
 
 if __name__ == "__main__":
