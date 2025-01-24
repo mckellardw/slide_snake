@@ -1,15 +1,19 @@
 # Utility functions for use with scanpy
+import os
+import gzip
 import anndata as ad
 import scanpy as sc
 import pandas as pd
 import numpy as np
+
 from matplotlib.path import Path
 import matplotlib.pyplot as plt
-from scipy.sparse import issparse
-from typing import Union
+
+# from typing import Union
+
 import scipy.sparse as sp
+from scipy.sparse import issparse
 from scipy.io import mmread
-import gzip
 
 
 #  Get # PCs for a given % of variance
@@ -211,9 +215,6 @@ def export_dgea_to_csv(
     -------
     The function doesn't return anything but writes the DGEA results to a .csv file.
     """
-    import pandas as pd
-    import scanpy as sc
-
     result = adata.uns[dgea_name]
     groups = result["names"].dtype.names
 
@@ -1077,3 +1078,157 @@ def add_barcode_tally_to_anndata(
     adata.obs[metadata_key] = adata.obs[metadata_key].astype(int)
 
     return adata
+
+
+# 
+
+import PIL
+PIL.Image.MAX_IMAGE_PIXELS = 100_000_000
+
+from skimage.transform import rescale, resize
+from skimage.io import imread, imshow, imsave
+
+def rescale_annData(adata, adata2):
+    adata1 = adata.copy()
+    img1 = adata1.uns["spatial"]["HE"]
+    p_ma_y, p_ma_x = img1.shape[1], img1.shape[0]
+    img2 = adata2.uns["spatial"]["HE"]
+    n_ma_y, n_ma_x = img2.shape[1], img2.shape[0]
+    if len(adata1.obsm["spatial"].T) > 2:
+        new_spatial = adata1.obsm["spatial"].copy()
+    else:
+        new_spatial = adata1.obsm["spatial"].T.copy()
+    new_spatial[0] = n_ma_y / p_ma_y * new_spatial[0]
+    new_spatial[1] = n_ma_x / p_ma_x * new_spatial[1]
+    if len(adata1.obsm["spatial"].T) > 2:
+        adata1.obsm["spatial"] = new_spatial
+    else:
+        adata1.obsm["spatial"] = new_spatial.T
+
+    adata1.uns["spatial"]["HE"] = resize(adata1.uns["spatial"]["HE"], (n_ma_x, n_ma_y))
+    return adata1
+
+
+def load_annData(folder, show_img=True):
+    # RAW Data 50um
+    count_matrix, barcodes, img, annotation = None, None, None, None
+    for file in os.listdir(folder):
+        if file.__contains__("count"):
+            count_matrix_path = folder + file
+            if file.endswith(".tsv"):
+                sep = "\t"
+            else:
+                sep = ","
+            count_matrix = pd.read_csv(
+                count_matrix_path, index_col=0, header=0, sep=sep
+            )
+        if file.__contains__("bc"):
+            barcodes_path = folder + file
+            barcodes = pd.read_csv(barcodes_path, header=None, sep="\t")
+            try:
+                barcodes.columns = ["barcodes", "x", "y", "z"]
+            except ValueError:
+                barcodes.columns = ["barcodes", "x", "y"]
+
+        if (
+            file.__contains__("png")
+            or file.__contains__("tif")
+            or file.__contains__("jpg")
+        ):
+            image_path = folder + file
+            img = rescale(imread(image_path), 1 / 2, channel_axis=-1)
+
+        if file.__contains__("annotation"):
+            path = folder + file
+            annotation = pd.read_csv(path, index_col=0)
+
+    list_col = [
+        col for col in count_matrix.columns if col in barcodes["barcodes"].to_numpy()
+    ]
+    barcodes = barcodes[
+        [barcode in count_matrix.columns for barcode in barcodes["barcodes"].to_numpy()]
+    ]
+    count_matrix = count_matrix[list_col]
+    if show_img:
+        imshow(img)
+
+    adata = ad.AnnData(count_matrix[barcodes["barcodes"]].T)
+    adata.vars = pd.Series(count_matrix.T.columns)
+
+    ma_y, ma_x = img.shape[1], img.shape[0]
+    list_ = [
+        ma_y * (barcodes["x"]) / np.max(barcodes["x"]),
+        ma_x * (50 - barcodes["y"]) / np.max(barcodes["y"]),
+    ]
+    adata.obsm["spatial"] = np.array(list_).T
+    adata.uns["spatial"] = {}
+    adata.uns["spatial"]["images"] = {}
+    adata.uns["spatial"]["images"]["HE"] = img
+    adata.uns["Annotation"] = annotation
+    return adata
+
+
+def load_visium(folder):
+    visium, bc, visium_img, annotation = None, None, None, None
+    for file in os.listdir(folder):
+        if file.__contains__("raw_feature_bc_matrix") and file.endswith(".h5"):
+            h5_path = folder + file
+            visium = sc.read_10x_h5(h5_path)
+        if file.__contains__("png") or file.__contains__("tif"):
+            image_path = folder + file
+            visium_img = rescale(imread(image_path), 1 / 4, channel_axis=-1)
+        if file.__contains__("annotation"):
+            path = folder + file
+            annotation = pd.read_csv(path, index_col=0)
+        if file.__contains__("spatial"):
+            try:
+                for file2 in os.listdir(folder + file):
+                    if file2.endswith("json"):
+                        json_file_path = folder + file + "/" + file2
+                    if file2.__contains__("tissue_positions"):
+                        barcodes_path = folder + file + "/" + file2
+                        bc = pd.read_csv(barcodes_path, index_col=0)
+            except:
+                None
+
+    imshow(visium_img)
+    visium.uns["spatial"] = {}
+    visium.uns["spatial"]["HE"] = visium_img
+    visium.X = np.array(visium.X.todense())
+    visium = visium[bc.index].copy()
+    visium.obsm["spatial"] = bc
+    visium.obsm["spatial"].columns = [*visium.obsm["spatial"].columns[:-2], 1, 0]
+    visium.obsm["spatial"][0] = visium.obsm["spatial"][0] / 4
+    visium.obsm["spatial"][1] = visium.obsm["spatial"][1] / 4
+    visium.uns["Annotation"] = annotation
+    return visium
+
+# #To Celery (And beyond)
+def to_celery(adata, out_folder):    
+    def compose_alpha(image_with_alpha):
+
+        image_with_alpha = image_with_alpha.astype(np.float32)
+
+        image, alpha = image_with_alpha[..., :3], image_with_alpha[..., 3:] / 255.0
+
+        image = image * alpha + (1.0 - alpha) * 255.0
+
+        image = image.astype(np.uint8)
+
+        return image
+
+    if len(adata.uns["spatial"]["HE"]).shape == 4:
+        img = compose_alpha(adata.uns["spatial"]["HE"])
+    else:
+        img = adata.uns["spatial"]["HE"]
+    np.save(
+        out_folder + "/coord_inside_grid.npy",
+        np.array([adata.obsm["spatial"][1], adata.obsm["spatial"][0]]).T,
+    )
+    imsave(out_folder + "/aligned.png", img)
+    pd.DataFrame(data=adata.X, index=adata.var, columns=adata.obs).to_csv(
+        out_folder + "/sequencing_inside.csv"
+    )
+    pd.DataFrame(adata.X.var.index.to_numpy()).to_csv(
+        out_folder + "/gene_names.csv", index=False, header=False
+    )
