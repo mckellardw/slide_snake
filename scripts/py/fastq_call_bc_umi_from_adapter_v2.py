@@ -4,8 +4,28 @@ import parasail
 import time
 import os
 
-# Usage:
-# SlideSeq
+# Short-read usage:
+## Visium
+"""
+python scripts/py/fastq_call_bc_umi_from_adapter_v2.py \
+    --fq_in out/test_Vis_yPAP_3C/short_read/tmp/cut_R1.fq.gz \
+    --tsv_out out/test_Vis_yPAP_3C/short_read/barcodes_umis/visium/read_barcodes.tsv \
+    --bc_adapters 0 \
+    --bc_lengths 16 \
+    --bc_offsets 0 \
+    --bc_positions right \
+    --bc_mismatches 2 \
+    --umi_adapters 0 \
+    --umi_lengths 12 \
+    --umi_offsets 16 \
+    --umi_positions right \
+    --umi_mismatches 2 \
+    --threads 1
+"""
+
+
+# Long-read usage:
+## SlideSeq
 """ 
 python scripts/py/fastq_call_bc_umi_from_adapter_v2.py \
     --fq_in data/test_seeker/heart_ctrl_ont.fq.gz \
@@ -23,7 +43,7 @@ python scripts/py/fastq_call_bc_umi_from_adapter_v2.py \
     --threads 1
 """
 
-# Visium
+## Visium
 """ 
 python scripts/py/fastq_call_bc_umi_from_adapter_v2.py \
     --fq_in data/test_visium/vy3C_1k_ont.fq.gz \
@@ -76,7 +96,8 @@ def parse_args():
         "--bc_adapters",
         nargs="+",
         required=True,
-        help="List of adapter sequences used for barcode extraction.",
+        type=lambda x: int(x) if x.isdigit() else x,
+        help="List of adapter sequences or positions used for barcode extraction.",
     )
     parser.add_argument(
         "--bc_positions",
@@ -109,7 +130,8 @@ def parse_args():
         "--umi_adapters",
         nargs="+",
         required=True,
-        help="List of adapter sequences used for UMI extraction.",
+        type=lambda x: int(x) if x.isdigit() else x,
+        help="List of adapter sequences or positions used for UMI extraction.",
     )
     parser.add_argument(
         "--umi_positions",
@@ -179,6 +201,20 @@ def align_parasail(read, adapter, mismatches, verbose=False):
     return None, None, None
 
 
+def align_parasail_or_hardcoded(read, adapter, mismatches, verbose=False):
+    """
+    Align sequences using parasail (Smith-Waterman local alignment) or use hardcoded positions.
+    """
+    if isinstance(adapter, int):
+        # Use hardcoded position
+        start = adapter
+        end = adapter
+        return 420, start, end
+    else:
+        # Use parasail alignment
+        return align_parasail(read, adapter, mismatches, verbose)
+
+
 # Simple python version of R rep() function
 def rep(val, n):
     return [val for i in range(0, n)]
@@ -198,6 +234,9 @@ def main(
     umi_offsets,
     umi_mismatches,
 ):
+    # Ensure the output directory exists
+    os.makedirs(os.path.dirname(tsv_out), exist_ok=True)
+    
     null_bc_string = "-"
 
     bc_match_count = 0
@@ -223,39 +262,35 @@ def main(
 
                 bc_to_write = []
                 for adapter, position, length, offset, mismatches in BC_RANGES:
-                    if len(read.sequence) < len(adapter):
-                        continue
-                    elif len(read.sequence) < length:
-                        continue
+                    if isinstance(adapter, int) or len(read.sequence) >= len(adapter):
+                        align_score, start, end = align_parasail_or_hardcoded(
+                            read=read.sequence, adapter=adapter, mismatches=mismatches
+                        )
+                        # if align_score < 45: #debug
+                        # print(alignment)
+                        # print(align_score)
+                        # print(read.sequence[start:end])
 
-                    align_score, start, end = align_parasail(
-                        read=read.sequence, adapter=adapter, mismatches=mismatches
-                    )
-                    # if align_score < 45: #debug
-                    # print(alignment)
-                    # print(align_score)
-                    # print(read.sequence[start:end])
+                        if align_score is not None:
+                            # if align_score > 2 * len(adapter):
+                            if position == "left":
+                                bc_seq = read.sequence[
+                                    (start - offset - length) : (start - offset)
+                                ]
+                            elif position == "right":
+                                bc_seq = read.sequence[
+                                    (end + offset) : (end + offset + length)
+                                ]
+                            else:
+                                print(f"Incorrect barcode position [{position}] specified!")
 
-                    if align_score is not None:
-                        # if align_score > 2 * len(adapter):
-                        if position == "left":
-                            bc_seq = read.sequence[
-                                (start - offset - length) : (start - offset)
-                            ]
-                        elif position == "right":
-                            bc_seq = read.sequence[
-                                (end + offset) : (end + offset + length)
-                            ]
-                        else:
-                            print(f"Incorrect barcode position [{position}] specified!")
-
-                        # Don't write partial barcodes
-                        if len(bc_seq) == length:
-                            bc_to_write.append(bc_seq)
+                            # Don't write partial barcodes
+                            if len(bc_seq) == length:
+                                bc_to_write.append(bc_seq)
+                            else:
+                                bc_to_write.append(null_bc_string)
                         else:
                             bc_to_write.append(null_bc_string)
-                    else:
-                        bc_to_write.append(null_bc_string)
                 # end BC alignment
 
                 # Write barcode to file
@@ -266,33 +301,31 @@ def main(
                     # Proceed w/ UMI alignment
                     umi_to_write = []
                     for adapter, position, length, offset, mismatches in UMI_RANGES:
-                        # [align_score, start, end] = align_sequences(
-                        #     Seq(read.sequence), Seq(adapter), aligner, mismatches
-                        # )
-                        align_score, start, end = align_parasail(
-                            read=read.sequence, adapter=adapter, mismatches=mismatches
-                        )
+                        if isinstance(adapter, int) or len(read.sequence) >= len(adapter):
+                            align_score, start, end = align_parasail_or_hardcoded(
+                                read=read.sequence, adapter=adapter, mismatches=mismatches
+                            )
 
-                        # if align_score > 2 * len(adapter):
-                        if align_score is not None:
-                            if position == "left":
-                                umi_seq = read.sequence[
-                                    (start - offset - length) : (start - offset)
-                                ]
-                            elif position == "right":
-                                umi_seq = read.sequence[
-                                    (end + offset) : (end + offset + length)
-                                ]
-                            else:
-                                print(f"Incorrect UMI position [{position}] specified!")
+                            # if align_score > 2 * len(adapter):
+                            if align_score is not None:
+                                if position == "left":
+                                    umi_seq = read.sequence[
+                                        (start - offset - length) : (start - offset)
+                                    ]
+                                elif position == "right":
+                                    umi_seq = read.sequence[
+                                        (end + offset) : (end + offset + length)
+                                    ]
+                                else:
+                                    print(f"Incorrect UMI position [{position}] specified!")
 
-                            # Don't write partial barcodes
-                            if len(umi_seq) == length:
-                                umi_to_write.append(umi_seq)
+                                # Don't write partial barcodes
+                                if len(umi_seq) == length:
+                                    umi_to_write.append(umi_seq)
+                                else:
+                                    umi_to_write.append(null_bc_string)
                             else:
                                 umi_to_write.append(null_bc_string)
-                        else:
-                            umi_to_write.append(null_bc_string)
                     # end UMI alignment
 
                     outfile.write(
@@ -368,6 +401,13 @@ if __name__ == "__main__":
         f"UMI adapter mismatches allowed:   {args.umi_mismatches}\n"
         f"threads:                          {args.threads}\n"
     )
+
+    # Print if hardcoded positions are being used
+    if any(isinstance(adapter, int) for adapter in args.bc_adapters):
+        print("Using hardcoded positions for barcodes.")
+    if any(isinstance(adapter, int) for adapter in args.umi_adapters):
+        print("Using hardcoded positions for UMIs.")
+
     print(f"{currentTime()} - Running...")
     print("")
 
