@@ -12,6 +12,7 @@ rule ont_1a_merge_formats:
         OUTPUT_FORMAT="fastq",
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_merged.log",
+        err="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_merged.err",
     threads: config["CORES"]
     shell:
         """
@@ -20,8 +21,9 @@ rule ont_1a_merge_formats:
             -r "{params.ONT_reads}" \
             -c "{params.CHUNK_SIZE}" \
             -o "{output.MERGED_FQ}" \
-            -l "{log.log}" \
-            -t "{threads}"
+            -t "{threads}" \
+        1> {log.log} \
+        2> {log.err}
         """
 
 
@@ -60,20 +62,34 @@ rule ont_1a_merge_formats:
 
 
 # borrowed/modified from sockeye (https://github.com/jang1563/sockeye - original ONT github deleted!)
+
+
+def get_unique_primer_pairs():
+    recipes = get_all_recipes(mode="ONT")
+    primer_pairs = set()
+    for recipe in recipes:
+        fwd_primer = get_recipe_info(recipe, "fwd_primer", mode="ONT")
+        rev_primer = get_recipe_info(recipe, "rev_primer", mode="ONT")
+        primer_pairs.add((fwd_primer, rev_primer))
+    return primer_pairs
+
+
+# TODO- refactor this to allow for more flexible stranding!
 rule ont_1a_call_adapter_scan_v2:
     input:
         FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged.fq.gz",
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/adapter_scan.tsv",
         FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_stranded.fq.gz",
-        # ADAPTERS="{OUTDIR}/{SAMPLE}/ont/adapter_seqs.fasta",
     params:
         BATCH_SIZE=100000,
         ADAPTER1_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio
-        # ADAPTER1_SEQ=lambda w: get_recipe_info(w, "fwd_primer"),
+        # ADAPTER1_SEQ="CCCTCTCTCTCTCTTTCCTCTCTCCTGCGGTAGTCACGTG",
+        # ADAPTER1_SEQ="TGCGGTAGTCACGTGTTTTTTTT",
+        # ADAPTER1_SEQ=lambda w: get_recipe_info(w, "fwd_primer", mode="ONT"),
         ADAPTER2_SEQ="ATGTACTCTGCGTTGATACCACTGCTT",  #TXG/Curio
         # ADAPTER2_SEQ="GAGAGAGGAAAGAGAGAGAGAGGG",  #uMRT
-        # ADAPTER2_SEQ=lambda w: get_recipe_info(w, "rev_primer"),
+        # ADAPTER2_SEQ=lambda w: get_recipe_info(w, "rev_primer", mode="ONT"),
         VSEARCH_MIN_ADAPTER_ID=0.7,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan.log",
@@ -97,7 +113,6 @@ rule ont_1a_call_adapter_scan_v2:
         1> {log.log} \
         2> {log.err}
         """
-        # --adapters_fasta "{output.ADAPTERS}" \
 
 
 # Write lists of read IDs for each adapter type
@@ -123,15 +138,17 @@ rule ont_1a_readIDs_by_adapter_type:
             --output_directory $(dirname {output.FULL_LEN})
         """
 
+
 # Summarize adapter_scan results
 rule ont_1a_adapter_scan_summary:
     input:
         TSV="{OUTDIR}/{SAMPLE}/ont/adapter_scan.tsv",
     output:
         CSV="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan_summary.csv",
-        PLOT="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan_summary.pdf",
+        PDF="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan_summary.pdf",
+        PNG="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan_summary.png",
     params:
-        DEVICE="pdf"
+        DEVICE="pdf",
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan_summary.log",
         err="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan_summary.err",
@@ -145,8 +162,7 @@ rule ont_1a_adapter_scan_summary:
         Rscript scripts/R/adapter_scan_summary.R \
             -i {input.TSV} \
             -s {output.CSV} \
-            -p {output.PLOT} \
-            -d {params.DEVICE} \
+            -p {output.PNG},{output.PDF} \
         1> {log.log} \
         2> {log.err}
         """
@@ -229,7 +245,8 @@ rule ont_1a_split_fastq_to_R1_R2:
     params:
         # ANCHOR_SEQ=lambda w: get_recipe_info(w, "fwd_primer"),
         # ANCHOR_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio
-        ANCHOR_SEQ="ACGCTCTTCCGATCT",  #TXG/Curio
+        ANCHOR_SEQ="CCCTCTCTCTCTCTTTCCTCTCTCCT",  # RNAConnect/CT
+        # ANCHOR_SEQ="ACGCTCTTCCGATCT",  #TXG/Curio
         SPLIT_SEQ="T" * 8,
         SPLIT_OFFSET=8,  # offset from 3' end of split seq on which to split
         MAX_OFFSET=200,

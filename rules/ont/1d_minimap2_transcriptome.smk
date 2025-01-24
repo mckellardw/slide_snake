@@ -4,7 +4,7 @@ rule ont_1d_txome_align_minimap2_transcriptome:
     input:
         FQ=lambda w: get_fqs(w, return_type="list", mode="ONT")[1],
     output:
-        SAM_TMP=temp("{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/tmp.sam"),
+        BAM=temp("{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned.bam"),
     params:
         EXTRA_FLAGS=lambda wildcards: RECIPE_SHEET["mm2_extra"][wildcards.RECIPE],
         REF=lambda wildcards: SAMPLE_SHEET["cdna_fa"][wildcards.SAMPLE],
@@ -17,84 +17,39 @@ rule ont_1d_txome_align_minimap2_transcriptome:
         f"{workflow.basedir}/envs/minimap2.yml"
     shell:
         """
-        mkdir -p $(dirname {output.SAM_TMP})
+        mkdir -p $(dirname {output.BAM})
 
         echo "Genome reference:   {params.REF}" > {log.log} 
         echo "Junction reference: {params.REF}" >> {log.log} 
         echo "Extra flags:        {params.EXTRA_FLAGS}" >> {log.log} 
         echo "" >> {log.log} 
 
-        minimap2 -ax sr \
-            -uf \
-            --MD \
+        minimap2 \
+            -ax map-ont \
+            --eqx \
+            -N 100 \
             -t {threads} \
-            {params.EXTRA_FLAGS} {params.REF} \
+            {params.REF} \
             {input.FQ} \
-        2>> {log.log} \
-        > {output.SAM_TMP}
-        """
-
-
-# Sort and compresss minimap2 output
-rule ont_1d_txome_sort_compress_output:
-    input:
-        SAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/tmp.sam",
-    output:
-        # BAM_UNSORT_TMP=temp("{OUTDIR}/{SAMPLE}/ont/tmp_unsort.sam"),
-        BAM=temp("{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/sorted.bam"),
-    params:
-        REF=lambda wildcards: SAMPLE_SHEET["cdna_fa"][wildcards.SAMPLE],
-    resources:
-        mem="16G",
-    threads: 1
-    shell:
-        """
-        samtools sort --reference {params.REF} \
-            -O BAM \
-            -o {output.BAM} \
-            {input.SAM}             
-        """
-
-
-# Assign feature (transcript ID) and add gene tag (GN) to each alignment
-rule ont_1d_txome_tag_gene:
-    input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/sorted.bam",
-        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/sorted.bam.bai",
-    output:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/sorted_gn.bam",
-    params:
-        TAG="GN",  # corrected barcode tag
-    log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/tsv2tag_1_GN.log",
-    resources:
-        mem="32G",
-    threads: 1  # long reads can only run single-threaded
-    conda:
-        f"{workflow.basedir}/envs/minimap2.yml"
-    shell:
-        """
-        bash scripts/bash/bam_chr2tag.sh \
-            --input {input.BAM} \
-            --output {output.BAM} \
-            --tag {params.TAG} \
-        |& tee {log.log}
+        | samtools view -@ {threads} -b \
+        > {output.BAM} \
+        2>> {log.log}
         """
 
 
 # Add CB to gene-tagged .bam
 rule ont_1d_txome_add_corrected_barcodes:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/sorted_gn.bam",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned.bam",
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected.tsv",
     output:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/sorted_gn_cb.bam",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_cb.bam",
     params:
         READ_ID_COLUMN=0,
         BARCODE_TAG="CB",  # corrected barcode
         BARCODE_TSV_COLUMN=1,
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/tsv2tag_2_CB.log",
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/tsv2tag_1_CB.log",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
@@ -115,16 +70,16 @@ rule ont_1d_txome_add_corrected_barcodes:
 # Add UMI (UR) to barcoded & gene-tagged .bam
 rule ont_1d_txome_add_umis:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/sorted_gn_cb.bam",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_cb.bam",
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_filtered.tsv",
     output:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/sorted_gn_cb_ub.bam",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_cb_ub.bam",
     params:
         READ_ID_COLUMN=0,
         UMI_TSV_COLUMN=-1,  # last column
         UMI_TAG="UR",  # uncorrected UMI
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/tsv2tag_3_UR.log",
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/tsv2tag_2_UR.log",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
@@ -145,10 +100,10 @@ rule ont_1d_txome_add_umis:
 # Generate count matrix w/ umi-tools
 rule ont_1d_txome_filter_bam_empty_tags:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/sorted_gn_cb_ub.bam",
-        # BAI="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/sorted_gn_cb_ub.bam.bai",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_cb_ub.bam",
+        # BAI="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_gn_cb_ub.bam.bai",
     output:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/sorted_filtered_gn_cb_ub.bam",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_cb_ub.bam",
     params:
         CELL_TAG="CB",  # uncorrected = CR; corrected = CB
         GENE_TAG="GN",  # GN XS
@@ -160,18 +115,75 @@ rule ont_1d_txome_filter_bam_empty_tags:
         """
         samtools view -h {input.BAM} \
         | awk -v tag={params.CELL_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
-        | awk -v tag={params.GENE_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
         | awk -v tag={params.UMI_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
         | samtools view -b \
         > {output.BAM}
         """
+        # | awk -v tag={params.GENE_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
 
+
+# Sort aligned_filtered_cb_ub.bam by CB tag
+rule ont_1d_txome_sort_by_cb:
+    input:
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_cb_ub.bam",
+    output:
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub.bam",
+    log:
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/sort_by_cb.log",
+    resources:
+        mem="16G",
+    threads: 1
+    conda:
+        f"{workflow.basedir}/envs/minimap2.yml"
+    shell:
+        """
+        samtools sort -t CB -o {output.BAM} {input.BAM} 2> {log.log}
+        """
+
+
+# Run oarfish alignment mode transcript quantification
+# github: https://github.com/COMBINE-lab/oarfish
+#TODO- --short-quant?
+rule ont_1d_txome_oarfish_quant:
+    input:
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub.bam",
+        # BAI="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub.bam.bai",
+    output:
+        DIR=directory("{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish"),
+        JSON="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/P.meta_info.json",
+        QUANT="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/P.quant",
+        PQ="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/P.infreps.pq",
+        AMBIG="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/P.ambig_info.tsv",
+    log:
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish.err",
+    resources:
+        mem="32G",
+    threads: 16
+    conda:
+        f"{workflow.basedir}/envs/oarfish.yml"
+    shell:
+        """
+        mkdir -p {output.DIR}
+
+        oarfish \
+            -a {input.BAM} \
+            -o {output.DIR}/P \
+            -j {threads} \
+            --filter-group no-filters \
+            --model-coverage \
+            --single-cell \
+        1> {log.log} \
+        2> {log.err}
+        """
+# Code snippet to remove the annoying ANSI codes from the log file:
+## sed -r 's/\x1B\[[0-9;]*[mK]//g' oarfish.err > oarfish_cleaned.err
 
 # Generate count matrix w/ umi-tools
 rule ont_1d_txome_umitools_count:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/sorted_filtered_gn_cb_ub.bam",
-        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/sorted_filtered_gn_cb_ub.bam.bai",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_gn_cb_ub.bam",
+        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_gn_cb_ub.bam.bai",
     output:
         COUNTS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/umitools_counts.tsv.gz",
     params:
