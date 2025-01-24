@@ -1089,6 +1089,16 @@ from skimage.transform import rescale, resize
 from skimage.io import imread, imshow, imsave
 
 def rescale_annData(adata, adata2):
+    """
+    Rescale the spatial coordinates and image of an AnnData object to match another AnnData object.
+
+    Parameters:
+    adata (AnnData): The AnnData object to be rescaled.
+    adata2 (AnnData): The AnnData object to match the scale.
+
+    Returns:
+    AnnData: A new AnnData object with rescaled spatial coordinates and image.
+    """
     adata1 = adata.copy()
     img1 = adata1.uns["spatial"]["HE"]
     p_ma_y, p_ma_x = img1.shape[1], img1.shape[0]
@@ -1110,6 +1120,16 @@ def rescale_annData(adata, adata2):
 
 
 def load_annData(folder, show_img=True):
+    """
+    Load AnnData object from a folder containing count matrix, barcodes, image, and annotation files.
+
+    Parameters:
+    folder (str): Path to the folder containing the files.
+    show_img (bool): Whether to display the image. Default is True.
+
+    Returns:
+    AnnData: The loaded AnnData object.
+    """
     # RAW Data 50um
     count_matrix, barcodes, img, annotation = None, None, None, None
     for file in os.listdir(folder):
@@ -1169,6 +1189,15 @@ def load_annData(folder, show_img=True):
 
 
 def load_visium(folder):
+    """
+    Load Visium data from a folder containing raw feature matrix, image, and annotation files.
+
+    Parameters:
+    folder (str): Path to the folder containing the files.
+
+    Returns:
+    AnnData: The loaded Visium AnnData object.
+    """
     visium, bc, visium_img, annotation = None, None, None, None
     for file in os.listdir(folder):
         if file.__contains__("raw_feature_bc_matrix") and file.endswith(".h5"):
@@ -1204,17 +1233,31 @@ def load_visium(folder):
     return visium
 
 # #To Celery (And beyond)
-def to_celery(adata, out_folder):    
+def to_celery(adata, out_folder):
+    """
+    Export AnnData object to a format compatible with Celery.
+
+    Parameters:
+    adata (AnnData): The AnnData object to be exported.
+    out_folder (str): Path to the output folder.
+
+    Returns:
+    None
+    """
     def compose_alpha(image_with_alpha):
+        """
+        Compose an image with an alpha channel into an image without an alpha channel.
 
+        Parameters:
+        image_with_alpha (ndarray): The image with an alpha channel.
+
+        Returns:
+        ndarray: The composed image without an alpha channel.
+        """
         image_with_alpha = image_with_alpha.astype(np.float32)
-
         image, alpha = image_with_alpha[..., :3], image_with_alpha[..., 3:] / 255.0
-
         image = image * alpha + (1.0 - alpha) * 255.0
-
         image = image.astype(np.uint8)
-
         return image
 
     if len(adata.uns["spatial"]["HE"]).shape == 4:
