@@ -1,12 +1,25 @@
 #!/usr/bin/env Rscript
 
+# Usage:
+# Rscript scripts/R/adapter_scan_summary.R \
+# -i out/E105_3C2_P5_maxima_txg_kapahifi/ont/adapter_scan.tsv \
+# -s out/E105_3C2_P5_maxima_txg_kapahifi/ont/misc_logs/1a_adapter_scan_summary.csv \
+# -p out/E105_3C2_P5_maxima_txg_kapahifi/ont/misc_logs/1a_adapter_scan_summary.pdf,out/E105_3C2_P5_maxima_txg_kapahifi/ont/misc_logs/1a_adapter_scan_summary.png \
+# 1> out/E105_3C2_P5_maxima_txg_kapahifi/ont/misc_logs/1a_adapter_scan_summary.log \
+# 2> out/E105_3C2_P5_maxima_txg_kapahifi/ont/misc_logs/1a_adapter_scan_summary.err
+
 # Load required libraries
 library(readr)
 library(dplyr)
 library(ggplot2)
 library(optparse)
-library(patchwork) 
+library(patchwork)
+library(glue)
 
+# Start time
+start_time <- Sys.time()
+cat(glue("Script started at: {format(start_time, '%Y-%m-%d %H:%M:%S')}"), "\n")
+cat("\n")
 
 # Function to load the data
 load_data <- function(data_file, n_max=Inf){    
@@ -39,12 +52,10 @@ option_list <- list(
   make_option(c("-s", "--summary"), type="character", default="adapter_scan_summary.csv", 
               help="Output file for summary CSV [default= %default]", metavar="FILE"),
   make_option(c("-p", "--plots"), type="character", default="adapter_scan_summary.pdf", 
-              help="Output file for combined plots [default= %default]", metavar="FILE"),
-  make_option(c("-d", "--device"), type="character", default="pdf", 
-              help="Output device for plots (pdf, png, svg) [default= %default]", metavar="DEVICE"),
+              help="Output file(s) for combined plots, comma-separated [default= %default]", metavar="FILES"),
   make_option(c("-v", "--verbose"), type="logical", default=TRUE, 
               help="Whether or not to print updates [default= %default]", metavar="VERBOSE"),
-  make_option(c("-n", "--nrows"), type="integer", default=0, 
+  make_option(c("-n", "--nrows"), type="integer", default=Inf, 
               help="Number of rows to read from the input file [default= %default]", metavar="NROWS")
 )
 
@@ -54,17 +65,31 @@ opt <- parse_args(opt_parser)
 
 verbose <- opt$verbose
 
+# Log the parameters passed in
+cat("Parameters passed in:\n")
+cat(glue("Input file:     {opt$input}"), "\n")
+cat(glue("Summary file:   {opt$summary}"), "\n")
+cat(glue("Plot files:     {opt$plots}"), "\n")
+cat(glue("Verbose:        {opt$verbose}"), "\n")
+cat(glue("Number of rows: {opt$nrows}"), "\n")
+cat("\n")
+
 # Check if input file is provided
 if (is.null(opt$input)) {
   stop("Input file path must be provided. Use -h for help.")
 }
 
+# Ensure n_max is properly handled
+n_max <- ifelse(is.na(opt$nrows) || opt$nrows == 0, Inf, opt$nrows)
+
 # Read the TSV file
-if(verbose){message("Reading in tsv...")}
+if(verbose){cat("Reading in tsv...\n")}
 data <- load_data(
   opt$input, 
-  n_max=opt$nrows
+  n_max=n_max
 )
+cat(glue("Number of reads analyzed: {nrow(data)}"), "\n")
+cat("\n")
 
 data$lab <- outFactor <- factor(
   x = data$lab, 
@@ -80,7 +105,7 @@ data$lab <- outFactor <- factor(
 )
 
 # Generate summary grouped by 'lab'
-if(verbose){message("Computing stats...")}
+if(verbose){cat("Computing stats...\n")}
 
 # Full read length ("readlen" is just the insert length plus primers)
 data <- data %>%
@@ -103,13 +128,14 @@ summary <- data %>%
     avg_normStart = mean(normStart),
     pct_stranded = sum(stranded) / n() * 100
   )
-  
+cat(glue("Summary statistics computed for {nrow(summary)} groups"), "\n")
+
 # Write summary to CSV file
-if(verbose){message("Writing summary...")}
+if(verbose){cat("Writing summary...\n")}
 write_csv(summary, opt$summary)
 
 # Generate plots
-if(verbose){message("Generating plots...")}
+if(verbose){cat("Generating plots...\n")}
 
 current_theme <- theme(
     plot.title = element_text(hjust = 0.5, face="bold"),
@@ -182,16 +208,28 @@ combined_plot <- (p1 + p2) / (p3 + p4) +
                   theme = theme(plot.title = element_text(size = 16, hjust = 0.5, face="bold")))
 
 # Save combined plot
-if(verbose){message("Saving combined plot...")}
-ggsave(
-  opt$plots, 
-  combined_plot, 
-  width = 12, 
-  height = 12, 
-  units = "in", 
-  dpi = 300,
-  device = opt$device
-  # create.dir = TRUE
-)
+if(verbose){cat("Saving combined plot...\n")}
+plot_files <- strsplit(opt$plots, ",")[[1]]
+for (plot_file in plot_files) {
+  device <- tools::file_ext(plot_file)
+  if (device == "") {
+    stop("File extension must be provided to infer the device.")
+  }
+  ggsave(
+    plot_file, 
+    combined_plot, 
+    width = 12, 
+    height = 12, 
+    units = "in", 
+    dpi = 300,
+    device = device
+  )
+}
 
-message("Analysis complete. Summary and combined plot have been saved.\n")
+cat("Analysis complete. Summary and combined plot have been saved.\n")
+
+# End time and run time
+end_time <- Sys.time()
+cat("\n")
+cat(glue("Script ended at: {format(end_time, '%Y-%m-%d %H:%M:%S')}"), "\n")
+cat(glue("Total run time: {difftime(end_time, start_time, units = 'secs')} seconds"), "\n")

@@ -214,6 +214,7 @@ def find_and_split_reads(
                 f"  Anchor sequence not found: {unaligned_counter}\n"
                 f"  Split sequence not found:  {missing_split_counter}\n"
             )
+        return read_counter, too_short_counter, unaligned_counter, missing_split_counter
     except Exception as e:
         print(f"Error occurred: {e}")
         raise
@@ -235,13 +236,20 @@ if __name__ == "__main__":
     print("")
 
     if args.threads == 1:
-        find_and_split_reads(
+        read_counter, too_short_counter, unaligned_counter, missing_split_counter = find_and_split_reads(
             fq_in=args.fq_in,
             anchor_seq=args.anchor_seq,
             split_seq=args.split_seq,
             split_offset=args.split_offset,
             max_offset=args.max_offset,
             max_errors=args.max_errors,
+        )
+        print(
+            f"Reads successfully split & written: {read_counter}\n"
+            f"Reads removed:\n"
+            f"  Too short:                 {too_short_counter}\n"
+            f"  Anchor sequence not found: {unaligned_counter}\n"
+            f"  Split sequence not found:  {missing_split_counter}\n"
         )
     elif args.threads > 1:
         # Source: https://superfastpython.com/multiprocessing-pool-for-loop/
@@ -289,6 +297,19 @@ if __name__ == "__main__":
 
         with multiprocessing.Pool(args.threads) as pool:
             multi_out = pool.starmap(find_and_split_reads, items)
+
+        total_read_counter = sum([x[0] for x in multi_out])
+        total_too_short_counter = sum([x[1] for x in multi_out])
+        total_unaligned_counter = sum([x[2] for x in multi_out])
+        total_missing_split_counter = sum([x[3] for x in multi_out])
+
+        print(
+            f"Reads successfully split & written: {total_read_counter}\n"
+            f"Reads removed:\n"
+            f"  Too short:                 {total_too_short_counter}\n"
+            f"  Anchor sequence not found: {total_unaligned_counter}\n"
+            f"  Split sequence not found:  {total_missing_split_counter}\n"
+        )
 
         # Merge chunked/trimmed fastqs
         os.system(
