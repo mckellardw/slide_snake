@@ -1,5 +1,7 @@
 import argparse
 import pysam
+from datetime import datetime
+from collections import Counter
 
 # Usage:
 """
@@ -16,6 +18,7 @@ python scripts/py/tsv2tag.py \
 def parse_tsv(in_tsv, readIDcolumn, tagColumns, exclude_values):
     """Parse the TSV file and return a dictionary mapping read IDs (keys) to bam tags (values)."""
     read_to_tags = {}
+    exclude_counts = Counter()
     with open(in_tsv, "r") as file:
         for line in file:
             line_as_list = line.strip().split("\t")
@@ -23,18 +26,21 @@ def parse_tsv(in_tsv, readIDcolumn, tagColumns, exclude_values):
             try:
                 tags = [line_as_list[tagColumn] for tagColumn in tagColumns]
                 if any(tag in exclude_values for tag in tags):
+                    for tag in tags:
+                        if tag in exclude_values:
+                            exclude_counts[tag] += 1
                     continue
                 read_to_tags[read_id] = tags
             except:
                 continue
-    return read_to_tags
+    return read_to_tags, exclude_counts
 
 
 def add_tags_to_bam(
     in_bam, in_tsv, out_bam, readIDColumn=0, tagColumns=[1], tags=["GN"], exclude_values=["-", "NA"]
 ):
     """Add tag values from TSV to BAM and write to a new BAM file."""
-    read_to_tags = parse_tsv(in_tsv, readIDColumn, tagColumns, exclude_values)
+    read_to_tags, exclude_counts = parse_tsv(in_tsv, readIDColumn, tagColumns, exclude_values)
 
     reads_yes_tags = 0
     reads_no_tags = 0
@@ -50,7 +56,7 @@ def add_tags_to_bam(
             else:
                 reads_no_tags += 1
             bam_out.write(read)
-        return [reads_yes_tags, reads_no_tags]
+        return [reads_yes_tags, reads_no_tags, exclude_counts]
 
 
 def main():
@@ -89,6 +95,9 @@ def main():
     )
 
     args = parser.parse_args()
+    start_time = datetime.now()
+    timestamp = start_time.strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{timestamp}] Script started")
     print(
         f"input BAM:                {args.in_bam}\n"
         f"input TSV:                {args.in_tsv}\n"
@@ -97,7 +106,7 @@ def main():
         f"Tag column(s) in TSV:     {list(args.tagColumns)}\n"
         f"Tag(s) to add:            {list(args.tags)}\n"
     )
-    reads_yes_tags, reads_no_tags = add_tags_to_bam(
+    reads_yes_tags, reads_no_tags, exclude_counts = add_tags_to_bam(
         in_bam=args.in_bam,
         in_tsv=args.in_tsv,
         out_bam=args.out_bam,
@@ -107,10 +116,19 @@ def main():
         exclude_values=list(args.exclude_values),
     )
     print("")
+    end_time = datetime.now()
+    timestamp = end_time.strftime("%Y-%m-%d %H:%M:%S")
+    duration = end_time - start_time
     print(
-        f"# total reads parsed:         {reads_yes_tags+ reads_no_tags}\n"
-        f"# Reads w/ tag(s) found:      {reads_yes_tags}\n"
-        f"# Reads w/ no tag(s) found:   {reads_no_tags}\n"
+        f"# total reads parsed:         {reads_yes_tags + reads_no_tags:,}\n"
+        f"# Reads w/ tag(s) found:      {reads_yes_tags:,}\n"
+        f"# Reads w/ no tag(s) found:   {reads_no_tags:,}\n"
+    )
+    for value, count in exclude_counts.items():
+        print(f"# Reads excluded with '{value}': {count:,}")
+    print(
+        f"[{timestamp}] Script finished\n"
+        f"Duration: {duration}\n"
     )
 
 
