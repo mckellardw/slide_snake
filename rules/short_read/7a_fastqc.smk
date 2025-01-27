@@ -2,7 +2,7 @@
 ## fastQC rules
 #############################################
 # fastqc on R1 & R2 before trimming
-rule ilmn_1c_fastQC_preTrim:
+rule ilmn_7a_fastQC_preTrim:
     input:
         MERGED_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/merged_{READ}.fq.gz",
     output:
@@ -27,7 +27,7 @@ rule ilmn_1c_fastQC_preTrim:
 
 
 # fastqc on R1 after linker removal & R2 trimming/filtering
-rule ilmn_1c_fastQC_postTrim:
+rule ilmn_7a_fastQC_postTrim:
     input:
         FINAL_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/cut_{READ}.fq.gz",
     output:
@@ -51,7 +51,7 @@ rule ilmn_1c_fastQC_postTrim:
         """
 
 
-rule ilmn_1c_fastQC_twiceTrim:
+rule ilmn_7a_fastQC_twiceTrim:
     input:
         FINAL_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_{READ}.fq.gz",
     output:

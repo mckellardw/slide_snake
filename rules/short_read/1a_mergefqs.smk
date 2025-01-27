@@ -1,6 +1,6 @@
 # Merge .fastq files (in case more than one sesquencing run was performed)
 rule ilmn_1a_merge_fastqs:
-    input:        
+    input:
         R1_FQ=lambda wildcards: R1_FQS[wildcards.SAMPLE],
         R2_FQ=lambda wildcards: R2_FQS[wildcards.SAMPLE],
     output:

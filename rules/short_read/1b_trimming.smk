@@ -67,6 +67,7 @@ rule ilmn_1b_cutadapt:
         1> {log.log}
         """
 
+
 # Second round of adapter trimming
 rule ilmn_1b_cutadapt2:
     input:
@@ -202,3 +203,23 @@ rule ilmn_1b_R1_internalTrimming:
             --min_align_score {params.MIN_ALIGN_SCORE} \
         | tee {log.log}
         """
+
+
+# rule multiqc_cutadapt_summary:
+#     input:
+#         expand("{OUTDIR}/{SAMPLE}/short_read/misc_logs/cutadapt{num}.json", SAMPLE=config["samples"], num=[1, 2])
+#     output:
+#         expand("{OUTDIR}/{SAMPLE}/short_read/misc_logs/multiqc_cutadapt_report.html", SAMPLE=config["samples"])
+#     log:
+#         expand("{OUTDIR}/{SAMPLE}/short_read/misc_logs/multiqc_cutadapt_summary.log", SAMPLE=config["samples"])
+#     conda:
+#         f"{workflow.basedir}/envs/multiqc.yml"
+#     shell:
+#         """
+#         for sample in {config["samples"]}; do
+#             multiqc -o {wildcards.OUTDIR}/$sample/short_read/misc_logs/multiqc_cutadapt_report.html \
+#                     {wildcards.OUTDIR}/$sample/short_read/misc_logs/cutadapt1.json \
+#                     {wildcards.OUTDIR}/$sample/short_read/misc_logs/cutadapt2.json \
+#                     1> {wildcards.OUTDIR}/$sample/short_read/misc_logs/multiqc_cutadapt_summary.log
+#         done
+#         """

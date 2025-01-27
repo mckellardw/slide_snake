@@ -1,5 +1,5 @@
 # Borrowed portions of this code from `sockeye` - https://github.com/nanoporetech/sockeye/tree/master
-
+# borrowed/modified from sockeye (https://github.com/jang1563/sockeye - original ONT github deleted!)
 
 # Merge all the input files into a .fastq
 rule ont_1a_merge_formats:
@@ -29,17 +29,27 @@ rule ont_1a_merge_formats:
 
 # TODO
 # Remove super short reads that likely do not have a barcode...
-# rule ont_1a_length_filter:
-#     input:
-#         MERGED_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged.fq.gz",
-#     input:
-#         MERGED_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_filtered.fq.gz",
-#     params:
-#         MIN_LENGTH=50,
-#     threads: config["CORES"]
-#     shell:
-#         """
-#         """
+rule ont_1a_length_filter:
+    input:
+        FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged.fq.gz",
+    input:
+        FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_filtered.fq.gz",
+    params:
+        MIN_LENGTH=20,
+    threads: config["CORES"]
+    shell:
+        """
+        seqkit seq -m {params.MIN_LENGTH} {input.FQ} \
+        | gzip \
+        > {output.FQ}
+        """
+
+#TODO
+## add chunking rule here to improve parallelization & run times
+## when to merge again?
+## Could also split input files into chunks **during** merge- just specify chunk size?
+
+
 
 # Remove super short reads that likely do not have a barcode...
 # rule ont_1a_pychopper:
@@ -61,11 +71,10 @@ rule ont_1a_merge_formats:
 #         """
 
 
-# borrowed/modified from sockeye (https://github.com/jang1563/sockeye - original ONT github deleted!)
 
 
-def get_unique_primer_pairs():
-    recipes = get_all_recipes(mode="ONT")
+def get_unique_primer_pairs(w):
+    recipes = get_all_recipes(w, mode="ONT")
     primer_pairs = set()
     for recipe in recipes:
         fwd_primer = get_recipe_info(recipe, "fwd_primer", mode="ONT")

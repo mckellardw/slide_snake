@@ -97,6 +97,7 @@ rule ont_2a_readQC_3_bam:
         CHUNK_SIZE=500000,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/readqc/3_aligned/{RECIPE}_qc.log",
+        err="{OUTDIR}/{SAMPLE}/ont/readqc/3_aligned/{RECIPE}_qc.err",
     resources:
         mem="8G",
     threads: 1
@@ -108,7 +109,8 @@ rule ont_2a_readQC_3_bam:
             --chunk-size {params.CHUNK_SIZE} \
             --bam_file {input.BAM} \
             --tsv_file {output.TSV} \
-        > {log.log}
+        1> {log.log} \
+        2> {log.err}
         """
 
 
@@ -117,30 +119,52 @@ rule ont_2a_readQC_downsample:
     input:
         TSV="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc.tsv",
     output:
-        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc_500000.tsv",
+        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc_downSampled.tsv",
     params:
-        N_READS=500001,  # 500k plus header
+        N_READS=config["N_READS_READQC"],
     resources:
         mem="4G",
     threads: 1
     shell:
         """
-        {head -n 1 {input.TSV} && tail -n +2 {input.TSV} | shuf -n {params.N_READS-1}} > {output.TSV}
+        head -n 1 {input.TSV} > {output.TSV} && tail -n +2 {input.TSV} | shuf -n {params.N_READS} >> {output.TSV}
         """
 
 
 # Summary plot
 rule ont_2a_readQC_summaryplot:
     input:
-        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc_500000.tsv",
+        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc_downSampled.tsv",
     output:
         IMG="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc.png",
     resources:
         mem="8G",
     threads: 1
+    log:
+        log="{OUTDIR}/{SAMPLE}/short_read/readqc/{TRIM}/{READ}_qc.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/readqc/{TRIM}/{READ}_qc.err",
     conda:
         f"{workflow.basedir}/envs/ggplot2.yml"
     shell:
         """
-        Rscript scripts/R/readqc_summary.R -f {input.TSV} -o {output.IMG}
+        Rscript scripts/R/readqc_summary.R \
+            -f {input.TSV} \
+            -o {output.IMG} \
+        1> {log.log} \
+        2> {log.err}
+        """
+
+
+# Compress TSV files using pigz
+rule ont_2a_readQC_compress:
+    input:
+        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc.tsv",
+    output:
+        GZ="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc.tsv.gz",
+    resources:
+        mem="4G",
+    threads: 1
+    shell:
+        """
+        pigz -c {input.TSV} > {output.GZ}
         """

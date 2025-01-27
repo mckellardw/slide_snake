@@ -39,7 +39,9 @@ rule ilmn_2b_ribodetector_get_noRibo_list:
     input:
         R2_FQ_NORIBO="{OUTDIR}/{SAMPLE}/short_read/rRNA/ribodetector/noRibo_R2.fq",
     output:
-        NORIBO_LIST=temp("{OUTDIR}/{SAMPLE}/short_read/rRNA/ribodetector/noRibo_readID.list"),
+        NORIBO_LIST=temp(
+            "{OUTDIR}/{SAMPLE}/short_read/rRNA/ribodetector/noRibo_readID.list"
+        ),
     threads: 1
     shell:
         """
@@ -65,6 +67,7 @@ rule ilmn_2b_ribodetector_filter_R1:
         """
         zcat {input.R1_FQ} | seqkit grep -f {input.NORIBO_LIST} -o {output.R1_FQ_NORIBO}
         """
+
 
 rule ilmn_2b_ribodetector_filter_trimmed_R1:
     input:

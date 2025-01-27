@@ -101,6 +101,7 @@ rule ilmn_3a_STARsolo_firstPass:
 
 
 # Second pass of STAR alignment; includes barcode calling, etc.
+# TODO- add sj filtering? (https://www.reneshbedre.com/blog/star-aligner-twopass-mode.html)
 rule ilmn_3a_STARsolo_secondPass:
     input:
         FQS=lambda w: get_fqs(w, return_type="list", mode="ILMN"),
