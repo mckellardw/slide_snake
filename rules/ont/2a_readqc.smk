@@ -125,7 +125,7 @@ rule ont_2a_readQC_downsample:
     threads: 1
     shell:
         """
-        head -n {params.N_READS} {input.TSV} > {output.TSV} 
+        {head -n 1 {input.TSV} && tail -n +2 {input.TSV} | shuf -n {params.N_READS-1}} > {output.TSV}
         """
 
 
