@@ -105,6 +105,7 @@ def main():
         f"Read ID column in TSV:    {args.readIDColumn[0]}\n"
         f"Tag column(s) in TSV:     {list(args.tagColumns)}\n"
         f"Tag(s) to add:            {list(args.tags)}\n"
+        f"Tag values to exclude:    {list(args.exclude_values)}\n"
     )
     reads_yes_tags, reads_no_tags, exclude_counts = add_tags_to_bam(
         in_bam=args.in_bam,

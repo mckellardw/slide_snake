@@ -182,9 +182,14 @@ create_plots <- function(df, data_file, out_file) {
 
     # Re-size Read1 and Read2 plots..
     if(grepl("R1", data_file)){
-        scatter.gc <- scatter.gc + xlim(0,1000)
+        if(grepl("short_read", data_file)){
+            scatter.gc <- scatter.gc + xlim(0,160)
+            plot.readLength.zoom <- plot.readLength.zoom + xlim(0,100)
+        } else{
+            scatter.gc <- scatter.gc + xlim(0,1000)
+            plot.readLength.zoom <- plot.readLength.zoom + xlim(0,100)
+        }
         
-        plot.readLength.zoom <- plot.readLength.zoom + xlim(0,100)
     } else if(grepl("R2", data_file)){
         median_read_length <- median(df$Read_Length, na.rm = TRUE)
         plot.readLength.zoom <- plot.readLength.zoom + xlim(0, median_read_length)
