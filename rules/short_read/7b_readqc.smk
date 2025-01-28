@@ -8,6 +8,7 @@ rule ilmn_7b_readQC_0_rawInput:
         CHUNK_SIZE=100000,  # number of reads to handle in each chunk
     log:
         log="{OUTDIR}/{SAMPLE}/short_read/readqc/0_rawInput/{READ}_qc.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/readqc/0_rawInput/{READ}_qc.err",
     resources:
         mem="8G",
     threads: config["CORES"]
@@ -18,7 +19,8 @@ rule ilmn_7b_readQC_0_rawInput:
             {output.TSV} \
             --cores {threads} \
             --chunk_size {params.CHUNK_SIZE} \
-        > {log.log}
+        > {log.log} \
+        2> {log.err}
         """
 
 
@@ -32,6 +34,7 @@ rule ilmn_7b_readQC_1_preCutadapt:
         CHUNK_SIZE=500000,  # number of reads to handle in each chunk
     log:
         log="{OUTDIR}/{SAMPLE}/short_read/readqc/1_preCutadapt/{READ}_qc.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/readqc/1_preCutadapt/{READ}_qc.err",
     resources:
         mem="8G",
     threads: config["CORES"]
@@ -42,7 +45,8 @@ rule ilmn_7b_readQC_1_preCutadapt:
             {output.TSV} \
             --cores {threads} \
             --chunk_size {params.CHUNK_SIZE} \
-        > {log.log}
+        > {log.log} \
+        2> {log.err}
         """
 
 
@@ -56,6 +60,7 @@ rule ilmn_7b_readQC_2_postCutadapt:
         CHUNK_SIZE=500000,
     log:
         log="{OUTDIR}/{SAMPLE}/short_read/readqc/2_postCutadapt/{READ}_qc.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/readqc/2_postCutadapt/{READ}_qc.err",
     resources:
         mem="8G",
     threads: config["CORES"]
@@ -66,7 +71,8 @@ rule ilmn_7b_readQC_2_postCutadapt:
             {output.TSV} \
             --cores {threads} \
             --chunk_size {params.CHUNK_SIZE} \
-        > {log.log}
+        > {log.log} \
+        2> {log.err}
         """
 
 
@@ -80,6 +86,7 @@ rule ilmn_7b_readQC_3_twiceCutadapt:
         CHUNK_SIZE=500000,
     log:
         log="{OUTDIR}/{SAMPLE}/short_read/readqc/3_twiceCutadapt/{READ}_qc.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/readqc/3_twiceCutadapt/{READ}_qc.err",
     resources:
         mem="8G",
     threads: config["CORES"]
@@ -90,7 +97,8 @@ rule ilmn_7b_readQC_3_twiceCutadapt:
             {output.TSV} \
             --cores {threads} \
             --chunk_size {params.CHUNK_SIZE} \
-        > {log.log}
+        > {log.log} \
+        2> {log.err}
         """
 
 

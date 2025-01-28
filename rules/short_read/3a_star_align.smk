@@ -77,6 +77,7 @@ rule ilmn_3a_STARsolo_firstPass:
         STAR_EXTRA=lambda w: get_STAR_extra_params(w)["STAR_extra"],
         WHITELIST=lambda w: " ".join(get_whitelist(w, return_type="list")),  # space-delimited for multi-barcode
     log:
+        log="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/firstPass/pass1.log",
         err="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/firstPass/pass1.err",
     resources:
         mem=megabytes2bytes(config["MEMLIMIT_MB"]),
@@ -96,6 +97,7 @@ rule ilmn_3a_STARsolo_firstPass:
             --readFilesIn {input.FQS[1]} \
             --outSAMtype BAM Unsorted {params.STAR_EXTRA} \
             --twopassMode Basic \
+        1> {log.log} \
         2> {log.err}
         """
 
@@ -146,6 +148,7 @@ rule ilmn_3a_STARsolo_secondPass:
         outBAMsortingBinsN=100,  # default: 50; increase to save mem usage
         outBAMsortingThreadN=4,  # default: min(6,–runThreadN); reduce to save mem
     log:
+        log="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/pass2.log",
         err="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/pass2.err",
     resources:
         # mem=megabytes2bytes(config["MEMLIMIT_MB"]),
@@ -179,6 +182,7 @@ rule ilmn_3a_STARsolo_secondPass:
             --soloFeatures Gene GeneFull Velocyto \
             --soloMultiMappers EM \
             --sjdbFileChrStartEnd {input.SJ} \
+        1> {log.log} \
         2> {log.err}
         """
 

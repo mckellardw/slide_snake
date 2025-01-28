@@ -166,6 +166,7 @@ rule ont_1d_genome_add_featureCounts_to_bam:
         TAG_COLUMN=3,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_1_GN.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_1_GN.err",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
@@ -179,7 +180,8 @@ rule ont_1d_genome_add_featureCounts_to_bam:
             --readIDColumn {params.READ_ID_COLUMN} \
             --tagColumns {params.TAG_COLUMN} \
             --tags {params.TAG} \
-        |& tee {log.log}
+        1> {log.log} \
+        2> {log.err}
         """
 
 
@@ -196,6 +198,7 @@ rule ont_1d_genome_add_corrected_barcodes:
         BARCODE_TSV_COLUMN=1,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_2_CB.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_2_CB.err",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
@@ -209,7 +212,8 @@ rule ont_1d_genome_add_corrected_barcodes:
             --readIDColumn {params.READ_ID_COLUMN} \
             --tagColumns {params.BARCODE_TSV_COLUMN} \
             --tags {params.BARCODE_TAG} \
-        |& tee {log.log}
+        1> {log.log} \
+        2> {log.err}
         """
 
 
@@ -226,6 +230,7 @@ rule ont_1d_genome_add_umis:
         UMI_TAG="UR",  # uncorrected UMI
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_3_UR.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_3_UR.err",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
@@ -239,7 +244,8 @@ rule ont_1d_genome_add_umis:
             --readIDColumn {params.READ_ID_COLUMN} \
             --tagColumns {params.UMI_TSV_COLUMN} \
             --tags {params.UMI_TAG} \
-        |& tee {log.log}
+        1> {log.log} \
+        2> {log.err}
         """
 
 

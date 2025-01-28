@@ -15,6 +15,7 @@ rule ilmn_2b_ribodetector:
         CHUNK_SIZE=1024,
     log:
         log="{OUTDIR}/{SAMPLE}/short_read/rRNA/ribodetector/ribodetector.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/rRNA/ribodetector/ribodetector.err",
     threads: config["CORES"]
     conda:
         f"{workflow.basedir}/envs/ribodetector.yml"
@@ -30,7 +31,8 @@ rule ilmn_2b_ribodetector:
             --chunk_size {params.CHUNK_SIZE} \
             --rrna {output.RIBO_R2_FQ} \
             --output {output.R2_FQ} \
-            --log {log.log}
+            --log {log.log} \
+        2> {log.err}
         """
 
 
