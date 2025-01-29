@@ -5,7 +5,7 @@ rule ont_2a_readQC_0_rawInput:
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/readqc/0_rawInput/merged_qc.tsv",
     params:
-        CHUNK_SIZE=100000,  # number of reads to handle in each chunk
+        CHUNK_SIZE=100000,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/readqc/0_rawInput/merged_qc.log",
         err="{OUTDIR}/{SAMPLE}/ont/readqc/0_rawInput/merged_qc.err",
@@ -31,7 +31,7 @@ rule ont_2a_readQC_1_preCutadapt:
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/readqc/1_preCutadapt/{READ}_qc.tsv",
     params:
-        CHUNK_SIZE=500000,  # number of reads to handle in each chunk
+        CHUNK_SIZE=500000,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/readqc/1_preCutadapt/{READ}_qc.log",
         err="{OUTDIR}/{SAMPLE}/ont/readqc/1_preCutadapt/{READ}_qc.err",

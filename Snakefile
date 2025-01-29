@@ -71,6 +71,7 @@ wildcard_constraints:
 ### include rules #######################################################################
 # Barcode handling ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 include: "rules/0a_barcode_maps.smk"
+
 # Short-read module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## fastq preprocessing & QC
 include: "rules/short_read/1a_mergefqs.smk"
@@ -134,8 +135,8 @@ ilmn_fastqc = [
 
 ilmn_barcodes = [
     f"{OUTDIR}/{SAMPLE}/short_read/{FILE}"
-    for SAMPLE in ONT.keys()
-    for RECIPE in RECIPE_ONT_DICT[SAMPLE]
+    for SAMPLE in R2_FQS.keys()
+    for RECIPE in RECIPE_DICT[SAMPLE]
     for FILE in [
         f"barcodes_umis/{RECIPE}/read_barcodes_corrected.tsv",
         f"barcodes_umis/{RECIPE}/bc_correction_stats.txt",
@@ -268,6 +269,7 @@ ont_minimap_genome = [
     for RECIPE in RECIPE_ONT_DICT[SAMPLE]
     for FILE in [
         f"sorted_gn_cb.bam",
+        "sorted_filtered_gn_cb_ub_pos.bam",
         f"raw/output.h5ad",
     ]
 ]

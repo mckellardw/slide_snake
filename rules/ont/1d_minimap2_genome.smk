@@ -1,12 +1,12 @@
 # Convert gtf to junction bed for minimap2 alignment
 rule ont_1d_genome_generate_junction_bed:
     input:
-        GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE]
+        GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
     output:
-        JUNC_BED="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/junctions.bed"
+        JUNC_BED="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/junctions.bed",
     log:
         # log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/generate_junction_bed.log",
-        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/gff2bed.err"
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/gff2bed.err",
     conda:
         f"{workflow.basedir}/envs/minimap2.yml"
     shell:
@@ -19,12 +19,13 @@ rule ont_1d_genome_generate_junction_bed:
         2> {log.err}
         """
 
+
 # Align w/ minimap2
 ## minimap2 docs - https://lh3.github.io/minimap2/minimap2.html
 rule ont_1d_genome_align_minimap2_genome:
     input:
         FQ=lambda w: get_fqs(w, return_type="list", mode="ONT")[1],
-        JUNC_BED="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/junctions.bed"
+        JUNC_BED="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/junctions.bed",
     output:
         SAM_TMP=temp("{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tmp.sam"),
     params:
@@ -117,8 +118,10 @@ rule ont_1d_genome_featureCounts:
             {input.BAM} \
         |& tee {log.log}
         """
-        # -t 'transcript' \
-        # -g 'transcript_id' \
+
+
+# -t 'transcript' \
+# -g 'transcript_id' \
 
 
 # --donotsort \
@@ -194,7 +197,7 @@ rule ont_1d_genome_add_corrected_barcodes:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb.bam",
     params:
         READ_ID_COLUMN=0,
-        BARCODE_TAG="CB",  # corrected barcode
+        BARCODE_TAG="CB",
         BARCODE_TSV_COLUMN=1,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_2_CB.log",
@@ -271,6 +274,23 @@ rule ont_1d_genome_filter_bam_empty_tags:
         | awk -v tag={params.UMI_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
         | samtools view -b \
         > {output.BAM}
+        """
+
+
+# Split BAM by strand
+rule ont_1d_genome_split_bam_by_strand:
+    input:
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_gn_cb_ub.bam",
+    output:
+        BAM_POS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_gn_cb_ub_pos.bam",
+        BAM_NEG="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_gn_cb_ub_neg.bam",
+    resources:
+        mem="8G",
+    threads: 1
+    shell:
+        """
+        samtools view -bh -F 0x10 {input.BAM} > {output.BAM_POS}
+        samtools view -bh -f 0x10 {input.BAM} > {output.BAM_NEG}
         """
 
 
