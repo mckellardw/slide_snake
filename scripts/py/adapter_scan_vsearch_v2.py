@@ -9,18 +9,10 @@ import subprocess
 import sys
 import tempfile
 import time
-# from collections import defaultdict
-# from glob import glob
 
 import numpy as np
 import pandas as pd
 import pysam
-
-from Bio import SeqIO
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
-
-# from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -62,18 +54,20 @@ def parse_args():
     parser.add_argument(
         "-f",
         "--adapter1_seq",
-        help="Forward primer sequence (Read1). For TXG, Curio, etc. use [CTACACGACGCTCTTCCGATCT]",
-        default="CTACACGACGCTCTTCCGATCT",
+        help="Forward primer sequences (Read1). For TXG, Curio, etc. use [CTACACGACGCTCTTCCGATCT]",
+        nargs='+',
+        default=["CTACACGACGCTCTTCCGATCT"],
         type=str,
     )
 
     parser.add_argument(
         "-r",
         "--adapter2_seq",
-        help="Reverse complement of the primer sequence (rcTSO, minus the CCC preffix). \
+        help="Reverse complement of the primer sequences (rcTSO, minus the CCC prefix). \
             For TXG/Curio chemistries, use [ATGTACTCTGCGTTGATACCACTGCTT] (default). \
             For uMRT chemistries, use [GAGAGAGGAAAGAGAGAGAGAGGG]",
-        default="ATGTACTCTGCGTTGATACCACTGCTT",
+        nargs='+',
+        default=["ATGTACTCTGCGTTGATACCACTGCTT"],
         type=str,
     )
 
@@ -147,16 +141,14 @@ def check_vsearch():
 
 def write_adapters_fasta(args):
     adapters = []
-    for adapter, seq in {
-        "adapter1_f": args.adapter1_seq,
-        "adapter1_r": args.adapter1_seq[::-1].translate(COMPLEMENT_TRANS),
-        "adapter2_f": args.adapter2_seq,
-        "adapter2_r": args.adapter2_seq[::-1].translate(COMPLEMENT_TRANS),
-    }.items():
-        entry = SeqRecord(Seq(seq), id=adapter, name="", description="")
-
-        adapters.append(entry)
-    SeqIO.write(adapters, args.adapters_fasta, "fasta")
+    for i, seq in enumerate(args.adapter1_seq):
+        adapters.append(f">adapter1_f_{i}\n{seq}\n")
+        adapters.append(f">adapter1_r_{i}\n{seq[::-1].translate(COMPLEMENT_TRANS)}\n")
+    for i, seq in enumerate(args.adapter2_seq):
+        adapters.append(f">adapter2_f_{i}\n{seq}\n")
+        adapters.append(f">adapter2_r_{i}\n{seq[::-1].translate(COMPLEMENT_TRANS)}\n")
+    with open(args.adapters_fasta, "w") as f:
+        f.writelines(adapters)
 
 
 def write_tmp_fasta(batch_reads, args):
@@ -199,11 +191,11 @@ def call_vsearch(tmp_fastq, args):
     return tmp_vsearch
 
 
-def get_valid_adapter_pair_positions_in_read(read):
+def get_valid_adapter_pair_positions_in_read(read, args):
     valid_pairs_n = 0
     fl_pairs = []
 
-    def write_valid_pair_dict(read, adapter_1_idx, adapter_2_idx, valid_pairs_n):
+    def write_valid_pair_dict(read, adapter_1_idx, adapter_2_idx, valid_pairs_n, strand):
         read_id = read["query"].iloc[0]
         pair_str = (
             f"{read.iloc[adapter_1_idx]['target']}-{read.iloc[adapter_2_idx]['target']}"
@@ -213,29 +205,23 @@ def get_valid_adapter_pair_positions_in_read(read):
             "config": pair_str,
             "start": read.iloc[adapter_1_idx]["qilo"],
             "end": read.iloc[adapter_2_idx]["qihi"],
+            "strand": strand
         }
         return fl_pair, valid_pairs_n
 
-    compat_adapters = {"adapter1_f": "adapter2_f", "adapter2_r": "adapter1_r"}
+    compat_adapters = {f"adapter1_f_{i}": f"adapter2_f_{j}" for i in range(len(args.adapter1_seq)) for j in range(len(args.adapter2_seq))}
+    compat_adapters.update({f"adapter1_r_{i}": f"adapter2_r_{j}" for i in range(len(args.adapter1_seq)) for j in range(len(args.adapter2_seq))})
 
-    # First find all instances of adapter1_f
-    for adapter1 in ["adapter1_f", "adapter2_r"]:
+    for adapter1 in compat_adapters.keys():
         adapter_1_idxs = read.index[read["target"] == adapter1]
         for adapter_1_idx in adapter_1_idxs:
-            # For each found adapter1_f, examine next found adapter
             adapter_2_idx = adapter_1_idx + 1
-            # Make sure there are enough alignments to allow this indexing
             if adapter_2_idx < read.shape[0]:
-                # Is the next found adapter a adapter2_f?
                 if read.iloc[adapter_2_idx]["target"] == compat_adapters[adapter1]:
-                    # This is a valid adapter pairing (adapter1_f-adapter2_f)
+                    strand = "+" if "f" in adapter1 else "-"
                     fl_pair, valid_pairs_n = write_valid_pair_dict(
-                        read, adapter_1_idx, adapter_2_idx, valid_pairs_n
+                        read, adapter_1_idx, adapter_2_idx, valid_pairs_n, strand
                     )
-                    if adapter1 == "adapter1_f":
-                        fl_pair["strand"] = "+"
-                    else:
-                        fl_pair["strand"] = "-"
                     valid_pairs_n += 1
                     fl_pairs.append(fl_pair)
     return fl_pairs
@@ -290,26 +276,24 @@ def parse_vsearch(tmp_vsearch, args):
 
     read_info = {}
     for read_id, read in df.groupby("query"):
-        # Sort aligned adapters by their position in the read
         read = read.sort_values("qilo").reset_index()
-
-        # Get the original adapter config
         orig_adapter_config = "-".join(read["target"])
-
         orig_read_id = read["query"].iloc[0]
         read_info[orig_read_id] = {}
 
-        # Look for reads with valid consecutive features.
-        # For example, a adapter1_f followed immediately by
-        # a adapter2_f, or a adapter2_r followed immediately by
-        # a adapter1_r.
-        fl_pairs = get_valid_adapter_pair_positions_in_read(read)
+        fl_pairs = get_valid_adapter_pair_positions_in_read(read, args)
         if len(fl_pairs) > 0:
+            strands = [fl_pair["strand"] for fl_pair in fl_pairs]
+            if all(s == "+" for s in strands):
+                strand = "+"
+            elif all(s == "-" for s in strands):
+                strand = "-"
+            else:
+                strand = "*"
             for fl_pair in fl_pairs:
                 fl = True
                 stranded = True
                 read_id = fl_pair["read_id"]
-                strand = fl_pair["strand"]
                 readlen = fl_pair["end"] - fl_pair["start"]
                 start = fl_pair["start"]
                 end = fl_pair["end"]
@@ -330,8 +314,6 @@ def parse_vsearch(tmp_vsearch, args):
                     lab,
                 )
         else:
-            # No valid adapter pairs found. Either single adapter,
-            # no adapter, or weird artifact read
             read_id = "{}_0".format(read["query"].iloc[0])
             fl = False
             stranded = False
@@ -347,13 +329,6 @@ def parse_vsearch(tmp_vsearch, args):
             elif adapter_config in ["adapter2_f", "adapter2_r"]:
                 lab = "single_adapter2"
                 if not args.only_strand_full_length:
-                    # We want to strand and trim reads where we only have
-                    # an adapter2 sequence but no adapter1. These MIGHT contain
-                    # the cell barcode, UMI, polyT (for --kit 3prime) and cDNA
-                    # sequence, but since the adapter1 is low-quality, these
-                    # might be of of dubious value. We can only trim the
-                    # adapter2 end of the read based on adapter2 aligned
-                    # positions, but won't touch the putative adapter1 end.
                     stranded = True
                     if adapter_config == "adapter2_f":
                         strand = "+"
@@ -365,17 +340,9 @@ def parse_vsearch(tmp_vsearch, args):
                         start = read.iloc[0]["qilo"]
                         end = read.iloc[0]["ql"] - 1
                         readlen = end - start
-                    else:
-                        raise Exception("Shouldn't be here!")
             elif adapter_config in ["adapter1_f", "adapter1_r"]:
                 lab = "single_adapter1"
                 if not args.only_strand_full_length:
-                    # We want to strand and trim reads where we only have
-                    # a adapter1 sequence but no adapter2. These should contain
-                    # the cell barcode, UMI, polyT (if --kit 3prime) and cDNA
-                    # sequence, so should still have significant value. We can
-                    # only trim the adapter1 end of the read, but won't touch
-                    # the putative adapter2 end.
                     stranded = True
                     if adapter_config == "adapter1_f":
                         strand = "+"
@@ -387,8 +354,6 @@ def parse_vsearch(tmp_vsearch, args):
                         start = 0
                         end = read.iloc[0]["qihi"]
                         readlen = end - start
-                    else:
-                        raise Exception("Shouldn't be here!")
             elif adapter_config == "*":
                 lab = "no_adapters"
             else:
@@ -418,26 +383,27 @@ def revcomp_adapter_config(adapters_string):
         "adapter2_r": "adapter2_f",
     }
 
-    rc_string = "-".join([d[a] for a in adapters_string.split("-")[::-1]])
+    # Handle the new adapter identifiers
+    def get_revcomp_adapter(adapter):
+        parts = adapter.split("_")
+        if len(parts) == 3:
+            return f"{parts[0]}_{d[parts[0] + '_' + parts[1]]}_{parts[2]}"
+        return adapter
+
+    rc_string = "-".join([get_revcomp_adapter(a) for a in adapters_string.split("-")[::-1]])
     return rc_string
 
 
 def write_stranded_fastq(tmp_fastq, read_info, args):
-    """ """
     tmp_stranded_fastq = tmp_fastq.replace(".fastq", ".stranded.fastq.gz")
 
-    # Iterate through FASTQ reads and re-write them with proper stranding based
-    # the results of the VSEARCH alignments.
     with pysam.FastxFile(tmp_fastq) as f_in:
-        # with open(tmp_stranded_fastq, "w") as f_out:
         with gzip.open(tmp_stranded_fastq, "wb") as f_out:
             for entry in f_in:
                 read_id = entry.name.split(" ")[0]
                 if read_info.get(read_id):
-                    # This read had some VSEARCH hits for adapter sequences
                     for subread_id in read_info[read_id].keys():
                         d = read_info[read_id][subread_id]
-                        # subread_info = read_info[read_id][subread_id]
                         subread_seq = str(entry.sequence[d["start"] : d["end"]])
                         subread_quals = entry.quality[d["start"] : d["end"]]
                         if d["orig_strand"] == "-":
@@ -450,8 +416,6 @@ def write_stranded_fastq(tmp_fastq, read_info, args):
                         f_out.write(b"+\n")
                         f_out.write(f"{subread_quals}\n".encode())
                 else:
-                    # This read had no VSEARCH hits for adapter sequences, so we
-                    # should omit this read from the stranded FASTQ output
                     pass
 
     return tmp_stranded_fastq
@@ -552,11 +516,8 @@ def write_fq_out(tmp_fastqs, args):
 
 
 def write_tmp_fastx_files_for_processing(n_batches, args):
-    """ """
-    # Write a FASTA file containing the adapter sequences for VSEARCH to use
     write_adapters_fasta(args)
 
-    # Create batched FASTQ temp files that we'll write to next
     fastq_fns = {}
     fastq_fs = {}
     for i in range(1, n_batches + 1):
@@ -567,11 +528,9 @@ def write_tmp_fastx_files_for_processing(n_batches, args):
         fastq_fns[i] = tmp_fastq.name
         fastq_fs[i] = open(tmp_fastq.name, "w")
 
-    # Stream through entire input FASTQ and write batched FASTQ files
     batch_id = 1
     with pysam.FastxFile(args.fq_in, "r") as f_in:
         for i, entry in enumerate(f_in):
-            # Increment batch_id after streaming through <args.batch_size> reads
             if (i > 0) & (i % args.batch_size == 0):
                 batch_id += 1
             f_out = fastq_fs[batch_id]
@@ -580,7 +539,6 @@ def write_tmp_fastx_files_for_processing(n_batches, args):
             f_out.write(str("+\n"))
             f_out.write(str(entry.quality) + "\n")
 
-    # Close these temporary FASTQ files
     [f_out.close() for f_out in fastq_fs.values()]
 
     return fastq_fns
@@ -621,14 +579,15 @@ def main(args):
     fastq_fns = write_tmp_fastx_files_for_processing(n_batches, args)
 
     print(f"Processing {n_batches} batches of {args.batch_size} reads")
-    func_args = []
-    for batch_id, fn in fastq_fns.items():
-        func_args.append((fn, args))
+    func_args = [(fn, args) for fn in fastq_fns.values()]
 
-    with multiprocessing.Pool(args.threads) as p:
-        r = list(p.imap(process_batch, func_args))
+    if args.threads == 1 or n_batches == 1:
+        results = [process_batch(arg) for arg in func_args]
+    else:
+        with multiprocessing.Pool(args.threads) as p:
+            results = list(p.imap(process_batch, func_args))
 
-    tmp_fastqs, tmp_tables, vsearch_cols = zip(*r)
+    tmp_fastqs, tmp_tables, vsearch_cols = zip(*results)
     vsearch_cols = vsearch_cols[0]
 
     # Merge temp tables and fastqs then clean up
@@ -645,5 +604,4 @@ def main(args):
 
 if __name__ == "__main__":
     args = parse_args()
-
     main(args)
