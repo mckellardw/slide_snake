@@ -1,6 +1,5 @@
 import argparse
 import gzip
-import logging
 import multiprocessing
 import os
 import pathlib
@@ -14,7 +13,18 @@ import numpy as np
 import pandas as pd
 import pysam
 
-logger = logging.getLogger(__name__)
+# Example usage:
+"""
+python scripts/py/adapter_scan_vsearch_v2.py \
+    --fq_in "sandbox/adapter_scan/maxima/merged.fq.gz" \
+    --fq_out "sandbox/adapter_scan/maxima/merged_stranded.fq.gz" \
+    --output_tsv "sandbox/adapter_scan/maxima/adapter_scan.tsv" \
+    --threads 56 \
+    --batch_size 100000 \
+    --adapter1_seq "CTACACGACGCTCTTCCGATCT" \
+    --adapter2_seq "ATGTACTCTGCGTTGATACCACTGCTT" \
+    --min_adapter_id 0.7 
+"""
 
 
 def parse_args():
@@ -135,7 +145,7 @@ def run_subprocess(cmd):
 def check_vsearch():
     stdout, stderr = run_subprocess("vsearch --quiet -h")
     if stderr.find("vsearch: command not found") > -1:
-        logging.error("Could not load find VSEARCH -- check installation")
+        print("Could not load find VSEARCH -- check installation")
         sys.exit(1)
 
 
@@ -144,9 +154,10 @@ def write_adapters_fasta(args):
     for i, seq in enumerate(args.adapter1_seq):
         adapters.append(f">adapter1_f_{i}\n{seq}\n")
         adapters.append(f">adapter1_r_{i}\n{seq[::-1].translate(COMPLEMENT_TRANS)}\n")
-    for i, seq in enumerate(args.adapter2_seq):
-        adapters.append(f">adapter2_f_{i}\n{seq}\n")
-        adapters.append(f">adapter2_r_{i}\n{seq[::-1].translate(COMPLEMENT_TRANS)}\n")
+    if not args.single_adapter_mode:
+        for i, seq in enumerate(args.adapter2_seq):
+            adapters.append(f">adapter2_f_{i}\n{seq}\n")
+            adapters.append(f">adapter2_r_{i}\n{seq[::-1].translate(COMPLEMENT_TRANS)}\n")
     with open(args.adapters_fasta, "w") as f:
         f.writelines(adapters)
 
@@ -168,6 +179,9 @@ def call_vsearch(tmp_fastq, args):
     # Convert batch FASTQ to FASTA for input into VSEARCH
     tmp_fasta = tmp_fastq.replace(".fastq", ".fasta")
 
+    # Minimum adapter sequence length - adapters silently thrown out if shorter
+    minseqlength = 15
+
     with pysam.FastxFile(tmp_fastq) as f_in:
         with open(tmp_fasta, "w") as f_out:
             for entry in f_in:
@@ -177,13 +191,14 @@ def call_vsearch(tmp_fastq, args):
     tmp_vsearch = tmp_fastq.replace(".fastq", ".vsearch.tsv")
 
     vsearch_cmd = "vsearch --usearch_global {fasta} --db {adapters} \
-    --threads 1 --minseqlength 20 --maxaccepts 5 --id {id} --strand plus \
+    --threads 1 --minseqlength {minseqlength} --maxaccepts 5 --id {id} --strand plus \
     --wordlength 3 --minwordmatches 10 --output_no_hits --userfields \
     'query+target+id+alnlen+mism+opens+qilo+qihi+qstrand+tilo+tihi+ql+tl' \
     --userout {output}".format(
         fasta=tmp_fasta,
-        id=args.min_adapter_id,
         adapters=args.adapters_fasta,
+        minseqlength=minseqlength,
+        id=args.min_adapter_id,
         output=tmp_vsearch,
     )
     stdout, stderr = run_subprocess(vsearch_cmd)
@@ -209,21 +224,44 @@ def get_valid_adapter_pair_positions_in_read(read, args):
         }
         return fl_pair, valid_pairs_n
 
-    compat_adapters = {f"adapter1_f_{i}": f"adapter2_f_{j}" for i in range(len(args.adapter1_seq)) for j in range(len(args.adapter2_seq))}
-    compat_adapters.update({f"adapter1_r_{i}": f"adapter2_r_{j}" for i in range(len(args.adapter1_seq)) for j in range(len(args.adapter2_seq))})
+    if args.single_adapter_mode:
+        for i in range(len(args.adapter1_seq)):
+            adapter1_f = f"adapter1_f_{i}"
+            adapter1_r = f"adapter1_r_{i}"
+            adapter_1_f_idxs = read.index[read["target"] == adapter1_f]
+            adapter_1_r_idxs = read.index[read["target"] == adapter1_r]
+            for adapter_1_f_idx in adapter_1_f_idxs:
+                for adapter_1_r_idx in adapter_1_r_idxs:
+                    if adapter_1_f_idx < adapter_1_r_idx:
+                        strand = "+"
+                        fl_pair, valid_pairs_n = write_valid_pair_dict(
+                            read, adapter_1_f_idx, adapter_1_r_idx, valid_pairs_n, strand
+                        )
+                        valid_pairs_n += 1
+                        fl_pairs.append(fl_pair)
+                    elif adapter_1_f_idx > adapter_1_r_idx:
+                        strand = "-"
+                        fl_pair, valid_pairs_n = write_valid_pair_dict(
+                            read, adapter_1_r_idx, adapter_1_f_idx, valid_pairs_n, strand
+                        )
+                        valid_pairs_n += 1
+                        fl_pairs.append(fl_pair)
+    else:
+        compat_adapters = {f"adapter1_f_{i}": f"adapter2_f_{j}" for i in range(len(args.adapter1_seq)) for j in range(len(args.adapter2_seq))}
+        compat_adapters.update({f"adapter1_r_{i}": f"adapter2_r_{j}" for i in range(len(args.adapter1_seq)) for j in range(len(args.adapter2_seq))})
 
-    for adapter1 in compat_adapters.keys():
-        adapter_1_idxs = read.index[read["target"] == adapter1]
-        for adapter_1_idx in adapter_1_idxs:
-            adapter_2_idx = adapter_1_idx + 1
-            if adapter_2_idx < read.shape[0]:
-                if read.iloc[adapter_2_idx]["target"] == compat_adapters[adapter1]:
-                    strand = "+" if "f" in adapter1 else "-"
-                    fl_pair, valid_pairs_n = write_valid_pair_dict(
-                        read, adapter_1_idx, adapter_2_idx, valid_pairs_n, strand
-                    )
-                    valid_pairs_n += 1
-                    fl_pairs.append(fl_pair)
+        for adapter1 in compat_adapters.keys():
+            adapter_1_idxs = read.index[read["target"] == adapter1]
+            for adapter_1_idx in adapter_1_idxs:
+                adapter_2_idx = adapter_1_idx + 1
+                if adapter_2_idx < read.shape[0]:
+                    if read.iloc[adapter_2_idx]["target"] == compat_adapters[adapter1]:
+                        strand = "+" if "f" in adapter1 else "-"
+                        fl_pair, valid_pairs_n = write_valid_pair_dict(
+                            read, adapter_1_idx, adapter_2_idx, valid_pairs_n, strand
+                        )
+                        valid_pairs_n += 1
+                        fl_pairs.append(fl_pair)
     return fl_pairs
 
 
@@ -564,6 +602,26 @@ def main(args):
         f"Adapters FASTA:                   {args.adapters_fasta}\n"
         f"Verbosity:                        {args.verbosity}\n"
     )
+
+    # Check for identical adapter sequences or reverse complements
+    adapter1_set = set(args.adapter1_seq)
+    adapter2_set = set(args.adapter2_seq)
+    adapter2_rc_set = set(seq[::-1].translate(COMPLEMENT_TRANS) for seq in args.adapter2_seq)
+    common_adapters = adapter1_set.intersection(adapter2_set).union(adapter1_set.intersection(adapter2_rc_set))
+    if common_adapters:
+        print(f"Warning: The following adapter sequences are present in both adapter1 and adapter2 (including reverse complements): {common_adapters}")
+        print(f"Using single_adapter_mode")
+        args.single_adapter_mode = True
+    else:
+        args.single_adapter_mode = False
+
+    # Print all sequences used in the search
+    print(f"All sequences used in the search:")
+    for seq in args.adapter1_seq:
+        print(f"Adapter1: {seq}")
+    if not args.single_adapter_mode:
+        for seq in args.adapter2_seq:
+            print(f"Adapter2: {seq}")
 
     # If specified batch size is > total number of reads, reduce batch size
     print("Counting reads")
