@@ -396,13 +396,20 @@ def write_stranded_fastq(tmp_fastq, read_info, args):
                 if read_info.get(read_id):
                     for subread_id in read_info[read_id].keys():
                         d = read_info[read_id][subread_id]
-                        subread_seq = str(entry.sequence[d["start"] : d["end"]])
-                        subread_quals = entry.quality[d["start"] : d["end"]]
-                        if d["orig_strand"] == "-":
-                            rc_config = revcomp_adapter_config(d["adapter_config"])
-                            d["adapter_config"] = rc_config
-                            subread_seq = subread_seq[::-1].translate(COMPLEMENT_TRANS)
-                            subread_quals = subread_quals[::-1]
+                        if args.single_adapter_mode:
+                            subread_seq = str(entry.sequence)
+                            subread_quals = entry.quality
+                            if d["orig_strand"] == "-":
+                                subread_seq = subread_seq[::-1].translate(COMPLEMENT_TRANS)
+                                subread_quals = subread_quals[::-1]
+                        else:
+                            subread_seq = str(entry.sequence[d["start"] : d["end"]])
+                            subread_quals = entry.quality[d["start"] : d["end"]]
+                            if d["orig_strand"] == "-":
+                                rc_config = revcomp_adapter_config(d["adapter_config"])
+                                d["adapter_config"] = rc_config
+                                subread_seq = subread_seq[::-1].translate(COMPLEMENT_TRANS)
+                                subread_quals = subread_quals[::-1]
                         f_out.write(f"@{subread_id}\n".encode())
                         f_out.write(f"{subread_seq}\n".encode())
                         f_out.write(b"+\n")
