@@ -85,39 +85,41 @@ def generate_stats_output(stats, levenshtein_tally, num_barcodes):
     output.append(f"Number of barcodes per read: {num_barcodes}")
     for barcode_num in sorted(stats.keys()):
         output.append(f"\nStatistics for {barcode_num}:")
-        output.append(f"Total reads processed: {stats[barcode_num]['total_reads']}")
         output.append(
-            f"Number of corrected barcodes: {stats[barcode_num]['corrected_barcodes']}"
+            f"Total reads processed:        {stats[barcode_num]['total_reads']:,}"
         )
         output.append(
-            f"Correction efficiency: {stats[barcode_num]['corrected_barcodes']/stats[barcode_num]['total_reads']:.3f}"
+            f"Number of corrected barcodes: {stats[barcode_num]['corrected_barcodes']:,}"
+        )
+        output.append(
+            f"Correction efficiency:        {stats[barcode_num]['corrected_barcodes']/stats[barcode_num]['total_reads']:.3f}"
         )
         output.append(f"")
         output.append(
-            f"Mean levenshtein distance of corrected barcodes: {stats[barcode_num]['mean_levenshtein_corrected']:.2f}"
+            f"Mean levenshtein distance of corrected barcodes:   {stats[barcode_num]['mean_levenshtein_corrected']:.2f}"
         )
         output.append(
             f"Mean levenshtein distance of uncorrected barcodes: {stats[barcode_num]['mean_levenshtein_uncorrected']:.2f}"
         )
         output.append(f"")
         output.append(
-            f"Mean second match levenshtein distance of corrected barcodes: {stats[barcode_num]['mean_second_match_corrected']:.2f}"
+            f"Mean 2nd match levenshtein distance of corrected barcodes:   {stats[barcode_num]['mean_second_match_corrected']:.2f}"
         )
         output.append(
-            f"Mean second match levenshtein distance of uncorrected barcodes: {stats[barcode_num]['mean_second_match_uncorrected']:.2f}"
+            f"Mean 2nd match levenshtein distance of uncorrected barcodes: {stats[barcode_num]['mean_second_match_uncorrected']:.2f}"
         )
 
         output.append("\nLevenshtein distance tally for corrected barcodes:")
         for distance, count in sorted(
             levenshtein_tally[barcode_num]["corrected"].items()
         ):
-            output.append(f"  Distance {distance}: {count}")
+            output.append(f"  Distance {distance}: {count:,}")
 
         output.append("\nLevenshtein distance tally for uncorrected barcodes:")
         for distance, count in sorted(
             levenshtein_tally[barcode_num]["uncorrected"].items()
         ):
-            output.append(f"  Distance {distance}: {count}")
+            output.append(f"  Distance {distance}: {count:,}")
 
     return output
 
