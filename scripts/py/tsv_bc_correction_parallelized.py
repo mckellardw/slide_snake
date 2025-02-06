@@ -47,7 +47,19 @@ python scripts/py/tsv_bc_correction.py \
 
 ## microST
 """
-TODO
+python scripts/py/tsv_bc_correction_parallelized.py \
+    --tsv_in out/E109_A1_pool_txg/ont/barcodes_umis/microST_ssv1/read_barcodes_filtered.tsv \
+    --tsv_out_full out/E109_A1_pool_txg/ont/barcodes_umis/microST_ssv1/read_barcodes_corrected_full.tsv \
+    --tsv_out_slim out/E109_A1_pool_txg/ont/barcodes_umis/microST_ssv1/read_barcodes_corrected.tsv \
+    --id_column 0 \
+    --bc_columns 1 2 \
+    --whitelist_files out/E109_A1_pool_txg/bc/whitelist_1.txt out/E109_A1_pool_txg/bc/whitelist_2.txt \
+    --max_levens 3 \
+    --min_next_match_diffs 1 \
+    --k 5 \
+    --threads 56 \
+    1> out/E109_A1_pool_txg/ont/misc_logs/microST_ssv1/1c_tsv_bc_correction.log \
+    2> out/E109_A1_pool_txg/ont/misc_logs/microST_ssv1/1c_tsv_bc_correction.err
 """
 
 # fast levenshtein implementation- https://github.com/rapidfuzz/Levenshtein
@@ -527,6 +539,17 @@ def process_tsv(
 if __name__ == "__main__":
     args = parse_args()
 
+    # Check if input TSV file exists
+    if not os.path.isfile(args.tsv_in):
+        print(f"Error: Input TSV file '{args.tsv_in}' does not exist.")
+        sys.exit(1)
+
+    # Check if whitelist files exist
+    for whitelist_file in args.whitelist_files:
+        if not os.path.isfile(whitelist_file):
+            print(f"Error: Whitelist file '{whitelist_file}' does not exist.")
+            sys.exit(1)
+
     # param checks ------
     if len(args.max_levens) != len(args.bc_columns) and len(args.max_levens) == 1:
         args.max_levens = rep(val=args.max_levens[0], n=len(args.bc_columns))
@@ -538,6 +561,26 @@ if __name__ == "__main__":
         args.min_next_match_diffs = rep(
             val=args.min_next_match_diffs[0], n=len(args.bc_columns)
         )
+
+    # Add check for whitelist files matching bc_columns when concat_bcs is False
+    if not args.concat_bcs and len(args.whitelist_files) != len(args.bc_columns):
+        print(f"Error: Number of whitelist files ({len(args.whitelist_files)}) does not match the number of barcode columns ({len(args.bc_columns)}) when concat_bcs is set to False.")
+        sys.exit(1)
+
+    # Check if column indices are valid
+    with open(args.tsv_in, "r") as infile:
+        reader = csv.reader(infile, delimiter="\t")
+        header = next(reader)
+        num_columns = len(header)
+
+        if args.id_column >= num_columns:
+            print(f"Error: Read ID column index ({args.id_column}) is out of range.")
+            sys.exit(1)
+
+        for bc_column in args.bc_columns:
+            if bc_column >= num_columns:
+                print(f"Error: Barcode column index ({bc_column}) is out of range.")
+                sys.exit(1)
 
     # Print run settings for log files ----
     print(

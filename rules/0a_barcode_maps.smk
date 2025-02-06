@@ -58,18 +58,26 @@ rule BC_write_whitelist_variants:
         BC_LENGTHS=lambda w: get_recipe_info(w, info_col="BC_length", mode="list"),
     # resources:
     threads: 1
+    log:
+        log="{OUTDIR}/{SAMPLE}/bc/info.log",
     run:
         recipes = "".join(get_recipes(wildcards, mode="list"))
+        with open(log.log, "a") as log_file:
+            log_file.write(f"Recipes: {recipes}\n")
 
-        # load bc
+            # load bc
         bc_map = pd.read_csv(input.BC_MAP, sep="\t", header=None)
+        with open(log.log, "a") as log_file:
+            log_file.write(f"Loaded barcode map with {len(bc_map)} entries\n")
 
-        # split into multiple whitelists for separated barcodes
-        # TODO- fix this code... Needs to be abstracted!
+            # split into multiple whitelists for separated barcodes
+            # TODO- fix this code... Needs to be abstracted using barcode lengths, etc in recipe_sheet
         if "seeker" in recipes:
             bc_1 = [bc[:8] for bc in list(bc_map[0])]
             bc_2 = [bc[8:] for bc in list(bc_map[0])]
             bc_us = [bc[:8] + "_" + bc[8:] for bc in list(bc_map[0])]
+            with open(log.log, "a") as log_file:
+                log_file.write("Processed 'seeker' barcodes\n")
 
             bc_us_map = bc_map.copy()
             bc_us_map.iloc[:, 0] = bc_us
@@ -89,6 +97,8 @@ rule BC_write_whitelist_variants:
             bc_1 = [bc[:8] for bc in list(bc_map[0])]
             bc_2 = [bc[8:] for bc in list(bc_map[0])]
             bc_us = [bc[:8] + "_" + bc[8:] for bc in list(bc_map[0])]
+            with open(log.log, "a") as log_file:
+                log_file.write("Processed 'decoder' barcodes\n")
 
             bc_us_map = bc_map.copy()
             bc_us_map.iloc[:, 0] = bc_us
@@ -109,6 +119,8 @@ rule BC_write_whitelist_variants:
             bc_1 = [bc[:10] for bc in list(bc_map[0])]
             bc_2 = [bc[10:] for bc in list(bc_map[0])]
             bc_us = [bc[:10] + "_" + bc[10:] for bc in list(bc_map[0])]
+            with open(log.log, "a") as log_file:
+                log_file.write("Processed 'microST' barcodes\n")
 
             bc_us_map = bc_map.copy()
             bc_us_map.iloc[:, 0] = bc_us
@@ -136,6 +148,8 @@ rule BC_write_whitelist_variants:
                 cat {input.BC_MAP} | cut -f1 > {output.BC_US}
                 """
             )
+            with open(log.log, "a") as log_file:
+                log_file.write("Processed default barcodes\n")
 
 
 # For Seeker - Insert the adapter sequence into the bead barcodes for barcode matching/alignment
