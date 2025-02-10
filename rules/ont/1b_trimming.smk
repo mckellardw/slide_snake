@@ -40,6 +40,7 @@ rule ont_1b_cutadapt:
     threads: config["CORES"]
     log:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1b_cutadapt.log",
+        err="{OUTDIR}/{SAMPLE}/ont/misc_logs/1b_cutadapt.err",
     conda:
         f"{workflow.basedir}/envs/cutadapt.yml"
     shell:
@@ -58,7 +59,6 @@ rule ont_1b_cutadapt:
             -A POLYA_3p="{params.POLYA}X;max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
             -B TSO={params.TSO} \
             -B TXG_TSO={params.TXG_TSO} \
-            -B uMRT_TSO={params.uMRT_TSO} \
             -B SEEKER_LINKER={params.SEEKER_BB_LINKER} \
             --pair-filter=any \
             -o {output.R1_FQ} \
@@ -66,8 +66,10 @@ rule ont_1b_cutadapt:
             --cores {threads} \
             --json {output.JSON} \
             {input.R1_FQ} {input.R2_FQ} \
-        1>> {log.log}
+        1>> {log.log} \
+        2> {log.err}
         """
+        # -B uMRT_TSO={params.uMRT_TSO} \
         # -g R1_PRIMER=X{params.R1_PRIMER} \
         # --minimum-length {R1_LENGTH}:{params.MIN_R2_LENGTH} \
         # --maximum-length {2*R1_LENGTH}: \

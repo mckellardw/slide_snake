@@ -166,6 +166,12 @@ def parse_args():
         required=True,
         help="Number of threads to use.",
     )
+    parser.add_argument(
+        "--stats_out",
+        required=False,
+        default=None,
+        help="Path to the output TSV file for statistics.",
+    )
     args = parser.parse_args()
 
     return args
@@ -351,9 +357,10 @@ def main(
     # end fq open
 
     print("")
-    print(f"{currentTime()} - {read_count} total reads processed.")
+    print(f"{currentTime()} - {read_count:,} total reads processed.")
 
     return (
+        read_count,
         bc_match_count,
         bc_missing_count,
         no_bc_count,
@@ -463,6 +470,7 @@ if __name__ == "__main__":
 
         print(f"Multithreading not yet supported, running on 1 thread...")
         (
+            read_count,
             bc_match_count,
             bc_missing_count,
             no_bc_count,
@@ -485,6 +493,7 @@ if __name__ == "__main__":
         )
     elif args.threads == 1:
         (
+            read_count,
             bc_match_count,
             bc_missing_count,
             no_bc_count,
@@ -509,11 +518,19 @@ if __name__ == "__main__":
     print("")
     print(
         f"{currentTime()}\n"
-        f"# Reads w/ all barcodes found:            {bc_match_count}\n"
-        f"# Reads w/ one or more barcodes missing:  {bc_missing_count}\n"
-        f"# Reads w/ no barcodes                    {no_bc_count}\n"
+        f"# Total reads processed:                  {read_count}\n"
+        f"# Reads w/ all barcodes found:            {bc_match_count} ({bc_match_count/read_count*100:.2f}%)\n"
+        f"# Reads w/ one or more barcodes missing:  {bc_missing_count} ({bc_missing_count/read_count*100:.2f}%)\n"
+        f"# Reads w/ no barcodes:                   {no_bc_count} ({no_bc_count/read_count*100:.2f}%)\n"
         f"\n"
-        f"# Reads w/ all UMIs found:            {umi_match_count}\n"
-        f"# Reads w/ at least one UMI missing:  {umi_missing_count}\n"
-        f"# Reads w/ no UMIs                    {no_umi_count}\n"
+        f"# Reads w/ all UMIs found:                {umi_match_count} ({umi_match_count/read_count*100:.2f}%)\n"
+        f"# Reads w/ at least one UMI missing:      {umi_missing_count} ({umi_missing_count/read_count*100:.2f}%)\n"
+        f"# Reads w/ no UMIs:                       {no_umi_count} ({no_umi_count/read_count*100:.2f}%)\n"
     )
+
+    if args.stats_out:
+        with open(args.stats_out, "w") as stats_file:
+            stats_file.write(
+                "total_reads\tbc_match_count\tbc_missing_count\tno_bc_count\tumi_match_count\tumi_missing_count\tno_umi_count\n"
+                f"{read_count}\t{bc_match_count}\t{bc_missing_count}\t{no_bc_count}\t{umi_match_count}\t{umi_missing_count}\t{no_umi_count}\n"
+            )

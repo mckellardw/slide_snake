@@ -6,6 +6,7 @@ rule ont_1c_fastq_call_bc_from_adapter:
         FQS=lambda w: get_fqs(w, return_type="list", mode="ONT"),
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes.tsv",
+        STATS_TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/stats.tsv",
     params:
         BC_ADAPTERS=lambda w: get_recipe_info(w, "BC_adapter", mode="ONT"),
         BC_LENGTHS=lambda w: get_recipe_info(w, "BC_length", mode="ONT"),
@@ -45,6 +46,7 @@ rule ont_1c_fastq_call_bc_from_adapter:
             --umi_positions {params.UMI_POSITIONS} \
             --umi_mismatches {params.UMI_ADAPTER_MISMATCHES} \
             --threads {threads} \
+            --stats_out {output.STATS_TSV} \
         1> {log.log} \
         2> {log.err}
         """

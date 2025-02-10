@@ -203,7 +203,7 @@ def main(args):
         print(f"Total read count:         {read_count:,}")
         print(f"Insertion count in BC_1:  {ins_count:,}")
         print(f"Deletion count in BC_1:   {del_count:,}")
-        print(f"Reads missing adapter: {no_adapter_count:,}")
+        print(f"Reads missing adapter:    {no_adapter_count:,}")
     else:
         out = trim_fq(args.fq1_in, args.fq1_out.replace(".gz", ""), True)
 
@@ -234,6 +234,8 @@ if __name__ == "__main__":
     print(f"Minimum adapter start position:     {args.min_adapter_start_pos}")
     print(f"Minimum adapter alignment score:    {args.min_align_score}")
     print(f"{currentTime()} - Run starting...")
+    print("")
 
     main(args)
+    print("")
     print(f"{currentTime()} - Run complete.")

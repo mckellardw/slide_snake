@@ -479,7 +479,7 @@ def process_tsv(
 
                         if len(barcode) != len(whitelist[0]):
                             print(
-                                f"Barcode length [{len(barcode)}] does not match whitelist [{len(whitelist[0])}]"
+                                f"Error: Barcode length [{len(barcode)}] does not match whitelist [{len(whitelist[0])}] for read ID [{read_id}]"
                             )
                             sys.exit(1)
 
