@@ -10,9 +10,6 @@ set-threads:
   ilmn_1b_cutadapt2: 8
   ilmn_1b_R1_hardTrimming: 24
   ilmn_1b_R1_internalTrimming: 24
-  ilmn_1c_fastQC_preTrim: 24
-  ilmn_1c_fastQC_postTrim: 24
-  ilmn_1c_fastQC_twiceTrim: 24
   ilmn_2a_bwa_rRNA_align: 16
   ilmn_2a_bwa_rRNA_filter_R1: 16
   ilmn_2b_ribodetector: 16
@@ -23,6 +20,17 @@ set-threads:
   ilmn_4a_kbpython_std: 16
   ilmn_5a_miRge3_pseudobulk: 4
   ilmn_6a_cache_h5ad_STAR: 1
+  ilmn_7a_fastQC_preTrim: 24
+  ilmn_7a_fastQC_postTrim: 24
+  ilmn_7a_fastQC_twiceTrim: 24
+  ilmn_7b_readQC_0_rawInput: 24
+  ilmn_7b_readQC_1_preCutadapt: 24
+  ilmn_7b_readQC_2_postCutadapt: 24
+  ilmn_7b_readQC_3_twiceCutadapt: 24
+  ilmn_7b_readQC_3_bam: 1
+  ilmn_7b_readQC_downsample: 1
+  ilmn_7b_readQC_summaryplot: 8
+  ilmn_7b_readQC_compress: 1
   ont_1a_call_adapter_scan_v2: 56
   ont_1a_readIDs_by_adapter_type: 24
   ont_1a_adapter_scan_results: 1
@@ -77,7 +85,6 @@ set-threads:
   ont_2b_qualimap_minimap2: 1
   ont_2b_qualimap_STAR: 1
   ont_2b_qualimap_summary2csv: 1
-
 
 set-resources:
   ilmn_1a_merge_fastqs:
@@ -289,3 +296,36 @@ set-resources:
     mem_mb: 32000
   ont_2b_qualimap_summary2csv:
     mem: 8G
+  ilmn_7a_fastQC_preTrim:
+    mem: 16G
+    mem_mb: 16000
+  ilmn_7a_fastQC_postTrim:
+    mem: 16G
+    mem_mb: 16000
+  ilmn_7a_fastQC_twiceTrim:
+    mem: 16G
+    mem_mb: 16000
+  ilmn_7b_readQC_0_rawInput:
+    mem: 8G
+    mem_mb: 8000
+  ilmn_7b_readQC_1_preCutadapt:
+    mem: 8G
+    mem_mb: 8000
+  ilmn_7b_readQC_2_postCutadapt:
+    mem: 8G
+    mem_mb: 8000
+  ilmn_7b_readQC_3_twiceCutadapt:
+    mem: 8G
+    mem_mb: 8000
+  ilmn_7b_readQC_3_bam:
+    mem: 8G
+    mem_mb: 8000
+  ilmn_7b_readQC_downsample:
+    mem: 4G
+    mem_mb: 4000
+  ilmn_7b_readQC_summaryplot:
+    mem: 8G
+    mem_mb: 8000
+  ilmn_7b_readQC_compress:
+    mem: 4G
+    mem_mb: 4000
