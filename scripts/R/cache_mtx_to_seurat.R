@@ -1,0 +1,58 @@
+library(Seurat)
+library(Matrix)
+library(argparse)
+
+# Example usage:
+# Rscript scripts/r/cache_mtx_to_seurat.R \
+#   --mat_in input_matrix.mtx \
+#   --feat_in input_features.tsv \
+#   --bc_in input_barcodes.txt \
+#   --bc_map input_spatial_map.tsv \
+#   --seurat_out output_seurat.rds
+
+parse_args <- function() {
+  parser <- ArgumentParser(description = "Process spatial transcriptomics data with Seurat.")
+  parser$add_argument("--mat_in", required = TRUE, help = "Input count matrix file (mtx format)")
+  parser$add_argument("--feat_in", required = TRUE, help = "Input feature file (tsv format)")
+  parser$add_argument("--bc_in", required = TRUE, help = "Input barcode file (txt format)")
+  parser$add_argument("--bc_map", required = TRUE, help = "Input spatial map file (tsv format)")
+  parser$add_argument("--seurat_out", required = TRUE, help = "Output Seurat object file (rds format)")
+  return(parser$parse_args())
+}
+
+main <- function(mat_in, feat_in, bc_in, bc_map, seurat_out) {
+  # Load count matrix
+  counts <- readMM(mat_in)
+  
+  # Load features
+  features <- read.table(feat_in, sep = "\t", header = FALSE)
+  rownames(counts) <- features$V1
+  
+  # Load barcodes
+  barcodes <- read.table(bc_in, sep = "\t", header = FALSE)
+  colnames(counts) <- barcodes$V1
+  
+  # Create Seurat object
+  seurat_obj <- CreateSeuratObject(counts = counts)
+  
+  # Load spatial coordinates
+  spatial_data <- read.table(bc_map, sep = "\t", header = FALSE, col.names = c("barcode", "x", "y"))
+  rownames(spatial_data) <- spatial_data$barcode
+  
+  # Add spatial coordinates to Seurat object
+  seurat_obj[["spatial"]] <- CreateDimReducObject(embeddings = as.matrix(spatial_data[, c("x", "y")]), key = "spatial_")
+  
+  # Save Seurat object
+  saveRDS(seurat_obj, file = seurat_out)
+  cat("Seurat object saved to", seurat_out, "\n")
+}
+
+args <- parse_args()
+cat(
+  "Matrix file:                  ", args$mat_in, "\n",
+  "Features/genes file:          ", args$feat_in, "\n",
+  "Barcodes file:                ", args$bc_in, "\n",
+  "Barcode map file:             ", args$bc_map, "\n",
+  "Output Seurat object file:    ", args$seurat_out, "\n"
+)
+main(args$mat_in, args$feat_in, args$bc_in, args$bc_map, args$seurat_out)

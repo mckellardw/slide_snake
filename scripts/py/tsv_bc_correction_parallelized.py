@@ -421,7 +421,7 @@ def process_tsv(
 
     if verbose:
         processStartTime = time.time()
-        print(f"Correcting barcode(s)..")
+        
     # Prepare the output file
     with open(tsv_out_full, "w", newline="") as outfile_full:
         writer_full = csv.writer(outfile_full, delimiter="\t")
@@ -652,7 +652,7 @@ if __name__ == "__main__":
             file_path=args.tsv_in, temp_dir=temp_dir, num_chunks=args.threads
         )
 
-        print(f"{currentTime()} - Correcting {n_bcs} barcodes...")
+        print(f"{currentTime()} - Correcting {n_bcs:,} barcodes...")
 
         temp_tsvs_out_full = [
             fn.replace(".tsv", "_corr_full.tsv") for fn in temp_tsvs_in

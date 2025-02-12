@@ -72,17 +72,24 @@ def calculate_metrics(fastq_file, start, chunk_size=100000):
     read_id = "TMP"
     offset = start * 4  # Adjust for 4 lines per read
 
-    print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Starting calculate_metrics for offset {offset}")
+    # print(
+    #     f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Starting calculate_metrics for offset {offset}"
+    # )
 
     with gzip.open(fastq_file, "rt") if is_compressed else open(fastq_file, "r") as f:
-        if not is_compressed:
-            f = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
-            f = f.read().decode('utf-8').splitlines()
+        # if not is_compressed:
+        #     f = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+        #     f = f.read().decode("utf-8").splitlines()
         for i, line in enumerate(f):
             # Skip to offset
             if i >= offset:
                 if i % 4 == 0 and line.startswith("@"):  # ID line
-                    read_id = line.strip().replace("@", "").replace("\t", "_").split(" ", 1)[0]
+                    read_id = (
+                        line.strip()
+                        .replace("@", "")
+                        .replace("\t", "_")
+                        .split(" ", 1)[0]
+                    )
 
                 if i % 4 == 1:  # Sequence line
                     seq = line.strip()
@@ -121,14 +128,16 @@ def calculate_metrics(fastq_file, start, chunk_size=100000):
                     )
 
                 if (i + 1) % (4 * chunk_size) == 0:
-                    print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Yielding metrics for offset {offset}")
+                    # print(
+                    #     f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Yielding metrics for offset {offset}"
+                    # )
                     yield metrics
                     metrics = []
 
     if metrics:
-        print(
-            f"Last Offset: {offset} to {i} -> {i-offset} lines | {(i-offset)/4} reads"
-        )
+        # print(
+        #     f"Last Offset: {offset} to {i} -> {i-offset} lines | {(i-offset)/4} reads"
+        # )
         yield metrics
 
 
@@ -148,10 +157,15 @@ def worker(fastq_file, tsv_file, start, chunk_size, temp_dir):
     try:
         for read_metrics in calculate_metrics(fastq_file, start, chunk_size):
             write_tsv(read_metrics, temp_file)
-        print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Worker completed for chunk starting at {start}")
+        print(
+            f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Worker completed for chunk starting at {start}"
+        )
     except Exception as e:
-        print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Error in worker for chunk starting at {start}: {str(e)}")
+        print(
+            f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Error in worker for chunk starting at {start}: {str(e)}"
+        )
         raise
+
 
 def merge_tsv_files(temp_dir, final_tsv_file):
     with open(final_tsv_file, "w") as outfile:
@@ -164,12 +178,13 @@ def merge_tsv_files(temp_dir, final_tsv_file):
                     next(infile)  # Skip header
                     outfile.write(infile.read())
 
+
 def process_reads(fastq_file, tsv_file, chunk_size=100000, cores=1):
     # Determine the number of chunks to process
     print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Counting reads...")
     total_reads = count_reads_in_fastq(fastq_file)
     print(
-        f"{time.strftime('%D - %H:%M:%S', time.localtime())} | {total_reads} total reads found..."
+        f"{time.strftime('%D - %H:%M:%S', time.localtime())} | {total_reads:,} total reads found..."
     )
 
     total_chunks = (
@@ -184,7 +199,9 @@ def process_reads(fastq_file, tsv_file, chunk_size=100000, cores=1):
 
     with ProcessPoolExecutor(max_workers=cores) as executor:
         futures = [
-            executor.submit(worker, fastq_file, tsv_file, i * chunk_size, chunk_size, temp_dir)
+            executor.submit(
+                worker, fastq_file, tsv_file, i * chunk_size, chunk_size, temp_dir
+            )
             for i in range(total_chunks)
         ]
 
@@ -202,30 +219,23 @@ def process_reads(fastq_file, tsv_file, chunk_size=100000, cores=1):
                 )
 
     merge_tsv_files(temp_dir, tsv_file)
-    print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Merged all chunks into {tsv_file}")
+    print(
+        f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Merged all chunks into {tsv_file}"
+    )
     # Clean up temporary directory
     for temp_file in os.listdir(temp_dir):
         os.remove(os.path.join(temp_dir, temp_file))
     os.rmdir(temp_dir)
 
-def decompress_fastq_with_pigz(fastq_file, cores):
-    """
-    Decompress a gzipped FASTQ file using pigz and save it as an uncompressed file.
-
-    Args:
-    fastq_file (str): Path to the gzipped FASTQ file.
-    cores (int): Number of cores to use for decompression.
-
-    Returns:
-    str: Path to the uncompressed FASTQ file.
-    """
-    uncompressed_file = fastq_file.rstrip(".gz")
-    command = ["pigz", "-d", "-p", str(cores), fastq_file]
-    with open(uncompressed_file, "wb") as f_out:
-        subprocess.run(command, stdout=f_out)
-    return uncompressed_file
 
 def main(fastq_file, tsv_file, cores, chunk_size):
+    # Check if the input FASTQ file exists
+    if not os.path.exists(fastq_file):
+        print(
+            f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Error: Input FASTQ file '{fastq_file}' does not exist."
+        )
+        sys.exit(1)
+
     # Make output directory if needed
     output_dir = os.path.dirname(tsv_file)
     if len(output_dir) > 0 and not os.path.exists(output_dir):
@@ -234,21 +244,12 @@ def main(fastq_file, tsv_file, cores, chunk_size):
     output_removed = remove_file_if_exists(tsv_file)
 
     print(
-        f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Decompressing input FASTQ file with pigz..."
-    )
-    uncompressed_fastq_file = decompress_fastq_with_pigz(fastq_file, cores)
-
-    print(
         f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Processing reads across {cores} cores..."
     )
 
-    process_reads(uncompressed_fastq_file, tsv_file, chunk_size, cores)
+    process_reads(fastq_file, tsv_file, chunk_size, cores)
 
     print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Done!")
-
-    # Remove the uncompressed FASTQ file
-    os.remove(uncompressed_fastq_file)
-    print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Removed uncompressed FASTQ file [{uncompressed_fastq_file}]")
 
 
 if __name__ == "__main__":
