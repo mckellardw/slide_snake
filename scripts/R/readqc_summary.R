@@ -92,6 +92,13 @@ load_data <- function(data_file, n_max=Inf){
 
 # Function to read data and create plots --------------------------------------------
 create_plots <- function(df, data_file, out_file) {
+    
+    if(grepl("short_read", data_file)){
+        readLength.binwidth <- 1
+    } else{
+        readLength.binwidth <- 50
+    }
+
 
     # Summary histograms (left column)
     plot.gc <- ggplot(df, aes(x = GC_Percent)) +
@@ -102,7 +109,7 @@ create_plots <- function(df, data_file, out_file) {
 
     plot.readLength <- ggplot(df, aes(x = Read_Length)) +
         geom_histogram(
-            binwidth = 50, fill = "blue", alpha = 0.5
+            binwidth = readLength.binwidth, fill = "blue", alpha = 0.5
         ) +
         custom_theme +
         lims(
@@ -151,7 +158,8 @@ create_plots <- function(df, data_file, out_file) {
             aes(x = Read_Length)
         ) +
         geom_histogram(
-            binwidth = 1, fill = "blue", alpha = 0.5
+            binwidth = readLength.binwidth, 
+            fill = "blue", alpha = 0.5
         ) +
         custom_theme +
         lims(
@@ -174,7 +182,7 @@ create_plots <- function(df, data_file, out_file) {
         ) +
         geom_violin() +
         custom_theme +
-        lims(y=c(0,200))+
+        # lims(y=c(0,200))+
         # scale_y_continuous(trans="log10") +
         # scale_y_log10()+
         ggtitle("Longest Homopolymer Length") +
@@ -184,7 +192,8 @@ create_plots <- function(df, data_file, out_file) {
     if(grepl("R1", data_file)){
         if(grepl("short_read", data_file)){
             scatter.gc <- scatter.gc + xlim(0,160)
-            plot.readLength.zoom <- plot.readLength.zoom + xlim(0,100)
+            plot.readLength <- plot.readLength + xlim(0,NA)
+            plot.readLength.zoom <- plot.readLength.zoom + xlim(0,50)
         } else{
             scatter.gc <- scatter.gc + xlim(0,1000)
             plot.readLength.zoom <- plot.readLength.zoom + xlim(0,100)
@@ -193,6 +202,7 @@ create_plots <- function(df, data_file, out_file) {
     } else if(grepl("R2", data_file)){
         median_read_length <- median(df$Read_Length, na.rm = TRUE)
         plot.readLength.zoom <- plot.readLength.zoom + xlim(0, median_read_length)
+        plot.readLength <- plot.readLength + xlim(0,NA)
     }
 
     # Combine plots using patchwork
