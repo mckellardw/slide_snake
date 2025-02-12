@@ -9,4 +9,4 @@ dependencies:
   - keyutils=1.6.1
   - minimap2=2.28
   - samtools=1.20
-  - subread=2.0.6
+  - subread=2.0.8

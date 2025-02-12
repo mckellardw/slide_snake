@@ -4,6 +4,6 @@ channels:
   - conda-forge
 dependencies:
   - minimap2=2.28
-  - oarfish==0.6.5
+  - oarfish==0.7.0
   - pigz=2.8
   - samtools
