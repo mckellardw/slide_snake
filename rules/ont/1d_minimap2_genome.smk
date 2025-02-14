@@ -380,3 +380,31 @@ rule ont_1d_genome_cache_preQC_h5ad_minimap2:
         1> {log.log} \
         2> {log.err}
         """
+
+
+# make Seurat object with spatial coordinates
+rule ont_1d_genome_cache_preQC_seurat_minimap2:
+    input:
+        BCS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/barcodes.tsv.gz",
+        FEATS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/features.tsv.gz",
+        MAT="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/matrix.mtx.gz",
+        BC_map=lambda w: get_bc_map(w, mode="ONT"),
+    output:
+        SEURAT="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/output.rds",
+    log:
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/cache.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/cache.err",
+    threads: 1
+    conda:
+        f"{workflow.basedir}/envs/seurat.yml"
+    shell:
+        """
+        Rscript scripts/R/cache_mtx_to_seurat.R \
+            --mat_in {input.MAT} \
+            --feat_in {input.FEATS} \
+            --bc_in {input.BCS} \
+            --bc_map {input.BC_map} \
+            --seurat_out {output.SEURAT} \
+        1> {log.log} \
+        2> {log.err}
+        """
