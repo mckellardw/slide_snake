@@ -1080,13 +1080,15 @@ def add_barcode_tally_to_anndata(
     return adata
 
 
-# 
+#
 
 import PIL
+
 PIL.Image.MAX_IMAGE_PIXELS = 100_000_000
 
 from skimage.transform import rescale, resize
 from skimage.io import imread, imshow, imsave
+
 
 def rescale_annData(adata, adata2):
     """
@@ -1232,6 +1234,7 @@ def load_visium(folder):
     visium.uns["Annotation"] = annotation
     return visium
 
+
 # #To Celery (And beyond)
 def to_celery(adata, out_folder):
     """
@@ -1244,6 +1247,7 @@ def to_celery(adata, out_folder):
     Returns:
     None
     """
+
     def compose_alpha(image_with_alpha):
         """
         Compose an image with an alpha channel into an image without an alpha channel.

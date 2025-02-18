@@ -37,10 +37,18 @@ def parse_tsv(in_tsv, readIDcolumn, tagColumns, exclude_values):
 
 
 def add_tags_to_bam(
-    in_bam, in_tsv, out_bam, readIDColumn=0, tagColumns=[1], tags=["GN"], exclude_values=["-", "NA"]
+    in_bam,
+    in_tsv,
+    out_bam,
+    readIDColumn=0,
+    tagColumns=[1],
+    tags=["GN"],
+    exclude_values=["-", "NA"],
 ):
     """Add tag values from TSV to BAM and write to a new BAM file."""
-    read_to_tags, exclude_counts = parse_tsv(in_tsv, readIDColumn, tagColumns, exclude_values)
+    read_to_tags, exclude_counts = parse_tsv(
+        in_tsv, readIDColumn, tagColumns, exclude_values
+    )
 
     reads_yes_tags = 0
     reads_no_tags = 0
@@ -127,10 +135,7 @@ def main():
     )
     for value, count in exclude_counts.items():
         print(f"# Reads excluded with '{value}': {count:,}")
-    print(
-        f"[{timestamp}] Script finished\n"
-        f"Duration: {duration}\n"
-    )
+    print(f"[{timestamp}] Script finished\n" f"Duration: {duration}\n")
 
 
 if __name__ == "__main__":

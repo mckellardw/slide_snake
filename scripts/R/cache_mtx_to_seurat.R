@@ -39,8 +39,15 @@ main <- function(mat_in, feat_in, bc_in, bc_map, seurat_out) {
   spatial_data <- read.table(bc_map, sep = "\t", header = FALSE, col.names = c("barcode", "x", "y"))
   rownames(spatial_data) <- spatial_data$barcode
   
-  # Add spatial coordinates to Seurat object
-  seurat_obj[["spatial"]] <- CreateDimReducObject(embeddings = as.matrix(spatial_data[, c("x", "y")]), key = "spatial_")
+  # Match cells between Seurat object and spatial data
+  common_cells <- intersect(colnames(seurat_obj), rownames(spatial_data))
+  if(length(common_cells) == 0) stop("No matching barcodes between data and spatial map")
+  
+  # Subset Seurat object and spatial data to the common cells
+  seurat_obj <- subset(seurat_obj, cells = common_cells)
+  embeddings <- as.matrix(spatial_data[common_cells, c("x", "y")])
+  colnames(embeddings) <- paste0("spatial_", seq_len(ncol(embeddings)))
+  seurat_obj[["spatial"]] <- CreateDimReducObject(embeddings = embeddings, key = "spatial_")
   
   # Save Seurat object
   saveRDS(seurat_obj, file = seurat_out)

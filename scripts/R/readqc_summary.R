@@ -102,14 +102,20 @@ create_plots <- function(df, data_file, out_file) {
 
     # Summary histograms (left column)
     plot.gc <- ggplot(df, aes(x = GC_Percent)) +
-        geom_histogram(binwidth = 1, fill = "red", alpha = 0.5) +
+        geom_histogram(
+            binwidth = 1, 
+            fill = "red", 
+            alpha = 0.5
+        ) +
         custom_theme +
         scale_y_continuous(labels = label_scientific()) +
         ggtitle("GC Percentage Distribution")
 
     plot.readLength <- ggplot(df, aes(x = Read_Length)) +
         geom_histogram(
-            binwidth = readLength.binwidth, fill = "blue", alpha = 0.5
+            binwidth = readLength.binwidth, 
+            fill = "blue", 
+            alpha = 0.5
         ) +
         custom_theme +
         lims(
@@ -122,10 +128,15 @@ create_plots <- function(df, data_file, out_file) {
         ggtitle("Read Length Distribution")
 
     plot.homoploymer <- ggplot(
-            df, aes(x = Longest_Homopolymer/Read_Length, fill=Homopolymer_Base)
+            df, 
+            aes(
+                x = Longest_Homopolymer/Read_Length, 
+                fill=Homopolymer_Base
+            )
         ) +
         geom_histogram(
-            binwidth = 0.01
+            binwidth = 0.01,
+            color="black"
         ) +
         custom_theme +
         # scale_x_continuous(trans='log2') +

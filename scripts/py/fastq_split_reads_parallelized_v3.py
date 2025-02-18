@@ -229,13 +229,15 @@ if __name__ == "__main__":
     print("")
 
     if args.threads == 1:
-        read_counter, too_short_counter, unaligned_counter, missing_split_counter = find_and_split_reads(
-            fq_in=args.fq_in,
-            anchor_seq=args.anchor_seq,
-            split_seq=args.split_seq,
-            split_offset=args.split_offset,
-            max_offset=args.max_offset,
-            max_errors=args.max_errors,
+        read_counter, too_short_counter, unaligned_counter, missing_split_counter = (
+            find_and_split_reads(
+                fq_in=args.fq_in,
+                anchor_seq=args.anchor_seq,
+                split_seq=args.split_seq,
+                split_offset=args.split_offset,
+                max_offset=args.max_offset,
+                max_errors=args.max_errors,
+            )
         )
         print(
             f"Reads successfully split & written: {read_counter:,}\n"
@@ -294,7 +296,11 @@ if __name__ == "__main__":
         total_too_short_counter = sum([x[1] for x in multi_out])
         total_unaligned_counter = sum([x[2] for x in multi_out])
         total_missing_split_counter = sum([x[3] for x in multi_out])
-        total_removed_counter = total_too_short_counter + total_unaligned_counter + total_missing_split_counter
+        total_removed_counter = (
+            total_too_short_counter
+            + total_unaligned_counter
+            + total_missing_split_counter
+        )
 
         print(
             f"Reads successfully split & written: {total_read_counter:,} ({total_read_counter/(total_read_counter+total_removed_counter)*100:.2f}%)\n"

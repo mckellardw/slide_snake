@@ -184,6 +184,12 @@ def main(args):
             del_count += multi_out[i][2]
             no_adapter_count += multi_out[i][3]
 
+        # Calculate percentages
+        total = read_count if read_count else 1
+        ins_pct = ins_count / total * 100
+        del_pct = del_count / total * 100
+        na_pct = no_adapter_count / total * 100
+
         # Merge and compress chunked/trimmed fastqs
         os.system(
             f"""
@@ -200,13 +206,13 @@ def main(args):
                 """
             )
 
+        # Log output with percentages
         print(f"Total read count:         {read_count:,}")
-        print(f"Insertion count in BC_1:  {ins_count:,}")
-        print(f"Deletion count in BC_1:   {del_count:,}")
-        print(f"Reads missing adapter:    {no_adapter_count:,}")
+        print(f"Insertion count in BC_1:  {ins_count:,} ({ins_pct:.2f}%)")
+        print(f"Deletion count in BC_1:   {del_count:,} ({del_pct:.2f}%)")
+        print(f"Reads missing adapter:    {no_adapter_count:,} ({na_pct:.2f}%)")
     else:
-        out = trim_fq(args.fq1_in, args.fq1_out.replace(".gz", ""), True)
-
+        out = trim_fq(args.fq1_in, args.fq1_out.replace(".gz", ""), args.adapter_seq)
         read_count, ins_count, del_count, no_adapter_count = out
 
         # Compress trimmed fastq
@@ -216,12 +222,21 @@ def main(args):
             """
         )
 
+        # Calculate percentages
+        total = read_count if read_count else 1
+        ins_pct = ins_count / total * 100
+        del_pct = del_count / total * 100
+        na_pct = no_adapter_count / total * 100
+        
+        # Log output with percentages
         print(f"Total read count:         {read_count:,}")
-        print(f"Insertion count in BC_1:  {ins_count:,}")
-        print(f"Deletion count in BC_1:   {del_count:,}")
-        print(
-            f"Reads trimmed below {args.min_adapter_start_pos}bp: {no_adapter_count:,}"
-        )
+        print(f"Insertion count in BC_1:  {ins_count:,} ({ins_pct:.2f}%)")
+        print(f"Deletion count in BC_1:   {del_count:,} ({del_pct:.2f}%)")
+        print(f"Reads trimmed below {args.min_adapter_start_pos}bp: {no_adapter_count:,} ({na_pct:.2f}%)")
+
+    print(
+        f"Reads trimmed below {args.min_adapter_start_pos}bp: {no_adapter_count:,}"
+    )
 
 
 if __name__ == "__main__":

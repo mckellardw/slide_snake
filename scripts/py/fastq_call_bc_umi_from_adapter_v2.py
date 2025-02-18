@@ -242,7 +242,7 @@ def main(
 ):
     # Ensure the output directory exists
     os.makedirs(os.path.dirname(tsv_out), exist_ok=True)
-    
+
     null_bc_string = "-"
 
     bc_match_count = 0
@@ -288,7 +288,9 @@ def main(
                                     (end + offset) : (end + offset + length)
                                 ]
                             else:
-                                print(f"Incorrect barcode position [{position}] specified!")
+                                print(
+                                    f"Incorrect barcode position [{position}] specified!"
+                                )
 
                             # Don't write partial barcodes
                             if len(bc_seq) == length:
@@ -307,9 +309,13 @@ def main(
                     # Proceed w/ UMI alignment
                     umi_to_write = []
                     for adapter, position, length, offset, mismatches in UMI_RANGES:
-                        if isinstance(adapter, int) or len(read.sequence) >= len(adapter):
+                        if isinstance(adapter, int) or len(read.sequence) >= len(
+                            adapter
+                        ):
                             align_score, start, end = align_parasail_or_hardcoded(
-                                read=read.sequence, adapter=adapter, mismatches=mismatches
+                                read=read.sequence,
+                                adapter=adapter,
+                                mismatches=mismatches,
                             )
 
                             # if align_score > 2 * len(adapter):
@@ -323,7 +329,9 @@ def main(
                                         (end + offset) : (end + offset + length)
                                     ]
                                 else:
-                                    print(f"Incorrect UMI position [{position}] specified!")
+                                    print(
+                                        f"Incorrect UMI position [{position}] specified!"
+                                    )
 
                                 # Don't write partial barcodes
                                 if len(umi_seq) == length:

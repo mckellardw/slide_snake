@@ -421,7 +421,7 @@ def process_tsv(
 
     if verbose:
         processStartTime = time.time()
-        
+
     # Prepare the output file
     with open(tsv_out_full, "w", newline="") as outfile_full:
         writer_full = csv.writer(outfile_full, delimiter="\t")
@@ -564,7 +564,9 @@ if __name__ == "__main__":
 
     # Add check for whitelist files matching bc_columns when concat_bcs is False
     if not args.concat_bcs and len(args.whitelist_files) != len(args.bc_columns):
-        print(f"Error: Number of whitelist files ({len(args.whitelist_files)}) does not match the number of barcode columns ({len(args.bc_columns)}) when concat_bcs is set to False.")
+        print(
+            f"Error: Number of whitelist files ({len(args.whitelist_files)}) does not match the number of barcode columns ({len(args.bc_columns)}) when concat_bcs is set to False."
+        )
         sys.exit(1)
 
     # Check if column indices are valid

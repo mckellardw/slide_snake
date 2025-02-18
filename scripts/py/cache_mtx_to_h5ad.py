@@ -44,10 +44,24 @@ def plot_qc_metrics(adata, output_file):
     axes[0, 1].set_title("Knee Plot of Number of Genes per Cell")
 
     # Create spatial plots using scanpy
-    pl.embedding(adata, basis="spatial", color="n_counts", ax=axes[1, 0], show=False, size=point_size)
+    pl.embedding(
+        adata,
+        basis="spatial",
+        color="n_counts",
+        ax=axes[1, 0],
+        show=False,
+        size=point_size,
+    )
     axes[1, 0].set_title("Spatial Map of Total Counts")
 
-    pl.embedding(adata, basis="spatial", color="n_genes", ax=axes[1, 1], show=False, size=point_size)
+    pl.embedding(
+        adata,
+        basis="spatial",
+        color="n_genes",
+        ax=axes[1, 1],
+        show=False,
+        size=point_size,
+    )
     axes[1, 1].set_title("Spatial Map of Number of Genes")
 
     plt.tight_layout()
