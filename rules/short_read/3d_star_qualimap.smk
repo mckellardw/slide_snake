@@ -2,16 +2,19 @@
 ## link: https://qualimap.conesalab.org/
 
 
-## qualimap on aligned reads (not deduplicated)
+## qualimap on "raw" (not deduplicated) aligned reads
 rule ilmn_3d_qualimapQC_STAR:
     input:
         BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.bam",
         BAI="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.bam.bai",
     output:
         TXT="{OUTDIR}/{SAMPLE}/short_read/qualimap/STAR/{RECIPE}/raw/rnaseq_qc_results.txt",
-        HTML="{OUTDIR}/{SAMPLE}/short_read/qualimap/STAR/{RECIPE}/raw/qualimapReport.html",
+        PDF="{OUTDIR}/{SAMPLE}/short_read/qualimap/STAR/{RECIPE}/raw/rnaseq_qc_results.pdf",
     params:
         GENES_GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
+    log:
+        log="{OUTDIR}/{SAMPLE}/short_read/qualimap/STAR/{RECIPE}/raw/rnaseq.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/qualimap/STAR/{RECIPE}/raw/rnaseq.err",
     resources:
         mem="32G",
     threads: 1
@@ -28,7 +31,9 @@ rule ilmn_3d_qualimapQC_STAR:
             --sorted \
             --java-mem-size={resources.mem} \
             -outdir $(dirname {output.TXT}) \
-            -outformat html
+            -outformat pdf \
+        1> {log.log}
+        2> {log.err}
         """
 
 ## qualimap on deduplicated/aligned reads
@@ -38,9 +43,13 @@ rule ilmn_3d_qualimapQC_dedup_STAR:
         BAI="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.dedup.bam.bai",
     output:
         TXT="{OUTDIR}/{SAMPLE}/short_read/qualimap/STAR/{RECIPE}/dedup/rnaseq_qc_results.txt",
-        HTML="{OUTDIR}/{SAMPLE}/short_read/qualimap/STAR/{RECIPE}/dedup/qualimapReport.html",
+        PDF="{OUTDIR}/{SAMPLE}/short_read/qualimap/STAR/{RECIPE}/dedup/report.pdf",
     params:
         GENES_GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
+    log:
+        log="{OUTDIR}/{SAMPLE}/short_read/qualimap/STAR/{RECIPE}/dedup/rnaseq.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/qualimap/STAR/{RECIPE}/dedup/rnaseq.err",
+    resources:
     resources:
         mem="32G",
     threads: 1
@@ -57,7 +66,9 @@ rule ilmn_3d_qualimapQC_dedup_STAR:
             --sorted \
             --java-mem-size={resources.mem} \
             -outdir $(dirname {output.TXT}) \
-            -outformat html
+            -outformat pdf \
+        1> {log.log}
+        2> {log.err}
         """
 
 

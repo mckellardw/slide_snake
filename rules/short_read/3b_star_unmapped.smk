@@ -9,8 +9,8 @@ rule ilmn_3b_fastqc_unmapped:
         UNMAPPED1="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate1",
         UNMAPPED2="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2",
     output:
-        UNMAPPED1_FQ="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate1.fastq.gz",
-        UNMAPPED2_FQ="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2.fastq.gz",
+        UNMAPPED1_FQ="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate1.fq.gz",
+        UNMAPPED2_FQ="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2.fq.gz",
         fastqcDir=directory("{OUTDIR}/{SAMPLE}/short_read/fastqc/unmapped/{RECIPE}"),
     params:
         FASTQC_ADAPTERS=config["FASTQC_ADAPTERS"],
@@ -20,10 +20,10 @@ rule ilmn_3b_fastqc_unmapped:
         f"{workflow.basedir}/envs/fastqc.yml"
     shell:
         """        
-        mv {input.UNMAPPED1} {input.UNMAPPED2}.fastq
-        mv {input.UNMAPPED2} {input.UNMAPPED1}.fastq
+        mv {input.UNMAPPED1} {input.UNMAPPED2}.fq
+        mv {input.UNMAPPED2} {input.UNMAPPED1}.fq
 
-        pigz -p{threads} -f {input.UNMAPPED1}.fastq {input.UNMAPPED2}.fastq
+        pigz -p{threads} -f {input.UNMAPPED1}.fq {input.UNMAPPED2}.fq
 
         mkdir -p {output.fastqcDir}
 
@@ -38,7 +38,7 @@ rule ilmn_3b_fastqc_unmapped:
 # Only BLAST R2, which contains the insert (converts .fq to .fa, then removes the .fa file)
 rule ilmn_3b_blast_unmapped:
     input:
-        UNMAPPED2_FQ="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2.fastq.gz",
+        UNMAPPED2_FQ="{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2.fq.gz",
     output:
         BLAST_R2="{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/blast/Unmapped.out.mate2_blastResults.txt",
         TMP_FA=temp("{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/blast/Unmapped.out.mate2.fa"),
@@ -101,7 +101,7 @@ rule ilmn_3b_blast_unmapped:
 # rule unmapped_phix_bwa:
 #     input:
 #         PHIX_IDX = 'resources/phix/bwa.idx',
-#         UNMAPPED2_FQ = '{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2.fastq.gz'
+#         UNMAPPED2_FQ = '{OUTDIR}/{SAMPLE}/STARsolo/short_read/{RECIPE}/Unmapped.out.mate2.fq.gz'
 #     output:
 #         BAM1 = temp('{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/aligned.bam'), #temp()?
 #         BAM2 = '{OUTDIR}/{SAMPLE}unmapped/{RECIPE}/aligned_sorted.bam', #temp()?

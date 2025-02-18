@@ -120,6 +120,7 @@ rule ont_1f_genome_featureCounts:
         MAX_TEMPLATE_LENGTH=10000,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/featureCounts.log",
+        err="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/featureCounts.err",
     resources:
         mem="32G",
     threads: 1  # long reads can only run single-threaded
@@ -140,7 +141,8 @@ rule ont_1f_genome_featureCounts:
             -T {threads} \
             -R CORE {params.EXTRA_FLAGS} \
             {input.BAM} \
-        |& tee {log.log}
+        1> {log.log} \
+        2> {log.err} \
         """
 
 
@@ -158,6 +160,7 @@ rule ont_1f_genome_add_featureCounts_to_bam:
         TAG_COLUMN=3,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/tsv2tag_1_GN.log",
+        err="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/tsv2tag_1_GN.err",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
@@ -171,7 +174,8 @@ rule ont_1f_genome_add_featureCounts_to_bam:
             --readIDColumn {params.READ_ID_COLUMN} \
             --tagColumns {params.TAG_COLUMN} \
             --tags {params.TAG} \
-        |& tee {log.log}
+        1> {log.log} \
+        2> {log.err}
         """
 
 
@@ -188,6 +192,7 @@ rule ont_1f_genome_add_corrected_barcodes:
         BARCODE_TSV_COLUMN=1,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/tsv2tag_2_CB.log",
+        err="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/tsv2tag_2_CB.err",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
@@ -201,7 +206,8 @@ rule ont_1f_genome_add_corrected_barcodes:
             --readIDColumn {params.READ_ID_COLUMN} \
             --tagColumns {params.BARCODE_TSV_COLUMN} \
             --tags {params.BARCODE_TAG} \
-        |& tee {log.log}
+        1> {log.log} \
+        2> {log.err}
         """
 
 
@@ -218,6 +224,7 @@ rule ont_1f_genome_add_umis:
         UMI_TAG="UR",  # uncorrected UMI
     log:
         log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/tsv2tag_3_UR.log",
+        err="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/tsv2tag_3_UR.err",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
@@ -231,7 +238,8 @@ rule ont_1f_genome_add_umis:
             --readIDColumn {params.READ_ID_COLUMN} \
             --tagColumns {params.UMI_TSV_COLUMN} \
             --tags {params.UMI_TAG} \
-        |& tee {log.log}
+        1> {log.log} \
+        2> {log.err}
         """
 
 
@@ -325,6 +333,7 @@ rule ont_1f_genome_cache_preQC_h5ad_ultra:
         QC_PLOTS="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/raw/qc_plots.png",
     log:
         log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/cache.log",
+        err="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/cache.err",
     threads: 1
     conda:
         f"{workflow.basedir}/envs/scanpy.yml"
@@ -340,5 +349,6 @@ rule ont_1f_genome_cache_preQC_h5ad_ultra:
             --remove_zero_features \
             --plot_qc \
             --qc_plot_file {output.QC_PLOTS} \
-        1> {log.log}
+        1> {log.log} \
+        2> {log.err}
         """

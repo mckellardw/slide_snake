@@ -358,10 +358,10 @@ rule ont_1d_genome_cache_preQC_h5ad_minimap2:
         # BC_map="{OUTDIR}/{SAMPLE}/bc/map_underscore.txt",
     output:
         H5AD="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/output.h5ad",
-        QC_PLOTS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/qc_plots.png",
+        QC_PLOTS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/qc_h5ad.png",
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1d_minimap2_cache.log",
-        err="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1d_minimap2_cache.err",
+        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/raw/cache_h5ad.log",
+        err="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/raw/cache_h5ad.err",
     threads: 1
     conda:
         f"{workflow.basedir}/envs/scanpy.yml"
@@ -392,8 +392,8 @@ rule ont_1d_genome_cache_preQC_seurat_minimap2:
     output:
         SEURAT="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/output.rds",
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/cache.log",
-        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/cache.err",
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/cache_seurat.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/cache_seurat.err",
     threads: 1
     conda:
         f"{workflow.basedir}/envs/seurat.yml"
