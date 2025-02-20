@@ -37,7 +37,7 @@ def parse_args():
         description="Script to remove the adapter sequence from R1."
     )
     parser.add_argument(
-        "--adapter_seq", type=str, help="The internal adapter sequence."
+        "--adapter_seq", type=str, nargs="+", help="Internal adapter sequence(s). Provide one or more values."
     )
     parser.add_argument("--n_cores", type=int, help="Number of threads to use.")
     parser.add_argument("--tmp_dir", type=str, help="Directory for temporary files.")
@@ -55,7 +55,13 @@ def parse_args():
         "--min_align_score", type=float, default=58, help="Minimum alignment score."
     )
     args = parser.parse_args()
-
+    
+    # Convert adapter_seq into a unique list if provided
+    if args.adapter_seq:
+        args.adapter_seqs = list(set(args.adapter_seq))
+    else:
+        args.adapter_seqs = []
+    
     return args
 
 
@@ -78,7 +84,7 @@ def align_parasail(read, adapter, min_align_score=58, verbose=False):
 
 
 # Function to run internal trimming on a single .fq.gz file
-def trim_fq(fq_in, fq_out, adapter_seq, min_adapter_start_pos, min_align_score):
+def trim_fq(fq_in, fq_out, adapter_seqs, min_adapter_start_pos, min_align_score):
     # Tallies for log file
     read_count = 0  # Read count
     ins_count = 0  # Insertion counter for BC_1
@@ -91,41 +97,45 @@ def trim_fq(fq_in, fq_out, adapter_seq, min_adapter_start_pos, min_align_score):
             for read in fq:
                 read_count += 1
 
-                # Perform pairwise alignment to find the sequence with allowed score
-                align_score, start, end = align_parasail(
-                    read=read.sequence,
-                    adapter=adapter_seq,
-                    min_align_score=min_align_score,
-                )
+                best_score = -1
+                best_start, best_end = None, None
 
-                # Account for reads with deletions in `BC_1`
+                # Check alignment for each adapter
+                for adapter in adapter_seqs:
+                    score, start, end = align_parasail(
+                        read=read.sequence,
+                        adapter=adapter,
+                        min_align_score=min_align_score,
+                    )
+                    if score >= min_align_score and score > best_score:
+                        best_score = score
+                        best_start = start
+                        best_end = end
 
-                # Check if alignment meets the minimum score threshold based on mismatches
-                if align_score >= min_align_score:
-                    if start < min_adapter_start_pos:  # Deletion in BC_1
-                        offset = min_adapter_start_pos - start
+                if best_score >= min_align_score:
+                    if best_start < min_adapter_start_pos:  # Deletion in BC_1
+                        offset = min_adapter_start_pos - best_start
                         seq_out = (
                             "N" * offset
-                            + read.sequence[start:min_adapter_start_pos]
-                            + read.sequence[end:]
+                            + read.sequence[best_start:min_adapter_start_pos]
+                            + read.sequence[best_end:]
                         )
                         qual_out = (
                             "!" * offset
-                            + read.quality[start:min_adapter_start_pos]
-                            + read.quality[end:]
+                            + read.quality[best_start:min_adapter_start_pos]
+                            + read.quality[best_end:]
                         )
-
                         del_count += 1
                     else:
-                        if start > min_adapter_start_pos:  # Insertion in BC_1
+                        if best_start > min_adapter_start_pos:  # Insertion in BC_1
                             ins_count += 1
 
                         ## Trim the base closest to adapter
                         seq_out = (
-                            read.sequence[0:min_adapter_start_pos] + read.sequence[end:]
+                            read.sequence[:min_adapter_start_pos] + read.sequence[best_end:]
                         )
                         qual_out = (
-                            read.quality[0:min_adapter_start_pos] + read.quality[end:]
+                            read.quality[:min_adapter_start_pos] + read.quality[best_end:]
                         )
                 else:
                     # Broken read; erase R1 and add `N` with qval=0 ('!')
@@ -164,7 +174,7 @@ def main(args):
             (
                 f"{args.fq1_in.replace('.fq.gz','')}_{str(n).zfill(3)}.fq",
                 f"{args.fq1_in.replace('.fq.gz','')}_{str(n).zfill(3)}_trimmed.fq",
-                args.adapter_seq,
+                args.adapter_seqs,
                 args.min_adapter_start_pos,
                 args.min_align_score,
             )
@@ -212,7 +222,7 @@ def main(args):
         print(f"Deletion count in BC_1:   {del_count:,} ({del_pct:.2f}%)")
         print(f"Reads missing adapter:    {no_adapter_count:,} ({na_pct:.2f}%)")
     else:
-        out = trim_fq(args.fq1_in, args.fq1_out.replace(".gz", ""), args.adapter_seq)
+        out = trim_fq(args.fq1_in, args.fq1_out.replace(".gz", ""), args.adapter_seqs, args.min_adapter_start_pos, args.min_align_score)
         read_count, ins_count, del_count, no_adapter_count = out
 
         # Compress trimmed fastq
@@ -243,7 +253,7 @@ if __name__ == "__main__":
     args = parse_args()
 
     # Run params
-    print(f"Adapter sequence:                   {args.adapter_seq}")
+    print(f"Adapter sequence(s):              {args.adapter_seqs}")
     print(f"Input fastq:                        {args.fq1_in}")
     print(f"Output fastq:                       {args.fq1_out}")
     print(f"Minimum adapter start position:     {args.min_adapter_start_pos}")

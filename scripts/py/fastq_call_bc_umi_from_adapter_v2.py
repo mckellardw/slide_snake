@@ -209,10 +209,13 @@ def align_parasail(read, adapter, mismatches, verbose=False):
 
 def align_parasail_or_hardcoded(read, adapter, mismatches, verbose=False):
     """
-    Align sequences using parasail (Smith-Waterman local alignment) or use hardcoded positions.
+    Align sequences using parasail (Smith-Waterman local alignment) or,
+    if an integer is passed for the adapter, use that as a hardcoded position.
+    Supports both barcode and UMI extraction.
     """
     if isinstance(adapter, int):
-        # Use hardcoded position
+        # Use hardcoded position for barcode or UMI extraction:
+        # For hardcoded, return a dummy alignment score and use the integer as start and end.
         start = adapter
         end = adapter
         return 420, start, end
@@ -399,6 +402,14 @@ if __name__ == "__main__":
 
     if len(args.umi_offsets) != len(args.umi_adapters) and len(args.umi_offsets) == 1:
         args.umi_offsets = rep(val=args.umi_offsets[0], n=len(args.umi_adapters))
+
+    # Set offsets to 0 for hardcoded adapter positions.
+    for i, adapter in enumerate(args.bc_adapters):
+        if isinstance(adapter, int):
+            args.bc_offsets[i] = 0
+    for i, adapter in enumerate(args.umi_adapters):
+        if isinstance(adapter, int):
+            args.umi_offsets[i] = 0
 
     # Print run settings for log files ----
     print(

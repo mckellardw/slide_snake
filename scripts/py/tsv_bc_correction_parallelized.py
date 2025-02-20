@@ -309,6 +309,7 @@ def generate_kmer_index(whitelist, k):
     return kmer_to_bc_index
 
 
+# TODO- auto set k based on bc length (dependent on seq error rate)
 def load_whitelist(whitelist_path, k):
     """
     Read in barcode whitelist and create dictionary mapping each k-mer to all
@@ -404,11 +405,11 @@ def process_tsv(
     - tsv_in: Path to the input TSV file.
     - tsv_out_full: Path to the output TSV file with full information.
     - tsv_out_slim: Path to the output TSV file with slim information.
-    - id_column: Column index for read IDs.
-    - bc_columns: List of column indices for uncorrected barcodes.
+    - id_column: Column index(es) for read IDs.
+    - bc_columns: List of column index(es) for uncorrected barcodes.
     - concat_bcs: Boolean indicating whether to concatenate barcodes.
     - whitelists: Dictionary of whitelists for each barcode column.
-    - kmer_to_bc_indexes: Dictionary of k-mer to barcode index mappings.
+    - kmer_to_bc_indexes: Dictionary(ies) of k-mer to barcode index mappings.
     - max_levens: List of maximum Levenshtein distances for correction.
     - min_next_match_diffs: List of minimum differences between first and second closest matches.
     - verbose: Boolean indicating whether to print verbose output.
@@ -453,6 +454,7 @@ def process_tsv(
                                 whitelists[0],
                                 max_levens[0],
                                 min_next_match_diffs[0],
+                                kmer_to_bc_indexes[0]
                             ]
                         ]
 
@@ -463,6 +465,7 @@ def process_tsv(
                                 whitelists[i],
                                 max_levens[i],
                                 min_next_match_diffs[i],
+                                kmer_to_bc_indexes[i]
                             ]
                             for i in range(len(barcodes))
                         ]
@@ -470,7 +473,7 @@ def process_tsv(
                     # used for slim list for simple .bam tagging
                     concat_corrected_bc = []
 
-                    for barcode, whitelist, max_leven, min_next_match_diff in RANGE:
+                    for barcode, whitelist, max_leven, min_next_match_diff, kmer_to_bc_index in RANGE:
                         st = time.time()
 
                         # skip reads w/ missing bc
@@ -499,7 +502,7 @@ def process_tsv(
                                 bc_uncorr=barcode,
                                 whitelist=whitelist,
                                 bc_len=len(barcode),
-                                kmer_to_bc_index=kmer_to_bc_indexes[i],
+                                kmer_to_bc_index=kmer_to_bc_index,
                             )
                             concat_corrected_bc.append(corrected_bc)
 
@@ -599,23 +602,39 @@ if __name__ == "__main__":
         f"Number of threads:                {args.threads}\n"
     )
 
-    if args.concat_bcs and len(list(args.whitelist_files)) > 1:
-        print(f"Need a merged barcode whitelist!")
-        sys.exit(1)
 
-    # prep whitelists
     if len(args.whitelist_files) != len(args.bc_columns):
         print(f"Using this whitelist for all corrections:   {args.whitelist_files[0]}")
         args.whitelist_files = rep(args.whitelist_files[0], len(args.bc_columns))
 
+    # prep whitelists
     whitelists = {}
     kmer_to_bc_indexes = {}
-    for i, whitelist_file in enumerate(args.whitelist_files):
-        wl, kmer_to_bc_index = load_whitelist(whitelist_file, k=args.k)
-        # TODO- auto set k based on bc length (dependent on seq error rate)
+    if args.concat_bcs and len(list(args.whitelist_files)) > 1:
+        # merge linked barcode lists (SlideSeq)
+        if len(list(args.whitelist_files)) == len(list(args.bc_columns)):
+            print(f"Concatenating the [{len(list(args.whitelist_files))}] barcode lists given...")
+            sub_whitelists = {}
+            for i, whitelist_file in enumerate(args.whitelist_files):
+                sub_whitelists[i], sub_kmer_to_bc_index = load_whitelist(whitelist_file, k=args.k)
 
-        whitelists[i] = wl
-        kmer_to_bc_indexes[i] = kmer_to_bc_index
+            # Assuming lists are the same length...
+            wl = ["".join(strings) for strings in zip(*sub_whitelists.values())]     
+        
+            whitelists[0] = wl
+            kmer_to_bc_indexes[0] = generate_kmer_index(wl, args.k)
+
+        else:
+            print(f"Need a merged barcode whitelist, and parameter lengths don't match!")
+            sys.exit(1)
+    else:
+        # independent barcode lists (combinatorial indexing, etc.) or a single barcode list
+        for i, whitelist_file in enumerate(args.whitelist_files):
+            wl, kmer_to_bc_index = load_whitelist(whitelist_file, k=args.k)
+            # TODO- auto set k based on bc length (dependent on seq error rate)
+
+            whitelists[i] = wl
+            kmer_to_bc_indexes[i] = kmer_to_bc_index
 
     # Single-threaded = verbose
     if args.threads == 1:
