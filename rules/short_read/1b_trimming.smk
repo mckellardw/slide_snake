@@ -63,6 +63,7 @@ rule ilmn_1b_cutadapt:
             -p {output.R2_FQ} \
             --cores {threads} \
             --json {output.JSON} \
+            --quiet \
             {input.R1_FQ} {input.R2_FQ} \
         1> {log.log}
         """
@@ -127,6 +128,7 @@ rule ilmn_1b_cutadapt2:
             -p {output.R2_FQ} \
             --cores {threads} \
             --json {output.JSON} \
+            --quiet \
             {input.R1_FQ} {input.R2_FQ} \
         1> {log.log}
         """
@@ -158,7 +160,7 @@ rule ilmn_1b_R1_hardTrimming:
         | awk -v s={params.CB1end} \
             -v S={params.CB2start} \
             -v E={params.CB2end} \
-            -f scripts/awk/hardTrimFq.awk \
+            -f scripts/awk/fq_hardTrim.awk \
         > {output.R1_FQ.strip('.gz')}
 
         pigz -f -p{threads} {output.R1_FQ.strip('.gz')}
@@ -168,6 +170,7 @@ rule ilmn_1b_R1_hardTrimming:
 
 
 ## Internal trimming to cut out adapter sequences (SlideSeq, DecoderSeq, microST, etc.)
+#TODO- refactor script so that multiple adapter sequeces can be passed/trimmed (for miST, dBIT, etc)
 rule ilmn_1b_R1_internalTrimming:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R1.fq.gz",
@@ -179,13 +182,14 @@ rule ilmn_1b_R1_internalTrimming:
         # CB2start=27,
         # CB2end=42,
         TMPDIR="{OUTDIR}/{SAMPLE}/short_read/tmp/seqkit",
-        ADAPTER=lambda w: get_recipe_info(w, "internal_adapter", mode="ILMN")[0],
+        ADAPTER=lambda w: " ".join(get_recipe_info(w, "BC_adapter", mode="ILMN")),
         # RECIPE=lambda w: get_recipes(w, mode="ILMN"),
         # R1_LENGTH=lambda w: get_recipe_info(w, info_col="R1_finalLength", mode="ILMN"),
         BC1_LENGTH=8,  #TODO - lambda w: get_recipe_info(w, info_col="BC_length", mode="ILMN"),
         MIN_ALIGN_SCORE=58,
     log:
         log="{OUTDIR}/{SAMPLE}/short_read/misc_logs/R1_internalTrimming.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/misc_logs/R1_internalTrimming.err",
     resources:
         mem="16G",
     threads: config["CORES"]
@@ -201,7 +205,8 @@ rule ilmn_1b_R1_internalTrimming:
             --fq1_out {output.R1_FQ} \
             --min_adapter_start_pos {params.BC1_LENGTH} \
             --min_align_score {params.MIN_ALIGN_SCORE} \
-        | tee {log.log}
+        1> {log.log} \
+        2> {log.err}
         """
 
 
