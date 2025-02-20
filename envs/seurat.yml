@@ -4,4 +4,6 @@ channels:
   - bioconda
   - defaults
 dependencies:
+  - r-argparse
+  - r-matrix==1.6.5
   - r-seurat=5.1.0
