@@ -2,6 +2,11 @@
 # VASAseq implementation - https://github.com/anna-alemany/VASAseq/blob/main/mapping/ribo-bwamem.sh
 ##TODO incorporate VASAseq style "long"/short read handling with multiple align steps
 # Align to rRNA ref; keep reads with low alignment score (noRibo_R2.fq)
+# Tag	Description
+# AS:i:	Alignment score (higher is better)
+# XS:i:	Suboptimal alignment score (for secondary alignments)
+# NM:i:	Edit distance (number of mismatches and indels)
+# MD:Z:	Mismatch string (indicates mismatches against the reference)
 rule ilmn_2a_bwa_rRNA_align:
     input:
         R2_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R2.fq.gz",
@@ -14,6 +19,7 @@ rule ilmn_2a_bwa_rRNA_align:
         MIN_ALIGNSCORE=40,
     log:
         log="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/bwa_mem.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/bwa_mem.err",
     resources:
         mem="96G",
         time="2:00:00",
@@ -22,30 +28,16 @@ rule ilmn_2a_bwa_rRNA_align:
         f"{workflow.basedir}/envs/bwa.yml"
     shell:
         """
-        mkdir -p $(dirname {output.BAM1})
-
-        bwa-mem2 mem \
+        bash scripts/bash/fq_bwa_rRNA_align.sh \
+            -r {input.R2_FQ} \
+            -a {output.BAM1} \
+            -s {output.BAM2} \
+            -n {output.R2_FQ_BWA_FILTERED} \
+            -f {params.BWA_REF} \
+            -q {params.MIN_ALIGNSCORE} \
             -t {threads} \
-            {params.BWA_REF} \
-            {input.R2_FQ} \
-        1> {output.BAM1} \
-        2> {log.log}
-
-        samtools sort \
-            -@ {threads} \
-            -O BAM \
-            -o {output.BAM2} \
-            {output.BAM1}
-            
-        samtools index {output.BAM2}
-
-        samtools view \
-            -h {output.BAM2} \
-        | awk \
-            -v quality={params.MIN_ALIGNSCORE} \
-            -f scripts/awk/bam_lowPassMAPQFilter.awk \
-        | samtools fastq \
-        > {output.R2_FQ_BWA_FILTERED}
+        1> {log.log} \
+        2> {log.err}
         """
 
 

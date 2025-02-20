@@ -1,6 +1,5 @@
 BEGIN {
-    quality = ARGV[1]
-    ARGV[1] = ""
+    
 }
 
 {

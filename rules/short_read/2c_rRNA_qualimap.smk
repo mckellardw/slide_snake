@@ -6,11 +6,12 @@ rule ilmn_2c_qualimapQC_rRNA_bwa:
         BAI="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/aligned_sorted.bam.bai",
     output:
         TXT="{OUTDIR}/{SAMPLE}/qualimap/rRNA/bwa/rnaseq_qc_results.txt",
-        HTML="{OUTDIR}/{SAMPLE}/qualimap/rRNA/bwa/qualimapReport.html",
+        HTML="{OUTDIR}/{SAMPLE}/qualimap/rRNA/bwa/report.pdf",
     params:
         GENES_GTF=lambda wildcards: SAMPLE_SHEET["rRNA_gtf"][wildcards.SAMPLE],
     log:
         log="{OUTDIR}/{SAMPLE}/qualimap/rRNA/bwa/rnaseq_qc.log",
+        err="{OUTDIR}/{SAMPLE}/qualimap/rRNA/bwa/rnaseq_qc.err",
     resources:
         mem="32G",
     threads: 1
@@ -27,8 +28,9 @@ rule ilmn_2c_qualimapQC_rRNA_bwa:
             -gtf {params.GENES_GTF} \
             --java-mem-size={resources.mem} \
             -outdir $(dirname {output.TXT}) \
-            -outformat html \
-        2> {log.log}
+            -outformat pdf \
+        1> {log.log}
+        2> {log.err}
         """
 
 
