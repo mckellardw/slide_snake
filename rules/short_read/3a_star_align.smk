@@ -111,10 +111,8 @@ rule ilmn_3a_STARsolo_secondPass:
         SJ="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/firstPass/_STARpass1/SJ.out.tab",
     output:
         BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.bam",
-        UNMAPPED=[
-            f"{{OUTDIR}}/{{SAMPLE}}/short_read/STARsolo/{{RECIPE}}/Unmapped.out.mate{READ}"
-            for READ in [1, 2]
-        ],
+        UNMAPPED1="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Unmapped.out.mate1",
+        UNMAPPED2="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Unmapped.out.mate2",
         VEL=[
             f"{{OUTDIR}}/{{SAMPLE}}/short_read/STARsolo/{{RECIPE}}/Solo.out/Velocyto/raw/{FILE}"
             for FILE in ["spliced.mtx", "barcodes.tsv", "features.tsv"]

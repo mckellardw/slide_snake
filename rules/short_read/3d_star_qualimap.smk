@@ -36,6 +36,7 @@ rule ilmn_3d_qualimapQC_STAR:
         2> {log.err}
         """
 
+
 ## qualimap on deduplicated/aligned reads
 rule ilmn_3d_qualimapQC_dedup_STAR:
     input:
@@ -49,7 +50,6 @@ rule ilmn_3d_qualimapQC_dedup_STAR:
     log:
         log="{OUTDIR}/{SAMPLE}/short_read/qualimap/STAR/{RECIPE}/dedup/rnaseq.log",
         err="{OUTDIR}/{SAMPLE}/short_read/qualimap/STAR/{RECIPE}/dedup/rnaseq.err",
-    resources:
     resources:
         mem="32G",
     threads: 1
