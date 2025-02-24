@@ -8,9 +8,12 @@ rule ont_2b_qualimap:
         BAI="{OUTDIR}/{SAMPLE}/ont/{REF}/{RECIPE}/sorted_filtered_gn_cb_ub.bam.bai",
     output:
         TXT="{OUTDIR}/{SAMPLE}/ont/qualimap/{REF}/{RECIPE}/rnaseq_qc_results.txt",
-        HTML="{OUTDIR}/{SAMPLE}/ont/qualimap/{REF}/{RECIPE}/qualimapReport.html",
+        PDF="{OUTDIR}/{SAMPLE}/ont/qualimap/{REF}/{RECIPE}/report.pdf",
     params:
         GENES_GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
+    log:
+        log="{OUTDIR}/{SAMPLE}/ont/qualimap/{REF}/{RECIPE}/rnaseq.log",
+        err="{OUTDIR}/{SAMPLE}/ont/qualimap/{REF}/{RECIPE}/rnaseq.err",
     resources:
         mem="32G",
     threads: 1
@@ -27,7 +30,9 @@ rule ont_2b_qualimap:
             --sorted \
             --java-mem-size={resources.mem} \
             -outdir $(dirname {output.TXT}) \
-            -outformat html
+            -outformat pdf \
+        1> {log.log} \
+        2> {log.err}
         """
 
 # Convert the unfortunately formatted qc results from qualimap into a readable format

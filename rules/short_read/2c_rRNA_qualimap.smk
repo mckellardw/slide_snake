@@ -5,13 +5,13 @@ rule ilmn_2c_qualimapQC_rRNA_bwa:
         BAM="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/aligned_sorted.bam",
         BAI="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/aligned_sorted.bam.bai",
     output:
-        TXT="{OUTDIR}/{SAMPLE}/qualimap/rRNA/bwa/rnaseq_qc_results.txt",
-        HTML="{OUTDIR}/{SAMPLE}/qualimap/rRNA/bwa/report.pdf",
+        TXT="{OUTDIR}/{SAMPLE}/short_read/qualimap/rRNA/bwa/rnaseq_qc_results.txt",
+        HTML="{OUTDIR}/{SAMPLE}/short_read/qualimap/rRNA/bwa/report.pdf",
     params:
         GENES_GTF=lambda wildcards: SAMPLE_SHEET["rRNA_gtf"][wildcards.SAMPLE],
     log:
-        log="{OUTDIR}/{SAMPLE}/qualimap/rRNA/bwa/rnaseq_qc.log",
-        err="{OUTDIR}/{SAMPLE}/qualimap/rRNA/bwa/rnaseq_qc.err",
+        log="{OUTDIR}/{SAMPLE}/short_read/qualimap/rRNA/bwa/rnaseq_qc.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/qualimap/rRNA/bwa/rnaseq_qc.err",
     resources:
         mem="32G",
     threads: 1

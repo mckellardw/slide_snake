@@ -51,6 +51,7 @@ rule ilmn_1b_cutadapt:
             --overlap {params.OVERLAP} \
             --match-read-wildcards \
             --nextseq-trim=20 \
+            --trim-n \
             -A POLYA_3p="{params.POLYA}X;max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
             -A POLYT_3p="{params.POLYT}X;max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
             -B TSO={params.TSO} \

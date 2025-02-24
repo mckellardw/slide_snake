@@ -128,19 +128,19 @@ def get_fqs(w, return_type=["list", "dict"], mode=["ONT", "ILMN"]):
     try:
         if mode == "ILMN":
             if "rRNA-bwa" in w.RECIPE:  # Use trimmed & bwa-rRNA-filtered .fq's
-                R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/bwa/noRibo_R1.fq.gz"
-                R2 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/bwa/noRibo_R2.fq.gz"
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/bwa/no_rRNA_R1.fq.gz"
+                R2 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/bwa/no_rRNA_R2.fq.gz"
 
                 # TODO - update to match ribodetector style
 
             elif "ribodetector" in w.RECIPE:
-                R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/ribodetector/noRibo_R1.fq.gz"
-                R2 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/ribodetector/noRibo_R2.fq.gz"
+                R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/ribodetector/no_rRNA_R1.fq.gz"
+                R2 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/ribodetector/no_rRNA_R2.fq.gz"
 
                 if "internalTrim" in w.RECIPE:
-                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/ribodetector/noRibo_internalTrim_R1.fq.gz"
+                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/ribodetector/no_rRNA_internalTrim_R1.fq.gz"
                 if "hardTrim" in w.RECIPE:
-                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/ribodetector/noRibo_hardTrim_R1.fq.gz"
+                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/ribodetector/no_rRNA_hardTrim_R1.fq.gz"
             else:  # just trimmed .fq's
                 R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/tmp/twiceCut_R1.fq.gz"
                 R2 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/tmp/twiceCut_R2.fq.gz"
@@ -177,6 +177,46 @@ def get_fqs(w, return_type=["list", "dict"], mode=["ONT", "ILMN"]):
         return {"R1": R1, "R2": R2}
 
 
+def get_bc_adapter(w, mode=["ONT", "ILMN"]):
+    try:
+        if mode == "ILMN":
+            if "Trim" in w.RECIPE or "std" in w.RECIPE:
+                return get_recipe_info(w, "BC_start") # return integer start positions for each BC sequence
+            elif "matchLinker" in w.RECIPE or "seeker" in w.RECIPE:
+                return get_recipe_info(w, "BC_adapter")            
+        elif mode == "ONT":
+                return get_recipe_info(w, "BC_adapter")
+        else:
+            print("get_bc_adapter(): `mode` not found")
+            return "ERROR"
+    except Exception:
+        if mode == "ILMN":
+            print("TODO")
+        elif mode == "ONT":
+            print("TODO")
+        else:
+            print("get_bc_adapter(): `mode` not found")
+
+def get_umi_adapter(w, mode=["ONT", "ILMN"]):
+    try:
+        if mode == "ILMN":
+            if "Trim" in w.RECIPE or "std" in w.RECIPE:
+                return get_recipe_info(w, "UMI_start") # return integer start positions for each BC sequence
+            elif "matchLinker" in w.RECIPE or "seeker" in w.RECIPE:
+                return get_recipe_info(w, "UMI_adapter")            
+        elif mode == "ONT":
+                return get_recipe_info(w, "UMI_adapter")
+        else:
+            print("get_umi_adapter(): `mode` not found")
+            return "ERROR"
+    except Exception:
+        if mode == "ILMN":
+            print("TODO")
+        elif mode == "ONT":
+            print("TODO")
+        else:
+            print("get_umi_adapter(): `mode` not found")
+
 # whitelist param handling for different recipes/technologies/chemistries/etc
 def get_whitelist(w, return_type=None, mode="STAR"):
     try:
@@ -191,9 +231,9 @@ def get_whitelist(w, return_type=None, mode="STAR"):
             else:
                 whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_adapter.txt"
         elif "matchLinker" in w.RECIPE or "seeker" in w.RECIPE:
-            # Use BC_concat=True for combinatorial barcode constructs (DBIT, microST, etc)
+            # Use BC_concat=False for combinatorial barcode constructs (DBIT, microST, etc)
             if return_type == "list":
-                if RECIPE_SHEET["BC_concat"][w.RECIPE] and mode=="STAR":
+                if RECIPE_SHEET["BC_concat"][w.RECIPE] and mode in ["STAR", "ILMN"]:
                     # Barcode constructs where positional barcodes are NOT independent (must be concatenated)
                     whitelist = [
                         f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_1.txt",
@@ -289,6 +329,10 @@ def get_bc_map(w, mode=["ONT", "ILMN"]):
 
     # return whitelist path(s)
     return bc_map
+
+
+
+
 
 # Get number of barcodes (does not include UMIs!)
 def get_n_cells(w):

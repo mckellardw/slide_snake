@@ -1,5 +1,4 @@
 library(Seurat)
-library(Matrix)
 library(argparse)
 
 # Example usage:
@@ -17,12 +16,18 @@ parse_args <- function() {
   parser$add_argument("--bc_in", required = TRUE, help = "Input barcode file (txt format)")
   parser$add_argument("--bc_map", required = TRUE, help = "Input spatial map file (tsv format)")
   parser$add_argument("--seurat_out", required = TRUE, help = "Output Seurat object file (rds format)")
+  parser$add_argument("--feat_col", type = "integer", default = 1, help = "Feature column index in the feature file (default: 1)")
+  parser$add_argument("--transpose", type = "logical", default = FALSE, help = "Transpose count matrix? (default: FALSE)")
   return(parser$parse_args())
 }
 
-main <- function(mat_in, feat_in, bc_in, bc_map, seurat_out) {
-  # Load count matrix
-  counts <- readMM(mat_in)
+main <- function(mat_in, feat_in, bc_in, bc_map, seurat_out, feat_col, transpose) {
+  # Load count matrix using Seurat
+  counts <- Read10X(data.dir = dirname(mat_in), gene.column = feat_col, cell.column = 1)
+  
+  if (transpose) {
+    counts <- t(counts)
+  }
   
   # Load features
   features <- read.table(feat_in, sep = "\t", header = FALSE)
@@ -60,6 +65,9 @@ cat(
   "Features/genes file:          ", args$feat_in, "\n",
   "Barcodes file:                ", args$bc_in, "\n",
   "Barcode map file:             ", args$bc_map, "\n",
-  "Output Seurat object file:    ", args$seurat_out, "\n"
+  "Output Seurat object file:    ", args$seurat_out, "\n",
+  "Feature column index:         ", args$feat_col, "\n",
+  "Transpose matrix:             ", args$transpose, "\n",
+  sep=""
 )
-main(args$mat_in, args$feat_in, args$bc_in, args$bc_map, args$seurat_out)
+main(args$mat_in, args$feat_in, args$bc_in, args$bc_map, args$seurat_out, args$feat_col, args$transpose)

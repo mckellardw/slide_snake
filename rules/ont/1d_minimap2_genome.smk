@@ -192,7 +192,7 @@ rule ont_1d_genome_add_featureCounts_to_bam:
 rule ont_1d_genome_add_corrected_barcodes:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn.bam",
-        TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected.tsv",
+        TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_corrected.tsv",
     output:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb.bam",
     params:
@@ -224,7 +224,7 @@ rule ont_1d_genome_add_corrected_barcodes:
 rule ont_1d_genome_add_umis:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb.bam",
-        TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_filtered.tsv",
+        TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_filtered.tsv",
     output:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam",
     params:
@@ -360,8 +360,8 @@ rule ont_1d_genome_cache_preQC_h5ad_minimap2:
         H5AD="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/output.h5ad",
         QC_PLOTS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/qc_h5ad.png",
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/raw/cache_h5ad.log",
-        err="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/raw/cache_h5ad.err",
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/cache_h5ad.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/cache_h5ad.err",
     threads: 1
     conda:
         f"{workflow.basedir}/envs/scanpy.yml"

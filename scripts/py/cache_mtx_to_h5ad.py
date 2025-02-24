@@ -137,14 +137,17 @@ def main(
     # Count matrix
     adata = read_mtx(mat_in)
 
-    # Save raw counts
-    adata.raw = adata
 
     # Transpose for STAR inputs...
     if transpose:
-        print("transposing count matrix...")
-        print("")
+        # Convert to CSC format to avoid memory errors when transposing
+        print("Converting count matrix to CSC & transposing...")
+        adata.X = adata.X.tocsc()
         adata = adata.transpose()
+        print("    Done.")
+    
+    # Save raw counts
+    adata.raw = adata
 
     # Features
     feature_df = pd.read_csv(feat_in, sep="\t", header=None)

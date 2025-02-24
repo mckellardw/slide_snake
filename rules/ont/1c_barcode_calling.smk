@@ -5,8 +5,8 @@ rule ont_1c_fastq_call_bc_from_adapter:
         # LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan_results.txt",
         FQS=lambda w: get_fqs(w, return_type="list", mode="ONT"),
     output:
-        TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes.tsv",
-        STATS_TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/stats.tsv",
+        TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes.tsv",
+        STATS_TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcode_stats.tsv",
     params:
         BC_ADAPTERS=lambda w: get_recipe_info(w, "BC_adapter", mode="ONT"),
         BC_LENGTHS=lambda w: get_recipe_info(w, "BC_length", mode="ONT"),
@@ -23,8 +23,8 @@ rule ont_1c_fastq_call_bc_from_adapter:
             len(get_recipe_info(w, "UMI_adapter", mode="ONT")) * 0.1
         ),
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1c_fastq_call_bc_from_adapter.log",
-        err="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1c_fastq_call_bc_from_adapter.err",
+        log="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/1c_fastq_call_bc_from_adapter.log",
+        err="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/1c_fastq_call_bc_from_adapter.err",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
@@ -53,11 +53,11 @@ rule ont_1c_fastq_call_bc_from_adapter:
 
 
 # Filter called read barcodes
-rule ont_1c_filter_read_barcodes:
+rule ont_1c_filter_barcodes:
     input:
-        TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes.tsv",
+        TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes.tsv",
     output:
-        TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_filtered.tsv",
+        TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_filtered.tsv",
     shell:
         """
         cat {input.TSV} | grep -vP "\t-" > {output.TSV}
@@ -67,21 +67,23 @@ rule ont_1c_filter_read_barcodes:
 # Correct barcodes based on white lists
 rule ont_1c_tsv_bc_correction:
     input:
-        TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_filtered.tsv",
+        TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_filtered.tsv",
         WHITELIST=lambda w: get_whitelist(w, return_type="list", mode="ONT"),
     output:
-        TSV_SLIM="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected.tsv",
-        TSV_FULL="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected_full.tsv",
+        TSV_SLIM="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_corrected.tsv",
+        TSV_FULL="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_corrected_full.tsv",
     params:
         WHITELIST=lambda w: " ".join(get_whitelist(w, return_type="list", mode="ONT")),
         MAX_LEVEN=lambda w: get_recipe_info(w, "BC_max_ED", mode="ONT"),  # maximum Levenshtein distance tolerated in correction;
         NEXT_MATCH_DIFF=lambda w: get_recipe_info(w, "BC_min_ED_diff", mode="ONT"),
         K=5,  # kmer length for BC whitelist filtering; shorter value improves accuracy, extends runtime
         BC_COLUMNS=lambda w: " ".join(map(str, range(1, get_n_bcs(w) + 1))),
-        CONCAT_BCS=lambda w: '--concat_bcs' if get_recipe_info(w, "BC_concat", mode="ONT") else '',  # whether the sub-barcodes should be corrected together (SlideSeq) or separately (microST)
+        CONCAT_BCS=lambda w: (
+            "--concat_bcs" if get_recipe_info(w, "BC_concat", mode="ONT") else ""
+        ),  # whether the sub-barcodes should be corrected together (SlideSeq) or separately (microST)
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1c_tsv_bc_correction.log",
-        err="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1c_tsv_bc_correction.err",
+        log="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/1c_tsv_bc_correction.log",
+        err="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/1c_tsv_bc_correction.err",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
@@ -89,8 +91,6 @@ rule ont_1c_tsv_bc_correction:
     threads: config["CORES"]
     shell:
         """
-        echo {params.CONCAT_BCS}
-
         python scripts/py/tsv_bc_correction_parallelized.py --tsv_in {input.TSV} \
             --tsv_out_full {output.TSV_FULL} \
             --tsv_out_slim {output.TSV_SLIM} \
@@ -111,8 +111,8 @@ rule ont_1c_tsv_bc_correction:
 
 rule ont_1c_summarize_bc_correction:
     input:
-        # TSV_SLIM="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected.tsv",
-        TSV_FULL="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected_full.tsv",
+        # TSV_SLIM="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_corrected.tsv",
+        TSV_FULL="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_corrected_full.tsv",
     output:
         SUMMARY="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/bc_correction_stats.txt",
     params:

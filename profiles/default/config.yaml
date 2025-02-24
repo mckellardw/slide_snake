@@ -19,7 +19,9 @@ set-threads:
   ilmn_3d_qualimapQC_STAR: 8
   ilmn_4a_kbpython_std: 16
   ilmn_5a_miRge3_pseudobulk: 4
-  ilmn_6a_cache_h5ad_STAR: 1
+  ilmn_6a_cache_h5ad_STAR: 1  
+  ilmn_6a_cache_seurat_STAR: 1
+  ilmn_6a_cache_seurat_kbpython_std: 1
   ilmn_7a_fastQC_preTrim: 24
   ilmn_7a_fastQC_postTrim: 24
   ilmn_7a_fastQC_twiceTrim: 24
@@ -56,16 +58,16 @@ set-threads:
   ont_1d_genome_umitools_count: 1
   ont_1d_genome_counts_to_sparse: 1
   ont_1d_genome_cache_h5ad_minimap2: 1
-  ont_1d_transcriptome_align_minimap2_genome: 16
-  ont_1d_transcriptome_sort_compress_output: 1
-  ont_1d_transcriptome_featureCounts: 1
-  ont_1d_transcriptome_add_featureCounts_to_bam: 1
-  ont_1d_transcriptome_add_corrected_barcodes: 1
-  ont_1d_transcriptome_add_umis: 1
-  ont_1d_transcriptome_filter_bam_empty_tags: 1
-  ont_1d_transcriptome_umitools_count: 1
-  ont_1d_transcriptome_counts_to_sparse: 1
-  ont_1d_transcriptome_cache_h5ad_minimap2: 1  
+  ont_1d_txome_align_minimap2_txome: 1
+  ont_1d_txome_add_corrected_barcodes: 1
+  ont_1d_txome_add_umis: 1
+  ont_1d_txome_filter_bam_empty_tags: 1
+  ont_1d_txome_sort_by_cb: 1
+  ont_1d_txome_oarfish_quant: 16
+  ont_1d_txome_umitools_count: 1
+  ont_1d_txome_counts_to_sparse: 1
+  ont_1d_txome_cache_preQC_h5ad_minimap2: 1
+  ont_1d_txome_cache_preQC_seurat_minimap2: 1
   ont_1f_ultra_pipeline_genome: 16
   ont_1f_genome_sort_compress_output: 1
   ont_1f_genome_featureCounts: 1
@@ -149,6 +151,12 @@ set-resources:
   ilmn_6a_cache_h5ad_STAR:
     mem: 64G
     mem_mb: 64000
+  ilmn_6a_cache_seurat_STAR:
+    mem: 64G
+    mem_mb: 64000
+  ilmn_6a_cache_seurat_kbpython_std:
+    mem: 64G
+    mem_mb: 64000
   ilmn_6a_cache_h5ad_kbpython_std:
     mem: 64G
     mem_mb: 64000
@@ -217,34 +225,34 @@ set-resources:
   ont_1d_genome_cache_h5ad_minimap2:
     mem: 16G
     mem_mb: 16000
-  ont_1d_transcriptome_align_minimap2_genome:
+  ont_1d_txome_align_minimap2_genome:
     mem: 128G
     mem_mb: 128000
-  ont_1d_transcriptome_sort_compress_output:
+  ont_1d_txome_sort_compress_output:
     mem: 16G
     mem_mb: 16000
-  ont_1d_transcriptome_featureCounts:
+  ont_1d_txome_featureCounts:
     mem: 32G
     mem_mb: 32000
-  ont_1d_transcriptome_add_featureCounts_to_bam:
+  ont_1d_txome_add_featureCounts_to_bam:
     mem: 16G
     mem_mb: 16000
-  ont_1d_transcriptome_add_corrected_barcodes:
+  ont_1d_txome_add_corrected_barcodes:
     mem: 16G
     mem_mb: 16000
-  ont_1d_transcriptome_add_umis:
+  ont_1d_txome_add_umis:
     mem: 16G
     mem_mb: 16000
-  ont_1d_transcriptome_filter_bam_empty_tags:
+  ont_1d_txome_filter_bam_empty_tags:
     mem: 16G
     mem_mb: 16000
-  ont_1d_transcriptome_umitools_count:
+  ont_1d_txome_umitools_count:
     mem: 16G
     mem_mb: 16000
-  ont_1d_transcriptome_counts_to_sparse:
+  ont_1d_txome_counts_to_sparse:
     mem: 16G
     mem_mb: 16000
-  ont_1d_transcriptome_cache_h5ad_minimap2:
+  ont_1d_txome_cache_h5ad_minimap2:
     mem: 16G
     mem_mb: 16000  
   ont_1f_ultra_pipeline_genome:

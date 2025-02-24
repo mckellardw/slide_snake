@@ -66,7 +66,6 @@ else
     echo $(date "+%Y-%m-%d %H:%M:%S")": Filtering aligned reads..."
     # Filter high edit-distance ("NM">) and low MAPQ reads and convert BAM to fastq
     samtools view -h "${BAM2}" | \
-        awk -v tag=NM -v threshold="${MIN_NM}" -f scripts/awk/bam_highPassTagFilter.awk | \
         awk -v quality="${MIN_MAPQ}" -f scripts/awk/bam_lowPassMAPQFilter.awk | \
         samtools fastq - > "${NO_RIBO_FQ}"
 fi

@@ -1,7 +1,7 @@
 # Filter out rRNA reads w/ bwa alignment
 # VASAseq implementation - https://github.com/anna-alemany/VASAseq/blob/main/mapping/ribo-bwamem.sh
 ##TODO incorporate VASAseq style "long"/short read handling with multiple align steps
-# Align to rRNA ref; keep reads with low alignment score (noRibo_R2.fq)
+# Align to rRNA ref; keep reads with low alignment score (no_rRNA_R2.fq)
 # Tag	Description
 # AS:i:	Alignment score (higher is better)
 # XS:i:	Suboptimal alignment score (for secondary alignments)
@@ -11,9 +11,9 @@ rule ilmn_2a_bwa_rRNA_align:
     input:
         R2_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R2.fq.gz",
     output:
-        BAM1=temp("{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/aligned.bam"),
+        BAM1=temp("{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/aligned.sam"),
         BAM2="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/aligned_sorted.bam",
-        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/noRibo_R2.fq",
+        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/no_rRNA_R2.fq",
     params:
         BWA_REF=lambda w: get_bwa_ref(w, mode="rRNA"),
         MIN_ALIGNSCORE=40,
@@ -42,11 +42,11 @@ rule ilmn_2a_bwa_rRNA_align:
 
 
 # Generate list of read IDs to keep ("no ribo") from the filtered R2 file
-rule ilmn_2a_bwa_rRNA_get_noRibo_list:
+rule ilmn_2a_bwa_rRNA_get_no_rRNA_list:
     input:
-        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/noRibo_R2.fq",
+        R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/no_rRNA_R2.fq",
     output:
-        NORIBO_LIST=temp("{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_readID.list"),
+        NORIBO_LIST=temp("{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/no_rRNA_readID.list"),
     threads: 1
     shell:
         """
@@ -58,9 +58,9 @@ rule ilmn_2a_bwa_rRNA_get_noRibo_list:
 rule ilmn_2a_bwa_rRNA_filter_R1:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R1.fq.gz",
-        NORIBO_LIST="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_readID.list",
+        NORIBO_LIST="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/no_rRNA_readID.list",
     output:
-        R1_FQ_NORIBO="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/noRibo_R1.fq",
+        R1_FQ_NORIBO="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/no_rRNA_R1.fq",
     resources:
         mem="64G",
     threads: config["CORES"]
@@ -76,9 +76,9 @@ rule ilmn_2a_bwa_rRNA_filter_R1:
 rule ilmn_2a_bwa_rRNA_filter_trimmed_R1:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_{TRIM}_R1.fq.gz",
-        rRNA_LIST="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_readID.list",
+        rRNA_LIST="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/no_rRNA_readID.list",
     output:
-        R1_FQ_NORIBO="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/noRibo_{TRIM}_R1.fq",
+        R1_FQ_NORIBO="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/no_rRNA_{TRIM}_R1.fq",
     resources:
         mem="64G",
     threads: config["CORES"]
@@ -93,9 +93,9 @@ rule ilmn_2a_bwa_rRNA_filter_trimmed_R1:
 # Compress previous outputs
 rule ilmn_2a_bwa_rRNA_compress_unmapped:
     input:
-        R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/noRibo_{READ}.fq",
+        R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/no_rRNA_{READ}.fq",
     output:
-        R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/noRibo_{READ}.fq.gz",
+        R1_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/no_rRNA_{READ}.fq.gz",
     resources:
         mem="16G",
     threads: config["CORES"]
@@ -108,7 +108,7 @@ rule ilmn_2a_bwa_rRNA_compress_unmapped:
 #  Run fastqc on unmapped reads;
 rule ilmn_2a_bwa_rRNA_filtered_fastqc:
     input:
-        FQ="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/noRibo_{READ}.fq.gz",
+        FQ="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/no_rRNA_{READ}.fq.gz",
     output:
         FQC_DIR=directory("{OUTDIR}/{SAMPLE}/fastqc/rRNA_bwa/{READ}"),
     params:

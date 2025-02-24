@@ -9,7 +9,7 @@ rule ilmn_3d_qualimapQC_STAR:
         BAI="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.bam.bai",
     output:
         TXT="{OUTDIR}/{SAMPLE}/short_read/qualimap/STAR/{RECIPE}/raw/rnaseq_qc_results.txt",
-        PDF="{OUTDIR}/{SAMPLE}/short_read/qualimap/STAR/{RECIPE}/raw/rnaseq_qc_results.pdf",
+        PDF="{OUTDIR}/{SAMPLE}/short_read/qualimap/STAR/{RECIPE}/raw/report.pdf",
     params:
         GENES_GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
     log:

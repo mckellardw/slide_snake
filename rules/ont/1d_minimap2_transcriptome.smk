@@ -1,5 +1,6 @@
 # Align w/ minimap2
 ## minimap2 docs - https://lh3.github.io/minimap2/minimap2.html
+## see oarfish requirements - https://github.com/COMBINE-lab/oarfish?tab=readme-ov-file#choosing-minimap2-alignment-options
 rule ont_1d_txome_align_minimap2_transcriptome:
     input:
         FQ=lambda w: get_fqs(w, return_type="list", mode="ONT")[1],
@@ -31,7 +32,7 @@ rule ont_1d_txome_align_minimap2_transcriptome:
             -t {threads} \
             {params.REF} \
             {input.FQ} \
-        | samtools view -@ {threads} -b \
+        | samtools view -b \
         > {output.BAM} \
         2>> {log.log}
         """
@@ -41,7 +42,7 @@ rule ont_1d_txome_align_minimap2_transcriptome:
 rule ont_1d_txome_add_corrected_barcodes:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned.bam",
-        TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected.tsv",
+        TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_corrected.tsv",
     output:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_cb.bam",
     params:
@@ -73,7 +74,7 @@ rule ont_1d_txome_add_corrected_barcodes:
 rule ont_1d_txome_add_umis:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_cb.bam",
-        TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_filtered.tsv",
+        TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_filtered.tsv",
     output:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_cb_ub.bam",
     params:
@@ -127,13 +128,16 @@ rule ont_1d_txome_filter_bam_empty_tags:
 
 
 # Sort aligned_filtered_cb_ub.bam by CB tag
+## see more oarfish requirements here - https://github.com/COMBINE-lab/oarfish?tab=readme-ov-file#notes-about-single-cell-mode
 rule ont_1d_txome_sort_by_cb:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_cb_ub.bam",
     output:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub.bam",
+    params:
+        BC_TAG="CB",  # corrected barcode tag
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/sort_by_cb.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/sort_by_cb.err",
     resources:
         mem="16G",
     threads: 1
@@ -141,13 +145,13 @@ rule ont_1d_txome_sort_by_cb:
         f"{workflow.basedir}/envs/minimap2.yml"
     shell:
         """
-        samtools sort -t CB -o {output.BAM} {input.BAM} 2> {log.log}
+        samtools sort -t {params.CB} -o {output.BAM} {input.BAM} 2> {log.err}
         """
 
 
 # Run oarfish alignment mode transcript quantification
 # github: https://github.com/COMBINE-lab/oarfish
-#TODO- --short-quant?
+# TODO- --short-quant?
 rule ont_1d_txome_oarfish_quant:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub.bam",
@@ -180,8 +184,11 @@ rule ont_1d_txome_oarfish_quant:
         1> {log.log} \
         2> {log.err}
         """
+
+
 # Code snippet to remove the annoying ANSI codes from the log file:
 ## sed -r 's/\x1B\[[0-9;]*[mK]//g' oarfish.err > oarfish_cleaned.err
+
 
 # Generate count matrix w/ umi-tools
 rule ont_1d_txome_umitools_count:
@@ -247,7 +254,8 @@ rule ont_1d_txome_cache_preQC_h5ad_minimap2:
         H5AD="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/output.h5ad",
         QC_PLOTS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/qc_plots.png",
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/cache.log",
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/cache_h5ad.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/cache_h5ad.err",
     threads: 1
     conda:
         f"{workflow.basedir}/envs/scanpy.yml"

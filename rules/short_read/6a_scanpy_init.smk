@@ -16,8 +16,8 @@ rule ilmn_6a_cache_h5ad_STAR:
         var_names="gene_symbols",  # scanpy.read_10x_mtx()
     threads: 1
     log:
-        log="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}_cache.log",
-        err="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}_cache.err",
+        log="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}_cache_h5ad.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}_cache_h5ad.err",
     conda:
         f"{workflow.basedir}/envs/scanpy.yml"
     shell:
@@ -37,6 +37,7 @@ rule ilmn_6a_cache_h5ad_STAR:
         2> {log.err}
         """
 
+
 # kallisto/bustools outputs
 rule ilmn_6a_cache_h5ad_kbpython_std:
     input:
@@ -51,8 +52,8 @@ rule ilmn_6a_cache_h5ad_kbpython_std:
         H5AD="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/output.h5ad",
         QC_PLOTS="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/qc_plots.png",
     log:
-        log="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/cache.log",
-        err="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/cache.err",
+        log="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/cache_h5ad.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/cache_h5ad.err",
     # params:
     #     var_names = "gene_symbols" # scanpy.read_10x_mtx()
     threads: 1
