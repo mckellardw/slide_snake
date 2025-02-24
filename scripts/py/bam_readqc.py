@@ -4,6 +4,7 @@ import pysam
 import time
 from itertools import groupby
 from collections import Counter
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 # Example usage:
 """
@@ -15,10 +16,14 @@ python scripts/py/bam_read_qc.py \
 """
 
 
-def calculate_metrics_bam(bam_file, tags, chunk_size=10000):
+def calculate_metrics_bam(bam_file, tags, chunk_start, chunk_size=10000):
     metrics = []
     with pysam.AlignmentFile(bam_file, "rb") as samfile:
         for i, read in enumerate(samfile):
+            if i < chunk_start:
+                continue
+            if i >= chunk_start + chunk_size:
+                break
             read_length = read.query_length
             if read_length > 0:
                 gc_count = (
@@ -86,25 +91,69 @@ def write_tsv(metrics, tsv_file, force_overwrite=True):
             f.write(line + "\n")
 
 
-def process_reads_bam(bam_file, tsv_file, tags, chunk_size=10000, force_overwrite=True):
-    print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Processing reads...")
-    for metrics_chunk in calculate_metrics_bam(bam_file, tags, chunk_size):
-        print(f"Processed {len(metrics_chunk)} reads...")
+def worker_bam(bam_file, tags, chunk_start, chunk_size, temp_dir):
+    temp_file = os.path.join(temp_dir, f"chunk_{chunk_start}.tsv")
+    try:
+        for metrics_chunk in calculate_metrics_bam(bam_file, tags, chunk_start, chunk_size):
+            write_tsv(metrics_chunk, temp_file)
         print(
-            f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Writing metrics to file..."
+            f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Worker completed for chunk starting at {chunk_start}"
         )
-        write_tsv(metrics_chunk, tsv_file, force_overwrite)
+    except Exception as e:
+        print(
+            f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Error in worker for chunk starting at {chunk_start}: {str(e)}"
+        )
+        raise
 
+def merge_tsv_files(temp_dir, final_tsv_file):
+    with open(final_tsv_file, "w") as outfile:
+        for i, temp_file in enumerate(sorted(os.listdir(temp_dir))):
+            temp_file_path = os.path.join(temp_dir, temp_file)
+            with open(temp_file_path, "r") as infile:
+                if i == 0:
+                    outfile.write(infile.read())
+                else:
+                    next(infile)  # Skip header
+                    outfile.write(infile.read())
 
-def main_bam(bam_file, tsv_file, tags, chunk_size=10000, force_overwrite=True):
-    output_dir = os.path.dirname(tsv_file)
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+def process_reads_bam(bam_file, tsv_file, tags, chunk_size=10000, cores=1, force_overwrite=True):
+    print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Processing reads...")
+    temp_dir = os.path.join(os.path.dirname(tsv_file), "temp_chunks")
+    os.makedirs(temp_dir, exist_ok=True)
 
-    process_reads_bam(bam_file, tsv_file, tags, chunk_size, force_overwrite)
+    with pysam.AlignmentFile(bam_file, "rb") as samfile:
+        total_reads = sum(1 for _ in samfile)
+    total_chunks = (total_reads + chunk_size - 1) // chunk_size
 
+    with ProcessPoolExecutor(max_workers=cores) as executor:
+        futures = [
+            executor.submit(worker_bam, bam_file, tags, i * chunk_size, chunk_size, temp_dir)
+            for i in range(total_chunks)
+        ]
 
-if __name__ == "__main__":
+        completed_chunks = 0
+        for future in as_completed(futures):
+            try:
+                result = future.result()
+                completed_chunks += 1
+                print(
+                    f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Completed chunks {completed_chunks}/{total_chunks} ({(completed_chunks/total_chunks)*100:.2f}%)"
+                )
+            except Exception as e:
+                print(
+                    f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Error in chunk: {str(e)}"
+                )
+
+    merge_tsv_files(temp_dir, tsv_file)
+    print(
+        f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Merged all chunks into {tsv_file}"
+    )
+    # Clean up temporary directory
+    for temp_file in os.listdir(temp_dir):
+        os.remove(os.path.join(temp_dir, temp_file))
+    os.rmdir(temp_dir)
+
+def parse_args():
     parser = argparse.ArgumentParser(
         description="Parse BAM/SAM file and write metrics to TSV."
     )
@@ -124,13 +173,39 @@ if __name__ == "__main__":
         help="Number of reads to process in each chunk. Default is 10000.",
     )
     parser.add_argument(
+        "--cores",
+        type=int,
+        default=1,
+        help="Number of cores to use for multithreading. Default is 1.",
+    )
+    parser.add_argument(
         "--force-overwrite",
         action="store_true",
         default=True,
         help="Force overwrite of the output file if it exists. Default is True.",
     )
-    args = parser.parse_args()
+    return parser.parse_args()
+
+def main_bam(bam_file, tsv_file, tags, chunk_size=10000, cores=1, force_overwrite=True):
+    output_dir = os.path.dirname(tsv_file)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    process_reads_bam(bam_file, tsv_file, tags, chunk_size, cores, force_overwrite)
+
+if __name__ == "__main__":
+    args = parse_args()
+
+    print(
+        f"Input BAM:        {args.bam_file}\n"
+        f"Output TSV:       {args.tsv_file}\n"
+        f"Tags:             {args.tags}\n"
+        f"Chunk size:       {args.chunk_size}\n"
+        f"Number of cores:  {args.cores}\n"
+        f"Force overwrite:  {args.force_overwrite}\n"
+        f"\n"
+    )
 
     main_bam(
-        args.bam_file, args.tsv_file, args.tags, args.chunk_size, args.force_overwrite
+        args.bam_file, args.tsv_file, args.tags, args.chunk_size, args.cores, args.force_overwrite
     )

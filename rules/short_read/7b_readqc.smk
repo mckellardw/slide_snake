@@ -102,6 +102,9 @@ rule ilmn_7b_readQC_3_twiceCutadapt:
         """
 
 
+# TODO- readqc on rRNA files
+
+
 # https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md
 # CR/UR: raw (uncorrected) CellBarcode/UMI
 # CY/UY: quality score for CellBarcode/UMI
@@ -122,8 +125,7 @@ rule ilmn_7b_readQC_3_bam:
         err="{OUTDIR}/{SAMPLE}/short_read/readqc/4_aligned/{RECIPE}_qc.err",
     resources:
         mem="8G",
-    threads: 1
-    # threads=config["CORES"],
+    threads: config["CORES"]
     shell:
         """
         python scripts/py/bam_readqc.py \
@@ -131,6 +133,7 @@ rule ilmn_7b_readQC_3_bam:
             --chunk-size {params.CHUNK_SIZE} \
             --bam_file {input.BAM} \
             --tsv_file {output.TSV} \
+            --cores {threads} \
         1> {log.log} \
         2> {log.err}
         """

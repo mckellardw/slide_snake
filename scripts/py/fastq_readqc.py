@@ -228,6 +228,26 @@ def process_reads(fastq_file, tsv_file, chunk_size=100000, cores=1):
     os.rmdir(temp_dir)
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Parse FASTQ file and write metrics to TSV."
+    )
+    parser.add_argument("fastq_file", type=str, help="Path to the input FASTQ file.")
+    parser.add_argument("tsv_file", type=str, help="Path to the output TSV file.")
+    parser.add_argument(
+        "--cores",
+        type=int,
+        default=1,
+        help="Number of cores to use for multithreading. Default is 1.",
+    )
+    parser.add_argument(
+        "--chunk_size",
+        type=int,
+        default=100000,
+        help="Number of reads to process in each chunk. Default is 100k.",
+    )
+    return parser.parse_args()
+
 def main(fastq_file, tsv_file, cores, chunk_size):
     # Check if the input FASTQ file exists
     if not os.path.exists(fastq_file):
@@ -251,26 +271,8 @@ def main(fastq_file, tsv_file, cores, chunk_size):
 
     print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Done!")
 
-
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Parse FASTQ file and write metrics to TSV."
-    )
-    parser.add_argument("fastq_file", type=str, help="Path to the input FASTQ file.")
-    parser.add_argument("tsv_file", type=str, help="Path to the output TSV file.")
-    parser.add_argument(
-        "--cores",
-        type=int,
-        default=1,
-        help="Number of cores to use for multithreading. Default is 1.",
-    )
-    parser.add_argument(
-        "--chunk_size",
-        type=int,
-        default=100000,
-        help="Number of reads to process in each chunk. Default is 100k.",
-    )
-    args = parser.parse_args()
+    args = parse_args()
 
     print(
         f"Input fastq:      {args.fastq_file}\n"

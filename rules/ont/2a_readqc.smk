@@ -106,8 +106,7 @@ rule ont_2a_readQC_3_bam:
         err="{OUTDIR}/{SAMPLE}/ont/readqc/3_aligned/{RECIPE}_qc.err",
     resources:
         mem="8G",
-    threads: 1
-    # threads=config["CORES"],
+    threads: config["CORES"]
     shell:
         """
         python scripts/py/bam_readqc.py \
@@ -115,6 +114,7 @@ rule ont_2a_readQC_3_bam:
             --chunk-size {params.CHUNK_SIZE} \
             --bam_file {input.BAM} \
             --tsv_file {output.TSV} \
+            --cores {threads} \
         1> {log.log} \
         2> {log.err}
         """
