@@ -1,5 +1,5 @@
 default-resources:
-  slurm_partition: pe2
+  slurm_partition: cpu
   slurm_account: innovation
   runtime: 1:00:00
   nodes: 1
@@ -90,6 +90,7 @@ set-threads:
   ont_2b_qualimap_minimap2: 1
   ont_2b_qualimap_STAR: 1
   ont_2b_qualimap_summary2csv: 1
+
 
 set-resources:
   ilmn_1a_merge_fastqs:
