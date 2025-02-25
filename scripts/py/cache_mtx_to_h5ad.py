@@ -137,7 +137,6 @@ def main(
     # Count matrix
     adata = read_mtx(mat_in)
 
-
     # Transpose for STAR inputs...
     if transpose:
         # Convert to CSC format to avoid memory errors when transposing
@@ -145,7 +144,7 @@ def main(
         adata.X = adata.X.tocsc()
         adata = adata.transpose()
         print("    Done.")
-    
+
     # Save raw counts
     adata.raw = adata
 

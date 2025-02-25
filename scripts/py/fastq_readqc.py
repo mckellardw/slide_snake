@@ -248,6 +248,7 @@ def parse_args():
     )
     return parser.parse_args()
 
+
 def main(fastq_file, tsv_file, cores, chunk_size):
     # Check if the input FASTQ file exists
     if not os.path.exists(fastq_file):
@@ -270,6 +271,7 @@ def main(fastq_file, tsv_file, cores, chunk_size):
     process_reads(fastq_file, tsv_file, chunk_size, cores)
 
     print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Done!")
+
 
 if __name__ == "__main__":
     args = parse_args()

@@ -94,7 +94,9 @@ def write_tsv(metrics, tsv_file, force_overwrite=True):
 def worker_bam(bam_file, tags, chunk_start, chunk_size, temp_dir):
     temp_file = os.path.join(temp_dir, f"chunk_{chunk_start}.tsv")
     try:
-        for metrics_chunk in calculate_metrics_bam(bam_file, tags, chunk_start, chunk_size):
+        for metrics_chunk in calculate_metrics_bam(
+            bam_file, tags, chunk_start, chunk_size
+        ):
             write_tsv(metrics_chunk, temp_file)
         print(
             f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Worker completed for chunk starting at {chunk_start}"
@@ -104,6 +106,7 @@ def worker_bam(bam_file, tags, chunk_start, chunk_size, temp_dir):
             f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Error in worker for chunk starting at {chunk_start}: {str(e)}"
         )
         raise
+
 
 def merge_tsv_files(temp_dir, final_tsv_file):
     if not os.path.exists(temp_dir):
@@ -118,7 +121,10 @@ def merge_tsv_files(temp_dir, final_tsv_file):
                     next(infile)  # Skip header
                     outfile.write(infile.read())
 
-def process_reads_bam(bam_file, tsv_file, tags, chunk_size=10000, cores=1, force_overwrite=True):
+
+def process_reads_bam(
+    bam_file, tsv_file, tags, chunk_size=10000, cores=1, force_overwrite=True
+):
     print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Processing reads...")
     temp_dir = os.path.join(os.path.dirname(tsv_file), "temp_chunks")
     os.makedirs(temp_dir, exist_ok=True)
@@ -129,7 +135,9 @@ def process_reads_bam(bam_file, tsv_file, tags, chunk_size=10000, cores=1, force
 
     with ProcessPoolExecutor(max_workers=cores) as executor:
         futures = [
-            executor.submit(worker_bam, bam_file, tags, i * chunk_size, chunk_size, temp_dir)
+            executor.submit(
+                worker_bam, bam_file, tags, i * chunk_size, chunk_size, temp_dir
+            )
             for i in range(total_chunks)
         ]
 
@@ -150,11 +158,14 @@ def process_reads_bam(bam_file, tsv_file, tags, chunk_size=10000, cores=1, force
     print(
         f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Merged all chunks into {tsv_file}"
     )
-    print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Total reads processed: {total_reads}")
+    print(
+        f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Total reads processed: {total_reads}"
+    )
     # Clean up temporary directory
     # for temp_file in os.listdir(temp_dir):
     #     os.remove(os.path.join(temp_dir, temp_file))
     # os.rmdir(temp_dir)
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -189,12 +200,14 @@ def parse_args():
     )
     return parser.parse_args()
 
+
 def main_bam(bam_file, tsv_file, tags, chunk_size=10000, cores=1, force_overwrite=True):
     output_dir = os.path.dirname(tsv_file)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
     process_reads_bam(bam_file, tsv_file, tags, chunk_size, cores, force_overwrite)
+
 
 if __name__ == "__main__":
     args = parse_args()
@@ -210,5 +223,10 @@ if __name__ == "__main__":
     )
 
     main_bam(
-        args.bam_file, args.tsv_file, args.tags, args.chunk_size, args.cores, args.force_overwrite
+        args.bam_file,
+        args.tsv_file,
+        args.tags,
+        args.chunk_size,
+        args.cores,
+        args.force_overwrite,
     )
