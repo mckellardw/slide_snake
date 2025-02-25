@@ -183,7 +183,7 @@ rule ont_1f_genome_add_featureCounts_to_bam:
 rule ont_1f_genome_add_corrected_barcodes:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_gn.bam",
-        TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_corrected.tsv",
+        TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_corrected.tsv",
     output:
         BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_gn_cb.bam",
     params:
@@ -215,7 +215,7 @@ rule ont_1f_genome_add_corrected_barcodes:
 rule ont_1f_genome_add_umis:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_gn_cb.bam",
-        TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/read_barcodes_filtered.tsv",
+        TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_filtered.tsv",
     output:
         BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_gn_cb_ub.bam",
     params:

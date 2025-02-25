@@ -65,7 +65,7 @@ def parse_args():
         "-f",
         "--adapter1_seq",
         help="Forward primer sequences (Read1). For TXG, Curio, etc. use [CTACACGACGCTCTTCCGATCT]",
-        nargs='+',
+        nargs="+",
         default=["CTACACGACGCTCTTCCGATCT"],
         type=str,
     )
@@ -76,7 +76,7 @@ def parse_args():
         help="Reverse complement of the primer sequences (rcTSO, minus the CCC prefix). \
             For TXG/Curio chemistries, use [ATGTACTCTGCGTTGATACCACTGCTT] (default). \
             For uMRT chemistries, use [GAGAGAGGAAAGAGAGAGAGAGGG]",
-        nargs='+',
+        nargs="+",
         default=["ATGTACTCTGCGTTGATACCACTGCTT"],
         type=str,
     )
@@ -157,7 +157,9 @@ def write_adapters_fasta(args):
     if not args.single_adapter_mode:
         for i, seq in enumerate(args.adapter2_seq):
             adapters.append(f">adapter2_f_{i}\n{seq}\n")
-            adapters.append(f">adapter2_r_{i}\n{seq[::-1].translate(COMPLEMENT_TRANS)}\n")
+            adapters.append(
+                f">adapter2_r_{i}\n{seq[::-1].translate(COMPLEMENT_TRANS)}\n"
+            )
     with open(args.adapters_fasta, "w") as f:
         f.writelines(adapters)
 
@@ -210,7 +212,9 @@ def get_valid_adapter_pair_positions_in_read(read, args):
     valid_pairs_n = 0
     fl_pairs = []
 
-    def write_valid_pair_dict(read, adapter_1_idx, adapter_2_idx, valid_pairs_n, strand):
+    def write_valid_pair_dict(
+        read, adapter_1_idx, adapter_2_idx, valid_pairs_n, strand
+    ):
         read_id = read["query"].iloc[0]
         pair_str = (
             f"{read.iloc[adapter_1_idx]['target']}-{read.iloc[adapter_2_idx]['target']}"
@@ -220,7 +224,7 @@ def get_valid_adapter_pair_positions_in_read(read, args):
             "config": pair_str,
             "start": read.iloc[adapter_1_idx]["qilo"],
             "end": read.iloc[adapter_2_idx]["qihi"],
-            "strand": strand
+            "strand": strand,
         }
         return fl_pair, valid_pairs_n
 
@@ -235,20 +239,38 @@ def get_valid_adapter_pair_positions_in_read(read, args):
                     if adapter_1_f_idx < adapter_1_r_idx:
                         strand = "+"
                         fl_pair, valid_pairs_n = write_valid_pair_dict(
-                            read, adapter_1_f_idx, adapter_1_r_idx, valid_pairs_n, strand
+                            read,
+                            adapter_1_f_idx,
+                            adapter_1_r_idx,
+                            valid_pairs_n,
+                            strand,
                         )
                         valid_pairs_n += 1
                         fl_pairs.append(fl_pair)
                     elif adapter_1_f_idx > adapter_1_r_idx:
                         strand = "-"
                         fl_pair, valid_pairs_n = write_valid_pair_dict(
-                            read, adapter_1_r_idx, adapter_1_f_idx, valid_pairs_n, strand
+                            read,
+                            adapter_1_r_idx,
+                            adapter_1_f_idx,
+                            valid_pairs_n,
+                            strand,
                         )
                         valid_pairs_n += 1
                         fl_pairs.append(fl_pair)
     else:
-        compat_adapters = {f"adapter1_f_{i}": f"adapter2_f_{j}" for i in range(len(args.adapter1_seq)) for j in range(len(args.adapter2_seq))}
-        compat_adapters.update({f"adapter1_r_{i}": f"adapter2_r_{j}" for i in range(len(args.adapter1_seq)) for j in range(len(args.adapter2_seq))})
+        compat_adapters = {
+            f"adapter1_f_{i}": f"adapter2_f_{j}"
+            for i in range(len(args.adapter1_seq))
+            for j in range(len(args.adapter2_seq))
+        }
+        compat_adapters.update(
+            {
+                f"adapter1_r_{i}": f"adapter2_r_{j}"
+                for i in range(len(args.adapter1_seq))
+                for j in range(len(args.adapter2_seq))
+            }
+        )
 
         for adapter1 in compat_adapters.keys():
             adapter_1_idxs = read.index[read["target"] == adapter1]
@@ -428,7 +450,9 @@ def revcomp_adapter_config(adapters_string):
             return f"{parts[0]}_{d[parts[0] + '_' + parts[1]]}_{parts[2]}"
         return adapter
 
-    rc_string = "-".join([get_revcomp_adapter(a) for a in adapters_string.split("-")[::-1]])
+    rc_string = "-".join(
+        [get_revcomp_adapter(a) for a in adapters_string.split("-")[::-1]]
+    )
     return rc_string
 
 
@@ -584,7 +608,9 @@ def write_tmp_fastx_files_for_processing(n_batches, args):
 
 def main(args):
     start_time = time.time()
-    print(f"Run started at: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))}")
+    print(
+        f"Run started at: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))}"
+    )
 
     check_vsearch()
 
@@ -606,10 +632,16 @@ def main(args):
     # Check for identical adapter sequences or reverse complements
     adapter1_set = set(args.adapter1_seq)
     adapter2_set = set(args.adapter2_seq)
-    adapter2_rc_set = set(seq[::-1].translate(COMPLEMENT_TRANS) for seq in args.adapter2_seq)
-    common_adapters = adapter1_set.intersection(adapter2_set).union(adapter1_set.intersection(adapter2_rc_set))
+    adapter2_rc_set = set(
+        seq[::-1].translate(COMPLEMENT_TRANS) for seq in args.adapter2_seq
+    )
+    common_adapters = adapter1_set.intersection(adapter2_set).union(
+        adapter1_set.intersection(adapter2_rc_set)
+    )
     if common_adapters:
-        print(f"Warning: The following adapter sequences are present in both adapter1 and adapter2 (including reverse complements): {common_adapters}")
+        print(
+            f"Warning: The following adapter sequences are present in both adapter1 and adapter2 (including reverse complements): {common_adapters}"
+        )
         print(f"Using single_adapter_mode")
         args.single_adapter_mode = True
     else:
@@ -656,7 +688,9 @@ def main(args):
     write_fq_out(tmp_fastqs, args)
 
     end_time = time.time()
-    print(f"Run finished at: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))}")
+    print(
+        f"Run finished at: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))}"
+    )
     print(f"Total run time: {end_time - start_time:.2f} seconds")
 
 

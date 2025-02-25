@@ -106,6 +106,8 @@ def worker_bam(bam_file, tags, chunk_start, chunk_size, temp_dir):
         raise
 
 def merge_tsv_files(temp_dir, final_tsv_file):
+    if not os.path.exists(temp_dir):
+        raise FileNotFoundError(f"Temporary directory {temp_dir} does not exist.")
     with open(final_tsv_file, "w") as outfile:
         for i, temp_file in enumerate(sorted(os.listdir(temp_dir))):
             temp_file_path = os.path.join(temp_dir, temp_file)
@@ -148,10 +150,11 @@ def process_reads_bam(bam_file, tsv_file, tags, chunk_size=10000, cores=1, force
     print(
         f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Merged all chunks into {tsv_file}"
     )
+    print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Total reads processed: {total_reads}")
     # Clean up temporary directory
-    for temp_file in os.listdir(temp_dir):
-        os.remove(os.path.join(temp_dir, temp_file))
-    os.rmdir(temp_dir)
+    # for temp_file in os.listdir(temp_dir):
+    #     os.remove(os.path.join(temp_dir, temp_file))
+    # os.rmdir(temp_dir)
 
 def parse_args():
     parser = argparse.ArgumentParser(

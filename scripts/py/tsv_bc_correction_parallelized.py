@@ -137,6 +137,9 @@ def parse_args():
 
     return args
 
+# New helper function to ensure value is a list
+def ensure_list(val):
+    return val if isinstance(val, list) else [val]
 
 # Random name for temp directory
 def generate_temp_dir_name(length=16):
@@ -184,6 +187,11 @@ def split_file(file_path, temp_dir, num_chunks):
     chunk_file_names = [
         f"{temp_dir}/chunk_{str(i).zfill(3)}.tsv" for i in range(num_chunks)
     ]
+
+    # Pre-create empty files to ensure every chunk file exists
+    for filename in chunk_file_names:
+        with open(filename, "w") as f:
+            pass
 
     # Open the original file and start writing the chunks
     with open(file_path, "r") as infile:
@@ -541,6 +549,12 @@ def process_tsv(
 
 if __name__ == "__main__":
     args = parse_args()
+    
+    # Ensure parameters with nargs="+" are lists
+    args.whitelist_files = ensure_list(args.whitelist_files)
+    args.bc_columns = ensure_list(args.bc_columns)
+    args.max_levens = ensure_list(args.max_levens)
+    args.min_next_match_diffs = ensure_list(args.min_next_match_diffs)
 
     # Check if input TSV file exists
     if not os.path.isfile(args.tsv_in):
@@ -603,9 +617,9 @@ if __name__ == "__main__":
     )
 
 
-    if len(args.whitelist_files) != len(args.bc_columns):
-        print(f"Using this whitelist for all corrections:   {args.whitelist_files[0]}")
-        args.whitelist_files = rep(args.whitelist_files[0], len(args.bc_columns))
+    # if len(args.whitelist_files) != len(args.bc_columns):
+    #     print(f"Using this whitelist for all corrections:   {args.whitelist_files[0]}")
+    #     args.whitelist_files = rep(args.whitelist_files[0], len(args.bc_columns))
 
     # prep whitelists
     whitelists = {}
