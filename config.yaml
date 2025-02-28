@@ -13,6 +13,8 @@ MEMLIMIT: 121916827066  # limit in bytes
 MEMLIMIT_MB: 256000     # limit in megabytes
 MEMLIMIT_GB: 200G       # mem limit for kallisto
 
+N_READS_READQC: 500000  # number of reads to downsample/analyze for readqc scripts
+
 # Recipe details (whitelists, barcode/UMI design, etc.)
 RECIPE_SHEET: resources/recipe_sheet.csv
 
