@@ -1,6 +1,7 @@
 # Borrowed portions of this code from `sockeye` - https://github.com/nanoporetech/sockeye/tree/master
 # borrowed/modified from sockeye (https://github.com/jang1563/sockeye - original ONT github deleted!)
 
+
 # Merge all the input files into a .fastq
 rule ont_1a_merge_formats:
     output:
@@ -44,11 +45,11 @@ rule ont_1a_length_filter:
         > {output.FQ}
         """
 
-#TODO
+
+# TODO
 ## add chunking rule here to improve parallelization & run times
 ## when to merge again?
 ## Could also split input files into chunks **during** merge- just specify chunk size?
-
 
 
 # Remove super short reads that likely do not have a barcode...
@@ -71,8 +72,6 @@ rule ont_1a_length_filter:
 #         """
 
 
-
-
 def get_unique_primer_pairs(w):
     recipes = get_all_recipes(w, mode="ONT")
     primer_pairs = set()
@@ -93,8 +92,8 @@ rule ont_1a_call_adapter_scan_v2:
     params:
         BATCH_SIZE=100000,
         ADAPTER1_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio
-        # ADAPTER1_SEQ="CCCTCTCTCTCTCTTTCCTCTCTCCTGCGGTAGTCACGTG", 
-        # ADAPTER1_SEQ="TGCGGTAGTCACGTGTTTTTTTT",
+        # ADAPTER1_SEQ="CCCTCTCTCTCTCTTTCCTCTCTC", # RNAConnect
+        # ADAPTER1_SEQ="TCTCTCCTGCGGTAGTCACGTG", # DOESN'T WORK
         # ADAPTER1_SEQ=lambda w: get_recipe_info(w, "fwd_primer", mode="ONT"),
         ADAPTER2_SEQ="ATGTACTCTGCGTTGATACCACTGCTT",  #TXG/Curio
         # ADAPTER2_SEQ="GAGAGAGGAAAGAGAGAGAGAGGG",  #uMRT
@@ -104,13 +103,14 @@ rule ont_1a_call_adapter_scan_v2:
         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan.log",
         err="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan.err",
     conda:
-        f"{workflow.basedir}/envs/adapter_scan.yml"
+        # f"{workflow.basedir}/envs/adapter_scan.yml"
+        f"{workflow.basedir}/envs/parasail.yml"
     resources:
         mem="16G",
     threads: 56
     shell:
         """
-        python scripts/py/adapter_scan_vsearch_v2.py \
+        python scripts/py/adapter_scan_parasail.py \
             --fq_in "{input.FQ}" \
             --fq_out "{output.FQ}" \
             --output_tsv "{output.TSV}" \
@@ -122,6 +122,9 @@ rule ont_1a_call_adapter_scan_v2:
         1> {log.log} \
         2> {log.err}
         """
+        #  "CTGCGGTAGTCACGTG"
+        # python scripts/py/adapter_scan_parasail.py \
+        # python scripts/py/adapter_scan_vsearch_v2.py \
 
 
 # Write lists of read IDs for each adapter type
@@ -131,7 +134,7 @@ rule ont_1a_readIDs_by_adapter_type:
         FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_stranded.fq.gz",
     output:
         FULL_LEN="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",  # keep
-        SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",  # keep
+        # SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",  # keep incomplete read
         # DOUBLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/double_adapter1.txt",  # toss
         # DOUBLE_ADAPTER2="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/double_adapter2.txt",  # toss
         # NO_ADAPTERS="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/no_adapters.txt",  # toss
@@ -183,7 +186,7 @@ rule ont_1a_adapter_scan_summary:
 rule ont_1a_merge_scan_lists:
     input:
         FULL_LEN="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
-        SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
+        # SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
     output:
         LST="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/keep.txt",
     resources:
@@ -191,7 +194,7 @@ rule ont_1a_merge_scan_lists:
     threads: 1
     shell:
         """
-        cat {input.FULL_LEN} {input.SINGLE_ADAPTER1} > {output.LST}
+        cat {input} > {output.LST}
         """
 
 
@@ -253,10 +256,11 @@ rule ont_1a_split_fastq_to_R1_R2:
         AMBIG_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_adapter_ambiguous.fq.gz",
     params:
         # ANCHOR_SEQ=lambda w: get_recipe_info(w, "fwd_primer"),
-        # ANCHOR_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio
-        ANCHOR_SEQ="CCCTCTCTCTCTCTTTCCTCTCTCCT",  # RNAConnect/CT
+        ANCHOR_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio
+        # ANCHOR_SEQ="CCCTCTCTCTCTCTTTCCTCTCTCCT",  # RNAConnect/CT
+        # ANCHOR_SEQ="TCTTTCCTCTCTCCT",  # RNAConnect/CT
         # ANCHOR_SEQ="ACGCTCTTCCGATCT",  #TXG/Curio
-        SPLIT_SEQ="T" * 8,
+        SPLIT_SEQ="T" * 6,
         SPLIT_OFFSET=8,  # offset from 3' end of split seq on which to split
         MAX_OFFSET=200,
     resources:

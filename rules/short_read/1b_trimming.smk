@@ -171,7 +171,7 @@ rule ilmn_1b_R1_hardTrimming:
 
 
 ## Internal trimming to cut out adapter sequences (SlideSeq, DecoderSeq, microST, etc.)
-#TODO- refactor script so that multiple adapter sequeces can be passed/trimmed (for miST, dBIT, etc)
+# TODO- refactor script so that multiple adapter sequeces can be passed/trimmed (for miST, dBIT, etc)
 rule ilmn_1b_R1_internalTrimming:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R1.fq.gz",

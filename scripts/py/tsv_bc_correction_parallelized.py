@@ -137,9 +137,11 @@ def parse_args():
 
     return args
 
+
 # New helper function to ensure value is a list
 def ensure_list(val):
     return val if isinstance(val, list) else [val]
+
 
 # Random name for temp directory
 def generate_temp_dir_name(length=16):
@@ -462,7 +464,7 @@ def process_tsv(
                                 whitelists[0],
                                 max_levens[0],
                                 min_next_match_diffs[0],
-                                kmer_to_bc_indexes[0]
+                                kmer_to_bc_indexes[0],
                             ]
                         ]
 
@@ -473,7 +475,7 @@ def process_tsv(
                                 whitelists[i],
                                 max_levens[i],
                                 min_next_match_diffs[i],
-                                kmer_to_bc_indexes[i]
+                                kmer_to_bc_indexes[i],
                             ]
                             for i in range(len(barcodes))
                         ]
@@ -481,7 +483,13 @@ def process_tsv(
                     # used for slim list for simple .bam tagging
                     concat_corrected_bc = []
 
-                    for barcode, whitelist, max_leven, min_next_match_diff, kmer_to_bc_index in RANGE:
+                    for (
+                        barcode,
+                        whitelist,
+                        max_leven,
+                        min_next_match_diff,
+                        kmer_to_bc_index,
+                    ) in RANGE:
                         st = time.time()
 
                         # skip reads w/ missing bc
@@ -549,7 +557,7 @@ def process_tsv(
 
 if __name__ == "__main__":
     args = parse_args()
-    
+
     # Ensure parameters with nargs="+" are lists
     args.whitelist_files = ensure_list(args.whitelist_files)
     args.bc_columns = ensure_list(args.bc_columns)
@@ -616,7 +624,6 @@ if __name__ == "__main__":
         f"Number of threads:                {args.threads}\n"
     )
 
-
     # if len(args.whitelist_files) != len(args.bc_columns):
     #     print(f"Using this whitelist for all corrections:   {args.whitelist_files[0]}")
     #     args.whitelist_files = rep(args.whitelist_files[0], len(args.bc_columns))
@@ -627,19 +634,25 @@ if __name__ == "__main__":
     if args.concat_bcs and len(list(args.whitelist_files)) > 1:
         # merge linked barcode lists (SlideSeq)
         if len(list(args.whitelist_files)) == len(list(args.bc_columns)):
-            print(f"Concatenating the [{len(list(args.whitelist_files))}] barcode lists given...")
+            print(
+                f"Concatenating the [{len(list(args.whitelist_files))}] barcode lists given..."
+            )
             sub_whitelists = {}
             for i, whitelist_file in enumerate(args.whitelist_files):
-                sub_whitelists[i], sub_kmer_to_bc_index = load_whitelist(whitelist_file, k=args.k)
+                sub_whitelists[i], sub_kmer_to_bc_index = load_whitelist(
+                    whitelist_file, k=args.k
+                )
 
             # Assuming lists are the same length...
-            wl = ["".join(strings) for strings in zip(*sub_whitelists.values())]     
-        
+            wl = ["".join(strings) for strings in zip(*sub_whitelists.values())]
+
             whitelists[0] = wl
             kmer_to_bc_indexes[0] = generate_kmer_index(wl, args.k)
 
         else:
-            print(f"Need a merged barcode whitelist, and parameter lengths don't match!")
+            print(
+                f"Need a merged barcode whitelist, and parameter lengths don't match!"
+            )
             sys.exit(1)
     else:
         # independent barcode lists (combinatorial indexing, etc.) or a single barcode list

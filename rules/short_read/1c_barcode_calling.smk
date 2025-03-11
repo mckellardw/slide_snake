@@ -73,12 +73,14 @@ rule ilmn_1c_tsv_bc_correction:
         TSV_SLIM="{OUTDIR}/{SAMPLE}/short_read/barcodes_umis/{RECIPE}/barcodes_corrected.tsv",
         TSV_FULL="{OUTDIR}/{SAMPLE}/short_read/barcodes_umis/{RECIPE}/barcodes_corrected_full.tsv",
     params:
-        WHITELIST=lambda w: " ".join(get_whitelist(w, return_type="list", mode="ILMN")), # use this for properly formatted multi-list passing
+        WHITELIST=lambda w: " ".join(get_whitelist(w, return_type="list", mode="ILMN")),  # use this for properly formatted multi-list passing
         MAX_LEVEN=lambda w: get_recipe_info(w, "BC_max_ED", mode="ILMN"),  # maximum Levenshtein distance tolerated in correction;
         NEXT_MATCH_DIFF=lambda w: get_recipe_info(w, "BC_min_ED_diff", mode="ILMN"),
         K=5,  # kmer length for BC whitelist filtering; shorter value improves accuracy, extends runtime
         BC_COLUMNS=lambda w: " ".join(map(str, range(1, get_n_bcs(w) + 1))),
-        CONCAT_BCS=lambda w: '--concat_bcs' if get_recipe_info(w, "BC_concat", mode="ILMN") else '',  # whether the sub-barcodes should be corrected together (SlideSeq) or separately (microST)
+        CONCAT_BCS=lambda w: (
+            "--concat_bcs" if get_recipe_info(w, "BC_concat", mode="ILMN") else ""
+        ),  # whether the sub-barcodes should be corrected together (SlideSeq) or separately (microST)
     log:
         log="{OUTDIR}/{SAMPLE}/short_read/barcodes_umis/{RECIPE}/1c_tsv_bc_correction.log",
         err="{OUTDIR}/{SAMPLE}/short_read/barcodes_umis/{RECIPE}/1c_tsv_bc_correction.err",
@@ -125,4 +127,5 @@ rule ilmn_1c_summarize_bc_correction:
         python scripts/py/tsv_bc_correction_summary.py {input.TSV_FULL} > {output.SUMMARY}
         """
 
-#TODO - visual summary of barcode correction
+
+# TODO - visual summary of barcode correction

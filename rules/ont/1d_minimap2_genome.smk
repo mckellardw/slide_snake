@@ -5,7 +5,6 @@ rule ont_1d_genome_generate_junction_bed:
     output:
         JUNC_BED="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/junctions.bed",
     log:
-        # log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/generate_junction_bed.log",
         err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/gff2bed.err",
     conda:
         f"{workflow.basedir}/envs/minimap2.yml"
@@ -349,7 +348,7 @@ rule ont_1d_genome_counts_to_sparse:
 
 
 # make anndata object with spatial coordinates
-rule ont_1d_genome_cache_preQC_h5ad_minimap2:
+rule ont_1d_genome_cache_h5ad_minimap2:
     input:
         BCS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/barcodes.tsv.gz",
         FEATS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/features.tsv.gz",
@@ -383,7 +382,7 @@ rule ont_1d_genome_cache_preQC_h5ad_minimap2:
 
 
 # make Seurat object with spatial coordinates
-rule ont_1d_genome_cache_preQC_seurat_minimap2:
+rule ont_1d_genome_cache_seurat_minimap2:
     input:
         BCS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/barcodes.tsv.gz",
         FEATS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/features.tsv.gz",

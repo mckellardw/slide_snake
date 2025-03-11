@@ -1,6 +1,7 @@
 # ALignment qc with qualimap
 ## link: https://qualimap.conesalab.org/
 
+
 # Qualimap QC on alignment outputs
 rule ont_2b_qualimap:
     input:
@@ -34,6 +35,7 @@ rule ont_2b_qualimap:
         1> {log.log} \
         2> {log.err}
         """
+
 
 # Convert the unfortunately formatted qc results from qualimap into a readable format
 rule ont_2b_qualimap_summary2csv:

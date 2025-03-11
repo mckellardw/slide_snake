@@ -1,7 +1,7 @@
 default-resources:
   runtime: 1:00:00
   mem_mb: 8192
-  mem: 8G
+  mem: 64G
   threads: 1
 
 set-threads:
@@ -25,11 +25,11 @@ set-threads:
   ilmn_7a_fastQC_preTrim: 24
   ilmn_7a_fastQC_postTrim: 24
   ilmn_7a_fastQC_twiceTrim: 24
-  ilmn_7b_readQC_0_rawInput: 24
-  ilmn_7b_readQC_1_preCutadapt: 24
-  ilmn_7b_readQC_2_postCutadapt: 24
-  ilmn_7b_readQC_3_twiceCutadapt: 24
-  ilmn_7b_readQC_3_bam: 1
+  ilmn_7b_readQC_0_rawInput: 56
+  ilmn_7b_readQC_1_preCutadapt: 56
+  ilmn_7b_readQC_2_postCutadapt: 56
+  ilmn_7b_readQC_3_twiceCutadapt: 56
+  ilmn_7b_readQC_3_bam: 56
   ilmn_7b_readQC_downsample: 1
   ilmn_7b_readQC_summaryplot: 8
   ilmn_7b_readQC_compress: 1
@@ -78,10 +78,10 @@ set-threads:
   ont_1f_genome_umitools_count: 1
   ont_1f_genome_counts_to_sparse: 1
   ont_1f_genome_cache_h5ad_ultra: 1
-  ont_2a_readQC_0_rawInput: 16
-  ont_2a_readQC_1_preCutadapt: 16
-  ont_2a_readQC_2_postCutadapt: 16
-  ont_2a_readQC_3_bam: 1
+  ont_2a_readQC_0_rawInput: 24
+  ont_2a_readQC_1_preCutadapt: 24
+  ont_2a_readQC_2_postCutadapt: 24
+  ont_2a_readQC_3_bam: 24
   ont_2a_readQC_downsample: 1
   ont_2a_readQC_summaryplot: 16
   ont_2b_qualimap_minimap2: 1
@@ -138,7 +138,7 @@ set-resources:
     mem: 128000000000
     mem_mb: 128000
   ilmn_3a_STARsolo_secondPass:
-    mem: 220000000000
+    mem: 320000000000
     mem_mb: 220000
   ilmn_3d_qualimapQC_STAR:
     mem: 32G
@@ -223,7 +223,7 @@ set-resources:
     mem: 16G
     mem_mb: 16000
   ont_1d_genome_cache_h5ad_minimap2:
-    mem: 16G
+    mem: 32G
     mem_mb: 16000
   ont_1d_txome_align_minimap2_genome:
     mem: 128G
@@ -253,7 +253,7 @@ set-resources:
     mem: 16G
     mem_mb: 16000
   ont_1d_txome_cache_h5ad_minimap2:
-    mem: 16G
+    mem: 32G
     mem_mb: 16000  
   ont_1f_ultra_pipeline_genome:
     mem: 128G
@@ -282,7 +282,7 @@ set-resources:
     mem: 16G
     mem_mb: 16000
   ont_1f_genome_cache_h5ad_ultra:
-    mem: 16G
+    mem: 32G
     mem_mb: 16000
   ont_2a_readQC_0_rawInput:
     mem: 8G

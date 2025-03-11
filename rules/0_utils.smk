@@ -2,6 +2,7 @@ import os
 import re
 import glob
 
+
 #### Utility rules ############################
 # Index .bam file
 rule utils_index_BAM:
@@ -29,14 +30,14 @@ def check_sample_sheet(SAMPLE_SHEET):
         "STAR_ref": [""],
         "kb_idx": [".idx"],
         "kb_t2g": [".txt"],
-        "genes_gtf": [".gtf"]
+        "genes_gtf": [".gtf"],
     }
 
     ONT_requirements = {
         "ONT": [".fq.gz", ".fastq.gz", ".bam", ".cram"],
         "genome_fa": [".fa"],
         "genes_gtf": [".gtf"],
-        "cdna_fa": [".fa"]
+        "cdna_fa": [".fa"],
     }
 
     missing_files = []
@@ -58,11 +59,17 @@ def check_sample_sheet(SAMPLE_SHEET):
                 for file_path in file_paths:
                     if file_path:
                         if column == "STAR_ref" and not os.path.isdir(file_path):
-                            print(f"WARNING: {file_path} for sample {sample_id} was not found, or is not a directory.")
+                            print(
+                                f"WARNING: {file_path} for sample {sample_id} was not found, or is not a directory."
+                            )
                             missing_files.append((sample_id, file_path))
                         elif not any(re.search(f"{ext}$", file_path) for ext in exts):
-                            print(f"WARNING: File {file_path} for sample {sample_id} does not have the correct extension {exts}")
-                        elif not glob.glob(file_path) and not re.search(r"\{.*\}", file_path):
+                            print(
+                                f"WARNING: File {file_path} for sample {sample_id} does not have the correct extension {exts}"
+                            )
+                        elif not glob.glob(file_path) and not re.search(
+                            r"\{.*\}", file_path
+                        ):
                             missing_files.append((sample_id, file_path))
 
         if row["recipe_ONT"]:
@@ -73,8 +80,12 @@ def check_sample_sheet(SAMPLE_SHEET):
                 if not file_paths:
                     empty_fields.append((sample_id, column))
                 for file_path in file_paths:
-                    if file_path and not any(re.search(f"{ext}$", file_path) for ext in exts):
-                        print(f"WARNING: File {file_path} for sample {sample_id} does not have the correct extension {exts}")
+                    if file_path and not any(
+                        re.search(f"{ext}$", file_path) for ext in exts
+                    ):
+                        print(
+                            f"WARNING: File {file_path} for sample {sample_id} does not have the correct extension {exts}"
+                        )
 
     if empty_fields:
         print("WARNING: The following required fields are empty:")
@@ -90,17 +101,50 @@ def check_sample_sheet(SAMPLE_SHEET):
         print("WARNING: The following files are missing:")
         for sample_id, file_path in missing_files:
             print(f"Sample {sample_id}: {file_path}")
-        raise FileNotFoundError("Some required files are missing. Please check the log for details.")
+        raise FileNotFoundError(
+            "Some required files are missing. Please check the log for details."
+        )
 
 
 def check_recipe_sheet(RECIPE_SHEET, RECIPE_DICT, RECIPE_ONT_DICT):
-    required_columns = ["whitelist", "R1_finalLength", "fwd_primer", "rev_primer", "BC_adapter", "BC_length", "BC_offset", "BC_position", "BC_max_ED", "BC_min_ED_diff", "BC_concat", "UMI_adapter", "UMI_length", "UMI_offset", "UMI_position", "internal_adapter", "STAR_soloType", "STAR_soloCBmatchWLtype", "STAR_soloCB", "STAR_soloUMI", "STAR_soloAdapter", "STAR_extra", "kb_x", "kb_extra", "featureCounts_extra", "mm2_extra"]
-    missing_columns = [col for col in required_columns if col not in RECIPE_SHEET.columns]
+    required_columns = [
+        "whitelist",
+        "R1_finalLength",
+        "fwd_primer",
+        "rev_primer",
+        "BC_adapter",
+        "BC_length",
+        "BC_offset",
+        "BC_position",
+        "BC_max_ED",
+        "BC_min_ED_diff",
+        "BC_concat",
+        "UMI_adapter",
+        "UMI_length",
+        "UMI_offset",
+        "UMI_position",
+        "internal_adapter",
+        "STAR_soloType",
+        "STAR_soloCBmatchWLtype",
+        "STAR_soloCB",
+        "STAR_soloUMI",
+        "STAR_soloAdapter",
+        "STAR_extra",
+        "kb_x",
+        "kb_extra",
+        "featureCounts_extra",
+        "mm2_extra",
+    ]
+    missing_columns = [
+        col for col in required_columns if col not in RECIPE_SHEET.columns
+    ]
     duplicate_recipes = RECIPE_SHEET.index.duplicated()
     duplicate_recipe_names = RECIPE_SHEET.index[duplicate_recipes].tolist()
 
     if missing_columns:
-        print("WARNING: The following required columns are missing from the recipe sheet:")
+        print(
+            "WARNING: The following required columns are missing from the recipe sheet:"
+        )
         for col in missing_columns:
             print(f"- {col}")
 
@@ -181,11 +225,13 @@ def get_bc_adapter(w, mode=["ONT", "ILMN"]):
     try:
         if mode == "ILMN":
             if "Trim" in w.RECIPE or "std" in w.RECIPE:
-                return get_recipe_info(w, "BC_start") # return integer start positions for each BC sequence
+                return get_recipe_info(
+                    w, "BC_start"
+                )  # return integer start positions for each BC sequence
             elif "matchLinker" in w.RECIPE or "seeker" in w.RECIPE:
-                return get_recipe_info(w, "BC_adapter")            
-        elif mode == "ONT":
                 return get_recipe_info(w, "BC_adapter")
+        elif mode == "ONT":
+            return get_recipe_info(w, "BC_adapter")
         else:
             print("get_bc_adapter(): `mode` not found")
             return "ERROR"
@@ -197,15 +243,18 @@ def get_bc_adapter(w, mode=["ONT", "ILMN"]):
         else:
             print("get_bc_adapter(): `mode` not found")
 
+
 def get_umi_adapter(w, mode=["ONT", "ILMN"]):
     try:
         if mode == "ILMN":
             if "Trim" in w.RECIPE or "std" in w.RECIPE:
-                return get_recipe_info(w, "UMI_start") # return integer start positions for each BC sequence
+                return get_recipe_info(
+                    w, "UMI_start"
+                )  # return integer start positions for each BC sequence
             elif "matchLinker" in w.RECIPE or "seeker" in w.RECIPE:
-                return get_recipe_info(w, "UMI_adapter")            
-        elif mode == "ONT":
                 return get_recipe_info(w, "UMI_adapter")
+        elif mode == "ONT":
+            return get_recipe_info(w, "UMI_adapter")
         else:
             print("get_umi_adapter(): `mode` not found")
             return "ERROR"
@@ -216,6 +265,7 @@ def get_umi_adapter(w, mode=["ONT", "ILMN"]):
             print("TODO")
         else:
             print("get_umi_adapter(): `mode` not found")
+
 
 # whitelist param handling for different recipes/technologies/chemistries/etc
 def get_whitelist(w, return_type=None, mode="STAR"):
@@ -239,7 +289,7 @@ def get_whitelist(w, return_type=None, mode="STAR"):
                         f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_1.txt",
                         f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_2.txt",
                     ]
-                elif RECIPE_SHEET["BC_concat"][w.RECIPE] and mode=="ONT":
+                elif RECIPE_SHEET["BC_concat"][w.RECIPE] and mode == "ONT":
                     whitelist = [
                         f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist.txt",
                     ]
@@ -331,9 +381,6 @@ def get_bc_map(w, mode=["ONT", "ILMN"]):
     return bc_map
 
 
-
-
-
 # Get number of barcodes (does not include UMIs!)
 def get_n_cells(w):
     """
@@ -343,8 +390,9 @@ def get_n_cells(w):
     """
     whitelist_path = get_whitelist(w, return_type="list")[0]
     n_bcs = count_lines_in_file(whitelist_path)
-    
+
     return n_bcs
+
 
 # Get number of barcodes (does not include UMIs!)
 def get_n_bcs(w):
@@ -481,7 +529,7 @@ def get_recipes(w, mode=["ONT", "ILMN", "list"]):
     - If no recipe is found, it prints a warning message and returns an empty string.
     """
     # default option
-    if isinstance(mode, list) and len(mode) > 1:  
+    if isinstance(mode, list) and len(mode) > 1:
         mode = "ONT"
 
     if "ONT" in mode:
@@ -531,7 +579,7 @@ def get_recipe_info(w, info_col, mode=["ONT", "ILMN", "list"]):
 
 
 def count_lines_in_file(file_path):
-    with open(file_path, 'r') as file:
+    with open(file_path, "r") as file:
         return sum(1 for _ in file)
 
 
@@ -598,4 +646,3 @@ def max_sum_of_entries(lst):
             max_sum = current_sum
 
     return max_sum
-
