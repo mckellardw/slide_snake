@@ -354,10 +354,13 @@ rule ont_1d_genome_cache_h5ad_minimap2:
         FEATS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/features.tsv.gz",
         MAT="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/matrix.mtx.gz",
         BC_map=lambda w: get_bc_map(w, mode="ONT"),
-        # BC_map="{OUTDIR}/{SAMPLE}/bc/map_underscore.txt",
     output:
         H5AD="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/output.h5ad",
         QC_PLOTS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/qc_h5ad.png",
+    params:
+        GTF=lambda w: SAMPLE_SHEET["genes_gtf"][w.SAMPLE],
+        GTF_FEATURE_TYPE="gene",  # feature type in gtf to use 
+        GTF_ID="gene_id",  # gtf attribute used to match var_names in adata
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/cache_h5ad.log",
         err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/cache_h5ad.err",
@@ -372,10 +375,13 @@ rule ont_1d_genome_cache_h5ad_minimap2:
             --bc_in {input.BCS} \
             --bc_map {input.BC_map} \
             --ad_out {output.H5AD} \
-            --feat_col 1 0 \
+            --feat_col 0 \
             --remove_zero_features \
             --plot_qc \
             --qc_plot_file {output.QC_PLOTS} \
+            --gtf_file {params.GTF} \
+            --gtf_feature_type {params.GTF_FEATURE_TYPE} \
+            --gtf_id {params.GTF_ID} \
         1> {log.log} \
         2> {log.err}
         """

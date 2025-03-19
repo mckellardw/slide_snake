@@ -2,6 +2,7 @@
 
 import pandas as pd
 import argparse
+import gzip
 from scanpy import read_mtx, pl
 from numpy import intersect1d
 import matplotlib.pyplot as plt
@@ -70,6 +71,62 @@ def plot_qc_metrics(adata, output_file):
     print(f"QC plots saved to {output_file}")
 
 
+def load_gtf_to_dataframe(gtf_file, feature_type="all", seqname_filter="all", unwrap_attributes=True):
+    """
+    Load a GTF file (including gzipped GTF files) into a Pandas DataFrame.
+
+    Parameters:
+        gtf_file (str): Path to the GTF file. Can be a plain text or gzipped file.
+        feature_type (str): Type of feature to load (e.g., "gene", "exon"). 
+                            Default is "all", which loads all features.
+        seqname_filter (str): Sequence name to filter by (e.g., "chr1", "chr2"). 
+                              Default is "all", which loads all sequence names.
+        unwrap_attributes (bool): If True, unpacks the attributes column into separate columns.
+                                  Default is True.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the GTF data.
+    """
+    def parse_attributes(attributes_str):
+        """
+        Parse the attributes column of a GTF file into a dictionary.
+        """
+        attributes = {}
+        for attribute in attributes_str.strip().split(';'):
+            if attribute.strip():
+                key, value = attribute.strip().split(' ', 1)
+                attributes[key] = value.strip('"')
+        return attributes
+
+    # Open the file (support for gzipped files)
+    open_func = gzip.open if gtf_file.endswith('.gz') else open
+    with open_func(gtf_file, 'rt') as f:
+        # Read the GTF file into a DataFrame
+        gtf_data = []
+        attributes_data = []
+        for line in f:
+            if line.startswith('#'):
+                continue  # Skip comment lines
+            fields = line.strip().split('\t')
+            if feature_type != "all" and fields[2] != feature_type:
+                continue  # Skip features that don't match the specified type
+            if seqname_filter != "all" and fields[0] != seqname_filter:
+                continue  # Skip sequence names that don't match the filter
+            attributes = parse_attributes(fields[8])
+            gtf_data.append(fields[:8])
+            attributes_data.append(attributes)
+        
+        # Create the main DataFrame
+        columns = ['seqname', 'source', 'feature', 'start', 'end', 'score', 'strand', 'frame']
+        gtf_df = pd.DataFrame(gtf_data, columns=columns)
+        
+        if unwrap_attributes:
+            # Create a DataFrame for attributes and concatenate with the main DataFrame
+            attributes_df = pd.DataFrame(attributes_data)
+            gtf_df = pd.concat([gtf_df, attributes_df], axis=1)
+    
+    return gtf_df
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Process spatial transcriptomics data."
@@ -118,6 +175,24 @@ def parse_args():
         default=None,
         help="Filename for the QC plots (default: {output_dir}/qc_plots.png)",
     )
+    parser.add_argument(
+        "--gtf_file",
+        type=str,
+        default=None,
+        help="Path to GTF file (optional)."
+    )
+    parser.add_argument(
+        "--gtf_feature_type",
+        type=str,
+        default="gene",
+        help="Feature type to load from GTF (default: gene)."
+    )
+    parser.add_argument(
+        "--gtf_id",
+        type=str,
+        default="gene_name",
+        help="Column in GTF used to match var_names"
+    )
     return parser.parse_args()
 
 
@@ -133,6 +208,9 @@ def main(
     verbose=True,
     plot_qc=False,
     qc_plot_file=None,
+    gtf_file=None,
+    gtf_feature_type="gene",
+    gtf_id="gene_name"
 ):
     # Count matrix
     adata = read_mtx(mat_in)
@@ -209,6 +287,21 @@ def main(
             qc_plot_file = f"{output_dir}/qc_plots.png"
         plot_qc_metrics(adata, qc_plot_file)
 
+    # Add feature info from gtf if provided
+    if gtf_file:
+        print(f"Loading GTF annotations from {gtf_file}...")
+        gtf_df = load_gtf_to_dataframe(
+            gtf_file,
+            feature_type=gtf_feature_type
+        )
+        if gtf_id in gtf_df.columns:
+            print(f"Reordering GTF rows using '{gtf_id}'...")
+            gtf_df_ordered = gtf_df.set_index(gtf_id).reindex(adata.var_names)
+            for col in gtf_df_ordered.columns:
+                adata.var[col] = gtf_df_ordered[col].astype(str)
+        else:
+            print(f"Warning: '{gtf_id}' not found in GTF columns.")
+
     # Write output
     print(f"Writing to {ad_out}")
     adata.write(ad_out)
@@ -227,6 +320,9 @@ if __name__ == "__main__":
         f"Remove undetected features:   {args.remove_zero_features}\n"
         f"Plot QC metrics:              {args.plot_qc}\n"
         f"QC plot file:                 {args.qc_plot_file}\n"
+        f"GTF file:                     {args.gtf_file}\n"
+        f"GTF feature type:             {args.gtf_feature_type}\n"
+        f"GTF ID column:                {args.gtf_id}\n"
     )
     main(
         args.mat_in,
@@ -239,4 +335,7 @@ if __name__ == "__main__":
         args.remove_zero_features,
         plot_qc=args.plot_qc,
         qc_plot_file=args.qc_plot_file,
+        gtf_file=args.gtf_file,
+        gtf_feature_type=args.gtf_feature_type,
+        gtf_id=args.gtf_id
     )
