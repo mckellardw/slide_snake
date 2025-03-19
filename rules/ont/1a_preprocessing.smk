@@ -12,8 +12,8 @@ rule ont_1a_merge_formats:
         CHUNK_SIZE=50,
         OUTPUT_FORMAT="fastq",
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_merged.log",
-        err="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_merged.err",
+        log="{OUTDIR}/{SAMPLE}/ont/logs/1a_merged.log",
+        err="{OUTDIR}/{SAMPLE}/ont/logs/1a_merged.err",
     threads: config["CORES"]
     shell:
         """
@@ -61,7 +61,7 @@ rule ont_1a_length_filter:
 #     params:
 #         MIN_LENGTH=100,
 #     log:
-#         log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_pychopper.log",
+#         log="{OUTDIR}/{SAMPLE}/ont/logs/1a_pychopper.log",
 #     conda:
 #         f"{workflow.basedir}/envs/pychopper.yml"
 #     resources:
@@ -100,8 +100,8 @@ rule ont_1a_call_adapter_scan_v2:
         # ADAPTER2_SEQ=lambda w: get_recipe_info(w, "rev_primer", mode="ONT"),
         VSEARCH_MIN_ADAPTER_ID=0.7,
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan.log",
-        err="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan.err",
+        log="{OUTDIR}/{SAMPLE}/ont/logs/1a_adapter_scan.log",
+        err="{OUTDIR}/{SAMPLE}/ont/logs/1a_adapter_scan.err",
     conda:
         # f"{workflow.basedir}/envs/adapter_scan.yml"
         f"{workflow.basedir}/envs/parasail.yml"
@@ -156,14 +156,14 @@ rule ont_1a_adapter_scan_summary:
     input:
         TSV="{OUTDIR}/{SAMPLE}/ont/adapter_scan.tsv",
     output:
-        CSV="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan_summary.csv",
-        PDF="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan_summary.pdf",
-        PNG="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan_summary.png",
+        CSV="{OUTDIR}/{SAMPLE}/ont/logs/1a_adapter_scan_summary.csv",
+        PDF="{OUTDIR}/{SAMPLE}/ont/logs/1a_adapter_scan_summary.pdf",
+        PNG="{OUTDIR}/{SAMPLE}/ont/logs/1a_adapter_scan_summary.png",
     params:
         DEVICE="pdf",
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan_summary.log",
-        err="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan_summary.err",
+        log="{OUTDIR}/{SAMPLE}/ont/logs/1a_adapter_scan_summary.log",
+        err="{OUTDIR}/{SAMPLE}/ont/logs/1a_adapter_scan_summary.err",
     resources:
         mem="8G",
     threads: 1
@@ -214,7 +214,7 @@ rule ont_1a_subset_fastq_by_adapter_type:
         mem="16G",
     threads: 1
     log:
-        err="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_subset_fastq_by_adapter_type.err",
+        err="{OUTDIR}/{SAMPLE}/ont/logs/1a_subset_fastq_by_adapter_type.err",
     conda:
         f"{workflow.basedir}/envs/seqkit.yml"
     shell:
@@ -267,8 +267,8 @@ rule ont_1a_split_fastq_to_R1_R2:
         mem="16G",
     # threads:  config["CORES"]
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_read_split.log",
-        err="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_read_split.err",
+        log="{OUTDIR}/{SAMPLE}/ont/logs/1a_read_split.log",
+        err="{OUTDIR}/{SAMPLE}/ont/logs/1a_read_split.err",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     shell:

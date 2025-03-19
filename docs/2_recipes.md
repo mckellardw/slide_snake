@@ -95,6 +95,7 @@ and positions), preprocessing of the FASTQ file should be performed beforehand t
 the reads into a structure that can be handled by this format.
 ```
 
+## **Recipes**:
 <details close>
 <summary> SlideSeq/Seeker (Curio) </summary>
 [manuscript link]()
@@ -105,6 +106,10 @@ Because of read quality issues (indels, low Q scores, etc.) in the SlideSeq barc
 - `seeker_hardTrim` - Hard trim the adapter read positions in R1, and use the best barcode correction algorithms in STARsolo
 - `seeker_MatchLinker` - Match the adapter sequence on R1 (w/ 2 mismatches allowed) and infer barcodes/UMIs from that position (*Note* best performer w/ Curio data)
 - `seeker_MatchLinker_total` - Same as `seeker_noTrimMatchLinker`, but with additional STAR parameters for total RNAseq alignment (more multimappers, looser alignment)
+- `seeker_std_rRNA-bwa` - Standard alignment with rRNA filtering using BWA
+- `seeker_std_ribodetector` - Standard alignment with rRNA filtering using RiboDetector
+- `seeker_std_total_rRNA-bwa` - Total RNA alignment with rRNA filtering using BWA
+- `seeker_std_total_ribodetector` - Total RNA alignment with rRNA filtering using RiboDetector
 </details>
 
 <details close>
@@ -112,7 +117,10 @@ Because of read quality issues (indels, low Q scores, etc.) in the SlideSeq barc
   
 - `stomics` - Standard alignment for StereoSeq/STOmics (BGI) data
 - `stomics_total` - Total RNA alignment for StereoSeq/STOmics (BGI) data
-- `stomics_rRNA.STAR` - Standard alignment performed after filtering rRNA with STAR alignment
+- `stomics_std_rRNA-bwa` - Standard alignment with rRNA filtering using BWA
+- `stomics_std_ribodetector` - Standard alignment with rRNA filtering using RiboDetector
+- `stomics_std_total_rRNA-bwa` - Total RNA alignment with rRNA filtering using BWA
+- `stomics_std_total_ribodetector` - Total RNA alignment with rRNA filtering using RiboDetector
 
 </details>
 
@@ -120,8 +128,12 @@ Because of read quality issues (indels, low Q scores, etc.) in the SlideSeq barc
 <details close>
 <summary> Visium (10x Genomics) </summary>
 
-- `visium` - #description
-- `visium_total` - #description
+- `visium` - Standard alignment for Visium (10x Genomics) data
+- `visium_total` - Total RNA alignment for Visium (10x Genomics) data
+- `visium_std_rRNA-bwa` - Standard alignment with rRNA filtering using BWA
+- `visium_std_ribodetector` - Standard alignment with rRNA filtering using RiboDetector
+- `visium_std_total_rRNA-bwa` - Total RNA alignment with rRNA filtering using BWA
+- `visium_std_total_ribodetector` - Total RNA alignment with rRNA filtering using RiboDetector
 
 </details>
 
@@ -130,8 +142,7 @@ Because of read quality issues (indels, low Q scores, etc.) in the SlideSeq barc
 <summary> DecoderSeq (Cao et al, Nat Biotechnol, 2024) </summary>
 [manuscript link](https://www.nature.com/articles/s41587-023-02086-y)  
 
-- `decoder` - #description
-- `decoder_total` - #description
-- `decoder_total_rRNA.STAR` - #description
+- `decoder` - Standard alignment for DecoderSeq data
+- `decoder_total` - Total RNA alignment for DecoderSeq data
 
 </details>

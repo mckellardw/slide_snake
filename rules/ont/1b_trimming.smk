@@ -9,7 +9,7 @@ rule ont_1b_cutadapt:
     output:
         R1_FQ=temp("{OUTDIR}/{SAMPLE}/ont/tmp/cut_R1.fq.gz"),
         R2_FQ=temp("{OUTDIR}/{SAMPLE}/ont/tmp/cut_R2.fq.gz"),
-        JSON="{OUTDIR}/{SAMPLE}/ont/misc_logs/1b_cutadapt.json",
+        JSON="{OUTDIR}/{SAMPLE}/ont/logs/1b_cutadapt.json",
     params:
         RECIPE=lambda w: get_recipes(w, mode="ONT"),
         BC_PRIMER=lambda w: get_recipe_info(w, "fwd_primer", mode="list")[0],
@@ -39,8 +39,8 @@ rule ont_1b_cutadapt:
         mem="16G",
     threads: config["CORES"]
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1b_cutadapt.log",
-        err="{OUTDIR}/{SAMPLE}/ont/misc_logs/1b_cutadapt.err",
+        log="{OUTDIR}/{SAMPLE}/ont/logs/1b_cutadapt.log",
+        err="{OUTDIR}/{SAMPLE}/ont/logs/1b_cutadapt.err",
     conda:
         f"{workflow.basedir}/envs/cutadapt.yml"
     shell:
@@ -91,7 +91,7 @@ rule ont_1b_R1_hardTrimming:
         mem="16G",
     threads: config["CORES"]
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1b_R1_hardTrimming.log",
+        log="{OUTDIR}/{SAMPLE}/ont/logs/1b_R1_hardTrimming.log",
     shell:
         """
         zcat {input.R1_FQ} \
@@ -113,7 +113,7 @@ rule ont_1b_R1_internalTrim:
         R1_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/cut_R1.fq.gz",
     output:
         R1_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/cut_internalTrim_R1.fq.gz",
-        # INTERNAL_TRIM_QC_LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/1b_internal_trim_qc.txt",
+        # INTERNAL_TRIM_QC_LOG="{OUTDIR}/{SAMPLE}/ont/logs/1b_internal_trim_qc.txt",
     params:
         TMPDIR="{OUTDIR}/{SAMPLE}/tmp/seqkit",
         ADAPTER=lambda w: get_recipe_info(w, info_col="internal_adapter", mode="list")[
@@ -129,7 +129,7 @@ rule ont_1b_R1_internalTrim:
         mem="16G",
     threads: config["CORES"]
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1b_R1_internalTrimming.log",
+        log="{OUTDIR}/{SAMPLE}/ont/logs/1b_R1_internalTrimming.log",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     shell:
@@ -154,7 +154,7 @@ rule ont_1b_cutadapt_internalTrimming:
     output:
         R1_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/twiceCut_internalTrim_R1.fq.gz",
         R2_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/twiceCut_internalTrim_R2.fq.gz",
-        JSON="{OUTDIR}/{SAMPLE}/ont/misc_logs/1b_cutadapt_internalTrim.json",
+        JSON="{OUTDIR}/{SAMPLE}/ont/logs/1b_cutadapt_internalTrim.json",
     params:
         RECIPE=lambda w: get_recipes(w, mode="ONT"),
         R1_LENGTH=lambda w: min(
@@ -167,7 +167,7 @@ rule ont_1b_cutadapt_internalTrimming:
         mem="16G",
     threads: config["CORES"]
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/1b_cutadapt_internalTrim.log",
+        log="{OUTDIR}/{SAMPLE}/ont/logs/1b_cutadapt_internalTrim.log",
     conda:
         f"{workflow.basedir}/envs/cutadapt.yml"
     shell:

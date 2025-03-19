@@ -345,7 +345,7 @@ rule ont_1f_genome_cache_preQC_h5ad_ultra:
             --bc_in {input.BCS} \
             --bc_map {input.BC_map} \
             --ad_out {output.H5AD} \
-            --feat_col 0 \
+            --feat_col 1 0 \
             --remove_zero_features \
             --plot_qc \
             --qc_plot_file {output.QC_PLOTS} \

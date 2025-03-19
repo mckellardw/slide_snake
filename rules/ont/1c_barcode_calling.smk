@@ -80,7 +80,8 @@ rule ont_1c_tsv_bc_correction:
         BC_COLUMNS=lambda w: " ".join(map(str, range(1, get_n_bcs(w) + 1))),
         CONCAT_BCS=lambda w: (
             "--concat_bcs" if get_recipe_info(w, "BC_concat", mode="ONT") else ""
-        ),  # whether the sub-barcodes should be corrected together (SlideSeq) or separately (microST)
+        ),
+        # whether the sub-barcodes should be corrected together (SlideSeq) or separately (microST)
     log:
         log="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/1c_tsv_bc_correction.log",
         err="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/1c_tsv_bc_correction.err",
