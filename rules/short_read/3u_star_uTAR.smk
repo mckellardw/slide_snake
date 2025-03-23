@@ -1,0 +1,180 @@
+# ported from https://github.com/mckellardw/uTAR_lite
+# Link to paper: https://www.nature.com/articles/s41467-021-22496-3
+
+
+# convert GTF to REFFlat, save in your cellranger reference
+# 	not run if REFFlat file exists -  will only need to run this once for each reference genome
+rule ilmn_3u_convertToRefFlat:
+    input:
+        GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
+    output:
+        TMP=temp("{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/tmp.refFlat"),
+        REFFLAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/genes.refFlat",
+    conda:
+        f"{workflow.basedir}/envs/ucsc.yml"
+    shell:
+        """
+        gtfToGenePred -genePredExt -geneNameAsName2 {input.GTF} {output.TMP}
+        paste <(cut -f 12 refFlat.tmp) <(cut -f 1-10 refFlat.tmp) > {output.REFFLAT}
+        """
+
+
+# Run HMM
+rule ilmn_3u_calcHMMbed:
+    input:
+        BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.dedup.bam",
+    output:
+        BED=temp("{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/TAR_reads.bed.gz"),
+    threads: config["CORES"]
+    params:
+        MEM="64G",
+        MERGEBP=100,  # default 100 (Note- window size across genome is 50bp)
+        THRESH=10000000,  # default 10000000 (Note- number of reads to use for HMM)
+        PL="scripts",  # Path to SingleCellHMM.R
+    log:
+        log="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/calcHMMbed.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/calcHMMbed.err",
+    conda:
+        f"{workflow.basedir}/envs/hmm.yml"
+    shell:
+        """
+        bash scripts/bash/bam_uTAR_HMM.sh \
+            --bam {input.BAM} \
+            --threads {threads} \
+            --mem {params.MEM} \
+            --mergebp {params.MERGEBP} \
+            --thresh {params.THRESH} \
+            --outdir $(dirname {output.BED}) \
+        1> {log.log} \
+        2> {log.err}
+        """
+
+
+# Convert BED to GTF
+rule ilmn_3u_bed_to_gtf:
+    input:
+        BEDGZ="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/TAR_reads.bed.gz",
+    output:
+        GTF="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/TAR_reads.withDir.gtf",
+    conda:
+        f"{workflow.basedir}/envs/ucsc.yml"
+    shell:
+        """
+        zcat {input.BEDGZ} \
+        | bedToGenePred stdin stdout \
+        | genePredToGtf file stdin {output.GTF}
+        """
+
+
+# Label .bam file with each HMM feature
+rule ilmn_3u_tagReads:
+    input:
+        BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.dedup.bam",
+        TAR_GTF="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/TAR_reads.withDir.gtf",
+    output:
+        DIR=directory(
+            "{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/gene_assigned"
+        ),
+        BAM=temp(
+            "{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/Aligned.sortedByCoord.out.dedup.bam.featureCounts.bam"
+        ),
+    threads: config["CORES"]
+    log:
+        log="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/featureCounts.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/featureCounts.err",
+    conda:
+        f"{workflow.basedir}/envs/umi_tools.yml"
+    shell:
+        """
+        featureCounts \
+            -T {threads} \
+            -t exon \
+            -g gene_id \
+            -a {input.TAR_GTF} \
+            --largestOverlap \
+            --readExtension5 0 \
+            --readExtension3 0 \
+            -s 1 \
+            -M \
+            -o {output.DIR} \
+            -R BAM \
+            {input.BAM} \
+        1> {log.log}
+        2> {log.err}
+        """
+
+
+rule ilmn_3u_sort_index_tagged_bam:
+    input:
+        BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/Aligned.sortedByCoord.out.dedup.bam.featureCounts.bam",
+    output:
+        BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/TAR_tagged.bam",
+    threads: config["CORES"]
+    shell:
+        """
+        samtools sort -@ {threads} {input.BAM} -o {output.BAM}
+        """
+
+
+# Get counts matrix for HMM-annotated features
+rule ilmn_3u_extract_HMM_expression:
+    input:
+        BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/TAR_tagged.bam",
+        BAI="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/TAR_tagged.bam.bai",
+    output:
+        COUNT_MTX="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/counts.tsv.gz",
+    params:
+        CELL_TAG="CB",  # uncorrected = CR
+        GENE_TAG="XT",  #GN XS
+        UMI_TAG="UB",
+        STATUS_TAG="XS",
+    log:
+        log="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/umitools_count.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/umitools_count.err",
+    conda:
+        f"{workflow.basedir}/envs/umi_tools.yml"
+    shell:
+        """
+        umi_tools count --extract-umi-method=tag \
+            --per-cell \
+            --per-gene \
+            --assigned-status-tag={params.CELL_TAG} \
+            --cell-tag={params.CELL_TAG} \
+            --gene-tag={params.GENE_TAG}  \
+            --umi-tag={params.UMI_TAG}  \
+            --log={log.log} \
+            --stdin {input.BAM} \
+            --stdout {output.COUNT_MTX} \
+        2> {log.err}
+        """
+        # --multimapping-detection-method=NH \
+
+
+# Convert the long-format matrix (from umi_tools) to an .mtx file
+rule ilmn_3u_counts_long2mtx:
+    input:
+        TSV="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/counts.tsv.gz",
+    output:
+        MTX="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/uTAR.mtx",
+        GENES="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/uTAR_genes.tsv.gz",
+        CELLS="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/uTAR_cells.tsv.gz",
+    shell:
+        """
+        python scripts/long2mtx.py \
+            --umitools_tsv {input.TSV} \
+            --out_mat {output.MTX} \
+            --output-format mtx
+        """
+
+
+# Compress the count matrix
+rule ilmn_3u_gzip_counts:
+    input:
+        COUNT_MTX="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/uTAR.mtx",
+    output:
+        COUNT_MTX="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/uTAR.mtx.gz",
+    threads: config["CORES"]
+    shell:
+        """
+        pigz -p{threads} {input.COUNT_MTX}
+        """

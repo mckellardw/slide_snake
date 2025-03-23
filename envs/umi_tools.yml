@@ -6,3 +6,4 @@ dependencies:
   - pysam
   - samtools
   - umi_tools=1.1.5
+  - subread=2.0.8

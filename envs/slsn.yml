@@ -1,8 +1,10 @@
 name: slsn
 channels:
+  - defaults
   - bioconda
   - conda-forge
 dependencies:
+  - mamba=1.5.8
   - numpy=1.26.4
   - pandas=2.2.2
   - pigz=2.8

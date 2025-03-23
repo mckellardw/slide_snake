@@ -1,0 +1,10 @@
+name: hmm
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - bioconductor-grohmm
+  - samtools
+  - bedtools
+  - pigz
