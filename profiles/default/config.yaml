@@ -69,15 +69,15 @@ set-threads:
   ont_1d_txome_cache_preQC_h5ad_minimap2: 1
   ont_1d_txome_cache_preQC_seurat_minimap2: 1
   ont_1f_ultra_pipeline_genome: 16
-  ont_1f_genome_sort_compress_output: 1
-  ont_1f_genome_featureCounts: 1
-  ont_1f_genome_add_featureCounts_to_bam: 1
-  ont_1f_genome_add_corrected_barcodes: 1
-  ont_1f_genome_add_umis: 1
-  ont_1f_genome_filter_bam_empty_tags: 1
-  ont_1f_genome_umitools_count: 1
-  ont_1f_genome_counts_to_sparse: 1
-  ont_1f_genome_cache_h5ad_ultra: 1
+  ont_1f_ultra_sort_compress_output: 1
+  ont_1f_ultra_featureCounts: 1
+  ont_1f_ultra_add_featureCounts_to_bam: 1
+  ont_1f_ultra_add_corrected_barcodes: 1
+  ont_1f_ultra_add_umis: 1
+  ont_1f_ultra_filter_bam_empty_tags: 1
+  ont_1f_ultra_umitools_count: 1
+  ont_1f_ultra_counts_to_sparse: 1
+  ont_1f_ultra_cache_h5ad_ultra: 1
   ont_2a_readQC_0_rawInput: 24
   ont_2a_readQC_1_preCutadapt: 24
   ont_2a_readQC_2_postCutadapt: 24
@@ -87,6 +87,22 @@ set-threads:
   ont_2b_qualimap_minimap2: 1
   ont_2b_qualimap_STAR: 1
   ont_2b_qualimap_summary2csv: 1
+  ilmn_3u_convertToRefFlat: 1
+  ilmn_3u_calcHMMbed: 24
+  ilmn_3u_calcHMMrefFlat: 24
+  ilmn_3u_HMM_refFlat_to_gtf: 1
+  ilmn_3u_tagReads: 24
+  ilmn_3u_sort_index_tagged_bam: 24
+  ilmn_3u_extract_HMM_expression: 24
+  ilmn_3u_counts_long2mtx: 1
+  ilmn_3u_gzip_counts: 24
+  ilmn_3q_qualimapQC_STAR: 8
+  ilmn_3q_qualimapQC_dedup_STAR: 8
+  ilmn_3q_qualimap_summary2csv_STAR: 1
+  ilmn_3c_strand_split_bam: 1
+  ilmn_3c_umitools_dedup_fwdBAM: 24
+  ilmn_3c_umitools_dedup_revBAM: 24
+  ilmn_3c_merge_dedup_bam: 1
 
 set-resources:
   ilmn_1a_merge_fastqs:
@@ -258,30 +274,30 @@ set-resources:
   ont_1f_ultra_pipeline_genome:
     mem: 128G
     mem_mb: 128000
-  ont_1f_genome_sort_compress_output:
+  ont_1f_ultra_sort_compress_output:
     mem: 16G
     mem_mb: 16000
-  ont_1f_genome_featureCounts:
+  ont_1f_ultra_featureCounts:
     mem: 32G
-  ont_1f_genome_add_featureCounts_to_bam:
+  ont_1f_ultra_add_featureCounts_to_bam:
     mem: 16G
     mem_mb: 16000
-  ont_1f_genome_add_corrected_barcodes:
+  ont_1f_ultra_add_corrected_barcodes:
     mem: 16G
     mem_mb: 16000
-  ont_1f_genome_add_umis:
+  ont_1f_ultra_add_umis:
     mem: 16G
     mem_mb: 16000
-  ont_1f_genome_filter_bam_empty_tags:
+  ont_1f_ultra_filter_bam_empty_tags:
     mem: 16G
     mem_mb: 16000
-  ont_1f_genome_umitools_count:
+  ont_1f_ultra_umitools_count:
     mem: 16G
     mem_mb: 16000
-  ont_1f_genome_counts_to_sparse:
+  ont_1f_ultra_counts_to_sparse:
     mem: 16G
     mem_mb: 16000
-  ont_1f_genome_cache_h5ad_ultra:
+  ont_1f_ultra_cache_h5ad_ultra:
     mem: 32G
     mem_mb: 16000
   ont_2a_readQC_0_rawInput:
@@ -337,3 +353,51 @@ set-resources:
   ilmn_7b_readQC_compress:
     mem: 4G
     mem_mb: 4000
+  ilmn_3u_convertToRefFlat:
+    mem: 8G
+    mem_mb: 8000
+  ilmn_3u_calcHMMbed:
+    mem: 64G
+    mem_mb: 64000
+  ilmn_3u_calcHMMrefFlat:
+    mem: 64G
+    mem_mb: 64000
+  ilmn_3u_HMM_refFlat_to_gtf:
+    mem: 8G
+    mem_mb: 8000
+  ilmn_3u_tagReads:
+    mem: 64G
+    mem_mb: 64000
+  ilmn_3u_sort_index_tagged_bam:
+    mem: 64G
+    mem_mb: 64000
+  ilmn_3u_extract_HMM_expression:
+    mem: 64G
+    mem_mb: 64000
+  ilmn_3u_counts_long2mtx:
+    mem: 8G
+    mem_mb: 8000
+  ilmn_3u_gzip_counts:
+    mem: 8G
+    mem_mb: 8000
+  ilmn_3q_qualimapQC_STAR:
+    mem: 32G
+    mem_mb: 32000
+  ilmn_3q_qualimapQC_dedup_STAR:
+    mem: 32G
+    mem_mb: 32000
+  ilmn_3q_qualimap_summary2csv_STAR:
+    mem: 8G
+    mem_mb: 8000
+  ilmn_3c_strand_split_bam:
+    mem: 8G
+    mem_mb: 8000
+  ilmn_3c_umitools_dedup_fwdBAM:
+    mem: 64G
+    mem_mb: 64000
+  ilmn_3c_umitools_dedup_revBAM:
+    mem: 64G
+    mem_mb: 64000
+  ilmn_3c_merge_dedup_bam:
+    mem: 8G
+    mem_mb: 8000

@@ -72,15 +72,15 @@ set-threads:
   ont_1d_txome_cache_preQC_h5ad_minimap2: 1
   ont_1d_txome_cache_preQC_seurat_minimap2: 1
   ont_1f_ultra_pipeline_genome: 16
-  ont_1f_genome_sort_compress_output: 1
-  ont_1f_genome_featureCounts: 1
-  ont_1f_genome_add_featureCounts_to_bam: 1
-  ont_1f_genome_add_corrected_barcodes: 1
-  ont_1f_genome_add_umis: 1
-  ont_1f_genome_filter_bam_empty_tags: 1
-  ont_1f_genome_umitools_count: 1
-  ont_1f_genome_counts_to_sparse: 1
-  ont_1f_genome_cache_h5ad_ultra: 1
+  ont_1f_ultra_sort_compress_output: 1
+  ont_1f_ultra_featureCounts: 1
+  ont_1f_ultra_add_featureCounts_to_bam: 1
+  ont_1f_ultra_add_corrected_barcodes: 1
+  ont_1f_ultra_add_umis: 1
+  ont_1f_ultra_filter_bam_empty_tags: 1
+  ont_1f_ultra_umitools_count: 1
+  ont_1f_ultra_counts_to_sparse: 1
+  ont_1f_ultra_cache_h5ad_ultra: 1
   ont_2a_readQC_0_rawInput: 16
   ont_2a_readQC_1_preCutadapt: 16
   ont_2a_readQC_2_postCutadapt: 16
@@ -261,30 +261,30 @@ set-resources:
   ont_1f_ultra_pipeline_genome:
     mem: 128G
     mem_mb: 128000
-  ont_1f_genome_sort_compress_output:
+  ont_1f_ultra_sort_compress_output:
     mem: 16G
     mem_mb: 16000
-  ont_1f_genome_featureCounts:
+  ont_1f_ultra_featureCounts:
     mem: 32G
-  ont_1f_genome_add_featureCounts_to_bam:
+  ont_1f_ultra_add_featureCounts_to_bam:
     mem: 16G
     mem_mb: 16000
-  ont_1f_genome_add_corrected_barcodes:
+  ont_1f_ultra_add_corrected_barcodes:
     mem: 16G
     mem_mb: 16000
-  ont_1f_genome_add_umis:
+  ont_1f_ultra_add_umis:
     mem: 16G
     mem_mb: 16000
-  ont_1f_genome_filter_bam_empty_tags:
+  ont_1f_ultra_filter_bam_empty_tags:
     mem: 16G
     mem_mb: 16000
-  ont_1f_genome_umitools_count:
+  ont_1f_ultra_umitools_count:
     mem: 16G
     mem_mb: 16000
-  ont_1f_genome_counts_to_sparse:
+  ont_1f_ultra_counts_to_sparse:
     mem: 16G
     mem_mb: 16000
-  ont_1f_genome_cache_h5ad_ultra:
+  ont_1f_ultra_cache_h5ad_ultra:
     mem: 16G
     mem_mb: 16000
   ont_2a_readQC_0_rawInput:

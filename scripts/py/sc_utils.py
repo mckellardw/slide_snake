@@ -50,6 +50,75 @@ def npcs(ADATA, var_perc=0.95, reduction="pca"):
         return n_pcs
 
 
+def load_gtf_to_dataframe(
+    gtf_file, feature_type="all", seqname_filter="all", unwrap_attributes=True
+):
+    """
+    Load a GTF file (including gzipped GTF files) into a Pandas DataFrame.
+
+    Parameters:
+        gtf_file (str): Path to the GTF file. Can be a plain text or gzipped file.
+        feature_type (str): Type of feature to load (e.g., "gene", "exon").
+                            Default is "all", which loads all features.
+        seqname_filter (str): Sequence name to filter by (e.g., "chr1", "chr2").
+                              Default is "all", which loads all sequence names.
+        unwrap_attributes (bool): If True, unpacks the attributes column into separate columns.
+                                  Default is True.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the GTF data.
+    """
+
+    def parse_attributes(attributes_str):
+        """
+        Parse the attributes column of a GTF file into a dictionary.
+        """
+        attributes = {}
+        for attribute in attributes_str.strip().split(";"):
+            if attribute.strip():
+                key, value = attribute.strip().split(" ", 1)
+                attributes[key] = value.strip('"')
+        return attributes
+
+    # Open the file (support for gzipped files)
+    open_func = gzip.open if gtf_file.endswith(".gz") else open
+    with open_func(gtf_file, "rt") as f:
+        # Read the GTF file into a DataFrame
+        gtf_data = []
+        attributes_data = []
+        for line in f:
+            if line.startswith("#"):
+                continue  # Skip comment lines
+            fields = line.strip().split("\t")
+            if feature_type != "all" and fields[2] != feature_type:
+                continue  # Skip features that don't match the specified type
+            if seqname_filter != "all" and fields[0] != seqname_filter:
+                continue  # Skip sequence names that don't match the filter
+            attributes = parse_attributes(fields[8])
+            gtf_data.append(fields[:8])
+            attributes_data.append(attributes)
+
+        # Create the main DataFrame
+        columns = [
+            "seqname",
+            "source",
+            "feature",
+            "start",
+            "end",
+            "score",
+            "strand",
+            "frame",
+        ]
+        gtf_df = pd.DataFrame(gtf_data, columns=columns)
+
+        if unwrap_attributes:
+            # Create a DataFrame for attributes and concatenate with the main DataFrame
+            attributes_df = pd.DataFrame(attributes_data)
+            gtf_df = pd.concat([gtf_df, attributes_df], axis=1)
+
+    return gtf_df
+
+
 # Pattern matching for gene names.
 ## Returns the genes sorted by expression (high to low) by default
 def grep_genes(

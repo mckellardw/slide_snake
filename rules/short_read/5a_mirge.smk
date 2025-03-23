@@ -1,10 +1,10 @@
 #############################################
 ## miRge3.0 analysis
 #############################################
-#TODO- add rule to filter out longer reads for faster smRNA analysis?
+# TODO- add rule to filter out longer reads for faster smRNA analysis?
 
 
-#TODO- remove this when miRge3 updates to allow '.fq.gz' as inputs...
+# TODO- remove this when miRge3 updates to allow '.fq.gz' as inputs...
 rule ilmn_5a_copy_R2_fq_for_mirge:
     input:
         FQ=lambda w: get_fqs(w, return_type="list", mode="ILMN")[1],
@@ -21,7 +21,9 @@ rule ilmn_5a_copy_R2_fq_for_mirge:
 # TODO update this code...
 rule ilmn_5a_miRge3_pseudobulk:
     input:
-        FQ=os.path.abspath("{OUTDIR}/{SAMPLE}/short_read/miRge_bulk/{RECIPE}/tmp/R2.fastq.gz"),
+        FQ=os.path.abspath(
+            "{OUTDIR}/{SAMPLE}/short_read/miRge_bulk/{RECIPE}/tmp/R2.fastq.gz"
+        ),
     output:
         HTML="{OUTDIR}/{SAMPLE}/short_read/miRge_bulk/{RECIPE}/annotation.report.html",
         CSV="{OUTDIR}/{SAMPLE}/short_read/miRge_bulk/{RECIPE}/annotation.report.csv",
@@ -29,8 +31,8 @@ rule ilmn_5a_miRge3_pseudobulk:
     params:
         MIRGE_LIB=os.path.abspath(config["MIRGE_LIB"]),
         SPECIES=lambda wildcards: SAMPLE_SHEET["species"][wildcards.SAMPLE],
-        MIN_LENGTH = 12,
-        MB_PER_THREAD = 128
+        MIN_LENGTH=12,
+        MB_PER_THREAD=128,
     log:
         log="{OUTDIR}/{SAMPLE}/short_read/miRge_bulk/{RECIPE}/run.log",
         err="{OUTDIR}/{SAMPLE}/short_read/miRge_bulk/{RECIPE}/mirge3.err",
@@ -58,17 +60,17 @@ rule ilmn_5a_miRge3_pseudobulk:
             --AtoI \
         2> {log.err}
         """
-            # --bam-out \
-            # --novel-miRNA \
+        # --bam-out \
+        # --novel-miRNA \
         # 
-            # --miREC \
- 
+        # --miREC \
         #TODO- extra flags for human:
-            # --miREC {EXTRA_FLAGS}
+        # --miREC {EXTRA_FLAGS}
         #     # human-only settings
         # if params.SPECIES == "human":
         #     EXTRA_FLAGS = "--tRNA-frag"
         # else:
         #     EXTRA_FLAGS = ""
+
 
 # bowtie --threads 16 /gpfs/commons/groups/innovation/dwm/slide_snake/resources/miRge3_Lib/mouse/index.Libs/mouse_genome -n 1 -f -a -3 2 /gpfs/commons/groups/innovation/dwm/slide_snake/out/Mouse_Lymphnode_20um/short_read/miRge_bulk/dbit-pretrim/SeqToMap.fasta --phred64-quals

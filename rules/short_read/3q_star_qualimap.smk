@@ -3,7 +3,7 @@
 
 
 ## qualimap on "raw" (not deduplicated) aligned reads
-rule ilmn_3d_qualimapQC_STAR:
+rule ilmn_3q_qualimapQC_STAR:
     input:
         BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.bam",
         BAI="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.bam.bai",
@@ -38,7 +38,7 @@ rule ilmn_3d_qualimapQC_STAR:
 
 
 ## qualimap on deduplicated/aligned reads
-rule ilmn_3d_qualimapQC_dedup_STAR:
+rule ilmn_3q_qualimapQC_dedup_STAR:
     input:
         BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.dedup.bam",
         BAI="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.dedup.bam.bai",
@@ -72,7 +72,7 @@ rule ilmn_3d_qualimapQC_dedup_STAR:
         """
 
 
-rule ilmn_3d_qualimap_summary2csv_STAR:
+rule ilmn_3q_qualimap_summary2csv_STAR:
     input:
         TXT="{OUTDIR}/{SAMPLE}/short_read/qualimap/STAR/{RECIPE}/{DEDUP}/rnaseq_qc_results.txt",
     output:

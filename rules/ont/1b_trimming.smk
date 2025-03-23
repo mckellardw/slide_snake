@@ -56,7 +56,6 @@ rule ont_1b_cutadapt:
             --overlap {params.OVERLAP} \
             --match-read-wildcards \
             --times {params.ADAPTER_COUNT} \
-            -A POLYA_3p="{params.POLYA}X;max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
             -B TSO={params.TSO} \
             -B TXG_TSO={params.TXG_TSO} \
             -B SEEKER_LINKER={params.SEEKER_BB_LINKER} \
@@ -69,6 +68,7 @@ rule ont_1b_cutadapt:
         1>> {log.log} \
         2> {log.err}
         """
+        # -A POLYA_3p="{params.POLYA}X;max_error_rate={params.HOMOPOLYMER_ERROR_RATE}" \
         # -B uMRT_TSO={params.uMRT_TSO} \
         # -g R1_PRIMER=X{params.R1_PRIMER} \
         # --minimum-length {R1_LENGTH}:{params.MIN_R2_LENGTH} \

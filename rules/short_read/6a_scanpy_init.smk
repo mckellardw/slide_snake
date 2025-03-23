@@ -67,7 +67,7 @@ rule ilmn_6a_cache_h5ad_kbpython_std:
             --bc_in {input.BCS} \
             --bc_map {input.BC_map} \
             --ad_out {output.H5AD} \
-            --feat_col 0 \
+            --feat_col 1 0 \
             --transpose True \
             --remove_zero_features \
             --plot_qc \
