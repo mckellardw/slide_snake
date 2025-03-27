@@ -66,29 +66,27 @@ check_sample_sheet(SAMPLE_SHEET)
 wildcard_constraints:
     OUTDIR=config["OUTDIR"],
     SAMPLE="[A-Za-z0-9_-]+",
+    RECIPE="[A-Za-z0-9_-]+",
 
 
 ### include rules #######################################################################
 # Barcode handling ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 include: "rules/0a_barcode_maps.smk"
-
 # Short-read module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## fastq preprocessing & QC
 include: "rules/short_read/1a_mergefqs.smk"
 include: "rules/short_read/1b_trimming.smk"
 include: "rules/short_read/1c_barcode_calling.smk"
-
 ## rRNA Filtering
 include: "rules/short_read/2a_rRNA_bwa.smk"
 include: "rules/short_read/2b_ribodetector.smk"
 include: "rules/short_read/2c_rRNA_qualimap.smk"
-
 ## STAR alignment, QC, and post-processing - TODO update numbering
 include: "rules/short_read/3a_star_align.smk"
 include: "rules/short_read/3b_star_unmapped.smk"
 include: "rules/short_read/3c_star_dedup.smk"
-include: "rules/short_read/3d_star_qualimap.smk"
-
+include: "rules/short_read/3q_star_qualimap.smk"
+include: "rules/short_read/3u_star_uTAR.smk"
 ## kallisto/bustools alignment
 include: "rules/short_read/4a_kbpython.smk"
 
@@ -100,11 +98,9 @@ include: "rules/short_read/4a_kbpython.smk"
 include: "rules/short_read/5a_mirge.smk"
 ## scanpy stuff
 include: "rules/short_read/6a_scanpy_init.smk"
-
-
+include: "rules/short_read/6b_seurat_init.smk"
 include: "rules/short_read/7a_fastqc.smk"
 include: "rules/short_read/7b_readqc.smk"
-
 # ONT module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## preprocessing
 include: "rules/ont/1a_preprocessing.smk"
@@ -138,7 +134,7 @@ ilmn_barcodes = [
     for SAMPLE in R2_FQS.keys()
     for RECIPE in RECIPE_DICT[SAMPLE]
     for FILE in [
-        f"barcodes_umis/{RECIPE}/read_barcodes_corrected.tsv",
+        f"barcodes_umis/{RECIPE}/barcodes_corrected.tsv",
         f"barcodes_umis/{RECIPE}/bc_correction_stats.txt",
     ]
 ]
@@ -149,7 +145,7 @@ ilmn_rRNA_qualimap = [
     f"{OUTDIR}/{SAMPLE}/short_read/qualimap/rRNA/{TOOL}/{FILE}"
     for SAMPLE in R2_FQS.keys()
     for TOOL in ["bwa"]
-    for FILE in ["qualimapReport.html", "rnaseq_qc_results.csv"]
+    for FILE in ["report.pdf", "rnaseq_qc_results.csv"]
 ]
 
 # Module 3 - STAR alignment
@@ -166,12 +162,12 @@ ilmn_STAR_counts = [
 
 ### Deduplicated and strand-split alignment files
 ilmn_STAR_dedup_bams = [
-    f"{OUTDIR}/{SAMPLE}/short_read/{REF}/short_read/{RECIPE}/Aligned.sortedByCoord.{STEP}out{STRAND}.{FILE}"
+    f"{OUTDIR}/{SAMPLE}/short_read/{REF}/{RECIPE}/Aligned.sortedByCoord.out{STRAND}{STEP}.{FILE}"
     for SAMPLE in R2_FQS.keys()
     for REF in ["STARsolo"]
     for RECIPE in RECIPE_DICT[SAMPLE]
-    for STEP in ["", "dedup."]
     for STRAND in ["", ".fwd", ".rev"]
+    for STEP in ["", ".dedup"]
     for FILE in ["bam", "bam.bai"]  # TODO add bigWigs
 ]
 
@@ -182,12 +178,19 @@ ilmn_STAR_qualimap = [
     for TOOL in ["STAR"]
     for RECIPE in RECIPE_DICT[SAMPLE]
     for DEDUP in ["raw"]  # , "dedup"
-    for FILE in ["qualimapReport.html", "rnaseq_qc_result.csv"]
+    for FILE in ["report.pdf", "rnaseq_qc_result.csv"]
 ]
 
 ## fastQC results for unmapped reads
 ilmn_STAR_unmapped_fastqc = [
     f"{OUTDIR}/{SAMPLE}/short_read/fastqc/unmapped/{RECIPE}"
+    for SAMPLE in R2_FQS.keys()
+    for RECIPE in RECIPE_DICT[SAMPLE]
+]
+
+### STAR uTAR outputs
+ilmn_STAR_uTAR = [
+    f"{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/uTAR.mtx.gz"
     for SAMPLE in R2_FQS.keys()
     for RECIPE in RECIPE_DICT[SAMPLE]
 ]
@@ -205,21 +208,29 @@ ilmn_mirge_bulk = [
 ]
 
 # Module 6 - anndata/scanpy
-## anndata files (with spatial info) - STAR
-ilmn_STAR_h5ad = [
-    f"{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.h5ad"
+## anndata and seurat/rds files (with spatial info) - STAR
+ilmn_STAR_cache = [
+    f"{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.{FILE}"
     for SAMPLE in R2_FQS.keys()
     for RECIPE in RECIPE_DICT[SAMPLE]
     for SOLO in ["Gene", "GeneFull"]
     for ALGO in ["UniqueAndMult-EM", "matrix"]
+    for FILE in [
+        # "h5ad",
+        "rds"
+    ]
 ]
 
 ## anndata files (with spatial info) - kallisto
-ilmn_kb_h5ad = [
-    f"{OUTDIR}/{SAMPLE}/short_read/kbpython_{KB}/{RECIPE}/counts_unfiltered/output.h5ad"
+ilmn_kb_cache = [
+    f"{OUTDIR}/{SAMPLE}/short_read/kbpython_{KB}/{RECIPE}/counts_unfiltered/output.{FILE}"
     for SAMPLE in R2_FQS.keys()
     for RECIPE in RECIPE_DICT[SAMPLE]
     for KB in ["std"]  # TODO "nac", "tcc"
+    for FILE in [
+        "h5ad",
+        # "rds"
+    ]
 ]
 
 # Module 7 - final QC
@@ -231,15 +242,14 @@ ilmn_readqc = [
     for READ in ["R1", "R2"]
     for RECIPE in RECIPE_DICT[SAMPLE]
     for TRIM in [
-        f"0_rawInput/{READ}",
-        f"1_preCutadapt/{READ}",
-        f"2_postCutadapt/{READ}",
-        f"3_twiceCutadapt/{READ}",
+        # f"0_rawInput/{READ}",
+        # f"1_preCutadapt/{READ}",
+        # f"2_postCutadapt/{READ}",
+        # f"3_twiceCutadapt/{READ}",
         f"4_aligned/{RECIPE}",
     ]
     for FILE in ["tsv.gz", "png"]
 ]
-
 
 
 ### ONT targets ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -248,7 +258,7 @@ ont_barcodes = [
     for SAMPLE in ONT.keys()
     for RECIPE in RECIPE_ONT_DICT[SAMPLE]
     for FILE in [
-        f"barcodes_umis/{RECIPE}/read_barcodes_corrected.tsv",
+        f"barcodes_umis/{RECIPE}/barcodes_corrected.tsv",
         f"barcodes_umis/{RECIPE}/bc_correction_stats.txt",
     ]
 ]
@@ -258,8 +268,8 @@ ont_adapter_scan_summary = [
     for SAMPLE in ONT.keys()
     for RECIPE in RECIPE_ONT_DICT[SAMPLE]
     for FILE in [
-        f"misc_logs/1a_adapter_scan_summary.csv",
-        f"misc_logs/1a_adapter_scan_summary.pdf",
+        f"logs/1a_adapter_scan_summary.csv",
+        f"logs/1a_adapter_scan_summary.pdf",
     ]
 ]
 
@@ -271,6 +281,7 @@ ont_minimap_genome = [
         f"sorted_gn_cb.bam",
         "sorted_filtered_gn_cb_ub_pos.bam",
         f"raw/output.h5ad",
+        # f"raw/output.rds",
     ]
 ]
 
@@ -283,6 +294,7 @@ ont_minimap_txome = [
         f"oarfish/P.meta_info.json",
         # f"aligned_gn_cb.bam",
         # f"raw/output.h5ad",
+        # f"raw/output.rds",
     ]
 ]
 
@@ -290,7 +302,12 @@ ont_ultra_genome = [
     f"{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/{FILE}"
     for SAMPLE in ONT.keys()
     for RECIPE in RECIPE_ONT_DICT[SAMPLE]
-    for FILE in [f"sorted_gn_cb.bam", f"raw/output.h5ad", f"raw/umitools_counts.tsv.gz"]
+    for FILE in [
+        f"sorted_gn_cb.bam",
+        f"raw/umitools_counts.tsv.gz",
+        f"raw/output.h5ad",
+        # f"raw/output.rds",
+    ]
 ]
 
 # ONT fastqc - not really useful, but I coded it out...
@@ -312,7 +329,7 @@ ont_readqc = [
     for READ in ["R1", "R2"]
     for RECIPE in RECIPE_ONT_DICT[SAMPLE]
     for TRIM in [
-        f"0_rawInput/merged",
+        # f"0_rawInput/merged",
         f"1_preCutadapt/{READ}",
         f"2_postCutadapt/{READ}",
         f"3_aligned/{RECIPE}",
@@ -328,13 +345,13 @@ ont_qualimap = [
     for TOOL in [
         "minimap2",
     ]
-    for FILE in ["qualimapReport.html", "rnaseq_qc_results.csv"]
+    for FILE in ["report.pdf", "rnaseq_qc_results.csv"]
 ]
 
 # kallisto-lr outputs
 # ont_kb = [f"{OUTDIR}/{SAMPLE}/ont/kb/{RECIPE}/{FILE}"
 #     for SAMPLE in ONT.keys()
-#     for RECIPE in RECIPE_DICT[SAMPLE]
+#     for RECIPE in RECIPE_ONT_DICT[SAMPLE]
 #     for FILE in [ ]
 # ],
 
@@ -342,22 +359,22 @@ ont_qualimap = [
 ### Target rule #################################################################################
 rule all:
     input:
-        ilmn_barcodes,
-        # ilmn_rRNA_qualimap,
+        # ilmn_barcodes,
+        ilmn_rRNA_qualimap,
         # ilmn_STAR_dedup_bams,
         # ilmn_STAR_counts,
-        ilmn_STAR_qualimap,
-        # ilmn_STAR_unmapped_fastqc,
-        # ilmn_mirge_bulk,
-        ilmn_STAR_h5ad,
-        # ilmn_kb_h5ad,
-        ilmn_fastqc,
-        ilmn_readqc,
-        # ont_barcodes,
+        # ilmn_STAR_qualimap,
+        # ilmn_STAR_unmapped_fastqc,  #
+        # ilmn_STAR_uTAR,
+        # ilmn_mirge_bulk, #
+        ilmn_STAR_cache,
+        # ilmn_kb_cache,
+        # ilmn_fastqc,
+        # ilmn_readqc,
+        ont_barcodes,
         ont_adapter_scan_summary,
         ont_minimap_genome,
         # ont_minimap_txome,
         # ont_ultra_genome,
-        ont_readqc,
+        # ont_readqc,
         ont_qualimap,
-        # ont_fastqc,

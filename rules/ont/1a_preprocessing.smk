@@ -110,7 +110,7 @@ rule ont_1a_call_adapter_scan_v2:
     threads: 56
     shell:
         """
-        python scripts/py/adapter_scan_parasail.py \
+        python scripts/py/adapter_scan_vsearch_v2.py \
             --fq_in "{input.FQ}" \
             --fq_out "{output.FQ}" \
             --output_tsv "{output.TSV}" \

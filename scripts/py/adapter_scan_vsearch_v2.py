@@ -204,6 +204,14 @@ def call_vsearch(tmp_fastq, args):
         output=tmp_vsearch,
     )
     stdout, stderr = run_subprocess(vsearch_cmd)
+    
+    # Check if the output file exists
+    if not os.path.exists(tmp_vsearch):
+        raise FileNotFoundError(
+            f"VSEARCH output file not found: {tmp_vsearch}. "
+            f"Command: {vsearch_cmd}\nStdout: {stdout}\nStderr: {stderr}"
+        )
+    
     os.remove(tmp_fasta)
     return tmp_vsearch
 
