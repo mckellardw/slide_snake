@@ -2,9 +2,9 @@
 import numpy as np
 import scanpy as sc
 import pandas as pd
+import anndata as ad
 import matplotlib.pyplot as plt
 from matplotlib import cm
-from anndata import AnnData
 
 # import anndata as ad
 
@@ -229,3 +229,90 @@ def plot_grid_of_embeddings(
         plt.savefig(filename)
 
     plt.show()
+
+
+
+def ad_scatter(
+    adata: ad.AnnData,
+    x: str,
+    y: str,
+    x_layer: str = None,
+    y_layer: str = None,
+    color: str = None,
+    alpha: float = 1,
+    title: str = "Scatter Plot",
+    figsize: tuple = (10, 8)
+):
+    """
+    Create a scatter plot from an AnnData object. Compare 2 values.
+
+    Parameters:
+    -----------
+    adata : anndata.AnnData
+        The AnnData object containing the data.
+    x : str
+        The feature or metadata to plot on the x-axis.
+    y : str
+        The feature or metadata to plot on the y-axis.
+    x_layer : str, optional
+        The layer to use for the x-axis if x is a gene. Default is None (uses .X).
+    y_layer : str, optional
+        The layer to use for the y-axis if y is a gene. Default is None (uses .X).
+    color : str, optional
+        The feature or metadata to use for coloring the points.
+    title : str, optional
+        The title of the plot. Default is "Scatter Plot".
+    figsize : tuple, optional
+        The size of the figure. Default is (10, 8).
+
+    Returns:
+    --------
+    fig : matplotlib.figure.Figure
+        The created figure object.
+    ax : matplotlib.axes.Axes
+        The created axes object.
+    """
+    
+    def get_feature_data(feature, layer):
+        if feature in adata.var_names:
+            if layer is None:
+                return adata[:, feature].X.flatten()
+            elif layer in adata.layers:
+                return adata[:, feature].layers[layer].flatten()
+            else:
+                raise ValueError(f"Layer '{layer}' not found in the AnnData object.")
+        elif feature in adata.obs.columns:
+            return adata.obs[feature]
+        else:
+            raise ValueError(f"Feature '{feature}' not found in AnnData object.")
+
+    x_data = get_feature_data(x, x_layer)
+    y_data = get_feature_data(y, y_layer)
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    if color:
+        color_data = get_feature_data(color, None)
+        scatter = ax.scatter(
+            x_data, 
+            y_data, 
+            c=color_data, 
+            alpha=alpha,
+            cmap='viridis'
+        )
+        plt.colorbar(
+            scatter, 
+            ax=ax, label=color)
+    else:
+        ax.scatter(
+            x_data, 
+            y_data,
+            alpha=alpha
+        )
+
+    ax.set_xlabel(f"{x} ({'obs' if x in adata.obs.columns else f'var, layer: {x_layer if x_layer else "X"}'})")
+    ax.set_ylabel(f"{y} ({'obs' if y in adata.obs.columns else f'var, layer: {y_layer if y_layer else "X"}'})")
+    ax.set_title(title)
+
+    plt.tight_layout()
+    return fig, ax

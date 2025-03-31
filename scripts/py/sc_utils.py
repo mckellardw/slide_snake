@@ -191,6 +191,85 @@ def grep_genes(
     return out_genes
 
 
+def grep_var(
+    adata: ad.AnnData,
+    pattern="",
+    var_colname: str = None,
+    layer=None,
+    filter_pattern=None,
+    sort_by="expression",
+    verbose=True,
+):
+    """
+    Search for entries in adata.var that match a given pattern.
+
+    Parameters:
+    adata (anndata.AnnData): The AnnData object containing the gene expression data.
+    pattern (str or list of str, optional): The pattern or patterns to search for. Default is "".
+    var_colname (str, optional): The column in adata.var to search. If None, defaults to var_names. Default is None.
+    layer (str, optional): The layer to use for expression-based sorting. Default is None, which uses .X.
+    filter_pattern (str or list of str, optional): A pattern or patterns to filter out from the results. Default is None.
+    sort_by (str, optional): How to sort the output. Can be "expression" (sort by total expression across all cells) or "abc" (sort alphabetically). Default is "expression".
+    verbose (bool, optional): Whether to print progress messages. Default is True.
+
+    Returns:
+    list of str: The names or values in the specified column that match the pattern and do not match the filter_pattern, sorted according to sort_by.
+    """
+    if var_colname is None:
+        if verbose:
+            print("No var_colname provided. Defaulting to var_names.")
+        search_data = adata.var_names
+    else:
+        if var_colname not in adata.var.columns:
+            raise ValueError(f"Column '{var_colname}' not found in adata.var.")
+        if not pd.api.types.is_categorical_dtype(adata.var[var_colname]) and not pd.api.types.is_string_dtype(adata.var[var_colname]):
+            raise ValueError(f"Column '{var_colname}' must be categorical or strings.")
+        search_data = adata.var[var_colname]
+
+    if verbose:
+        print(f"Searching in column '{var_colname or 'var_names'}'...")
+
+    if pattern == "":
+        if verbose:
+            print("No pattern provided. Returning all entries.")
+        out_entries = search_data
+    elif isinstance(pattern, list):
+        if verbose:
+            print("Looking for multiple patterns...")
+        out_entries = [entry for entry in search_data if any(pat in str(entry) for pat in pattern)]
+    else:
+        if verbose:
+            print(f"Looking for pattern '{pattern}'...")
+        out_entries = [entry for entry in search_data if pattern in str(entry)]
+
+    if len(out_entries) == 0:
+        if verbose:
+            print("No matches found.")
+        return []
+
+    if filter_pattern is not None:
+        if verbose:
+            print(f"Filtering out entries containing '{filter_pattern}'...")
+        out_entries = [
+            entry for entry in out_entries if not any(pat in str(entry) for pat in filter_pattern)
+        ]
+
+    if sort_by == "expression" and var_colname is None:
+        if verbose:
+            print("Sorting by expression...")
+        if layer:
+            gene_sums = np.asarray(adata[:, out_entries].layers[layer].sum(axis=0)).squeeze()
+        else:
+            gene_sums = np.asarray(adata[:, out_entries].X.sum(axis=0)).squeeze()
+        out_entries = [x for _, x in sorted(zip(gene_sums, out_entries), reverse=True)]
+    elif sort_by == "abc":
+        if verbose:
+            print("Sorting alphabetically...")
+        out_entries = sorted(out_entries)
+
+    return out_entries
+
+
 # Reorder a reduction by decreasing % variance
 def reorder_reduction(ADATA, reduction="pca", verbose=False):
     """
@@ -597,7 +676,8 @@ def add_biotypes_pct(
     prefix: str = "pct_",
     scale: int = 100,
     verbose: bool = True,
-    layer: str = None,  # New parameter to specify the layer
+    layer: str = None,  # Specify the layer to use
+    inplace: bool = True,  # Whether to modify the input AnnData object in place
 ) -> ad.AnnData:
     """
     This function adds gene biotype percentage values to an AnnData object.
@@ -612,20 +692,23 @@ def add_biotypes_pct(
         scale (int, optional): Determines the scaling for the percentage. Default is 100.
         verbose (bool, optional): Determines whether to print messages during function execution. Default is True.
         layer (str, optional): The layer in the AnnData object to use for computation. Default is None (uses .X).
+        inplace (bool, optional): Whether to modify the input AnnData object in place. Default is True.
 
     Returns:
-        AnnData: The original AnnData object with added gene biotype percentage values.
+        AnnData: The modified AnnData object if inplace=False, otherwise None.
     """
+    if not inplace:
+        adata = adata.copy()
 
     if biomart is None:
         if verbose:
             print("Need a list of gene biotypes! Nothing done.")
-        return adata
+        return adata if not inplace else None
 
     if add_as == "var":
         if verbose:
             print("add_as='var' is not yet implemented")
-        return adata
+        return adata if not inplace else None
 
     # Check if the specified layer exists
     if layer is not None and layer not in adata.layers:
@@ -643,7 +726,8 @@ def add_biotypes_pct(
             print("Using default expression matrix (.X)")
 
     biotypes = list(biomart[biotype_colname].unique())
-    print(f"Found {len(biotypes)} biotypes..")
+    if verbose:
+        print(f"Found {len(biotypes)} biotypes..")
 
     for biotype in biotypes:
         # Subset out current gene biotype
@@ -682,7 +766,102 @@ def add_biotypes_pct(
                 if verbose:
                     print("`add_as` option not found... Try again.")
 
-    return adata
+    return adata if not inplace else None
+
+
+def add_var_pct(
+    adata: ad.AnnData,
+    var_colname: str = "gene_type",
+    add_as: str = "obs",  # how percent features should be added
+    prefix: str = "pct_",
+    scale: int = 100,
+    verbose: bool = True,
+    layer: str = None,  # Specify the layer to use
+    inplace: bool = True,  # Whether to modify the input AnnData object in place
+) -> ad.AnnData:
+    """
+    This function computes percentages based on a column in adata.var and adds them to the AnnData object.
+
+    Args:
+        adata (AnnData): The AnnData object containing gene expression data.
+        var_colname (str, optional): Column name in adata.var to group features by. Default is "gene_type".
+        add_as (str, optional): Determines how percent features should be added. Default is "obs".
+        prefix (str, optional): Prefix for column names added to the AnnData object. Default is "pct_".
+        scale (int, optional): Determines the scaling for the percentage. Default is 100.
+        verbose (bool, optional): Determines whether to print messages during function execution. Default is True.
+        layer (str, optional): The layer in the AnnData object to use for computation. Default is None (uses .X).
+        inplace (bool, optional): Whether to modify the input AnnData object in place. Default is True.
+
+    Returns:
+        AnnData: The modified AnnData object if inplace=False, otherwise None.
+    """
+    if not inplace:
+        adata = adata.copy()
+
+    if var_colname not in adata.var.columns:
+        if verbose:
+            print(f"Column '{var_colname}' not found in adata.var. Nothing done.")
+        return adata if not inplace else None
+
+    # Check if the specified layer exists
+    if layer is not None and layer not in adata.layers:
+        if verbose:
+            print(
+                f"The specified layer '{layer}' does not exist in the AnnData object. Using .X instead."
+            )
+        layer = None
+
+    if verbose:
+        print(f"Adding percentages based on '{var_colname}' as {add_as} ...")
+        if layer:
+            print(f"Using layer: {layer}")
+        else:
+            print("Using default expression matrix (.X)")
+
+    categories = adata.var[var_colname].unique()
+    if verbose:
+        print(f"Found {len(categories)} unique categories in '{var_colname}'.")
+
+    for category in categories:
+        # Subset out current category
+        tmp_feat = adata.var_names[adata.var[var_colname] == category]
+
+        if len(tmp_feat) == 0:
+            if verbose:
+                print(f"  No features found for category '{category}'...")
+        else:
+            if add_as == "obs":
+                col_name = prefix + category
+
+                # Calculate the percentage based on the specified layer or .X
+                if layer:
+                    total_counts = adata.layers[layer].sum(axis=1)
+                    gene_pct = adata[:, tmp_feat].layers[layer].sum(axis=1) / np.where(
+                        total_counts == 0, np.nan, total_counts
+                    )
+                else:
+                    total_counts = adata.X.sum(axis=1)
+                    gene_pct = adata[:, tmp_feat].X.sum(axis=1) / np.where(
+                        total_counts == 0, np.nan, total_counts
+                    )
+
+                # Replace NaN values with 0
+                gene_pct = np.nan_to_num(gene_pct)
+
+                # Add the percentage to the AnnData object
+                adata.obs[col_name] = np.asarray(gene_pct).flatten()
+
+                # Scale the data if necessary
+                if scale == 1:  # [0,1]
+                    adata.obs[col_name] /= 100
+                elif scale != 100:  # [0,100]
+                    if verbose:
+                        print("Given scale was not found. Scaling to 100...")
+            else:
+                if verbose:
+                    print("`add_as` option not found... Try again.")
+
+    return adata if not inplace else None
 
 
 # Function to label cells within a region of interest (ROI) polygon
@@ -810,6 +989,7 @@ def add_mtx_as_layer(
     feature_column: int = 0,
     transpose: bool = False,
     intersect: bool = False,
+    assume_order: bool = False,
     inplace: bool = True,
     verbose: bool = False,
 ):
@@ -822,10 +1002,12 @@ def add_mtx_as_layer(
         obs_path (str): Path to row names for the mtx file.
         var_path (str): Path to column names in the mtx file.
         layer_name (str): Name of the layer to be added.
-        feature_column (int): Column # for desired feature names (similar to Seurat::ReadMtx)
-        transpose (bool, optional): Whether or not to transpose the matrix
+        feature_column (int): Column # for desired feature names (similar to Seurat::ReadMtx).
+        transpose (bool, optional): Whether or not to transpose the matrix.
         intersect (bool, optional): Whether to consider only the intersection of observations and features.
             If False, the union of observations and features will be used. Default is False.
+        assume_order (bool, optional): If True, assumes the adata object and the new matrix have features in the same order.
+            If True, directly loads the matrix without reordering. Default is True.
         inplace (bool, optional): Whether to modify the input AnnData object in place or create a new copy.
             If True, modifications are made to the input AnnData object. If False, a new AnnData object is created
             with the added layer. Default is True.
@@ -844,7 +1026,13 @@ def add_mtx_as_layer(
         matrix = matrix.tocsr()
 
     if verbose:
-        print(f"Loaded {matrix.shape[0]} obs and {matrix.shape[1]} vars")
+        print(f"Loaded {matrix.shape[0]:,} obs and {matrix.shape[1]:,} vars")
+
+    if assume_order:
+        if verbose:
+            print("Assuming the same feature order between adata and the new matrix.")
+        adata.layers[layer_name] = matrix
+        return adata if not inplace else None
 
     var_names_mat = (
         pd.read_csv(
@@ -862,43 +1050,39 @@ def add_mtx_as_layer(
         obs_names_common = list(set(adata.obs_names) & set(obs_names_mat))
         var_names_common = list(set(adata.var_names) & set(var_names_mat))
 
+        if verbose:
+            print(f"Subsetting to {len(obs_names_common):,} obs and {len(var_names_common):,} vars")
+
+        # Subset and re-order the AnnData object and the matrix
+        adata = adata[obs_names_common, var_names_common]
         obs_indices_mat = [obs_names_mat.index(obs) for obs in obs_names_common]
         var_indices_mat = [var_names_mat.index(var) for var in var_names_common]
-
         matrix = matrix[obs_indices_mat, :][:, var_indices_mat]
-
-        obs_names_out = obs_names_common
-        var_names_out = var_names_common
     else:
         obs_names_out = list(set(adata.obs_names) | set(obs_names_mat))
         var_names_out = list(set(adata.var_names) | set(var_names_mat))
 
-    if verbose:
-        print(f"Final matrix shape: {matrix.shape[0]} obs and {matrix.shape[1]} vars")
-        print(f"Intersection: {len(obs_names_out)} obs and {len(var_names_out)} vars")
+        if verbose:
+            print(f"Final matrix shape: {len(obs_names_out):,} obs and {len(var_names_out):,} vars")
 
-    # Create a new matrix with the correct dimensions
-    new_matrix = sp.csr_matrix(
-        (len(obs_names_out), len(var_names_out)), dtype=matrix.dtype
-    )
+        # Create a new matrix with the correct dimensions
+        new_matrix = sp.csr_matrix(
+            (len(obs_names_out), len(var_names_out)), dtype=matrix.dtype
+        )
 
-    # Fill in the values from the original matrix
-    obs_index_dict = {name: index for index, name in enumerate(obs_names_mat)}
-    var_index_dict = {name: index for index, name in enumerate(var_names_mat)}
+        # Fill in the values from the original matrix
+        obs_index_dict = {name: index for index, name in enumerate(obs_names_mat)}
+        var_index_dict = {name: index for index, name in enumerate(var_names_mat)}
 
-    for i, obs in enumerate(obs_names_out):
-        if obs in obs_index_dict:
-            orig_obs_idx = obs_index_dict[obs]
-            for j, var in enumerate(var_names_out):
-                if var in var_index_dict:
-                    orig_var_idx = var_index_dict[var]
-                    new_matrix[i, j] = matrix[orig_obs_idx, orig_var_idx]
+        for i, obs in enumerate(obs_names_out):
+            if obs in obs_index_dict:
+                orig_obs_idx = obs_index_dict[obs]
+                for j, var in enumerate(var_names_out):
+                    if var in var_index_dict:
+                        orig_var_idx = var_index_dict[var]
+                        new_matrix[i, j] = matrix[orig_obs_idx, orig_var_idx]
 
-    # Update adata object
-    if intersect:
-        adata = adata[:, var_names_common]
-    else:
-        # Add missing observations and variables to adata
+        # Update adata object
         missing_obs = list(set(obs_names_out) - set(adata.obs_names))
         missing_vars = list(set(var_names_out) - set(adata.var_names))
 
@@ -921,11 +1105,14 @@ def add_mtx_as_layer(
                 axis=1,
             )
 
-    # Ensure the order of observations and variables matches
-    adata = adata[obs_names_out, var_names_out]
+        # Ensure the order of observations and variables matches
+        adata = adata[obs_names_out, var_names_out]
+
+        # Assign the new matrix
+        matrix = new_matrix
 
     # Add the new layer
-    adata.layers[layer_name] = new_matrix
+    adata.layers[layer_name] = matrix
 
     if not inplace:
         return adata
