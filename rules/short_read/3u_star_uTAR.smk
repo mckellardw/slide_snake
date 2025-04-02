@@ -178,3 +178,23 @@ rule ilmn_3u_gzip_counts:
         """
         pigz -p{threads} {input.COUNT_MTX}
         """
+
+
+# Generate QC plots for the final matrix
+rule ilmn_3u_plot_qc:
+    input:
+        MTX="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/uTAR.mtx.gz",
+        GENES="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/uTAR_genes.tsv.gz",
+        CELLS="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/uTAR_cells.tsv.gz",
+    output:
+        PNG="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/qc_plots.png",
+    conda:
+        f"{workflow.basedir}/envs/seurat.yml"
+    shell:
+        """
+        Rscript scripts/R/matrix_qc_summary.R \
+            --matrix {input.MTX} \
+            --genes {input.GENES} \
+            --cells {input.CELLS} \
+            --output {output.PNG}
+        """
