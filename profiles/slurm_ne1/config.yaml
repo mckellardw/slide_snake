@@ -24,6 +24,8 @@ set-threads:
   ilmn_3c_umitools_dedup_revBAM: 24
   ilmn_3c_merge_dedup_bam: 1
   ilmn_3q_qualimapQC_STAR: 8
+  ilmn_3q_qualimapQC_dedup_STAR: 8
+  ilmn_3q_qualimap_summary2csv_STAR: 1
   ilmn_3u_convertToRefFlat: 1
   ilmn_3u_calcHMMbed: 24
   ilmn_3u_calcHMMrefFlat: 24
@@ -33,8 +35,6 @@ set-threads:
   ilmn_3u_extract_HMM_expression: 24
   ilmn_3u_counts_long2mtx: 1
   ilmn_3u_gzip_counts: 24
-  ilmn_3q_qualimapQC_dedup_STAR: 8
-  ilmn_3q_qualimap_summary2csv_STAR: 1
   ilmn_4a_kbpython_std: 24
   ilmn_5a_miRge3_pseudobulk: 4
   ilmn_6a_cache_h5ad_STAR: 1
@@ -158,8 +158,53 @@ set-resources:
   ilmn_3a_STARsolo_secondPass:
     mem: 220000000000
     mem_mb: 220000
+  ilmn_3c_strand_split_bam:
+    mem: 8G
+    mem_mb: 8000
+  ilmn_3c_umitools_dedup_fwdBAM:
+    mem: 64G
+    mem_mb: 64000
+  ilmn_3c_umitools_dedup_revBAM:
+    mem: 64G
+    mem_mb: 64000
+  ilmn_3c_merge_dedup_bam:
+    mem: 8G
+    mem_mb: 8000
+  ilmn_3q_qualimapQC_dedup_STAR:
+    mem: 32G
+    mem_mb: 32000
+  ilmn_3q_qualimap_summary2csv_STAR:
+    mem: 8G
+    mem_mb: 8000
   ilmn_3q_qualimapQC_STAR:
     mem: 32G
+  ilmn_3u_convertToRefFlat:
+    mem: 8G
+    mem_mb: 8000
+  ilmn_3u_calcHMMbed:
+    mem: 64G
+    mem_mb: 64000
+  ilmn_3u_calcHMMrefFlat:
+    mem: 64G
+    mem_mb: 64000
+  ilmn_3u_HMM_refFlat_to_gtf:
+    mem: 8G
+    mem_mb: 8000
+  ilmn_3u_tagReads:
+    mem: 64G
+    mem_mb: 64000
+  ilmn_3u_sort_index_tagged_bam:
+    mem: 64G
+    mem_mb: 64000
+  ilmn_3u_extract_HMM_expression:
+    mem: 64G
+    mem_mb: 64000
+  ilmn_3u_counts_long2mtx:
+    mem: 8G
+    mem_mb: 8000
+  ilmn_3u_gzip_counts:
+    mem: 8G
+    mem_mb: 8000
   ilmn_4a_kbpython_std:
     mem: 180G
     mem_mb: 220000
@@ -178,6 +223,39 @@ set-resources:
   ilmn_6a_cache_h5ad_kbpython_std:
     mem: 64G
     mem_mb: 64000
+  ilmn_7a_fastQC_preTrim:
+    mem: 16G
+    mem_mb: 16000
+  ilmn_7a_fastQC_postTrim:
+    mem: 16G
+    mem_mb: 16000
+  ilmn_7a_fastQC_twiceTrim:
+    mem: 16G
+    mem_mb: 16000
+  ilmn_7b_readQC_0_rawInput:
+    mem: 8G
+    mem_mb: 8000
+  ilmn_7b_readQC_1_preCutadapt:
+    mem: 8G
+    mem_mb: 8000
+  ilmn_7b_readQC_2_postCutadapt:
+    mem: 8G
+    mem_mb: 8000
+  ilmn_7b_readQC_3_twiceCutadapt:
+    mem: 8G
+    mem_mb: 8000
+  ilmn_7b_readQC_3_bam:
+    mem: 8G
+    mem_mb: 8000
+  ilmn_7b_readQC_downsample:
+    mem: 4G
+    mem_mb: 4000
+  ilmn_7b_readQC_summaryplot:
+    mem: 8G
+    mem_mb: 8000
+  ilmn_7b_readQC_compress:
+    mem: 4G
+    mem_mb: 4000
   ont_1a_call_adapter_scan_v2:
     mem: 64G
     mem_mb: 64000
@@ -322,81 +400,3 @@ set-resources:
     mem_mb: 32000
   ont_2b_qualimap_summary2csv:
     mem: 8G
-  ilmn_7a_fastQC_preTrim:
-    mem: 16G
-    mem_mb: 16000
-  ilmn_7a_fastQC_postTrim:
-    mem: 16G
-    mem_mb: 16000
-  ilmn_7a_fastQC_twiceTrim:
-    mem: 16G
-    mem_mb: 16000
-  ilmn_7b_readQC_0_rawInput:
-    mem: 8G
-    mem_mb: 8000
-  ilmn_7b_readQC_1_preCutadapt:
-    mem: 8G
-    mem_mb: 8000
-  ilmn_7b_readQC_2_postCutadapt:
-    mem: 8G
-    mem_mb: 8000
-  ilmn_7b_readQC_3_twiceCutadapt:
-    mem: 8G
-    mem_mb: 8000
-  ilmn_7b_readQC_3_bam:
-    mem: 8G
-    mem_mb: 8000
-  ilmn_7b_readQC_downsample:
-    mem: 4G
-    mem_mb: 4000
-  ilmn_7b_readQC_summaryplot:
-    mem: 8G
-    mem_mb: 8000
-  ilmn_7b_readQC_compress:
-    mem: 4G
-    mem_mb: 4000
-  ilmn_3u_convertToRefFlat:
-    mem: 8G
-    mem_mb: 8000
-  ilmn_3u_calcHMMbed:
-    mem: 64G
-    mem_mb: 64000
-  ilmn_3u_calcHMMrefFlat:
-    mem: 64G
-    mem_mb: 64000
-  ilmn_3u_HMM_refFlat_to_gtf:
-    mem: 8G
-    mem_mb: 8000
-  ilmn_3u_tagReads:
-    mem: 64G
-    mem_mb: 64000
-  ilmn_3u_sort_index_tagged_bam:
-    mem: 64G
-    mem_mb: 64000
-  ilmn_3u_extract_HMM_expression:
-    mem: 64G
-    mem_mb: 64000
-  ilmn_3u_counts_long2mtx:
-    mem: 8G
-    mem_mb: 8000
-  ilmn_3u_gzip_counts:
-    mem: 8G
-    mem_mb: 8000
-  ilmn_3q_qualimapQC_dedup_STAR:
-    mem: 32G
-    mem_mb: 32000
-  ilmn_3q_qualimap_summary2csv_STAR:
-    mem: 8G
-    mem_mb: 8000
-  ilmn_3c_strand_split_bam:
-    mem: 8G
-    mem_mb: 8000
-  ilmn_3c_umitools_dedup_fwdBAM:
-    mem: 64G
-    mem_mb: 64000
-  ilmn_3c_umitools_dedup_revBAM:
-    mem: 64G
-    mem_mb: 64000
-  ilmn_3c_merge_dedup_bam:
-    mem: 8G
-    mem_mb: 8000

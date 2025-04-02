@@ -145,7 +145,7 @@ rule ont_1d_txome_sort_by_cb:
         f"{workflow.basedir}/envs/minimap2.yml"
     shell:
         """
-        samtools sort -t {params.CB} -o {output.BAM} {input.BAM} 2> {log.err}
+        samtools sort -t {params.BC_TAG} -o {output.BAM} {input.BAM} 2> {log.err}
         """
 
 
@@ -163,8 +163,8 @@ rule ont_1d_txome_oarfish_quant:
         PQ="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/P.infreps.pq",
         AMBIG="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/P.ambig_info.tsv",
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish.log",
-        err="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish.err",
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/oarfish.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/oarfish.err",
     resources:
         mem="32G",
     threads: 16

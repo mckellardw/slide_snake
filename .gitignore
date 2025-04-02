@@ -24,6 +24,14 @@
 .RData
 .Rhistory
 
+# unwanted script files
+notebooks/__pycache__/**
+rules/*/not_used/*
+
+scripts/*/not_used/*
+scripts/py/__pycache__/**
+scripts/**.so
+
 # slide_snake
 figures/**
 sandbox/**
@@ -31,7 +39,3 @@ out/**
 out*/**
 tmp*/**
 temp*/**
-scripts/*/not_used/*
-rules/*/not_used/*
-scripts/py/__pycache__/**
-notebooks/__pycache__/**

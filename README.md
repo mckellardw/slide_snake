@@ -36,6 +36,12 @@ snakemake -k -p --nt --use-conda --conda-frontend mamba --executor slurm --workf
 ```
 *Note*, this pipeline was written with snakemake v8
 
+Or, my preferred way to run it in the background:
+```
+nohup snakemake -k -p --use-conda --conda-frontend mamba -j 36 > snake.log 2>&1 &
+```
+
+
 ## Helpful links:
 - [Barcode download from Curio](https://curiobioscience.com/support/barcode/)
 - Extract DNB barcode whitelist for StereoSeq with [ST_BarcodeMap](https://github.com/STOmics/ST_BarcodeMap) 

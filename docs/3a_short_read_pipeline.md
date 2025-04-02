@@ -89,6 +89,20 @@
 --soloCBlen 14
 ```
 
+### (u) uTAR pipeline
+*U*nnanotated *T*ranscriptionally *A*ctive *R*egions (uTARs)
+- Identify unannotated transcriptionally active regions (TARs) using `uTAR_lite`.
+- Uses `groHMM` to identify peaks in the STAR alignment outputs, then generates a count matrix.
+- ported from https://github.com/mckellardw/uTAR_lite
+- Link to paper: https://www.nature.com/articles/s41467-021-22496-3
+
+#### Outputs
+- RefFlat file for annotations.
+- BED and GTF files for TARs.
+- Tagged and sorted BAM files.
+- Count matrices in both long-format (`counts.tsv.gz`) and sparse matrix format (`uTAR.mtx.gz`).
+
+
 ### Step 4: Pseudoalignment w/ kallisto/bustools
 #TODO
 
