@@ -5,7 +5,7 @@ default-resources:
   threads: 1
 
 set-threads:
-  ilmn_1a_merge_fastqs: 1
+  ilmn_1a_merge_fastqs: 28
   ilmn_1b_cutadapt: 8
   ilmn_1b_cutadapt2: 8
   ilmn_1b_R1_hardTrimming: 24
@@ -13,6 +13,7 @@ set-threads:
   ilmn_2a_bwa_rRNA_align: 16
   ilmn_2a_bwa_rRNA_filter_R1: 16
   ilmn_2b_ribodetector: 16
+  ilmn_2c_qualimap_bamqc_rRNA_bwa: 1
   ilmn_3a_STARsolo_firstPass: 24
   ilmn_3a_STARsolo_secondPass: 24
   ilmn_3a_compress_STAR_outs: 16
@@ -33,6 +34,8 @@ set-threads:
   ilmn_3q_qualimapQC_STAR: 8
   ilmn_3q_qualimapQC_dedup_STAR: 8
   ilmn_3q_qualimap_summary2csv_STAR: 1
+  ilmn_3q_qualimap_bamqc_STAR_raw: 1
+  ilmn_3q_qualimap_bamqc_STAR_dedup: 1
   ilmn_4a_kbpython_std: 16
   ilmn_5a_miRge3_pseudobulk: 4
   ilmn_6a_cache_h5ad_STAR: 1  
@@ -102,6 +105,7 @@ set-threads:
   ont_2a_readQC_summaryplot: 16
   ont_2b_qualimap_minimap2: 1
   ont_2b_qualimap_STAR: 1
+  ont_2b_qualimap_bamqc: 1
   ont_2b_qualimap_summary2csv: 1
 
 set-resources:
@@ -401,3 +405,15 @@ set-resources:
   ilmn_3c_merge_dedup_bam:
     mem: 8G
     mem_mb: 8000
+  ilmn_3q_qualimap_bamqc_STAR_raw:
+    mem: 16G
+    mem_mb: 16000
+  ilmn_3q_qualimap_bamqc_STAR_dedup:
+    mem: 16G
+    mem_mb: 16000
+  ilmn_2c_qualimap_bamqc_rRNA_bwa:
+    mem: 16G
+    mem_mb: 16000
+  ont_2b_qualimap_bamqc:
+    mem: 16G
+    mem_mb: 16000

@@ -8,7 +8,7 @@ default-resources:
   threads: 1
 
 set-threads:
-  ilmn_1a_merge_fastqs: 1
+  ilmn_1a_merge_fastqs: 24
   ilmn_1b_cutadapt: 8
   ilmn_1b_cutadapt2: 8
   ilmn_1b_R1_hardTrimming: 24
@@ -90,6 +90,10 @@ set-threads:
   ont_2b_qualimap_minimap2: 1
   ont_2b_qualimap_STAR: 1
   ont_2b_qualimap_summary2csv: 1
+  ilmn_3q_qualimap_bamqc_STAR_raw: 1
+  ilmn_3q_qualimap_bamqc_STAR_dedup: 1
+  ilmn_2c_qualimap_bamqc_rRNA_bwa: 1
+  ont_2b_qualimap_bamqc: 1
 
 set-resources:
   ilmn_1a_merge_fastqs:
@@ -340,3 +344,15 @@ set-resources:
   ilmn_7b_readQC_compress:
     mem: 4G
     mem_mb: 4000
+  ilmn_3q_qualimap_bamqc_STAR_raw:
+    mem: 16G
+    mem_mb: 16000
+  ilmn_3q_qualimap_bamqc_STAR_dedup:
+    mem: 16G
+    mem_mb: 16000
+  ilmn_2c_qualimap_bamqc_rRNA_bwa:
+    mem: 16G
+    mem_mb: 16000
+  ont_2b_qualimap_bamqc:
+    mem: 16G
+    mem_mb: 16000

@@ -145,8 +145,14 @@ ilmn_rRNA_qualimap = [
     f"{OUTDIR}/{SAMPLE}/short_read/qualimap/rRNA/{TOOL}/{FILE}"
     for SAMPLE in R2_FQS.keys()
     for TOOL in ["bwa"]
-    for FILE in ["report.pdf", "rnaseq_qc_results.csv"]
+    for FILE in [
+        "rnaseq/report.pdf",
+        "rnaseq/rnaseq_qc_results.csv",
+        "bamqc/report.pdf",
+        "bamqc/genome_results.csv",
+    ]
 ]
+
 
 # Module 3 - STAR alignment
 ## deduped and/or strand-split, umi_tools deduplicated .bam
@@ -178,7 +184,12 @@ ilmn_STAR_qualimap = [
     for TOOL in ["STAR"]
     for RECIPE in RECIPE_DICT[SAMPLE]
     for DEDUP in ["raw"]  # , "dedup"
-    for FILE in ["report.pdf", "rnaseq_qc_result.csv"]
+    for FILE in [
+        "rnaseq/report.pdf",
+        "rnaseq/rnaseq_qc_results.csv",
+        "bamqc/report.pdf",
+        "bamqc/genome_results.csv",
+    ]
 ]
 
 ## fastQC results for unmapped reads
@@ -190,9 +201,10 @@ ilmn_STAR_unmapped_fastqc = [
 
 ### STAR uTAR outputs
 ilmn_STAR_uTAR = [
-    f"{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/uTAR.mtx.gz"
+    f"{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/{FILE}"
     for SAMPLE in R2_FQS.keys()
     for RECIPE in RECIPE_DICT[SAMPLE]
+    for FILE in ["uTAR.mtx.gz", "qc_plots.png"]
 ]
 
 # Module 4 - kallisto & bustools
@@ -345,8 +357,14 @@ ont_qualimap = [
     for TOOL in [
         "minimap2",
     ]
-    for FILE in ["report.pdf", "rnaseq_qc_results.csv"]
+    for FILE in [
+        "rnaseq/report.pdf",
+        "rnaseq/rnaseq_qc_results.csv",
+        "bamqc/report.pdf",
+        "bamqc/genome_results.csv",
+    ]
 ]
+
 
 # kallisto-lr outputs
 # ont_kb = [f"{OUTDIR}/{SAMPLE}/ont/kb/{RECIPE}/{FILE}"
@@ -361,20 +379,20 @@ rule all:
     input:
         # ilmn_barcodes,
         ilmn_rRNA_qualimap,
-        # ilmn_STAR_dedup_bams,
-        # ilmn_STAR_counts,
-        # ilmn_STAR_qualimap,
+        ilmn_STAR_dedup_bams,
+        ilmn_STAR_counts,
+        ilmn_STAR_qualimap,
         # ilmn_STAR_unmapped_fastqc,  #
         # ilmn_STAR_uTAR,
         # ilmn_mirge_bulk, #
         ilmn_STAR_cache,
         # ilmn_kb_cache,
-        # ilmn_fastqc,
-        # ilmn_readqc,
+        ilmn_fastqc,
+        ilmn_readqc,
         ont_barcodes,
         ont_adapter_scan_summary,
         ont_minimap_genome,
-        # ont_minimap_txome,
-        # ont_ultra_genome,
-        # ont_readqc,
+        ont_minimap_txome,
+        ont_ultra_genome,
+        ont_readqc,
         ont_qualimap,

@@ -2,7 +2,7 @@
 # TODO-add option for UMI-free assay
 rule ont_1c_fastq_call_bc_from_adapter:
     input:
-        # LOG="{OUTDIR}/{SAMPLE}/ont/misc_logs/1a_adapter_scan_results.txt",
+        # LOG="{OUTDIR}/{SAMPLE}/ont/logs/1a_adapter_scan_results.txt",
         FQS=lambda w: get_fqs(w, return_type="list", mode="ONT"),
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes.tsv",

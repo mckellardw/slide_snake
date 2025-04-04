@@ -12,7 +12,7 @@ rule ilmn_1b_cutadapt:
     output:
         R1_FQ=temp("{OUTDIR}/{SAMPLE}/short_read/tmp/cut_R1.fq.gz"),
         R2_FQ=temp("{OUTDIR}/{SAMPLE}/short_read/tmp/cut_R2.fq.gz"),
-        JSON="{OUTDIR}/{SAMPLE}/short_read/misc_logs/cutadapt1.json",
+        JSON="{OUTDIR}/{SAMPLE}/short_read/logs/cutadapt1.json",
     params:
         RECIPE=lambda w: get_recipes(w, mode="ILMN"),
         R1_LENGTH=lambda w: min(
@@ -37,7 +37,7 @@ rule ilmn_1b_cutadapt:
         SEEKER_BB_ADAPTER="TCTTCAGCGTTCCCGAGA",  # Adapter between BB1 & BB2 in R1 
         rcSEEKER_BB_ADAPTER="AGAGCCCTTGCGACTTCT",  # Reverse of the adapter between BB1 & BB2 in R1 
     log:
-        log="{OUTDIR}/{SAMPLE}/short_read/misc_logs/cutadapt1.log",
+        log="{OUTDIR}/{SAMPLE}/short_read/logs/cutadapt1.log",
     resources:
         mem="16G",
     threads: config["CORES"]
@@ -78,7 +78,7 @@ rule ilmn_1b_cutadapt2:
     output:
         R1_FQ=temp("{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R1.fq.gz"),
         R2_FQ=temp("{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R2.fq.gz"),
-        JSON="{OUTDIR}/{SAMPLE}/short_read/misc_logs/cutadapt2.json",
+        JSON="{OUTDIR}/{SAMPLE}/short_read/logs/cutadapt2.json",
     params:
         RECIPE=lambda w: get_recipes(w, mode="ILMN"),
         R1_LENGTH=lambda w: min(
@@ -103,7 +103,7 @@ rule ilmn_1b_cutadapt2:
         SEEKER_BB_ADAPTER="TCTTCAGCGTTCCCGAGA",  # Adapter between BB1 & BB2 in R1 
         rcSEEKER_BB_ADAPTER="AGAGCCCTTGCGACTTCT",  # Reverse of the adapter between BB1 & BB2 in R1 
     log:
-        log="{OUTDIR}/{SAMPLE}/short_read/misc_logs/cutadapt2.log",
+        log="{OUTDIR}/{SAMPLE}/short_read/logs/cutadapt2.log",
     resources:
         mem="16G",
     threads: config["CORES"]
@@ -151,7 +151,7 @@ rule ilmn_1b_R1_hardTrimming:
         RECIPE=lambda w: get_recipes(w, mode="ILMN"),
         R1_LENGTH=lambda w: get_recipe_info(w, info_col="R1_finalLength", mode="ILMN"),
     log:
-        log="{OUTDIR}/{SAMPLE}/short_read/misc_logs/R1_hardTrimming.log",
+        log="{OUTDIR}/{SAMPLE}/short_read/logs/R1_hardTrimming.log",
     resources:
         mem="16G",
     threads: config["CORES"]
@@ -177,7 +177,7 @@ rule ilmn_1b_R1_internalTrimming:
         R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R1.fq.gz",
     output:
         R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_internalTrim_R1.fq.gz",  #temp()
-        # INTERNAL_TRIM_QC_LOG="{OUTDIR}/{SAMPLE}short_read/misc_logs/internal_trim_qc.txt",
+        # INTERNAL_TRIM_QC_LOG="{OUTDIR}/{SAMPLE}short_read/logs/internal_trim_qc.txt",
     params:
         # CB1end=8, 
         # CB2start=27,
@@ -189,8 +189,8 @@ rule ilmn_1b_R1_internalTrimming:
         BC1_LENGTH=8,  #TODO - lambda w: get_recipe_info(w, info_col="BC_length", mode="ILMN"),
         MIN_ALIGN_SCORE=58,
     log:
-        log="{OUTDIR}/{SAMPLE}/short_read/misc_logs/R1_internalTrimming.log",
-        err="{OUTDIR}/{SAMPLE}/short_read/misc_logs/R1_internalTrimming.err",
+        log="{OUTDIR}/{SAMPLE}/short_read/logs/R1_internalTrimming.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/logs/R1_internalTrimming.err",
     resources:
         mem="16G",
     threads: config["CORES"]
@@ -213,19 +213,19 @@ rule ilmn_1b_R1_internalTrimming:
 
 # rule multiqc_cutadapt_summary:
 #     input:
-#         expand("{OUTDIR}/{SAMPLE}/short_read/misc_logs/cutadapt{num}.json", SAMPLE=config["samples"], num=[1, 2])
+#         expand("{OUTDIR}/{SAMPLE}/short_read/logs/cutadapt{num}.json", SAMPLE=config["samples"], num=[1, 2])
 #     output:
-#         expand("{OUTDIR}/{SAMPLE}/short_read/misc_logs/multiqc_cutadapt_report.html", SAMPLE=config["samples"])
+#         expand("{OUTDIR}/{SAMPLE}/short_read/logs/multiqc_cutadapt_report.html", SAMPLE=config["samples"])
 #     log:
-#         expand("{OUTDIR}/{SAMPLE}/short_read/misc_logs/multiqc_cutadapt_summary.log", SAMPLE=config["samples"])
+#         expand("{OUTDIR}/{SAMPLE}/short_read/logs/multiqc_cutadapt_summary.log", SAMPLE=config["samples"])
 #     conda:
 #         f"{workflow.basedir}/envs/multiqc.yml"
 #     shell:
 #         """
 #         for sample in {config["samples"]}; do
-#             multiqc -o {wildcards.OUTDIR}/$sample/short_read/misc_logs/multiqc_cutadapt_report.html \
-#                     {wildcards.OUTDIR}/$sample/short_read/misc_logs/cutadapt1.json \
-#                     {wildcards.OUTDIR}/$sample/short_read/misc_logs/cutadapt2.json \
-#                     1> {wildcards.OUTDIR}/$sample/short_read/misc_logs/multiqc_cutadapt_summary.log
+#             multiqc -o {wildcards.OUTDIR}/$sample/short_read/logs/multiqc_cutadapt_report.html \
+#                     {wildcards.OUTDIR}/$sample/short_read/logs/cutadapt1.json \
+#                     {wildcards.OUTDIR}/$sample/short_read/logs/cutadapt2.json \
+#                     1> {wildcards.OUTDIR}/$sample/short_read/logs/multiqc_cutadapt_summary.log
 #         done
 #         """
