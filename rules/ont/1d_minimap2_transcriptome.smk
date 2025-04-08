@@ -181,7 +181,8 @@ rule ont_1d_txome_oarfish_quant:
             --filter-group no-filters \
             --model-coverage \
             --single-cell \
-        1> {log.log} \
+            --verbose \
+        1> >(awk -f scripts/awk/remove_ansi.awk > {log.log}) \
         2> {log.err}
         """
 

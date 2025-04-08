@@ -7,6 +7,8 @@ rule ilmn_7a_fastQC_preTrim:
         MERGED_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/merged_{READ}.fq.gz",
     output:
         FASTQC_DIR=directory("{OUTDIR}/{SAMPLE}/short_read/fastqc/preCutadapt_{READ}"),
+    log:
+        "{OUTDIR}/{SAMPLE}/short_read/logs/fastqc_preTrim_{READ}.log",
     params:
         adapters=config["FASTQC_ADAPTERS"],
     resources:
@@ -22,7 +24,8 @@ rule ilmn_7a_fastQC_preTrim:
             --outdir {output.FASTQC_DIR} \
             --threads {threads} \
             -a {params.adapters} \
-            {input.MERGED_FQ}
+            {input.MERGED_FQ} \
+            > {log} 2>&1
         """
 
 
@@ -32,6 +35,8 @@ rule ilmn_7a_fastQC_postTrim:
         FINAL_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/cut_{READ}.fq.gz",
     output:
         FASTQC_DIR=directory("{OUTDIR}/{SAMPLE}/short_read/fastqc/postCutadapt_{READ}"),
+    log:
+        "{OUTDIR}/{SAMPLE}/short_read/logs/fastqc_postTrim_{READ}.log",
     params:
         adapters=config["FASTQC_ADAPTERS"],
     resources:
@@ -47,7 +52,8 @@ rule ilmn_7a_fastQC_postTrim:
             --outdir {output.FASTQC_DIR} \
             --threads {threads} \
             -a {params.adapters} \
-            {input.FINAL_FQ}
+            {input.FINAL_FQ} \
+            > {log} 2>&1
         """
 
 
@@ -56,6 +62,8 @@ rule ilmn_7a_fastQC_twiceTrim:
         FINAL_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_{READ}.fq.gz",
     output:
         FASTQC_DIR=directory("{OUTDIR}/{SAMPLE}/short_read/fastqc/twiceCutadapt_{READ}"),
+    log:
+        "{OUTDIR}/{SAMPLE}/short_read/logs/fastqc_twiceTrim_{READ}.log",
     params:
         adapters=config["FASTQC_ADAPTERS"],
     resources:
@@ -71,5 +79,6 @@ rule ilmn_7a_fastQC_twiceTrim:
             --outdir {output.FASTQC_DIR} \
             --threads {threads} \
             -a {params.adapters} \
-            {input.FINAL_FQ}
+            {input.FINAL_FQ} \
+            > {log} 2>&1
         """

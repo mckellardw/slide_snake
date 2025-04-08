@@ -32,7 +32,7 @@ rule ilmn_2b_ribodetector:
             --rrna {output.RIBO_R2_FQ} \
             --output {output.R2_FQ} \
             --log {log.log} \
-        2> {log.err}
+        2> >(awk -f scripts/awk/remove_ansi.awk > {log.err})
         """
 
 

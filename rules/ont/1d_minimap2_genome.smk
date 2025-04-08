@@ -305,8 +305,8 @@ rule ont_1d_genome_umitools_count:
         GENE_TAG="GN",  #GN XS
         UMI_TAG="UR",
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1d_umitools_count.log",
-        err="{OUTDIR}/{SAMPLE}/ont/misc_logs/{RECIPE}/1d_minimap2_umitools_count.err",
+        log="{OUTDIR}/{SAMPLE}/ont/logs/{RECIPE}/1d_minimap2_umitools_count.log",
+        err="{OUTDIR}/{SAMPLE}/ont/logs/{RECIPE}/1d_minimap2_umitools_count.err",
     resources:
         mem="16G",
     threads: 1
