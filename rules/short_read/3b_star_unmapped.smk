@@ -14,7 +14,8 @@ rule ilmn_3b_fastqc_unmapped:
         fastqcDir=directory("{OUTDIR}/{SAMPLE}/short_read/fastqc/unmapped/{RECIPE}"),
     params:
         FASTQC_ADAPTERS=config["FASTQC_ADAPTERS"],
-    # resources:
+    log:
+        log="{OUTDIR}/{SAMPLE}/short_read/fastqc/unmapped/{RECIPE}/fastqc_unmapped.log",
     threads: config["CORES"]
     conda:
         f"{workflow.basedir}/envs/fastqc.yml"
@@ -31,7 +32,8 @@ rule ilmn_3b_fastqc_unmapped:
             -o {output.fastqcDir} \
             -t {threads} \
             -a {params.FASTQC_ADAPTERS} \
-            {output.UNMAPPED1_FQ} {output.UNMAPPED2_FQ}
+            {output.UNMAPPED1_FQ} {output.UNMAPPED2_FQ} \
+            > {log.log} 2>&1
         """
 
 
@@ -49,7 +51,6 @@ rule ilmn_3b_blast_unmapped:
         OUTFMT="6 qseqid sseqid stitle pident length mismatch gapopen qstart qend sstart send evalue bitscore",
     log:
         log="{OUTDIR}/{SAMPLE}/unmapped/{RECIPE}/blast/blast_unmapped.log",
-    # resources:
     threads: config["CORES"]
     conda:
         f"{workflow.basedir}/envs/blast.yml"

@@ -39,3 +39,5 @@ out/**
 out*/**
 tmp*/**
 temp*/**
+
+snake*.log
