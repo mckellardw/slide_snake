@@ -95,6 +95,7 @@ rule ont_1d_genome_featureCounts:
         MAX_TEMPLATE_LENGTH=10000,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/featureCounts.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/featureCounts.err",
     resources:
         mem="32G",
     threads: 1  # long reads can only run single-threaded
@@ -115,7 +116,8 @@ rule ont_1d_genome_featureCounts:
             -T {threads} \
             -R CORE {params.EXTRA_FLAGS} \
             {input.BAM} \
-        |& tee {log.log}
+        1> {log.log} \
+        2> {log.err}
         """
 
 
