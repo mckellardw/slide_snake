@@ -231,7 +231,6 @@ def plot_grid_of_embeddings(
     plt.show()
 
 
-
 def ad_scatter(
     adata: ad.AnnData,
     x: str,
@@ -241,7 +240,7 @@ def ad_scatter(
     color: str = None,
     alpha: float = 1,
     title: str = "Scatter Plot",
-    figsize: tuple = (10, 8)
+    figsize: tuple = (10, 8),
 ):
     """
     Create a scatter plot from an AnnData object. Compare 2 values.
@@ -272,7 +271,7 @@ def ad_scatter(
     ax : matplotlib.axes.Axes
         The created axes object.
     """
-    
+
     def get_feature_data(feature, layer):
         if feature in adata.var_names:
             if layer is None:
@@ -293,25 +292,17 @@ def ad_scatter(
 
     if color:
         color_data = get_feature_data(color, None)
-        scatter = ax.scatter(
-            x_data, 
-            y_data, 
-            c=color_data, 
-            alpha=alpha,
-            cmap='viridis'
-        )
-        plt.colorbar(
-            scatter, 
-            ax=ax, label=color)
+        scatter = ax.scatter(x_data, y_data, c=color_data, alpha=alpha, cmap="viridis")
+        plt.colorbar(scatter, ax=ax, label=color)
     else:
-        ax.scatter(
-            x_data, 
-            y_data,
-            alpha=alpha
-        )
+        ax.scatter(x_data, y_data, alpha=alpha)
 
-    ax.set_xlabel(f"{x} ({'obs' if x in adata.obs.columns else f'var, layer: {x_layer if x_layer else "X"}'})")
-    ax.set_ylabel(f"{y} ({'obs' if y in adata.obs.columns else f'var, layer: {y_layer if y_layer else "X"}'})")
+    ax.set_xlabel(
+        f"{x} ({'obs' if x in adata.obs.columns else f'var, layer: {x_layer if x_layer else "X"}'})"
+    )
+    ax.set_ylabel(
+        f"{y} ({'obs' if y in adata.obs.columns else f'var, layer: {y_layer if y_layer else "X"}'})"
+    )
     ax.set_title(title)
 
     plt.tight_layout()

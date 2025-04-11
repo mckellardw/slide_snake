@@ -221,7 +221,9 @@ def grep_var(
     else:
         if var_colname not in adata.var.columns:
             raise ValueError(f"Column '{var_colname}' not found in adata.var.")
-        if not pd.api.types.is_categorical_dtype(adata.var[var_colname]) and not pd.api.types.is_string_dtype(adata.var[var_colname]):
+        if not pd.api.types.is_categorical_dtype(
+            adata.var[var_colname]
+        ) and not pd.api.types.is_string_dtype(adata.var[var_colname]):
             raise ValueError(f"Column '{var_colname}' must be categorical or strings.")
         search_data = adata.var[var_colname]
 
@@ -235,7 +237,9 @@ def grep_var(
     elif isinstance(pattern, list):
         if verbose:
             print("Looking for multiple patterns...")
-        out_entries = [entry for entry in search_data if any(pat in str(entry) for pat in pattern)]
+        out_entries = [
+            entry for entry in search_data if any(pat in str(entry) for pat in pattern)
+        ]
     else:
         if verbose:
             print(f"Looking for pattern '{pattern}'...")
@@ -250,14 +254,18 @@ def grep_var(
         if verbose:
             print(f"Filtering out entries containing '{filter_pattern}'...")
         out_entries = [
-            entry for entry in out_entries if not any(pat in str(entry) for pat in filter_pattern)
+            entry
+            for entry in out_entries
+            if not any(pat in str(entry) for pat in filter_pattern)
         ]
 
     if sort_by == "expression" and var_colname is None:
         if verbose:
             print("Sorting by expression...")
         if layer:
-            gene_sums = np.asarray(adata[:, out_entries].layers[layer].sum(axis=0)).squeeze()
+            gene_sums = np.asarray(
+                adata[:, out_entries].layers[layer].sum(axis=0)
+            ).squeeze()
         else:
             gene_sums = np.asarray(adata[:, out_entries].X.sum(axis=0)).squeeze()
         out_entries = [x for _, x in sorted(zip(gene_sums, out_entries), reverse=True)]
@@ -1050,7 +1058,9 @@ def add_mtx_as_layer(
         var_names_common = list(set(adata.var_names) & set(var_names_mat))
 
         if verbose:
-            print(f"Subsetting to {len(obs_names_common):,} obs and {len(var_names_common):,} vars")
+            print(
+                f"Subsetting to {len(obs_names_common):,} obs and {len(var_names_common):,} vars"
+            )
 
         # Subset and re-order the AnnData object and the matrix
         adata = adata[obs_names_common, var_names_common]
@@ -1062,7 +1072,9 @@ def add_mtx_as_layer(
         var_names_out = list(set(adata.var_names) | set(var_names_mat))
 
         if verbose:
-            print(f"Final matrix shape: {len(obs_names_out):,} obs and {len(var_names_out):,} vars")
+            print(
+                f"Final matrix shape: {len(obs_names_out):,} obs and {len(var_names_out):,} vars"
+            )
 
         # Create a new matrix with the correct dimensions
         new_matrix = sp.csr_matrix(
@@ -1264,11 +1276,14 @@ def top_n_genes(adata, n):
     sorted_genes = adata.var_names[np.argsort(adata.X.sum(axis=0))[::-1]]
     return sorted_genes[:n].tolist()
 
-def add_barcode_tally_to_anndata(tsv_path, adata, metadata_key='barcode_count', add_missing=False):
+
+def add_barcode_tally_to_anndata(
+    tsv_path, adata, metadata_key="barcode_count", add_missing=False
+):
     """
     Reads a TSV file containing read_IDs and barcodes, tallies the barcodes,
     and adds the counts as metadata to an AnnData object.
-    
+
     Parameters:
     -----------
     tsv_path : str
@@ -1280,73 +1295,73 @@ def add_barcode_tally_to_anndata(tsv_path, adata, metadata_key='barcode_count', 
     add_missing : bool, optional
         If True, adds missing barcodes to the AnnData object
         If False, skips barcodes that aren't in the AnnData object (default: False)
-    
+
     Returns:
     --------
     AnnData
         Modified AnnData object
     """
     # Read TSV file without header
-    df = pd.read_csv(tsv_path, sep='\t', header=None, names=['read_id', 'barcode'])
-    
+    df = pd.read_csv(tsv_path, sep="\t", header=None, names=["read_id", "barcode"])
+
     # Count occurrences of each barcode
-    barcode_counts = df['barcode'].value_counts()
-    
+    barcode_counts = df["barcode"].value_counts()
+
     if add_missing:
         # Get unique barcodes from both sources
         tsv_barcodes = set(barcode_counts.index)
         adata_barcodes = set(adata.obs_names)
         all_barcodes = sorted(tsv_barcodes.union(adata_barcodes))
-        
+
         # Create a new AnnData with all barcodes
         # First, create a DataFrame with zeros for all features
-        new_data = pd.DataFrame(
-            0, 
-            index=all_barcodes, 
-            columns=adata.var_names
-        )
-        
+        new_data = pd.DataFrame(0, index=all_barcodes, columns=adata.var_names)
+
         # Fill in the existing data
-        new_data.loc[adata.obs_names] = adata.X.toarray() if sp.issparse(adata.X) else adata.X
-        
+        new_data.loc[adata.obs_names] = (
+            adata.X.toarray() if sp.issparse(adata.X) else adata.X
+        )
+
         # Create new AnnData object
         new_adata = ad.AnnData(new_data)
-        
+
         # Copy over existing obs and var annotations
         for col in adata.obs.columns:
             new_adata.obs[col] = pd.Series(index=all_barcodes)
             new_adata.obs.loc[adata.obs_names, col] = adata.obs[col]
-            
+
         new_adata.var = adata.var.copy()
-        
+
         # Copy obsm
         for key in adata.obsm.keys():
             obsm_data = adata.obsm[key]
             new_obsm_data = np.zeros((len(all_barcodes), obsm_data.shape[1]))
             new_obsm_data[new_adata.obs_names.isin(adata.obs_names)] = obsm_data
             new_adata.obsm[key] = new_obsm_data
-        
+
         # Copy obsp
         for key in adata.obsp.keys():
             obsp_data = adata.obsp[key]
-            new_obsp_data = scipy.sparse.csr_matrix((len(all_barcodes), len(all_barcodes)))
+            new_obsp_data = scipy.sparse.csr_matrix(
+                (len(all_barcodes), len(all_barcodes))
+            )
             existing_indices = np.where(new_adata.obs_names.isin(adata.obs_names))[0]
             new_obsp_data[np.ix_(existing_indices, existing_indices)] = obsp_data
             new_adata.obsp[key] = new_obsp_data
-        
+
         # Update the reference to adata
         adata = new_adata
-    
+
     # Initialize counts for all cells in adata with 0
     adata.obs[metadata_key] = 0
-    
+
     # Update counts only for barcodes that exist in adata
     existing_barcodes = barcode_counts.index.intersection(adata.obs_names)
     adata.obs.loc[existing_barcodes, metadata_key] = barcode_counts[existing_barcodes]
-    
+
     # Convert counts to integer type
     adata.obs[metadata_key] = adata.obs[metadata_key].astype(int)
-    
+
     return adata
 
 

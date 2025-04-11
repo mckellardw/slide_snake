@@ -110,16 +110,22 @@ def generate_stats_output(stats, levenshtein_tally, num_barcodes):
         )
 
         output.append("\nLevenshtein distance tally for corrected barcodes:")
+        total_corrected = sum(levenshtein_tally[barcode_num]["corrected"].values())
         for distance, count in sorted(
             levenshtein_tally[barcode_num]["corrected"].items()
         ):
-            output.append(f"  Distance {distance}: {count:,}")
+            percentage = (count / total_corrected) * 100 if total_corrected > 0 else 0
+            output.append(f"  Distance {distance}: {count:,} ({percentage:.2f}%)")
 
         output.append("\nLevenshtein distance tally for uncorrected barcodes:")
+        total_uncorrected = sum(levenshtein_tally[barcode_num]["uncorrected"].values())
         for distance, count in sorted(
             levenshtein_tally[barcode_num]["uncorrected"].items()
         ):
-            output.append(f"  Distance {distance}: {count:,}")
+            percentage = (
+                (count / total_uncorrected) * 100 if total_uncorrected > 0 else 0
+            )
+            output.append(f"  Distance {distance}: {count:,} ({percentage:.2f}%)")
 
     return output
 

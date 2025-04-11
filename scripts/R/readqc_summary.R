@@ -195,7 +195,7 @@ create_plots <- function(df, data_file, out_file) {
         custom_theme +
         # lims(y=c(0,200))+
         # scale_y_continuous(trans="log10") +
-        # scale_y_log10()+
+        scale_y_log10()+
         ggtitle("Longest Homopolymer Length") +
         theme(legend.position = "bottom")
 
