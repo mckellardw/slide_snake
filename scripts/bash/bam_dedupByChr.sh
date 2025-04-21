@@ -58,6 +58,16 @@ while [[ "$#" -gt 0 ]]; do
     esac
 done
 
+# Print input parameters
+echo "Input parameters:"
+echo "  BAM file:          ${INBAM}"
+echo "  Cores:             ${CORE}"
+echo "  Output directory:  ${OUTDIR}"
+echo "  Temp. directory:   ${TMPDIR}"
+echo "  Cell tag:          ${CELL_TAG}"
+echo "  UMI tag:           ${UMI_TAG}"
+echo ""
+
 # Check if samtools and umi_tools are installed
 if ! command -v samtools &> /dev/null; then
     echo "samtools could not be found, please install it first"
@@ -83,6 +93,11 @@ fi
 # Ensure the output and temporary directories exist
 mkdir -p ${OUTDIR}
 mkdir -p ${TMPDIR}
+
+# Clean up any leftover files in the temporary directory
+echo "Cleaning up temporary directory: ${TMPDIR}"
+rm -rf ${TMPDIR}/*
+echo "Temporary directory cleaned."
 
 PREFIX=$(echo ${INBAM} | rev | cut -d / -f 1 | cut -d . -f 2- | rev)
 
@@ -172,6 +187,8 @@ echo "Indexing merged deduplicated BAM file..."
 samtools index -@ ${CORE} ${OUTDIR}/${PREFIX}.dedup.bam
 
 # Clean up temporary files
-# rm -r ${TMPDIR}
+if ! rm -r ${TMPDIR}; then
+    echo "Warning: Failed to clean up temporary directory: ${TMPDIR}" >>2
+fi
 
 echo "BAM file deduplicated and split by chromosome into ${OUTDIR}."

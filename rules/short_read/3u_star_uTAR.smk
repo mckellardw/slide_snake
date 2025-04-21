@@ -4,27 +4,45 @@
 
 # convert GTF to REFFlat, save in your cellranger reference
 # 	not run if REFFlat file exists -  will only need to run this once for each reference genome
-rule ilmn_3u_convertToRefFlat:
+# rule ilmn_3u_convertToRefFlat:
+#     input:
+#         GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
+#     output:
+#         TMP=temp("{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/tmp.refFlat"),
+#         REFFLAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/genes.refFlat",
+#     conda:
+#         f"{workflow.basedir}/envs/ucsc.yml"
+#     shell:
+#         """
+#         gtfToGenePred -genePredExt -geneNameAsName2 {input.GTF} {output.TMP}
+#         paste <(cut -f 12 refFlat.tmp) <(cut -f 1-10 refFlat.tmp) > {output.REFFLAT}
+#         """
+
+
+# Filter BAM to remove reads without GN tag
+## Deduped BAM file already has reads without CB/UB tags removed
+rule ilmn_3u_filter_noGN:
     input:
-        GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
+        BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.dedup.bam",
     output:
-        TMP=temp("{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/tmp.refFlat"),
-        REFFLAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/genes.refFlat",
-    conda:
-        f"{workflow.basedir}/envs/ucsc.yml"
+        BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.noGN.dedup.bam",
+    params:
+        TAG="GN",
     shell:
         """
-        gtfToGenePred -genePredExt -geneNameAsName2 {input.GTF} {output.TMP}
-        paste <(cut -f 12 refFlat.tmp) <(cut -f 1-10 refFlat.tmp) > {output.REFFLAT}
+        samtools view -h {input.BAM} \
+        | awk -v tag={params.TAG} -f scripts/awk/bam_filterEmptyTag.awk \
+        | samtools view -b -o {output.BAM}
         """
 
 
 # Run HMM
 rule ilmn_3u_calcHMMbed:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.dedup.bam",
+        BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.noGN.dedup.bam",
+        BAI="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.noGN.dedup.bam.bai",
     output:
-        BED=temp("{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/TAR_reads.bed.gz"),
+        BED=temp("{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/TAR_raw.bed.gz"),
     threads: config["CORES"]
     params:
         MEM="64G",
@@ -50,12 +68,30 @@ rule ilmn_3u_calcHMMbed:
         """
 
 
+rule ilmn_3U_filter_out_aTARs:
+    input:
+        BED="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/TAR_raw.bed.gz",
+    output:
+        BED="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/uTAR.bed.gz",
+    params:
+        GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
+    conda:
+        f"{workflow.basedir}/envs/ucsc.yml"
+    shell:
+        """
+        gtfToGenePred {params.GTF} stdout \
+        | genePredToBed stdin stdout \
+        | bedtools intersect -v -a {input.BED} -b stdin \
+        | bgzip > {output.BED}
+        """
+
+
 # Convert BED to GTF
 rule ilmn_3u_bed_to_gtf:
     input:
-        BEDGZ="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/TAR_reads.bed.gz",
+        BEDGZ="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/uTAR.bed.gz",
     output:
-        GTF="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/TAR_reads.withDir.gtf",
+        GTF="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/uTAR.withDir.gtf",
     conda:
         f"{workflow.basedir}/envs/ucsc.yml"
     shell:
@@ -69,14 +105,14 @@ rule ilmn_3u_bed_to_gtf:
 # Label .bam file with each HMM feature
 rule ilmn_3u_tagReads:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.dedup.bam",
-        TAR_GTF="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/TAR_reads.withDir.gtf",
+        BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.noGN.dedup.bam",
+        TAR_GTF="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/uTAR.withDir.gtf",
     output:
         DIR=directory(
             "{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/gene_assigned"
         ),
         BAM=temp(
-            "{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/Aligned.sortedByCoord.out.dedup.bam.featureCounts.bam"
+            "{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/Aligned.sortedByCoord.noGN.dedup.bam.featureCounts.bam"
         ),
     threads: config["CORES"]
     log:
@@ -106,7 +142,7 @@ rule ilmn_3u_tagReads:
 
 rule ilmn_3u_sort_index_tagged_bam:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/Aligned.sortedByCoord.out.dedup.bam.featureCounts.bam",
+        BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/Aligned.sortedByCoord.noGN.dedup.bam.featureCounts.bam",
     output:
         BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/TAR_tagged.bam",
     threads: config["CORES"]

@@ -40,7 +40,7 @@ log_with_timestamp() {
 }
 
 # Log input parameters
-echo "input .bam                  ${INPUT_BAM}"
+echo "input .BAM                  ${INPUT_BAM}"
 echo "output directory:           ${OUTDIR}"
 echo "tmp directory:              ${TMPDIR}"
 echo "number of threads:          ${N_THREADS}"
@@ -96,8 +96,13 @@ done
 wait "${pids2[@]}"
 
 log_with_timestamp "Combining HMM output from all chromosomes..."
-cat ${TMPDIR}/*_HMM.bed_plus_merge${MERGEBP}  | awk 'BEGIN{OFS="\t"} {print $0, ".", ".", "+"}' > ${TMPDIR}/${PREFIX}_merge${MERGEBP}
-cat ${TMPDIR}/*_HMM.bed_minus_merge${MERGEBP} | awk 'BEGIN{OFS="\t"} {print $0, ".", ".", "-"}' >> ${TMPDIR}/${PREFIX}_merge${MERGEBP}
+cat ${TMPDIR}/*_HMM.bed_plus_merge${MERGEBP}  \
+| awk 'BEGIN{OFS="\t"} {print $0, ".", ".", "+"}' \
+> ${TMPDIR}/${PREFIX}_merge${MERGEBP}
+
+cat ${TMPDIR}/*_HMM.bed_minus_merge${MERGEBP} \
+| awk 'BEGIN{OFS="\t"} {print $0, ".", ".", "-"}' \
+>> ${TMPDIR}/${PREFIX}_merge${MERGEBP}
 
 mkdir -p ${TMPDIR}/toremove
 for f in ${TMPDIR}/*_HMM.bed

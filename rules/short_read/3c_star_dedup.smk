@@ -40,7 +40,7 @@ rule ilmn_3c_umitools_dedup_fwdBAM:
             --bam {input.BAM} \
             --cores {threads} \
             --outdir $(dirname {output.BAM}) \
-            --tmpdir $(dirname {output.BAM})/tmp/dedup \
+            --tmpdir $(dirname {output.BAM})/tmp/dedup_fwd \
             --celltag {params.CELL_TAG} \
             --umitag {params.UMI_TAG} \
         1> {log.log} \
@@ -70,7 +70,7 @@ rule ilmn_3c_umitools_dedup_revBAM:
             --bam {input.BAM} \
             --cores {threads} \
             --outdir $(dirname {output.BAM}) \
-            --tmpdir $(dirname {output.BAM})/tmp/dedup \
+            --tmpdir $(dirname {output.BAM})/tmp/dedup_rev \
             --celltag {params.CELL_TAG} \
             --umitag {params.UMI_TAG} \
         1> {log.log} \
