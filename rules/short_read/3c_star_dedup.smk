@@ -39,7 +39,7 @@ rule ilmn_3c_umitools_dedup_fwdBAM:
         bash scripts/bash/bam_dedupByChr.sh \
             --bam {input.BAM} \
             --cores {threads} \
-            --outdir $(dirname {output.BAM}) \
+            --outbam {output.BAM} \
             --tmpdir $(dirname {output.BAM})/tmp/dedup_fwd \
             --celltag {params.CELL_TAG} \
             --umitag {params.UMI_TAG} \
@@ -69,7 +69,7 @@ rule ilmn_3c_umitools_dedup_revBAM:
         bash scripts/bash/bam_dedupByChr.sh \
             --bam {input.BAM} \
             --cores {threads} \
-            --outdir $(dirname {output.BAM}) \
+            --outbam {output.BAM} \
             --tmpdir $(dirname {output.BAM})/tmp/dedup_rev \
             --celltag {params.CELL_TAG} \
             --umitag {params.UMI_TAG} \

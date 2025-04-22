@@ -3,7 +3,7 @@
 # Default values
 INBAM=""
 CORE=""
-OUTDIR=""
+OUTBAM=""
 TMPDIR=""
 CELL_TAG="CB"
 UMI_TAG="UB"
@@ -11,12 +11,12 @@ UMI_TAG="UB"
 # Function to display usage information
 _usage() {
 cat << EOF
-Usage: $0 --bam|-b BAM_FILE --cores|-c CORES --outdir|-o OUTPUT_DIRECTORY --tmpdir|-t TMP_DIRECTORY [--celltag|-ct CELL_TAG] [--umitag|-ut UMI_TAG]
+Usage: $0 --bam|-b BAM_FILE --cores|-c CORES --outbam|-o OUTPUT_BAM_FILE --tmpdir|-t TMP_DIRECTORY [--celltag|-ct CELL_TAG] [--umitag|-ut UMI_TAG]
 
 Options:
  --bam|-b BAM_FILE          Path to the input BAM file.
  --cores|-c CORES           Number of cores for parallelization.
- --outdir|-o OUTPUT_DIRECTORY Output directory for split BAM files.
+ --outbam|-o OUTPUT_BAM_FILE Output BAM file name.
  --tmpdir|-t TMP_DIRECTORY  Temporary directory for intermediate files.
  --celltag|-ct CELL_TAG     Cell tag (default: CB).
  --umitag|-ut UMI_TAG       UMI tag (default: UB).
@@ -34,8 +34,8 @@ while [[ "$#" -gt 0 ]]; do
             CORE=$2
             shift 2
             ;;
-        -o|--outdir)
-            OUTDIR=$2
+        -o|--outbam)
+            OUTBAM=$2
             shift 2
             ;;
         -t|--tmpdir)
@@ -58,11 +58,17 @@ while [[ "$#" -gt 0 ]]; do
     esac
 done
 
+# Function to log messages
+log_message() {
+    local message="$1"
+    printf "%s - %s\n" "$(date '+%Y-%m-%d %H:%M:%S')" "$message"
+}
+
 # Print input parameters
 echo "Input parameters:"
 echo "  BAM file:          ${INBAM}"
 echo "  Cores:             ${CORE}"
-echo "  Output directory:  ${OUTDIR}"
+echo "  Output BAM file:   ${OUTBAM}"
 echo "  Temp. directory:   ${TMPDIR}"
 echo "  Cell tag:          ${CELL_TAG}"
 echo "  UMI tag:           ${UMI_TAG}"
@@ -81,37 +87,37 @@ fi
 
 # Check if the BAM file is provided
 if [ -z ${INBAM} ]; then
-    echo "Usage: $0 -b input.bam -c cores -o output_directory -t tmp_directory"
+    echo "Usage: $0 -b input.bam -c cores -o output.bam -t tmp_directory"
     exit 1
 fi
 
-# Set default output directory to the same directory as the BAM file if not specified
-if [ -z ${OUTDIR} ]; then
-    OUTDIR=$(dirname ${INBAM})
+# Check if the output BAM file is provided
+if [ -z ${OUTBAM} ]; then
+    echo "Error: Output BAM file must be specified using --outbam|-o."
+    exit 1
 fi
 
 # Ensure the output and temporary directories exist
-mkdir -p ${OUTDIR}
+mkdir -p $(dirname ${OUTBAM})
 mkdir -p ${TMPDIR}
 
 # Clean up any leftover files in the temporary directory
-echo "Cleaning up temporary directory: ${TMPDIR}"
+log_message "Cleaning up temporary directory: ${TMPDIR}"
 rm -rf ${TMPDIR}/*
-echo "Temporary directory cleaned."
+log_message "Temporary directory cleaned."
 
 PREFIX=$(echo ${INBAM} | rev | cut -d / -f 1 | cut -d . -f 2- | rev)
 
-echo "Using ${PREFIX} as file prefix..."
+log_message "Using ${PREFIX} as file prefix..."
 
 # Check for .bam index file
 if [ ! -f ${INBAM}.bai ] && [ ! -f ${INBAM}.csi ]; then
-    echo "Indexing input .bam file because you forgot to..."
+    log_message "Indexing input .bam file because you forgot to..."
     samtools index -@ ${CORE} ${INBAM}
 fi
 
 # Remove reads that don't have a barcode (CB)
-echo "Removing reads without '${CELL_TAG}' or '${UMI_TAG}' tags..."
-date
+log_message "Removing reads without '${CELL_TAG}' or '${UMI_TAG}' tags..."
 
 # Remove unmapped (q<1) and untagged (CELL_TAG or UMI_TAG) reads
 samtools view \
@@ -124,41 +130,30 @@ samtools view \
 | samtools view -bS \
 > ${TMPDIR}/filter.bam
 
-echo
-
-# Index filtered .bam
-echo "Indexing filtered .bam file..."
-date
-
+log_message "Indexing filtered .bam file..."
 samtools index -@ ${CORE} ${TMPDIR}/filter.bam
 
 # Check if there are reads remaining in the filtered BAM file
 if [ $(samtools view -c ${TMPDIR}/filter.bam) -eq 0 ]; then
-    echo "Error: No reads remaining after filtering. Exiting."
+    log_message "Error: No reads remaining after filtering. Exiting."
     exit 1
 fi
 
-echo ""
-
 # Extract chromosome names from the filtered BAM file
 CHROMOSOMES=$(samtools idxstats ${TMPDIR}/filter.bam | cut -f1)
-
-# Remove asterisk character from CHROMOSOMES
 CHROMOSOMES=$(echo "$CHROMOSOMES" | tr -d '*')
 
-echo "Found these chromosomes: "
-echo "${CHROMOSOMES}"
-echo ""
+log_message "Found these chromosomes: ${CHROMOSOMES}"
 
 # Loop over each chromosome, split the BAM file, and deduplicate
 for CHR in ${CHROMOSOMES}; do
     if [[ "${CHR}" == "*" ]]; then
-        echo "Skipping chromosome '*'."
+        log_message "Skipping chromosome '*'."
     else
-        echo "    Writing ${TMPDIR}/${CHR}.bam"
+        log_message "Writing ${TMPDIR}/${CHR}.bam"
         samtools view -b ${TMPDIR}/filter.bam ${CHR} > ${TMPDIR}/${CHR}.bam
 
-        echo "    Deduplicating ${TMPDIR}/${CHR}.bam"
+        log_message "Deduplicating ${TMPDIR}/${CHR}.bam"
         samtools index -@ ${CORE} ${TMPDIR}/${CHR}.bam  
         umi_tools dedup \
             -I ${TMPDIR}/${CHR}.bam \
@@ -172,23 +167,23 @@ for CHR in ${CHROMOSOMES}; do
             --unmapped-reads=discard \
             -S ${TMPDIR}/${CHR}.dedup.bam
         
-        echo ""
+        log_message "Finished deduplicating ${TMPDIR}/${CHR}.bam"
 
         rm ${TMPDIR}/${CHR}.bam
-    fi  # Fix syntax error by adding this line
+    fi
 done
 
 # Merge all deduplicated BAM files
-echo "Merging deduplicated BAM files..."
-samtools merge -@ ${CORE} ${OUTDIR}/${PREFIX}.dedup.bam ${TMPDIR}/*.dedup.bam
+log_message "Merging deduplicated BAM files..."
+samtools merge -@ ${CORE} ${OUTBAM} ${TMPDIR}/*.dedup.bam
 
 # Index the merged deduplicated BAM file
-echo "Indexing merged deduplicated BAM file..."
-samtools index -@ ${CORE} ${OUTDIR}/${PREFIX}.dedup.bam
+log_message "Indexing merged deduplicated BAM file..."
+samtools index -@ ${CORE} ${OUTBAM}
 
 # Clean up temporary files
 if ! rm -r ${TMPDIR}; then
-    echo "Warning: Failed to clean up temporary directory: ${TMPDIR}" >>2
+    log_message "Warning: Failed to clean up temporary directory: ${TMPDIR}" >>2
 fi
 
-echo "BAM file deduplicated and split by chromosome into ${OUTDIR}."
+log_message "BAM file deduplicated and split by chromosome into ${OUTBAM}."
