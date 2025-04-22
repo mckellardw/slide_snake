@@ -58,6 +58,8 @@ while [[ "$#" -gt 0 ]]; do
     esac
 done
 
+START_TIME=$(date +%s)
+
 # Function to log messages
 log_message() {
     local message="$1"
@@ -174,6 +176,7 @@ for CHR in ${CHROMOSOMES}; do
 done
 
 # Merge all deduplicated BAM files
+echo ""
 log_message "Merging deduplicated BAM files..."
 samtools merge -@ ${CORE} ${OUTBAM} ${TMPDIR}/*.dedup.bam
 
@@ -186,4 +189,10 @@ if ! rm -r ${TMPDIR}; then
     log_message "Warning: Failed to clean up temporary directory: ${TMPDIR}" >>2
 fi
 
+echo ""
 log_message "BAM file deduplicated and split by chromosome into ${OUTBAM}."
+
+# Print total runtime
+END_TIME=$(date +%s)
+RUNTIME=$(( (END_TIME - START_TIME) / 60 ))
+log_message "Total runtime: ${RUNTIME} minutes."

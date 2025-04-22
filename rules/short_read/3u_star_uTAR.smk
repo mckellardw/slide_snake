@@ -27,11 +27,11 @@ rule ilmn_3u_filter_noGN:
     output:
         BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.noGN.dedup.bam",
     params:
-        TAG="GN",
+        TAG="GN",  # param not actually used
     shell:
         """
         samtools view -h {input.BAM} \
-        | awk -v tag={params.TAG} -f scripts/awk/bam_filterEmptyTag.awk \
+        | awk -v tag=GN -f scripts/awk/bam_keepEmptyTag.awk \
         | samtools view -b -o {output.BAM}
         """
 
@@ -68,7 +68,7 @@ rule ilmn_3u_calcHMMbed:
         """
 
 
-rule ilmn_3U_filter_out_aTARs:
+rule ilmn_3u_filter_out_aTARs:
     input:
         BED="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/TAR_raw.bed.gz",
     output:
