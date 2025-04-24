@@ -180,10 +180,6 @@ echo ""
 log_message "Merging deduplicated BAM files..."
 samtools merge -@ ${CORE} ${OUTBAM} ${TMPDIR}/*.dedup.bam
 
-# Index the merged deduplicated BAM file
-log_message "Indexing merged deduplicated BAM file..."
-samtools index -@ ${CORE} ${OUTBAM}
-
 # Clean up temporary files
 if ! rm -r ${TMPDIR}; then
     log_message "Warning: Failed to clean up temporary directory: ${TMPDIR}" >>2

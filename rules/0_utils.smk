@@ -14,9 +14,11 @@ rule utils_index_BAM:
     #     BAM=".*\.(bam)$"
     # resources:
     threads: config["CORES"]
+    conda:
+        f"{workflow.basedir}/envs/sambamba.yml"
     shell:
         """
-        samtools index -@ {threads} {input.BAM}
+        sambamba index -q -t {threads} {input.BAM}
         """
 
 

@@ -5,9 +5,10 @@ set -euo pipefail
 # Function to display help message
 usage() {
     cat << EOF
-Usage: $0 -d TMPDIR -r READS -o MERGED_R1_FQ -p MERGED_R2_FQ -t THREADS
+Usage: $0 -d TMPDIR -1 R1_LIST -2 R2_LIST -o MERGED_R1_FQ -p MERGED_R2_FQ -t THREADS
        -d TMPDIR        : Temporary directory
-       -r READS         : Space-delimited list of paired-end reads or a regex pattern
+       -1 R1_LIST       : Space-delimited list of R1 files
+       -2 R2_LIST       : Space-delimited list of R2 files
        -o MERGED_R1_FQ  : Output merged R1 file
        -p MERGED_R2_FQ  : Output merged R2 file
        -t THREADS       : Number of threads
@@ -22,10 +23,11 @@ log_message() {
 }
 
 # Parse arguments
-while getopts ":d:r:o:p:t:" opt; do
+while getopts ":d:1:2:o:p:t:" opt; do
     case $opt in
         d) TMPDIR=$OPTARG ;;
-        r) READS=$OPTARG ;;
+        1) R1_LIST=$OPTARG ;;
+        2) R2_LIST=$OPTARG ;;
         o) MERGED_R1_FQ=$OPTARG ;;
         p) MERGED_R2_FQ=$OPTARG ;;
         t) THREADS=$OPTARG ;;
@@ -35,7 +37,7 @@ while getopts ":d:r:o:p:t:" opt; do
 done
 
 # Check for missing arguments
-if [ -z "${TMPDIR:-}" ] || [ -z "${READS:-}" ] || [ -z "${MERGED_R1_FQ:-}" ] || [ -z "${MERGED_R2_FQ:-}" ] || [ -z "${THREADS:-}" ]; then
+if [ -z "${TMPDIR:-}" ] || [ -z "${R1_LIST:-}" ] || [ -z "${R2_LIST:-}" ] || [ -z "${MERGED_R1_FQ:-}" ] || [ -z "${MERGED_R2_FQ:-}" ] || [ -z "${THREADS:-}" ]; then
     usage
 fi
 
@@ -46,32 +48,28 @@ if ! mkdir -p "$TMPDIR"; then
 fi
 
 log_message "Temporary directory: $TMPDIR"
-log_message "Reads: $READS"
+log_message "R1 files: $R1_LIST"
+log_message "R2 files: $R2_LIST"
 log_message "Output R1: $MERGED_R1_FQ"
 log_message "Output R2: $MERGED_R2_FQ"
 log_message "Threads: $THREADS"
 
-# Handle regex or space-delimited input
-if [[ $READS =~ "*" ]]; then
-    R1_LIST=($(ls $READS | grep "_R1"))
-    R2_LIST=($(ls $READS | grep "_R2"))
-else
-    R1_LIST=($(echo $READS | tr ' ' '\n' | grep "_R1"))
-    R2_LIST=($(echo $READS | tr ' ' '\n' | grep "_R2"))
-fi
+# Convert space-delimited lists into arrays
+R1_ARRAY=($R1_LIST)
+R2_ARRAY=($R2_LIST)
 
 # Validate paired-end files
-if [ ${#R1_LIST[@]} -ne ${#R2_LIST[@]} ]; then
+if [ ${#R1_ARRAY[@]} -ne ${#R2_ARRAY[@]} ]; then
     printf "Error: Mismatched number of R1 and R2 files.\n"
     exit 1
 fi
 
 log_message "Merging R1 files..."
-zcat "${R1_LIST[@]}" > "${MERGED_R1_FQ%.gz}"
+zcat "${R1_ARRAY[@]}" > "${MERGED_R1_FQ%.gz}"
 pigz -p "$THREADS" "${MERGED_R1_FQ%.gz}"
 
 log_message "Merging R2 files..."
-zcat "${R2_LIST[@]}" > "${MERGED_R2_FQ%.gz}"
+zcat "${R2_ARRAY[@]}" > "${MERGED_R2_FQ%.gz}"
 pigz -p "$THREADS" "${MERGED_R2_FQ%.gz}"
 
 log_message "Merging completed successfully!"
