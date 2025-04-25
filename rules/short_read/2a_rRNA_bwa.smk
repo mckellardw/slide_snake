@@ -76,7 +76,7 @@ rule ilmn_2a_bwa_rRNA_filter_R1:
 rule ilmn_2a_bwa_rRNA_filter_trimmed_R1:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_{TRIM}_R1.fq.gz",
-        rRNA_LIST="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/no_rRNA_readID.list",
+        NORIBO_LIST="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/no_rRNA_readID.list",
     output:
         R1_FQ_NORIBO="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/no_rRNA_{TRIM}_R1.fq",
     resources:

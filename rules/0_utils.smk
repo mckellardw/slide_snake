@@ -177,12 +177,17 @@ def get_fqs(w, return_type=["list", "dict"], mode=["ONT", "ILMN"]):
                 R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/bwa/no_rRNA_R1.fq.gz"
                 R2 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/bwa/no_rRNA_R2.fq.gz"
 
-                # TODO - update to match ribodetector style
+                # additional R1 trimming options to remove bridge adapter
+                if "internalTrim" in w.RECIPE:
+                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/bwa/no_rRNA_internalTrim_R1.fq.gz"
+                if "hardTrim" in w.RECIPE:
+                    R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/bwa/no_rRNA_hardTrim_R1.fq.gz"
 
             elif "ribodetector" in w.RECIPE:
                 R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/ribodetector/no_rRNA_R1.fq.gz"
                 R2 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/ribodetector/no_rRNA_R2.fq.gz"
 
+                # additional R1 trimming options to remove bridge adapter
                 if "internalTrim" in w.RECIPE:
                     R1 = f"{w.OUTDIR}/{w.SAMPLE}/short_read/rRNA/ribodetector/no_rRNA_internalTrim_R1.fq.gz"
                 if "hardTrim" in w.RECIPE:

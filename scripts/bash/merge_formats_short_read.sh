@@ -64,12 +64,24 @@ if [ ${#R1_ARRAY[@]} -ne ${#R2_ARRAY[@]} ]; then
     exit 1
 fi
 
-log_message "Merging R1 files..."
-zcat "${R1_ARRAY[@]}" > "${MERGED_R1_FQ%.gz}"
-pigz -p "$THREADS" "${MERGED_R1_FQ%.gz}"
+# Handle R1 files
+if [ ${#R1_ARRAY[@]} -eq 1 ]; then
+    log_message "Only one R1 file provided. Copying directly to output."
+    cp "${R1_ARRAY[0]}" "$MERGED_R1_FQ"
+else
+    log_message "Merging R1 files..."
+    zcat "${R1_ARRAY[@]}" > "${MERGED_R1_FQ%.gz}"
+    pigz -p "$THREADS" "${MERGED_R1_FQ%.gz}"
+fi
 
-log_message "Merging R2 files..."
-zcat "${R2_ARRAY[@]}" > "${MERGED_R2_FQ%.gz}"
-pigz -p "$THREADS" "${MERGED_R2_FQ%.gz}"
+# Handle R2 files
+if [ ${#R2_ARRAY[@]} -eq 1 ]; then
+    log_message "Only one R2 file provided. Copying directly to output."
+    cp "${R2_ARRAY[0]}" "$MERGED_R2_FQ"
+else
+    log_message "Merging R2 files..."
+    zcat "${R2_ARRAY[@]}" > "${MERGED_R2_FQ%.gz}"
+    pigz -p "$THREADS" "${MERGED_R2_FQ%.gz}"
+fi
 
 log_message "Merging completed successfully!"

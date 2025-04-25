@@ -72,7 +72,7 @@ rule ilmn_3q_qualimapQC_dedup_STAR:
         """
 
 
-rule ilmn_3q_qualimap_readqc_summary2csv_STAR:
+rule ilmn_3q_qualimap_rnaseq_summary2csv_STAR:
     input:
         TXT="{OUTDIR}/{SAMPLE}/short_read/qualimap/STAR/{RECIPE}/{DEDUP}/rnaseq/rnaseq_qc_results.txt",
     output:

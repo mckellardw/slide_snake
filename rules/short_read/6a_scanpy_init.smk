@@ -29,7 +29,7 @@ rule ilmn_6a_cache_h5ad_STAR:
             --bc_map {input.BC_map} \
             --ad_out {output.H5AD} \
             --feat_col 1 0 \
-            --transpose True \
+            --transpose \
             --remove_zero_features \
             --plot_qc \
             --qc_plot_file {output.QC_PLOTS} \
@@ -54,8 +54,6 @@ rule ilmn_6a_cache_h5ad_kbpython_std:
     log:
         log="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/cache_h5ad.log",
         err="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/cache_h5ad.err",
-    # params:
-    #     var_names = "gene_symbols" # scanpy.read_10x_mtx()
     threads: 1
     conda:
         f"{workflow.basedir}/envs/scanpy.yml"
@@ -68,7 +66,7 @@ rule ilmn_6a_cache_h5ad_kbpython_std:
             --bc_map {input.BC_map} \
             --ad_out {output.H5AD} \
             --feat_col 1 0 \
-            --transpose True \
+            --transpose \
             --remove_zero_features \
             --plot_qc \
             --qc_plot_file {output.QC_PLOTS} \

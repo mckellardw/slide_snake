@@ -25,8 +25,11 @@ def plot_qc_metrics(adata, output_file):
 
     # default = 120000 / num_points
     num_points = adata.shape[0]
+    total_umis = adata.obs["n_counts"].sum()
     if num_points > 5000:
         point_size = 150000 / num_points
+    elif num_points < 100:
+        point_size = 1
     else:
         point_size = max(1, 150000 / num_points)
 
@@ -168,8 +171,7 @@ def parse_args():
     )
     parser.add_argument(
         "--transpose",
-        type=bool,
-        default=False,
+        action="store_true",
         help="Transpose count matrix? (default: False)",
     )
     parser.add_argument(
@@ -215,12 +217,12 @@ def main(
     feat_cols=[1],
     transpose=True,
     remove_zero_features=False,
-    verbose=True,
     plot_qc=False,
     qc_plot_file=None,
     gtf_file=None,
     gtf_feature_type="gene",
     gtf_id="gene_name",
+    verbose=True,
 ):
     # Count matrix
     adata = read_mtx(mat_in)
@@ -257,9 +259,9 @@ def main(
 
     if verbose:
         print(
-            f"Found {len(adata.var_names)} features in count matrix.\n"
-            f"Found {len(adata.obs_names)} cell barcodes in count matrix.\n"
-            f"Found {spatial_data.shape[0]} cell barcodes in whitelist/map.\n"
+            f"Features in count matrix:     {len(adata.var_names):,}\n"
+            f"Barcodes in count matrix:     {len(adata.obs_names):,}\n"
+            f"Barcodes in whitelist/map:    {spatial_data.shape[0]:,}\n"
         )
 
     # Set the cell barcode as index
@@ -289,6 +291,10 @@ def main(
     # Calculate QC metrics
     adata.obs["n_counts"] = adata.X.sum(axis=1)
     adata.obs["n_genes"] = (adata.X > 0).sum(axis=1)
+    total_umis = adata.obs["n_counts"].sum()
+
+    if verbose:
+        print(f"Total number of UMIs:         {total_umis:,}\n")
 
     # Plot QC metrics if requested
     if plot_qc:
@@ -316,6 +322,9 @@ def main(
 
 if __name__ == "__main__":
     args = parse_args()
+
+    verbose = True
+
     print(
         f"Matrix file:                  {args.mat_in}\n"
         f"Features/genes file:          {args.feat_in}\n"
@@ -332,17 +341,18 @@ if __name__ == "__main__":
         f"GTF ID column:                {args.gtf_id}\n"
     )
     main(
-        args.mat_in,
-        args.feat_in,
-        args.bc_in,
-        args.bc_map,
-        args.ad_out,
-        args.feat_cols,
-        args.transpose,
-        args.remove_zero_features,
+        mat_in=args.mat_in,
+        feat_in=args.feat_in,
+        bc_in=args.bc_in,
+        bc_map=args.bc_map,
+        ad_out=args.ad_out,
+        feat_cols=args.feat_cols,
+        transpose=args.transpose,
+        remove_zero_features=args.remove_zero_features,
         plot_qc=args.plot_qc,
         qc_plot_file=args.qc_plot_file,
         gtf_file=args.gtf_file,
         gtf_feature_type=args.gtf_feature_type,
         gtf_id=args.gtf_id,
+        verbose=verbose,
     )

@@ -357,7 +357,6 @@ def parse_parasail(reads, args):
             #     "strand": strand
             # }
             if args.single_adapter_mode:
-                print(len(fl_pairs))
                 if len(fl_pairs) > 0:
                     # Modified strand determination logic for single_adapter_mode
                     f_strands = [
