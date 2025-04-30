@@ -30,12 +30,9 @@ load_data <- function(data_file, n_max=Inf){
             readlen = col_double(),
             start = col_double(),
             end = col_double(),
-            fl = col_logical(),
-            stranded = col_logical(),
-            orig_strand = col_character(),
-            orig_adapter_config = col_character(),
-            adapter_config = col_character(),
+            strand = col_character(),
             lab = col_character(),
+            adapter_config = col_character(),
             read_id = col_character()
         ),
         na = c("", "NA", "None"),
@@ -95,11 +92,12 @@ data$lab <- outFactor <- factor(
   x = data$lab, 
   levels = c(
     "full_len",
-    "single_adapter1",
-    "double_adapter1",
-    "single_adapter2",
-    "double_adapter2",
+    "adapter1_single",
+    "adapter1_double",
+    "adapter2_single",
+    "adapter2_double",
     "other",
+    "other_ambiguous",
     "no_adapters"
   )
 )
@@ -118,15 +116,14 @@ summary <- data %>%
   group_by(lab) %>%
   summarise(
     count = n(),
-    avg_insertlen = mean(readlen),
-    avg_readlen = mean(readlength),
-    # med_insertlen = median(readlen),
-    # med_readlen = median(readlength),
-    # min_readlen = min(readlength),
-    # max_readlen = max(readlength),
-    avg_start = mean(start),
-    avg_normStart = mean(normStart),
-    pct_stranded = sum(stranded) / n() * 100
+    avg_insertlen = round(mean(readlen), 2),
+    avg_readlen = round(mean(readlength), 2),
+    med_insertlen = round(median(readlen), 2),
+    med_readlen = round(median(readlength), 2),
+    min_readlen = round(min(readlength), 2),
+    max_readlen = round(max(readlength), 2),
+    avg_start = round(mean(start), 2),
+    avg_normStart = round(mean(normStart), 2)
   )
 cat(glue("Summary statistics computed for {nrow(summary)} groups"), "\n")
 
@@ -156,7 +153,7 @@ p1 <- ggplot(summary, aes(x = lab, y = count)) +
 p2 <- ggplot(data, aes(x = lab, y = readlength)) +
   geom_violin(fill = "darkgreen") +
   labs(
-    title = "Read Length Distribution by Lab", 
+    title = "Read Length Distribution by Label", 
     x = "Read Type", 
     y = "Read Length"
   ) +

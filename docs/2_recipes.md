@@ -12,6 +12,38 @@ The default receipe sheet is stored in `resources/recipe_sheet.csv`. Change the 
   - Multiple recipes can be passed for each sample. Include as many as you would like, each separated by a space in the sample sheet. This is useful for benchmarking.
   - You can also add a new recipe! Just add a new line to `resources/recipe_sheet.csv` and give it a unique name in the 1st (0th for you pythoners) column.
 
+## Recipe Fields:
+| **Field**                | **Description**                                                                                                       | **Required** | **Example for `seeker_internalTrim`**   |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------- | ------------ | --------------------------------------- |
+| `R1_finalLength`         | Minimum final length of Read1 after trimming.                                                                         | both         | 32                                      |
+| `fwd_primer`             | Forward primer sequence - *next to the barcode*; used for stranding reads.                                            | ont          | `CTACACGACGCTCTTCCGATCT`                |
+| `rev_primer`             | Reverse primer sequence - *away from the barcode*; used for stranding reads (TSO/2nd strand primer for most methods). | ont          | `AAGCAGTGGTATCAACGCAGAG`                |
+| `BC_adapter`             | Adapter sequence for barcode extraction; include adapter for each BC if there are multiple                            | ont          | `TCTTCAGCGTTCCCGAGA TCTTCAGCGTTCCCGAGA` |
+| `BC_start`               | Start position of the barcode in the read.                                                                            | ont          | 0 26                                    |
+| `BC_length`              | Length of the barcode.                                                                                                | ont          |
+| `BC_offset`              | Offset for barcode extraction.                                                                                        | ont          |
+| `BC_position`            | Position of the barcode relative to BC_adapter ("left" for 5', or "right" for 3')                                     | ont          |
+| `BC_max_ED`              | Maximum edit distance (levenshtein) allowed for barcode matching.                                                     | ont          |
+| `BC_min_ED_diff`         | Minimum difference in edit distance (levenshtein) between 1st and 2nd closest matches                                 | ont          |
+| `BC_concat`              | Should barcodes be combined for correction? (eg, True for SlideSeq, False for combinatorial indexing)                 | ont          |
+| `UMI_adapter`            | Adapter sequence for finding the UMI.                                                                                 | ont          |
+| `UMI_start`              | Start position of the UMI in the read (if there is no adapter)                                                        | ont          |
+| `UMI_length`             | Length of the UMI.                                                                                                    | both         |
+| `UMI_offset`             | Offset for UMI extraction, relative to the adapter.                                                                   | ont          |
+| `UMI_position`           | Position of the UMI relative to UMI_adapter ("left" for 5', or "right" for 3')                                        | ont          |
+| `internal_adapter`       | Internal adapter sequence for trimming.                                                                               | ilmn         |
+| `STAR_soloType`          | Type of `STARsolo` analysis (e.g., "CB_UMI_Simple").                                                                  | ilmn         |
+| `STAR_soloCBmatchWLtype` | Type of whitelist matching for `STARsolo`.                                                                            | ilmn         |
+| `STAR_soloCB`            | Cell barcode configuration for `STARsolo`.                                                                            | ilmn         |
+| `STAR_soloUMI`           | UMI configuration for `STARsolo`.                                                                                     | ilmn         |
+| `STAR_soloAdapter`       | Adapter sequence for `STARsolo` barcode anchoring.                                                                    | ilmn         |
+| `STAR_extra`             | Additional parameters for `STAR` alignment.                                                                           | ilmn         |
+| `kb_x`                   | Custom technology string for `kb-python`.                                                                             | ilmn         |
+| `kb_extra`               | Additional parameters for `kb-python`.                                                                                | ilmn         |
+| `featureCounts_extra`    | Additional parameters for `featureCounts` quantification.                                                             | ilmn         |
+| `mm2_extra`              | Additional parameters for `minimap2` alignment.                                                                       | ont          |
+| `ultra_extra`            | Additional parameters for `ultra`.                                                                                    | ont          |
+
 ## `STARsolo` barcode and UMI specifications
 See the STARsolo documentation [here](https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md) for details.  
 ```

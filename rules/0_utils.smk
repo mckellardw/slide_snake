@@ -110,7 +110,6 @@ def check_sample_sheet(SAMPLE_SHEET):
 
 def check_recipe_sheet(RECIPE_SHEET, RECIPE_DICT, RECIPE_ONT_DICT):
     required_columns = [
-        "whitelist",
         "R1_finalLength",
         "fwd_primer",
         "rev_primer",
@@ -226,6 +225,56 @@ def get_fqs(w, return_type=["list", "dict"], mode=["ONT", "ILMN"]):
         return [R1, R2]
     elif return_type == "dict":
         return {"R1": R1, "R2": R2}
+
+
+def get_fwd_primer(w, mode=["ONT", "ILMN"]):
+    """
+    Get the forward primer sequence from the recipe sheet.
+    w: wildcards
+    mode: which workflow this is for
+    """
+    try:
+        if mode == "ILMN":
+            fwd_primer = list(set(get_recipe_info(w, "fwd_primer")))
+        elif mode == "ONT":
+            fwd_primer = list(set(get_recipe_info(w, "fwd_primer")))
+        else:
+            print("get_fwd_primer(): `mode` not found")
+            return "ERROR"
+    except Exception:
+        if mode == "ILMN":
+            print("TODO")
+        elif mode == "ONT":
+            print("TODO")
+        else:
+            print("get_fwd_primer(): `mode` not found")
+
+    return fwd_primer
+
+
+def get_rev_primer(w, mode=["ONT", "ILMN"]):
+    """
+    Get the reverse primer sequence from the recipe sheet.
+    w: wildcards
+    mode: which workflow this is for
+    """
+    try:
+        if mode == "ILMN":
+            rev_primer = list(set(get_recipe_info(w, "rev_primer")))
+        elif mode == "ONT":
+            rev_primer = list(set(get_recipe_info(w, "rev_primer")))
+        else:
+            print("get_rev_primer(): `mode` not found")
+            return "ERROR"
+    except Exception:
+        if mode == "ILMN":
+            print("TODO")
+        elif mode == "ONT":
+            print("TODO")
+        else:
+            print("get_rev_primer(): `mode` not found")
+
+    return rev_primer
 
 
 def get_bc_adapter(w, mode=["ONT", "ILMN"]):

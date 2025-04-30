@@ -4,6 +4,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - bedtools
   - ucsc-gtftogenepred
   - ucsc-bedtogenepred
   - ucsc-genepredtogtf

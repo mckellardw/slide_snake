@@ -36,7 +36,7 @@ set-threads:
   ilmn_7b_readQC_downsample: 1
   ilmn_7b_readQC_summaryplot: 8
   ilmn_7b_readQC_compress: 1
-  ont_1a_call_adapter_scan_v2: 56
+  ont_1a_call_adapter_scan: 56
   ont_1a_readIDs_by_adapter_type: 24
   ont_1a_adapter_scan_results: 1
   ont_1a_merge_scan_lists: 1
@@ -167,7 +167,7 @@ set-resources:
   ilmn_6a_cache_h5ad_kbpython_std:
     mem: 64G
     mem_mb: 64000
-  ont_1a_call_adapter_scan_v2:
+  ont_1a_call_adapter_scan:
     mem: 64G
     mem_mb: 64000
   ont_1a_readIDs_by_adapter_type:

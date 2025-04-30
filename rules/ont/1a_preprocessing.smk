@@ -83,21 +83,24 @@ def get_unique_primer_pairs(w):
 
 
 # TODO- refactor this to allow for more flexible stranding!
-rule ont_1a_call_adapter_scan_v2:
+rule ont_1a_call_adapter_scan:
     input:
         FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged.fq.gz",
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/adapter_scan.tsv",
         FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_stranded.fq.gz",
     params:
-        BATCH_SIZE=100000,
-        ADAPTER1_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio
-        # ADAPTER1_SEQ="CCCTCTCTCTCTCTTTCCTCTCTC", # RNAConnect
-        # ADAPTER1_SEQ="TCTCTCCTGCGGTAGTCACGTG", # DOESN'T WORK
+        BATCH_SIZE=200000,
         # ADAPTER1_SEQ=lambda w: get_recipe_info(w, "fwd_primer", mode="ONT"),
-        ADAPTER2_SEQ="ATGTACTCTGCGTTGATACCACTGCTT",  #TXG/Curio
-        # ADAPTER2_SEQ="GAGAGAGGAAAGAGAGAGAGAGGG",  #uMRT
         # ADAPTER2_SEQ=lambda w: get_recipe_info(w, "rev_primer", mode="ONT"),
+        ADAPTER1_SEQ=lambda w: get_fwd_primer(w, mode="ONT"),  # the primer next to the barcode
+        ADAPTER2_SEQ=lambda w: get_rev_primer(w, mode="ONT"),
+        # ADAPTER1_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio <-
+        # ADAPTER2_SEQ="ATGTACTCTGCGTTGATACCACTGCTT",  #TXG/Curio <-
+        # ADAPTER1_SEQ="CCCTCTCTCTCTCTTTCCTCTCTC", # RNAConnect/CT
+        # ADAPTER2_SEQ="GAGAGAGGAAAGAGAGAGAGAGGG",  # RNAConnect/CT
+        # ADAPTER2_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio - rev
+        # ADAPTER1_SEQ="ATGTACTCTGCGTTGATACCACTGCTT",  #TXG/Curio - rev
         VSEARCH_MIN_ADAPTER_ID=0.7,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/logs/1a_adapter_scan.log",
@@ -110,7 +113,7 @@ rule ont_1a_call_adapter_scan_v2:
     threads: 56
     shell:
         """
-        python scripts/py/adapter_scan_vsearch_v2.py \
+        python scripts/py/adapter_scan_parasail_v2.py \
             --fq_in "{input.FQ}" \
             --fq_out "{output.FQ}" \
             --output_tsv "{output.TSV}" \
@@ -122,9 +125,10 @@ rule ont_1a_call_adapter_scan_v2:
         1> {log.log} \
         2> {log.err}
         """
-        #  "CTGCGGTAGTCACGTG"
         # python scripts/py/adapter_scan_parasail.py \
+        # python scripts/py/adapter_scan_parasail_v2.py \
         # python scripts/py/adapter_scan_vsearch_v2.py \
+        # python scripts/py/adapter_scan_vsearch_v3.py \
 
 
 # Write lists of read IDs for each adapter type
