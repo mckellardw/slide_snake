@@ -30,7 +30,19 @@ tab = str.maketrans("ACTG", "TGAC")
 
 
 def currentTime():
+    """Return the current time formatted as 'MM/DD/YY | HH:MM:SS'."""
     return time.strftime("%D | %H:%M:%S", time.localtime())
+
+
+def print_log(msg):
+    """Print a log message with the current time."""
+    print(f"{currentTime()} | {msg}")
+
+
+def print_error(msg):
+    """Print an error message with the current time."""
+    print(f"{currentTime()} | ERROR: {msg}", file=sys.stderr)
+    sys.exit(1)
 
 
 def parse_args():
@@ -63,10 +75,16 @@ def parse_args():
         help="Maximum scan distance from the 3' end of the anchor alignment",
     )
     parser.add_argument(
-        "--max_errors",
+        "--max_anchor_errors",
         type=int,
         default=2,
         help="The maximum allowed error rate for the anchor sequence matching.",
+    )
+    parser.add_argument(
+        "--max_split_errors",
+        type=int,
+        default=2,
+        help="The maximum allowed error rate for the split sequence matching.",
     )
     parser.add_argument(
         "--threads", type=int, default=1, help="Number of threads to use."
@@ -84,15 +102,18 @@ def reverse_complement(seq):
     return seq.translate(tab)[::-1]
 
 
-def align_parasail(read, adapter, mismatches, verbose=False):
+def align_parasail(read, adapter, mismatches, matrix=None, verbose=False):
     """
-    Align sequences using parasail (Smith-Waterman local alignment)
+    Align adapter sequence to a read using parasail (Smith-Waterman local alignment)
     - source: https://github.com/jeffdaily/parasail-python
     """
+    # Create scoring matrix and perform alignment
+    if matrix is None:
+        matrix = parasail.matrix_create(alphabet="ACGT", match=1, mismatch=-1)
 
-    # Create a simple identity matrix (match = 1, mismatch = 0)
-    matrix = parasail.matrix_create(alphabet="ACGT", match=1, mismatch=0)
-    alignment = parasail.sw(s1=adapter, s2=read, open=1, extend=1, matrix=matrix)
+    alignment = parasail.sw_trace_striped_32(
+        s1=adapter, s2=read, open=10, extend=1, matrix=matrix
+    )
 
     # Check if alignment meets the minimum score threshold based on mismatches
     if alignment.score >= (len(adapter) - mismatches):
@@ -109,6 +130,10 @@ def align_parasail(read, adapter, mismatches, verbose=False):
         return alignment.score, start, end
     return None, None, None
 
+    # if alignment.score >= (len(adapter) - mismatches):
+    #     return alignment
+    # return None
+
 
 def find_and_split_reads(
     fq_in,
@@ -116,7 +141,8 @@ def find_and_split_reads(
     split_seq,
     split_offset,
     max_offset,
-    max_errors=2,
+    max_anchor_errors,
+    max_split_errors,
     min_read_length=12,
 ):
     """
@@ -135,8 +161,10 @@ def find_and_split_reads(
         How far to the right/3'
     max_offset : int
         How far away the split_seq could be compared to the anchor_seq
-    max_errors : float
-        The maximum allowed error rate for the sequence matching.
+    max_anchor_errors : float
+        The maximum allowed error rate for the anchor sequence matching.
+    max_split_errors : float
+        The maximum allowed error rate for the split sequence matching.
     """
     try:
         output_prefix = fq_in.strip(".fq.gz")
@@ -157,7 +185,10 @@ def find_and_split_reads(
             for read in input_fastq:
                 # Align anchor sequence
                 anchor_score, anchor_start, anchor_end = align_parasail(
-                    read=read.sequence, adapter=anchor_seq, mismatches=max_errors
+                    read=read.sequence,
+                    adapter=anchor_seq,
+                    mismatches=max_anchor_errors,
+                    # matrix=matrix,
                 )
                 if anchor_score is None:
                     # write to ambiguous.fq
@@ -173,7 +204,10 @@ def find_and_split_reads(
                 scan_region = read.sequence[scan_start:scan_end]
 
                 split_score, split_start, split_end = align_parasail(
-                    read=scan_region, adapter=split_seq, mismatches=max_errors
+                    read=scan_region,
+                    adapter=split_seq,
+                    mismatches=max_split_errors,
+                    # matrix=matrix,
                 )
 
                 if split_score is None:
@@ -222,7 +256,8 @@ if __name__ == "__main__":
         f"split sequence:       {args.split_seq}\n"
         f"split offset:         {args.split_offset}\n"
         f"max offset:           {args.max_offset}\n"
-        f"max anchor errors:    {args.max_errors}\n"
+        f"max anchor errors:    {args.max_anchor_errors}\n"
+        f"max split errors:     {args.max_split_errors}\n"
         f"threads:              {args.threads}\n"
     )
     print(f"{currentTime()} - Running...")
@@ -236,7 +271,8 @@ if __name__ == "__main__":
                 split_seq=args.split_seq,
                 split_offset=args.split_offset,
                 max_offset=args.max_offset,
-                max_errors=args.max_errors,
+                max_anchor_errors=args.max_anchor_errors,
+                max_split_errors=args.max_split_errors,
             )
         )
         print(
@@ -284,7 +320,8 @@ if __name__ == "__main__":
                 args.split_seq,
                 args.split_offset,
                 args.max_offset,
-                args.max_errors,
+                args.max_anchor_errors,
+                args.max_split_errors,
             )
             for n in list(range(1, args.threads + 1))
         ]

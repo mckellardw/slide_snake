@@ -102,97 +102,20 @@ rule ont_1f_ultra_sort_compress_output:
         """
 
 
-# Assign feature (transcript ID) to each alignment
-rule ont_1f_ultra_featureCounts:
-    input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted.bam",
-        BAI="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted.bam.bai",
-        GTF="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted.gtf",
-    output:
-        TSV="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted.bam.featureCounts",
-        FEAT="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/featureCounts.tsv",
-    params:
-        GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
-        EXTRA_FLAGS=lambda wildcards: RECIPE_SHEET["featureCounts_extra"][
-            wildcards.RECIPE
-        ],
-        MIN_TEMPLATE_LENGTH=10,
-        MAX_TEMPLATE_LENGTH=10000,
-    log:
-        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/featureCounts.log",
-        err="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/featureCounts.err",
-    resources:
-        mem="32G",
-    threads: 1  # long reads can only run single-threaded
-    conda:
-        f"{workflow.basedir}/envs/minimap2.yml"
-    shell:
-        """
-        featureCounts \
-            -a {input.GTF} \
-            -o {output.FEAT} \
-            -L \
-            -s 1 \
-            -f \
-            -d {params.MIN_TEMPLATE_LENGTH} \
-            -D {params.MAX_TEMPLATE_LENGTH} \
-            -t 'gene' \
-            -g 'gene_id' \
-            -T {threads} \
-            -R CORE {params.EXTRA_FLAGS} \
-            {input.BAM} \
-        1> {log.log} \
-        2> {log.err} \
-        """
-
-
-# Add gene tag (GN) to bam...
-rule ont_1f_ultra_add_featureCounts_to_bam:
-    input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted.bam",
-        BAI="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted.bam.bai",
-        TSV="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted.bam.featureCounts",
-    output:
-        BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_gn.bam",
-    params:
-        READ_ID_COLUMN=0,
-        TAG="GN",  # corrected barcode tag
-        TAG_COLUMN=3,
-    log:
-        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/tsv2tag_1_GN.log",
-        err="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/tsv2tag_1_GN.err",
-    conda:
-        f"{workflow.basedir}/envs/parasail.yml"
-    resources:
-        mem="16G",
-    threads: 1
-    shell:
-        """
-        python scripts/py/tsv2tag.py --in_bam {input.BAM} \
-            --in_tsv {input.TSV} \
-            --out_bam {output.BAM} \
-            --readIDColumn {params.READ_ID_COLUMN} \
-            --tagColumns {params.TAG_COLUMN} \
-            --tags {params.TAG} \
-        1> {log.log} \
-        2> {log.err}
-        """
-
-
-# Add CB to gene-tagged .bam
+# Add CB to BAM
 rule ont_1f_ultra_add_corrected_barcodes:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_gn.bam",
+        BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted.bam",
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_corrected.tsv",
     output:
-        BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_gn_cb.bam",
+        BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_cb.bam",
     params:
         READ_ID_COLUMN=0,
         BARCODE_TAG="CB",  # corrected barcode
         BARCODE_TSV_COLUMN=1,
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/tsv2tag_2_CB.log",
-        err="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/tsv2tag_2_CB.err",
+        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/tsv2tag_1_CB.log",
+        err="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/tsv2tag_1_CB.err",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
@@ -211,20 +134,20 @@ rule ont_1f_ultra_add_corrected_barcodes:
         """
 
 
-# Add UMI (UR) to barcoded & gene-tagged .bam
+# Add UMI (UR) to barcoded BAM
 rule ont_1f_ultra_add_umis:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_gn_cb.bam",
+        BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_cb.bam",
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_filtered.tsv",
     output:
-        BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_gn_cb_ub.bam",
+        BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_cb_ub.bam",
     params:
         READ_ID_COLUMN=0,
         UMI_TSV_COLUMN=-1,  # last column
         UMI_TAG="UR",  # uncorrected UMI
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/tsv2tag_3_UR.log",
-        err="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/tsv2tag_3_UR.err",
+        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/tsv2tag_2_UR.log",
+        err="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/tsv2tag_2_UR.err",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
@@ -246,13 +169,13 @@ rule ont_1f_ultra_add_umis:
 # Generate count matrix w/ umi-tools
 rule ont_1f_ultra_filter_bam_empty_tags:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_gn_cb_ub.bam",
-        # BAI="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_gn_cb_ub.bam.bai",
+        BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_cb_ub.bam",
+        # BAI="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_cb_ub.bam.bai",
     output:
-        BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_filtered_gn_cb_ub.bam",
+        BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_filtered_cb_ub.bam",
     params:
         CELL_TAG="CB",  # uncorrected = CR; corrected = CB
-        GENE_TAG="GN",  # GN XS
+        # GENE_TAG="GN",  # GN XS
         UMI_TAG="UR",  # uncorrected = UR; corrected = UB
     resources:
         mem="16G",
@@ -261,18 +184,95 @@ rule ont_1f_ultra_filter_bam_empty_tags:
         """
         samtools view -h {input.BAM} \
         | awk -v tag={params.CELL_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
-        | awk -v tag={params.GENE_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
         | awk -v tag={params.UMI_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
         | samtools view -b \
         > {output.BAM}
         """
 
 
+# Assign feature (transcript ID) to each alignment
+rule ont_1f_ultra_featureCounts:
+    input:
+        BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_filtered_cb_ub.bam",
+        BAI="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_filtered_cb_ub.bam.bai",
+        GTF="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted.gtf",
+    output:
+        TSV="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/featureCounts/sorted_filtered_cb_ub.bam.featureCounts",
+        FEAT="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/featureCounts/featureCounts.tsv",
+    params:
+        GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
+        EXTRA_FLAGS=lambda wildcards: RECIPE_SHEET["featureCounts_extra"][
+            wildcards.RECIPE
+        ],
+        MIN_TEMPLATE_LENGTH=10,
+        MAX_TEMPLATE_LENGTH=10000,
+    log:
+        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/featureCounts/featureCounts.log",
+        err="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/featureCounts/featureCounts.err",
+    resources:
+        mem="32G",
+    threads: 1  # long reads can only run single-threaded
+    conda:
+        f"{workflow.basedir}/envs/minimap2.yml"
+    shell:
+        """
+        mkdir -p $(dirname {output.TSV})
+        featureCounts \
+            -a {input.GTF} \
+            -o {output.FEAT} \
+            -L \
+            -s 1 \
+            -f \
+            -d {params.MIN_TEMPLATE_LENGTH} \
+            -D {params.MAX_TEMPLATE_LENGTH} \
+            -t 'gene' \
+            -g 'gene_id' \
+            -T {threads} \
+            -R CORE {params.EXTRA_FLAGS} \
+            {input.BAM} \
+        1> {log.log} \
+        2> {log.err} \
+        """
+
+
+# Add gene tag (GN) to BAM
+rule ont_1f_ultra_add_featureCounts_to_bam:
+    input:
+        BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_filtered_cb_ub.bam",
+        BAI="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_filtered_cb_ub.bam.bai",
+        TSV="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/featureCounts/sorted_filtered_cb_ub.bam.featureCounts",
+    output:
+        BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_filtered_cb_ub_gn.bam",
+    params:
+        READ_ID_COLUMN=0,
+        TAG="GN",  # gene tag
+        TAG_COLUMN=3,
+    log:
+        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/tsv2tag_3_GN.log",
+        err="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/tsv2tag_3_GN.err",
+    conda:
+        f"{workflow.basedir}/envs/parasail.yml"
+    resources:
+        mem="16G",
+    threads: 1
+    shell:
+        """
+        python scripts/py/tsv2tag.py --in_bam {input.BAM} \
+            --in_tsv {input.TSV} \
+            --out_bam {output.BAM} \
+            --readIDColumn {params.READ_ID_COLUMN} \
+            --tagColumns {params.TAG_COLUMN} \
+            --tags {params.TAG} \
+        1> {log.log} \
+        2> {log.err}
+        """
+
+
 # Generate count matrix w/ umi-tools
 rule ont_1f_ultra_umitools_count:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_filtered_gn_cb_ub.bam",
-        BAI="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_filtered_gn_cb_ub.bam.bai",
+        BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_filtered_cb_ub_gn.bam",
+        BAI="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_filtered_cb_ub_gn.bam.bai",
     output:
         COUNTS="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/raw/umitools_counts.tsv.gz",
     params:

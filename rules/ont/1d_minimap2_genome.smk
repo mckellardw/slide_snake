@@ -78,131 +78,20 @@ rule ont_1d_genome_sort_compress_output:
         """
 
 
-# Assign feature (transcript ID) to each alignment
-rule ont_1d_genome_featureCounts:
-    input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam",
-        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam.bai",
-    output:
-        TSV="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam.featureCounts",
-        FEAT="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/featureCounts.tsv",
-    params:
-        GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
-        EXTRA_FLAGS=lambda wildcards: RECIPE_SHEET["featureCounts_extra"][
-            wildcards.RECIPE
-        ],
-        MIN_TEMPLATE_LENGTH=10,
-        MAX_TEMPLATE_LENGTH=10000,
-    log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/featureCounts.log",
-        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/featureCounts.err",
-    resources:
-        mem="32G",
-    threads: 1  # long reads can only run single-threaded
-    conda:
-        f"{workflow.basedir}/envs/minimap2.yml"
-    shell:
-        """
-        featureCounts \
-            -a {params.GTF} \
-            -o {output.FEAT} \
-            -L \
-            -s 1 \
-            -f \
-            -d {params.MIN_TEMPLATE_LENGTH} \
-            -D {params.MAX_TEMPLATE_LENGTH} \
-            -t 'gene' \
-            -g 'gene_id' \
-            -T {threads} \
-            -R CORE {params.EXTRA_FLAGS} \
-            {input.BAM} \
-        1> {log.log} \
-        2> {log.err}
-        """
-
-
-# -t 'transcript' \
-# -g 'transcript_id' \
-
-
-# --donotsort \
-# −−sortReadsByCoordinates \
-
-# TODO?
-# rule salmon_quant:
-#     input:
-#         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_cb.bam",
-#         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_cb.bam.bai",
-#         INDEX="{PATH_TO_SALMON_INDEX}"
-#     output:
-#         QUANT="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/quant.sf"
-#     params:
-#         LIBTYPE = "A", # Automatic library type detection
-#         VALIDATE_MAPPINGS = True, # Validate mappings
-#         GC_BIAS = True, # Correct GC bias
-#         NUM_GIBBS_SAMPLES = 20 # Number of Gibbs samples
-#     log:
-#         log = "{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/salmon_quant.log"
-#     threads:
-#         config["CORES"]
-#     conda:
-#          f"{workflow.basedir}/envs/salmon.yml"
-#     shell:
-#         """
-#         salmon quant -i {input.INDEX} -l {params.LIBTYPE} -p {threads} \
-#         --validateMappings {params.VALIDATE_MAPPINGS} --gcBias {params.GC_BIAS} \
-#         --numGibbsSamples {params.NUM_GIBBS_SAMPLES} -o {output.QUANT} \
-#         -1 {input.BAM} 2> {log.log}
-#         """
-
-
-# Add gene tag (GN) to bam...
-rule ont_1d_genome_add_featureCounts_to_bam:
-    input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam",
-        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam.bai",
-        TSV="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam.featureCounts",
-    output:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn.bam",
-    params:
-        READ_ID_COLUMN=0,
-        TAG="GN",  # corrected barcode tag
-        TAG_COLUMN=3,
-    log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_1_GN.log",
-        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_1_GN.err",
-    conda:
-        f"{workflow.basedir}/envs/parasail.yml"
-    resources:
-        mem="16G",
-    threads: 1
-    shell:
-        """
-        python scripts/py/tsv2tag.py --in_bam {input.BAM} \
-            --in_tsv {input.TSV} \
-            --out_bam {output.BAM} \
-            --readIDColumn {params.READ_ID_COLUMN} \
-            --tagColumns {params.TAG_COLUMN} \
-            --tags {params.TAG} \
-        1> {log.log} \
-        2> {log.err}
-        """
-
-
 # Add CB to gene-tagged .bam
 rule ont_1d_genome_add_corrected_barcodes:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn.bam",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam",
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_corrected.tsv",
     output:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb.bam",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_cb.bam",
     params:
         READ_ID_COLUMN=0,
         BARCODE_TAG="CB",
         BARCODE_TSV_COLUMN=1,
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_2_CB.log",
-        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_2_CB.err",
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_1_CB.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_1_CB.err",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
@@ -221,20 +110,20 @@ rule ont_1d_genome_add_corrected_barcodes:
         """
 
 
-# Add UMI (UR) to barcoded & gene-tagged .bam
+# Add UMI (UR) to barcoded .bam
 rule ont_1d_genome_add_umis:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb.bam",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_cb.bam",
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_filtered.tsv",
     output:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_cb_ub.bam",
     params:
         READ_ID_COLUMN=0,
         UMI_TSV_COLUMN=-1,  # last column
         UMI_TAG="UR",  # uncorrected UMI
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_3_UR.log",
-        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_3_UR.err",
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_2_UR.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_2_UR.err",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
@@ -253,16 +142,14 @@ rule ont_1d_genome_add_umis:
         """
 
 
-# Generate count matrix w/ umi-tools
+# Filter BAM based on cell barcode and UMI
 rule ont_1d_genome_filter_bam_empty_tags:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam",
-        # BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam.bai",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_cb_ub.bam",
     output:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_gn_cb_ub.bam",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_cb_ub.bam",
     params:
         CELL_TAG="CB",  # uncorrected = CR; corrected = CB
-        GENE_TAG="GN",  # GN XS
         UMI_TAG="UR",  # uncorrected = UR; corrected = UB
     resources:
         mem="16G",
@@ -271,20 +158,97 @@ rule ont_1d_genome_filter_bam_empty_tags:
         """
         samtools view -h {input.BAM} \
         | awk -v tag={params.CELL_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
-        | awk -v tag={params.GENE_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
         | awk -v tag={params.UMI_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
         | samtools view -b \
         > {output.BAM}
         """
 
 
+# Assign feature (transcript ID) to each alignment
+rule ont_1d_genome_featureCounts:
+    input:
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_cb_ub.bam",
+        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_cb_ub.bam.bai",
+    output:
+        TSV="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/featureCounts/sorted_filtered_cb_ub.bam.featureCounts",
+        FEAT="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/featureCounts/featureCounts.tsv",
+    params:
+        GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
+        EXTRA_FLAGS=lambda wildcards: RECIPE_SHEET["featureCounts_extra"][
+            wildcards.RECIPE
+        ],
+        MIN_TEMPLATE_LENGTH=10,
+        MAX_TEMPLATE_LENGTH=10000,
+    log:
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/featureCounts/featureCounts.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/featureCounts/featureCounts.err",
+    resources:
+        mem="32G",
+    threads: 1  # long reads can only run single-threaded
+    conda:
+        f"{workflow.basedir}/envs/minimap2.yml"
+    shell:
+        """
+        mkdir -p $(dirname {output.TSV})
+        featureCounts \
+            -a {params.GTF} \
+            -o {output.FEAT} \
+            -L \
+            -s 1 \
+            -f \
+            -d {params.MIN_TEMPLATE_LENGTH} \
+            -D {params.MAX_TEMPLATE_LENGTH} \
+            -t 'gene' \
+            -g 'gene_id' \
+            -T {threads} \
+            -R CORE {params.EXTRA_FLAGS} \
+            {input.BAM} \
+        1> {log.log} \
+        2> {log.err}
+        """
+
+
+# Add gene tag (GN) to bam...
+rule ont_1d_genome_add_featureCounts_to_bam:
+    input:
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_cb_ub.bam",
+        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_cb_ub.bam.bai",
+        TSV="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/featureCounts/sorted_filtered_cb_ub.bam.featureCounts",
+    output:
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_cb_ub_gn.bam",
+    params:
+        READ_ID_COLUMN=0,
+        TAG="GN",  # corrected barcode tag
+        TAG_COLUMN=3,
+    log:
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_3_GN.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_3_GN.err",
+    conda:
+        f"{workflow.basedir}/envs/parasail.yml"
+    resources:
+        mem="16G",
+    threads: 1
+    shell:
+        """
+        python scripts/py/tsv2tag.py --in_bam {input.BAM} \
+            --in_tsv {input.TSV} \
+            --out_bam {output.BAM} \
+            --readIDColumn {params.READ_ID_COLUMN} \
+            --tagColumns {params.TAG_COLUMN} \
+            --tags {params.TAG} \
+        1> {log.log} \
+        2> {log.err}
+        """
+
+
 # Split BAM by strand
 rule ont_1d_genome_split_bam_by_strand:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_gn_cb_ub.bam",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_cb_ub_gn.bam",
+        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_cb_ub_gn.bam.bai",
     output:
-        BAM_POS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_gn_cb_ub_pos.bam",
-        BAM_NEG="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_gn_cb_ub_neg.bam",
+        BAM_POS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_cb_ub_gn_pos.bam",
+        BAM_NEG="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_cb_ub_gn_neg.bam",
     resources:
         mem="8G",
     threads: 1
@@ -298,8 +262,8 @@ rule ont_1d_genome_split_bam_by_strand:
 # Generate count matrix w/ umi-tools
 rule ont_1d_genome_umitools_count:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_gn_cb_ub.bam",
-        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_gn_cb_ub.bam.bai",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_cb_ub_gn.bam",
+        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_cb_ub_gn.bam.bai",
     output:
         COUNTS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/umitools_counts.tsv.gz",
     params:

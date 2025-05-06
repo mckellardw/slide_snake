@@ -5,8 +5,8 @@
 # Qualimap QC on alignment outputs
 rule ont_2b_qualimap:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/{REF}/{RECIPE}/sorted_filtered_gn_cb_ub.bam",
-        BAI="{OUTDIR}/{SAMPLE}/ont/{REF}/{RECIPE}/sorted_filtered_gn_cb_ub.bam.bai",
+        BAM="{OUTDIR}/{SAMPLE}/ont/{REF}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam",
+        BAI="{OUTDIR}/{SAMPLE}/ont/{REF}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam.bai",
     output:
         TXT="{OUTDIR}/{SAMPLE}/ont/qualimap/{REF}/{RECIPE}/rnaseq/rnaseq_qc_results.txt",
         PDF="{OUTDIR}/{SAMPLE}/ont/qualimap/{REF}/{RECIPE}/rnaseq/report.pdf",
@@ -57,8 +57,8 @@ rule ont_2b_qualimap_readqc_summary2csv:
 # Qualimap BAM QC on alignment outputs
 rule ont_2b_qualimap_bamqc:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/{REF}/{RECIPE}/sorted_filtered_gn_cb_ub.bam",
-        BAI="{OUTDIR}/{SAMPLE}/ont/{REF}/{RECIPE}/sorted_filtered_gn_cb_ub.bam.bai",
+        BAM="{OUTDIR}/{SAMPLE}/ont/{REF}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam",
+        BAI="{OUTDIR}/{SAMPLE}/ont/{REF}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam.bai",
     output:
         REPORT="{OUTDIR}/{SAMPLE}/ont/qualimap/{REF}/{RECIPE}/bamqc/report.pdf",
         CSV="{OUTDIR}/{SAMPLE}/ont/qualimap/{REF}/{RECIPE}/bamqc/genome_results.txt",

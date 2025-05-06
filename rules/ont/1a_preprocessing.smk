@@ -138,7 +138,7 @@ rule ont_1a_readIDs_by_adapter_type:
         FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_stranded.fq.gz",
     output:
         FULL_LEN="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",  # keep
-        # SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",  # keep incomplete read
+        # SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/adapter1_single.txt",  # keep incomplete read
         # DOUBLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/double_adapter1.txt",  # toss
         # DOUBLE_ADAPTER2="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/double_adapter2.txt",  # toss
         # NO_ADAPTERS="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/no_adapters.txt",  # toss
@@ -161,8 +161,8 @@ rule ont_1a_adapter_scan_summary:
         TSV="{OUTDIR}/{SAMPLE}/ont/adapter_scan.tsv",
     output:
         CSV="{OUTDIR}/{SAMPLE}/ont/logs/1a_adapter_scan_summary.csv",
-        PDF="{OUTDIR}/{SAMPLE}/ont/logs/1a_adapter_scan_summary.pdf",
-        PNG="{OUTDIR}/{SAMPLE}/ont/logs/1a_adapter_scan_summary.png",
+        PDF="{OUTDIR}/{SAMPLE}/ont/plots/1a_adapter_scan_summary.pdf",
+        PNG="{OUTDIR}/{SAMPLE}/ont/plots/1a_adapter_scan_summary.png",
     params:
         DEVICE="pdf",
     log:
@@ -190,7 +190,7 @@ rule ont_1a_adapter_scan_summary:
 rule ont_1a_merge_scan_lists:
     input:
         FULL_LEN="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",
-        # SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/single_adapter1.txt",
+        # SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/adapter1_single.txt",
     output:
         LST="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/keep.txt",
     resources:
@@ -260,10 +260,11 @@ rule ont_1a_split_fastq_to_R1_R2:
         AMBIG_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_adapter_ambiguous.fq.gz",
     params:
         # ANCHOR_SEQ=lambda w: get_recipe_info(w, "fwd_primer"),
-        ANCHOR_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio
+        # ANCHOR_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio
         # ANCHOR_SEQ="CCCTCTCTCTCTCTTTCCTCTCTCCT",  # RNAConnect/CT
         # ANCHOR_SEQ="TCTTTCCTCTCTCCT",  # RNAConnect/CT
         # ANCHOR_SEQ="ACGCTCTTCCGATCT",  #TXG/Curio
+        ANCHOR_SEQ=lambda w: get_fwd_primer(w, mode="ONT"),  # the primer next to the barcode
         SPLIT_SEQ="T" * 6,
         SPLIT_OFFSET=8,  # offset from 3' end of split seq on which to split
         MAX_OFFSET=200,

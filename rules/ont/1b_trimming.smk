@@ -26,9 +26,7 @@ rule ont_1b_cutadapt:
         HETEROPOLYMER_ERROR_RATE=0.2,  # default error rate is 0.1
         POLYA="A" * 100,
         POLYT="T" * 100,
-        TSO="AAGCTGGTATCAACGCAGAGTGAATGGG",  # SlideSeq TSO - remove any polyadenylated TSOs
         TXG_TSO="AAGCAGTGGTATCAACGCAGAGTACATGGG",  # 10x TSO - remove any polyadenylated TSOs
-        rcTSO="CCCATTCACTCTGCGTTGATACCAGCTT",  # rev comp of SlideSeq TSO
         rcTXG_TSO="CCCATGTACTCTGCGTTGATACCACTGCTT",  # rev-comp of 10x TSO sequence
         uMRT_TSO="CCCTCTCTCTCTCTTTCCTCTCTC",  #ISOPCR sequence from uMRT protocol; does not contain the 4T overhang
         SEEKER_BB_LINKER="TCTTCAGCGTTCCCGAGA",  # Adapter between BB1 & BB2 in R1 
@@ -56,9 +54,7 @@ rule ont_1b_cutadapt:
             --overlap {params.OVERLAP} \
             --match-read-wildcards \
             --times {params.ADAPTER_COUNT} \
-            -B TSO={params.TSO} \
-            -B TXG_TSO={params.TXG_TSO} \
-            -B SEEKER_LINKER={params.SEEKER_BB_LINKER} \
+            -G TXG_TSO={params.TXG_TSO} \
             --pair-filter=any \
             -o {output.R1_FQ} \
             -p {output.R2_FQ} \
@@ -186,4 +182,24 @@ rule ont_1b_cutadapt_internalTrimming:
             --json {output.JSON} \
             {input.R1_FQ} {input.R2_FQ} \
         1>> {log.log}
+        """
+
+
+rule ont_1b_cutadapt_summary:
+    input:
+        JSON="{OUTDIR}/{SAMPLE}/ont/logs/1b_cutadapt.json",
+    output:
+        PNG="{OUTDIR}/{SAMPLE}/ont/plots/1b_cutadapt_summary.png",
+    log:
+        log="{OUTDIR}/{SAMPLE}/ont/logs/1b_cutadapt_summary.log",
+        err="{OUTDIR}/{SAMPLE}/ont/logs/1b_cutadapt_summary.err",
+    conda:
+        f"{workflow.basedir}/envs/ggplot2.yml"
+    shell:
+        """
+        Rscript scripts/R/cutadapt_summary.R \
+            -i {input.JSON} \
+            -p {output.PNG} \
+        1> {log.log} \
+        2> {log.err}
         """

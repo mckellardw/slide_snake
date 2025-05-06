@@ -94,8 +94,8 @@ rule ont_2a_readQC_2_postCutadapt:
 # └────┴──────┴───────────────────────────────────────────────────────┘
 rule ont_2a_readQC_3_bam:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam",
-        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_gn_cb_ub.bam.bai",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam",
+        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam.bai",
     output:
         TSV="{OUTDIR}/{SAMPLE}/ont/readqc/3_aligned/{RECIPE}_qc.tsv",
     params:

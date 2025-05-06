@@ -1,5 +1,6 @@
 import argparse
 import pysam
+import gzip
 from datetime import datetime
 from collections import Counter
 
@@ -19,8 +20,11 @@ def parse_tsv(in_tsv, readIDcolumn, tagColumns, exclude_values):
     """Parse the TSV file and return a dictionary mapping read IDs (keys) to bam tags (values)."""
     read_to_tags = {}
     exclude_counts = Counter()
-    with open(in_tsv, "r") as file:
+    open_func = gzip.open if in_tsv.endswith(".gz") else open  # Handle gzipped files
+    with open_func(in_tsv, "rt") as file:  # Use text mode for gzipped files
         for line in file:
+            if line.startswith("#"):  # Skip lines starting with '#'
+                continue
             line_as_list = line.strip().split("\t")
             read_id = line_as_list[readIDcolumn]
             try:

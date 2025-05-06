@@ -136,23 +136,34 @@ COMPLEMENT_TRANS = str.maketrans(
 
 
 # TODO- allow support for multi-alignments (important for TSO/PCR concatemers!)
-def align_parasail(read, adapter, min_adapter_id):
+def align_parasail(read, adapter, min_adapter_id, matrix=None):
     """
-    Perform Smith-Waterman alignment using parasail and return the result if the score passes the threshold.
+    Align adapter sequence to a read using parasail (Smith-Waterman local alignment)
     - source: https://github.com/jeffdaily/parasail-python
+
+    Parameters:
+        read (str): The DNA sequence of the read to which the adapter will be aligned.
+        adapter (str): The DNA sequence of the adapter to align to the read.
+        min_adapter_id (float): The minimum adapter identity threshold (between 0 and 1)
+                                to consider the alignment valid.
+
+    Returns:
+        parasail.Alignment or None: The alignment object if the alignment score meets
+                                     the threshold, otherwise None.
     """
     # Create scoring matrix and perform alignment
-    matrix = parasail.matrix_create("ACGT", 1, -1)
+    if matrix is None:
+        matrix = parasail.matrix_create("ACGT", 1, -1)
 
     # s1=query, s2=target
-    result = parasail.sw_trace_striped_32(
+    alignment = parasail.sw_trace_striped_32(
         s1=adapter, s2=read, open=10, extend=1, matrix=matrix
     )
 
     # Calculate mismatches and check if alignment score meets threshold
     mismatches = round((1 - min_adapter_id) * len(adapter))
-    if result.score >= (len(adapter) - mismatches):
-        return result
+    if alignment.score >= (len(adapter) - mismatches):
+        return alignment
     return None
 
 
@@ -220,95 +231,21 @@ def determine_strand_from_parasail(
     new_read_id = align_df["target"].iloc[0]
 
     if single_end_mode:
-        if len(fl_pairs) > 0:
-            f_strands = [
-                fl_pair["strand"] for fl_pair in fl_pairs if "_f" in fl_pair["config"]
-            ]
-            r_strands = [
-                fl_pair["strand"] for fl_pair in fl_pairs if "_r" in fl_pair["config"]
-            ]
-            if f_strands and all(s == "+" for s in f_strands):
-                strand = "+"
-            elif r_strands and all(s == "-" for s in r_strands):
-                strand = "-"
-            else:
-                strand = "="
-
-            for fl_pair in fl_pairs:
-                fl = True
-                stranded = True
-                new_read_id = fl_pair["read_id"]
-                readlen = len(read_seq)
-                start = fl_pair["start"]
-                end = fl_pair["end"]
-                adapter_config = fl_pair["config"]
-                lab = "full_len"
-                read_info = add_entry_to_read_info(
-                    read_info,
-                    read_id,
-                    new_read_id,
-                    readlen,
-                    start,
-                    end,
-                    strand,
-                    adapter_config,
-                    lab,
-                )
+        # single adapter mode
+        if all(s == "+" for s in strands):
+            strand = "+"
+            start = min(align_df["qihi"].tolist())
+            end = max(align_df["qilo"].tolist())
+            readlen = end - start
+            lab = "full_len"
+        elif all(s == "-" for s in strands):
+            strand = "-"
+            start = min(align_df["qihi"].tolist())
+            end = len(read_seq)
+            readlen = end - start
+            lab = "adapter1_single"
         else:
-            new_read_id = f"{read_id}_0"
-            fl = False
-            stranded = False
             strand = "="
-            readlen = len(read_seq)
-            start = 0
-            end = readlen - 1
-            adapter_config = "-".join(list(align_df["target"].values))
-            if adapter_config in [
-                "adapter1_r-adapter1_f",
-                "adapter1_f-adapter1_r",
-            ]:
-                lab = "double_adapter1"
-            elif adapter_config in ["adapter2_f", "adapter2_r"]:
-                lab = "single_adapter2"
-                stranded = True
-                if adapter_config == "adapter2_f":
-                    strand = "+"
-                    start = 0
-                    end = align_df.iloc[0]["qihi"]
-                    readlen = end - start
-                elif adapter_config == "adapter2_r":
-                    strand = "-"
-                    start = align_df.iloc[0]["qilo"]
-                    end = len(read_seq) - 1
-                    readlen = end - start
-            elif adapter_config in ["adapter1_f", "adapter1_r"]:
-                lab = "single_adapter1"
-                stranded = True
-                if adapter_config == "adapter1_f":
-                    strand = "+"
-                    start = align_df.iloc[0]["qilo"]
-                    end = len(read_seq) - 1
-                    readlen = end - start
-                elif adapter_config == "adapter1_r":
-                    strand = "-"
-                    start = 0
-                    end = align_df.iloc[0]["qihi"]
-                    readlen = end - start
-            elif adapter_config == "=":
-                lab = "no_adapters"
-            else:
-                lab = "other"
-            read_info = add_entry_to_read_info(
-                read_info,
-                read_id,
-                new_read_id,
-                readlen,
-                start,
-                end,
-                strand,
-                adapter_config,
-                lab,
-            )
     else:  # normal paired adapters mode
         if all(s == "+" for s in strands):
             strand = "+"
@@ -427,37 +364,37 @@ def parse_parasail(
         # Align adapter1 sequences
         for i, adapter in enumerate(adapter1_seq):
             # fwd alignment
-            result = align_parasail(
+            alignment = align_parasail(
                 read=read_seq, adapter=adapter, min_adapter_id=min_adapter_id
             )
-            if result:
+            if alignment:
                 alignments.append(
                     {
                         "target": read_id,
                         "query": f"adapter1_f_{i}",
-                        "qilo": result.end_ref - len(adapter) + 1,  # start
-                        "qihi": result.end_ref + 1,  # end
+                        "qilo": alignment.end_ref - len(adapter) + 1,  # start
+                        "qihi": alignment.end_ref + 1,  # end
                         "qstrand": "+",
-                        "score": result.score,
+                        "score": alignment.score,
                         "query_seq": adapter,
                     }
                 )
 
             # Reverse complement alignment
-            result_rc = align_parasail(
+            alignment_rc = align_parasail(
                 read_seq,
                 adapter[::-1].translate(COMPLEMENT_TRANS),
                 min_adapter_id,
             )
-            if result_rc:
+            if alignment_rc:
                 alignments.append(
                     {
                         "target": read_id,
                         "query": f"adapter1_r_{i}",
-                        "qilo": result_rc.end_ref - len(adapter) + 1,
-                        "qihi": result_rc.end_ref + 1,
+                        "qilo": alignment_rc.end_ref - len(adapter) + 1,
+                        "qihi": alignment_rc.end_ref + 1,
                         "qstrand": "-",
-                        "score": result_rc.score,
+                        "score": alignment_rc.score,
                         "query_seq": adapter[::-1].translate(COMPLEMENT_TRANS),
                     }
                 )
@@ -483,40 +420,43 @@ def parse_parasail(
                     )
 
                 # Reverse complement alignment
-                result_rc = align_parasail(
+                alignment_rc = align_parasail(
                     read_seq,
                     adapter[::-1].translate(COMPLEMENT_TRANS),
                     min_adapter_id,
                 )
-                if result_rc:
+                if alignment_rc:
                     alignments.append(
                         {
                             "target": read_id,
                             "query": f"adapter2_r_{i}",
-                            "qilo": result_rc.end_ref - len(adapter) + 1,
-                            "qihi": result_rc.end_ref + 1,
+                            "qilo": alignment_rc.end_ref - len(adapter) + 1,
+                            "qihi": alignment_rc.end_ref + 1,
                             "qstrand": "+",
-                            "score": result_rc.score,
+                            "score": alignment_rc.score,
                             "query_seq": adapter[::-1].translate(COMPLEMENT_TRANS),
                         }
                     )
         # Process alignments to determine valid adapter pairs
         if alignments:
             align_df = pd.DataFrame(alignments)  # one alignment per row
-            save_dict = {
-                "41061408-bbf4-4d9e-9835-a01a7fa3bee7": "full_len",
-                "76364f8f-ac7a-4773-aeac-049ee4fbdc6e": "other",
-                "14e386f9-c658-45f9-9ace-760fe5f9b2e2": "ambiguous",
-                "659ce72a-7fb2-4b1c-b71a-b471ba9c0b7d": "other",
-            }
-            if read_id in save_dict.keys():
-                output_dir = f"sandbox/adapter_scan/alignments/{save_dict[read_id]}"
-                os.makedirs(output_dir, exist_ok=True)
-                align_df.to_csv(
-                    f"{output_dir}/{read_id}.tsv",
-                    sep="\t",
-                    index=False,
-                )
+
+            #### for debugging
+            # save_dict = {
+            #     "41061408-bbf4-4d9e-9835-a01a7fa3bee7": "full_len",
+            #     "76364f8f-ac7a-4773-aeac-049ee4fbdc6e": "other",
+            #     "14e386f9-c658-45f9-9ace-760fe5f9b2e2": "ambiguous",
+            #     "659ce72a-7fb2-4b1c-b71a-b471ba9c0b7d": "other",
+            # }
+            # if read_id in save_dict.keys():
+            #     output_dir = f"sandbox/adapter_scan/alignments/{save_dict[read_id]}"
+            #     os.makedirs(output_dir, exist_ok=True)
+            #     align_df.to_csv(
+            #         f"{output_dir}/{read_id}.tsv",
+            #         sep="\t",
+            #         index=False,
+            #     )
+
             read_info = determine_strand_from_parasail(
                 align_df,
                 single_end_mode,
