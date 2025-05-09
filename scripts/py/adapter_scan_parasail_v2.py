@@ -25,7 +25,7 @@ python scripts/py/adapter_scan_parasail.py \
     --batch_size 100000 \
     --adapter1_seq "CTACACGACGCTCTTCCGATCT" \
     --adapter2_seq "ATGTACTCTGCGTTGATACCACTGCTT" \
-    --min_adapter_id 0.7 
+    --min_adapter_match 0.7 
 """
 
 
@@ -105,7 +105,7 @@ def parse_args():
 
     parser.add_argument(
         "-i",
-        "--min_adapter_id",
+        "--min_adapter_match",
         help="Minimum adapter alignment identity for parasail [0.7]",
         type=float,
         default=0.7,
@@ -136,7 +136,7 @@ COMPLEMENT_TRANS = str.maketrans(
 
 
 # TODO- allow support for multi-alignments (important for TSO/PCR concatemers!)
-def align_parasail(read, adapter, min_adapter_id, matrix=None):
+def align_parasail(read, adapter, min_adapter_match=0.7, matrix=None):
     """
     Align adapter sequence to a read using parasail (Smith-Waterman local alignment)
     - source: https://github.com/jeffdaily/parasail-python
@@ -144,7 +144,7 @@ def align_parasail(read, adapter, min_adapter_id, matrix=None):
     Parameters:
         read (str): The DNA sequence of the read to which the adapter will be aligned.
         adapter (str): The DNA sequence of the adapter to align to the read.
-        min_adapter_id (float): The minimum adapter identity threshold (between 0 and 1)
+        min_adapter_match (float): The minimum adapter identity threshold (between 0 and 1)
                                 to consider the alignment valid.
 
     Returns:
@@ -161,8 +161,8 @@ def align_parasail(read, adapter, min_adapter_id, matrix=None):
     )
 
     # Calculate mismatches and check if alignment score meets threshold
-    mismatches = round((1 - min_adapter_id) * len(adapter))
-    if alignment.score >= (len(adapter) - mismatches):
+    min_score = round(min_adapter_match * len(adapter))
+    if alignment.score >= min_score:
         return alignment
     return None
 
@@ -351,7 +351,7 @@ def parse_parasail(
     single_end_mode,
     adapter1_seq,
     adapter2_seq,
-    min_adapter_id,
+    min_adapter_match,
 ):
     """Process reads to find adapter alignments and valid adapter pairs; return the read_info dict."""
     read_info = {}
@@ -365,7 +365,7 @@ def parse_parasail(
         for i, adapter in enumerate(adapter1_seq):
             # fwd alignment
             alignment = align_parasail(
-                read=read_seq, adapter=adapter, min_adapter_id=min_adapter_id
+                read=read_seq, adapter=adapter, min_adapter_match=min_adapter_match
             )
             if alignment:
                 alignments.append(
@@ -384,7 +384,7 @@ def parse_parasail(
             alignment_rc = align_parasail(
                 read_seq,
                 adapter[::-1].translate(COMPLEMENT_TRANS),
-                min_adapter_id,
+                min_adapter_match,
             )
             if alignment_rc:
                 alignments.append(
@@ -404,7 +404,7 @@ def parse_parasail(
             for i, adapter in enumerate(adapter2_seq):
                 # fwd alignment
                 result = align_parasail(
-                    read=read_seq, adapter=adapter, min_adapter_id=min_adapter_id
+                    read=read_seq, adapter=adapter, min_adapter_match=min_adapter_match
                 )
                 if result:
                     alignments.append(
@@ -423,7 +423,7 @@ def parse_parasail(
                 alignment_rc = align_parasail(
                     read_seq,
                     adapter[::-1].translate(COMPLEMENT_TRANS),
-                    min_adapter_id,
+                    min_adapter_match,
                 )
                 if alignment_rc:
                     alignments.append(
@@ -571,7 +571,7 @@ def process_batch(tup):
         single_end_mode=args.single_end_mode,
         adapter1_seq=args.adapter1_seq,
         adapter2_seq=args.adapter2_seq,
-        min_adapter_id=args.min_adapter_id,
+        min_adapter_match=args.min_adapter_match,
     )
 
     # Write the stranded FASTQ entries based on the parsed read information
@@ -654,7 +654,7 @@ def main(args):
         f"Batch size:                       {args.batch_size}\n"
         f"Adapter1 sequence:                {args.adapter1_seq}\n"
         f"Adapter2 sequence:                {args.adapter2_seq}\n"
-        f"Minimum adapter % match:          {args.min_adapter_id}\n"
+        f"Minimum adapter % match:          {args.min_adapter_match}\n"
     )
 
     # Check for identical adapter sequences or reverse complements

@@ -3,6 +3,7 @@ import pysam
 import parasail
 import time
 import os
+import sys
 
 # Short-read usage:
 ## Visium
@@ -14,12 +15,12 @@ python scripts/py/fastq_call_bc_umi_from_adapter_v2.py \
     --bc_lengths 16 \
     --bc_offsets 0 \
     --bc_positions right \
-    --bc_mismatches 2 \
+    --bc_min_adapter_match 2 \
     --umi_adapters 0 \
     --umi_lengths 12 \
     --umi_offsets 16 \
     --umi_positions right \
-    --umi_mismatches 2 \
+    --umi_min_adapter_match 2 \
     --threads 1
 """
 
@@ -28,18 +29,18 @@ python scripts/py/fastq_call_bc_umi_from_adapter_v2.py \
 ## SlideSeq
 """ 
 python scripts/py/fastq_call_bc_umi_from_adapter_v2.py \
-    --fq_in data/test_seeker/heart_ctrl_ont.fq.gz \
+    --fq_in data/test_seeker/ont/tmp/cut_R1.fq.gz \
     --tsv_out barcodes.tsv \
     --bc_adapters TCTTCAGCGTTCCCGAGA TCTTCAGCGTTCCCGAGA \
     --bc_lengths 8 6 \
     --bc_offsets 0 \
     --bc_positions left right \
-    --bc_mismatches 2 \
+    --bc_min_adapter_match 2 \
     --umi_adapters TCTTCAGCGTTCCCGAGA \
     --umi_lengths 7 \
     --umi_offsets 6 \
     --umi_positions right \
-    --umi_mismatches 2 \
+    --umi_min_adapter_match 2 \
     --threads 1
 """
 
@@ -52,12 +53,12 @@ python scripts/py/fastq_call_bc_umi_from_adapter_v2.py \
     --bc_lengths 16 \
     --bc_offsets 0 \
     --bc_positions right \
-    --bc_mismatches 2 \
+    --bc_min_adapter_match 2 \
     --umi_adapters CTACACGACGCTCTTCCGATCT \
     --umi_lengths 12 \
     --umi_offsets 16 \
     --umi_positions right \
-    --umi_mismatches 2 \
+    --umi_min_adapter_match 2 \
     --threads 1
 """
 
@@ -70,18 +71,29 @@ python scripts/py/fastq_call_bc_umi_from_adapter_v2.py \
     --bc_lengths 10 10 \
     --bc_offsets 0 0 \
     --bc_positions left right \
-    --bc_mismatches 2 \
+    --bc_min_adapter_match 2 \
     --umi_adapters CTACACGACGCTCTTCCGATCT \
     --umi_lengths 12 \
     --umi_offsets 0 \
     --umi_positions right \
-    --umi_mismatches 2 \
+    --umi_min_adapter_match 2 \
     --threads 1
 """
 
 
 def currentTime():
     return time.strftime("%D | %H:%M:%S", time.localtime())
+
+
+def print_log(msg):
+    """Print a log message with the current time."""
+    print(f"{currentTime()} | {msg}")
+
+
+def print_error(msg):
+    """Print an error message with the current time."""
+    print(f"{currentTime()} | ERROR: {msg}", file=sys.stderr)
+    sys.exit(1)
 
 
 def parse_args():
@@ -120,11 +132,11 @@ def parse_args():
         help="List of offsets from adapter sequence. Keep in mind the `bc_position`",
     )
     parser.add_argument(
-        "--bc_mismatches",
+        "--bc_min_adapter_match",
         nargs="+",
-        type=int,
+        type=float,
         required=True,
-        help="Number of mismatches allowed in the adapter sequence for BC calling.",
+        help="Fraction anchor sequence match required for BC calling. [0.7]",
     )
     parser.add_argument(
         "--umi_adapters",
@@ -154,11 +166,11 @@ def parse_args():
         help="List of offsets from adapter sequence. Keep in mind the `umi_position`",
     )
     parser.add_argument(
-        "--umi_mismatches",
+        "--umi_min_adapter_match",
         nargs="+",
-        type=int,
+        type=float,
         required=True,
-        help="Number of mismatches allowed in the adapter sequence for UMI calling.",
+        help="Fraction anchor sequence match required for UMI calling. [0.7]",
     )
     parser.add_argument(
         "--threads",
@@ -177,37 +189,31 @@ def parse_args():
     return args
 
 
-def align_parasail(read, adapter, mismatches, verbose=False):
+def align_parasail(read, adapter, min_adapter_match=0.7, matrix=None):
     """
     Align sequences using parasail (Smith-Waterman local alignment)
     - source: https://github.com/jeffdaily/parasail-python
     """
+    # Create scoring matrix and perform alignment
+    if matrix is None:
+        matrix = parasail.matrix_create("ACGT", 1, -1)
 
-    # Create a simple identity matrix (match = 1, mismatch = 0)
-    matrix = parasail.matrix_create(alphabet="ACGT", match=1, mismatch=0)
-    alignment = parasail.sw(s1=adapter, s2=read, open=1, extend=1, matrix=matrix)
+    # s1=query, s2=target
+    alignment = parasail.sw_trace_striped_32(
+        s1=adapter, s2=read, open=10, extend=1, matrix=matrix
+    )
 
-    # Check if alignment meets the minimum score threshold based on mismatches
-    if alignment.score >= (len(adapter) - mismatches):
-        # if verbose:
-        #     # Print additional information when verbose mode is enabled
-        #     print(f"Alignment Score: {alignment.score}")
-        #     print(f"Start Position (Read): {alignment.end_query - alignment.end_ref}")
-        #     print(f"End Position (Read): {alignment.end_query}")
-        #     print(f"Aligned Sequences:\n{alignment.traceback.query}\n{alignment.traceback.comp}\n{alignment.traceback.ref}")
-
-        # return alignment info
+    # Check if alignment meets the minimum score threshold based on min_adapter_match
+    min_score = round(min_adapter_match * len(adapter))
+    if alignment.score >= min_score:
         start = alignment.end_ref - len(adapter) + 1
         end = alignment.end_ref + 1
         return alignment.score, start, end
 
-    start = alignment.end_ref - len(adapter) + 1
-    end = alignment.end_ref + 1
-    # print(f"{alignment.score} | {read}")
     return None, None, None
 
 
-def align_parasail_or_hardcoded(read, adapter, mismatches, verbose=False):
+def align_parasail_or_hardcoded(read, adapter, min_adapter_match=0.7, verbose=False):
     """
     Align sequences using parasail (Smith-Waterman local alignment) or,
     if an integer is passed for the adapter, use that as a hardcoded position.
@@ -215,13 +221,12 @@ def align_parasail_or_hardcoded(read, adapter, mismatches, verbose=False):
     """
     if isinstance(adapter, int):
         # Use hardcoded position for barcode or UMI extraction:
-        # For hardcoded, return a dummy alignment score and use the integer as start and end.
         start = adapter
         end = adapter
         return 420, start, end
     else:
         # Use parasail alignment
-        return align_parasail(read, adapter, mismatches, verbose)
+        return align_parasail(read, adapter, min_adapter_match)
 
 
 # Simple python version of R rep() function
@@ -236,12 +241,12 @@ def main(
     bc_positions,
     bc_lengths,
     bc_offsets,
-    bc_mismatches,
+    bc_min_adapter_match,
     umi_adapters,
     umi_positions,
     umi_lengths,
     umi_offsets,
-    umi_mismatches,
+    umi_min_adapter_match,
 ):
     # Ensure the output directory exists
     os.makedirs(os.path.dirname(tsv_out), exist_ok=True)
@@ -257,10 +262,12 @@ def main(
     read_count = 0
 
     BC_RANGES = list(
-        zip(bc_adapters, bc_positions, bc_lengths, bc_offsets, bc_mismatches)
+        zip(bc_adapters, bc_positions, bc_lengths, bc_offsets, bc_min_adapter_match)
     )
     UMI_RANGES = list(
-        zip(umi_adapters, umi_positions, umi_lengths, umi_offsets, umi_mismatches)
+        zip(
+            umi_adapters, umi_positions, umi_lengths, umi_offsets, umi_min_adapter_match
+        )
     )
 
     with pysam.FastxFile(fq_in) as fastq:
@@ -270,10 +277,12 @@ def main(
                     print(f"{currentTime()} - {read_count} reads processed...")
 
                 bc_to_write = []
-                for adapter, position, length, offset, mismatches in BC_RANGES:
+                for adapter, position, length, offset, min_adapter_match in BC_RANGES:
                     if isinstance(adapter, int) or len(read.sequence) >= len(adapter):
                         align_score, start, end = align_parasail_or_hardcoded(
-                            read=read.sequence, adapter=adapter, mismatches=mismatches
+                            read=read.sequence,
+                            adapter=adapter,
+                            min_adapter_match=min_adapter_match,
                         )
                         # if align_score < 45: #debug
                         # print(alignment)
@@ -311,14 +320,20 @@ def main(
 
                     # Proceed w/ UMI alignment
                     umi_to_write = []
-                    for adapter, position, length, offset, mismatches in UMI_RANGES:
+                    for (
+                        adapter,
+                        position,
+                        length,
+                        offset,
+                        min_adapter_match,
+                    ) in UMI_RANGES:
                         if isinstance(adapter, int) or len(read.sequence) >= len(
                             adapter
                         ):
                             align_score, start, end = align_parasail_or_hardcoded(
                                 read=read.sequence,
                                 adapter=adapter,
-                                mismatches=mismatches,
+                                min_adapter_match=min_adapter_match,
                             )
 
                             # if align_score > 2 * len(adapter):
@@ -386,19 +401,23 @@ if __name__ == "__main__":
 
     # param checks ------
     if (
-        len(args.bc_mismatches) != len(args.bc_adapters)
-        and len(args.bc_mismatches) == 1
+        len(args.bc_min_adapter_match) != len(args.bc_adapters)
+        and len(args.bc_min_adapter_match) == 1
     ):
-        args.bc_mismatches = rep(val=args.bc_mismatches[0], n=len(args.bc_adapters))
+        args.bc_min_adapter_match = rep(
+            val=args.bc_min_adapter_match[0], n=len(args.bc_adapters)
+        )
 
     if len(args.bc_offsets) != len(args.bc_adapters) and len(args.bc_offsets) == 1:
         args.bc_offsets = rep(val=args.bc_offsets[0], n=len(args.bc_adapters))
 
     if (
-        len(args.umi_mismatches) != len(args.umi_adapters)
-        and len(args.umi_mismatches) == 1
+        len(args.umi_min_adapter_match) != len(args.umi_adapters)
+        and len(args.umi_min_adapter_match) == 1
     ):
-        args.umi_mismatches = rep(val=args.umi_mismatches[0], n=len(args.umi_adapters))
+        args.umi_min_adapter_match = rep(
+            val=args.umi_min_adapter_match[0], n=len(args.umi_adapters)
+        )
 
     if len(args.umi_offsets) != len(args.umi_adapters) and len(args.umi_offsets) == 1:
         args.umi_offsets = rep(val=args.umi_offsets[0], n=len(args.umi_adapters))
@@ -419,12 +438,12 @@ if __name__ == "__main__":
         f"BC position(s):                   {args.bc_positions}\n"
         f"BC offset(s):                     {args.bc_offsets}\n"
         f"BC length(s):                     {args.bc_lengths}\n"
-        f"BC adapter mismatches allowed:    {args.bc_mismatches}\n"
+        f"BC adapter mismatches allowed:    {args.bc_min_adapter_match}\n"
         f"UMI adapter sequence(s):          {args.umi_adapters}\n"
         f"UMI position(s):                  {args.umi_positions}\n"
         f"UMI offset(s):                    {args.umi_offsets}\n"
         f"UMI length(s):                    {args.umi_lengths}\n"
-        f"UMI adapter mismatches allowed:   {args.umi_mismatches}\n"
+        f"UMI adapter mismatches allowed:   {args.umi_min_adapter_match}\n"
         f"threads:                          {args.threads}\n"
     )
 
@@ -434,7 +453,7 @@ if __name__ == "__main__":
     if any(isinstance(adapter, int) for adapter in args.umi_adapters):
         print("Using hardcoded positions for UMIs.")
 
-    print(f"{currentTime()} - Running...")
+    print_log("Starting run...")
     print("")
 
     # Run main function ------
@@ -465,12 +484,12 @@ if __name__ == "__main__":
         #         args.bc_positions,
         #         args.bc_lengths,
         #         args.bc_offsets,
-        #         args.bc_mismatches,
+        #         args.bc_min_adapter_match,
         #         args.umi_adapters,
         #         args.umi_positions,
         #         args.umi_lengths,
         #         args.umi_offsets,
-        #         args.umi_mismatches,
+        #         args.umi_min_adapter_match,
         #     )
         #     for n in list(range(1, args.threads + 1))
         # ]
@@ -503,12 +522,12 @@ if __name__ == "__main__":
             args.bc_positions,
             args.bc_lengths,
             args.bc_offsets,
-            args.bc_mismatches,
+            args.bc_min_adapter_match,
             args.umi_adapters,
             args.umi_positions,
             args.umi_lengths,
             args.umi_offsets,
-            args.umi_mismatches,
+            args.umi_min_adapter_match,
         )
     elif args.threads == 1:
         (
@@ -526,25 +545,26 @@ if __name__ == "__main__":
             args.bc_positions,
             args.bc_lengths,
             args.bc_offsets,
-            args.bc_mismatches,
+            args.bc_min_adapter_match,
             args.umi_adapters,
             args.umi_positions,
             args.umi_lengths,
             args.umi_offsets,
-            args.umi_mismatches,
+            args.umi_min_adapter_match,
         )
 
-    print("")
+    print_log("Run finished.")
     print(
-        f"{currentTime()}\n"
-        f"# Total reads processed:                  {read_count}\n"
-        f"# Reads w/ all barcodes found:            {bc_match_count} ({bc_match_count/read_count*100:.2f}%)\n"
-        f"# Reads w/ one or more barcodes missing:  {bc_missing_count} ({bc_missing_count/read_count*100:.2f}%)\n"
-        f"# Reads w/ no barcodes:                   {no_bc_count} ({no_bc_count/read_count*100:.2f}%)\n"
+        f"Summary:\n"
+        f"   # Total reads processed:                  {read_count}\n"
+        f"   # Reads w/ all barcodes found:            {bc_match_count} ({bc_match_count/read_count*100:.2f}%)\n"
+        f"   # Reads w/ one or more barcodes missing:  {bc_missing_count} ({bc_missing_count/read_count*100:.2f}%)\n"
+        f"   # Reads w/ no barcodes:                   {no_bc_count} ({no_bc_count/read_count*100:.2f}%)\n"
         f"\n"
-        f"# Reads w/ all UMIs found:                {umi_match_count} ({umi_match_count/read_count*100:.2f}%)\n"
-        f"# Reads w/ at least one UMI missing:      {umi_missing_count} ({umi_missing_count/read_count*100:.2f}%)\n"
-        f"# Reads w/ no UMIs:                       {no_umi_count} ({no_umi_count/read_count*100:.2f}%)\n"
+        f"   # Reads w/ all UMIs found:                {umi_match_count} ({umi_match_count/read_count*100:.2f}%)\n"
+        f"   # Reads w/ at least one UMI missing:      {umi_missing_count} ({umi_missing_count/read_count*100:.2f}%)\n"
+        f"   # Reads w/ no UMIs:                       {no_umi_count} ({no_umi_count/read_count*100:.2f}%)\n"
+        f"\n"
     )
 
     if args.stats_out:
@@ -553,3 +573,4 @@ if __name__ == "__main__":
                 "total_reads\tbc_match_count\tbc_missing_count\tno_bc_count\tumi_match_count\tumi_missing_count\tno_umi_count\n"
                 f"{read_count}\t{bc_match_count}\t{bc_missing_count}\t{no_bc_count}\t{umi_match_count}\t{umi_missing_count}\t{no_umi_count}\n"
             )
+        print_log(f"Summary stats written to [{args.stats_out}]")

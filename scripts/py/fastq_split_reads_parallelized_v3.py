@@ -5,6 +5,7 @@ import pysam
 import os
 import time
 import parasail
+import sys
 
 # Usage:
 # SlideSeq
@@ -75,15 +76,15 @@ def parse_args():
         help="Maximum scan distance from the 3' end of the anchor alignment",
     )
     parser.add_argument(
-        "--max_anchor_errors",
-        type=int,
-        default=2,
+        "--min_anchor_match",
+        type=float,
+        default=0.7,
         help="The maximum allowed error rate for the anchor sequence matching.",
     )
     parser.add_argument(
-        "--max_split_errors",
-        type=int,
-        default=2,
+        "--min_split_match",
+        type=float,
+        default=0.7,
         help="The maximum allowed error rate for the split sequence matching.",
     )
     parser.add_argument(
@@ -102,7 +103,7 @@ def reverse_complement(seq):
     return seq.translate(tab)[::-1]
 
 
-def align_parasail(read, adapter, mismatches, matrix=None, verbose=False):
+def align_parasail(read, adapter, min_adapter_match=0.7, matrix=None):
     """
     Align adapter sequence to a read using parasail (Smith-Waterman local alignment)
     - source: https://github.com/jeffdaily/parasail-python
@@ -115,24 +116,14 @@ def align_parasail(read, adapter, mismatches, matrix=None, verbose=False):
         s1=adapter, s2=read, open=10, extend=1, matrix=matrix
     )
 
-    # Check if alignment meets the minimum score threshold based on mismatches
-    if alignment.score >= (len(adapter) - mismatches):
-        # if verbose:
-        #     # Print additional information when verbose mode is enabled
-        #     print(f"Alignment Score: {alignment.score}")
-        #     print(f"Start Position (Read): {alignment.end_query - alignment.end_ref}")
-        #     print(f"End Position (Read): {alignment.end_query}")
-        #     print(f"Aligned Sequences:\n{alignment.traceback.query}\n{alignment.traceback.comp}\n{alignment.traceback.ref}")
-
-        # return alignment
+    # Check if alignment meets the minimum score threshold based on min_adapter_match
+    min_score = round(min_adapter_match * len(adapter))
+    if alignment.score >= min_score:
         start = alignment.end_ref - len(adapter) + 1
         end = alignment.end_ref + 1
         return alignment.score, start, end
-    return None, None, None
 
-    # if alignment.score >= (len(adapter) - mismatches):
-    #     return alignment
-    # return None
+    return None, None, None
 
 
 def find_and_split_reads(
@@ -141,8 +132,8 @@ def find_and_split_reads(
     split_seq,
     split_offset,
     max_offset,
-    max_anchor_errors,
-    max_split_errors,
+    min_anchor_match,
+    min_split_match,
     min_read_length=12,
 ):
     """
@@ -161,9 +152,9 @@ def find_and_split_reads(
         How far to the right/3'
     max_offset : int
         How far away the split_seq could be compared to the anchor_seq
-    max_anchor_errors : float
+    min_anchor_match : float
         The maximum allowed error rate for the anchor sequence matching.
-    max_split_errors : float
+    min_split_match : float
         The maximum allowed error rate for the split sequence matching.
     """
     try:
@@ -187,7 +178,7 @@ def find_and_split_reads(
                 anchor_score, anchor_start, anchor_end = align_parasail(
                     read=read.sequence,
                     adapter=anchor_seq,
-                    mismatches=max_anchor_errors,
+                    min_adapter_match=min_anchor_match,
                     # matrix=matrix,
                 )
                 if anchor_score is None:
@@ -206,7 +197,7 @@ def find_and_split_reads(
                 split_score, split_start, split_end = align_parasail(
                     read=scan_region,
                     adapter=split_seq,
-                    mismatches=max_split_errors,
+                    min_adapter_match=min_split_match,
                     # matrix=matrix,
                 )
 
@@ -256,8 +247,8 @@ if __name__ == "__main__":
         f"split sequence:       {args.split_seq}\n"
         f"split offset:         {args.split_offset}\n"
         f"max offset:           {args.max_offset}\n"
-        f"max anchor errors:    {args.max_anchor_errors}\n"
-        f"max split errors:     {args.max_split_errors}\n"
+        f"min anchor match:     {args.min_anchor_match}\n"
+        f"min split match:      {args.min_split_match}\n"
         f"threads:              {args.threads}\n"
     )
     print(f"{currentTime()} - Running...")
@@ -271,8 +262,8 @@ if __name__ == "__main__":
                 split_seq=args.split_seq,
                 split_offset=args.split_offset,
                 max_offset=args.max_offset,
-                max_anchor_errors=args.max_anchor_errors,
-                max_split_errors=args.max_split_errors,
+                min_anchor_match=args.min_anchor_match,
+                min_split_match=args.min_split_match,
             )
         )
         print(
@@ -320,8 +311,8 @@ if __name__ == "__main__":
                 args.split_seq,
                 args.split_offset,
                 args.max_offset,
-                args.max_anchor_errors,
-                args.max_split_errors,
+                args.min_anchor_match,
+                args.min_split_match,
             )
             for n in list(range(1, args.threads + 1))
         ]

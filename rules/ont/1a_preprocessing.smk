@@ -50,9 +50,9 @@ rule ont_1a_length_filter:
 ## add chunking rule here to improve parallelization & run times
 ## when to merge again?
 ## Could also split input files into chunks **during** merge- just specify chunk size?
+## Remove super short reads that likely do not have a barcode...
 
 
-# Remove super short reads that likely do not have a barcode...
 # rule ont_1a_pychopper:
 #     input:
 #         MERGED_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged.fq.gz",
@@ -91,16 +91,8 @@ rule ont_1a_call_adapter_scan:
         FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_stranded.fq.gz",
     params:
         BATCH_SIZE=200000,
-        # ADAPTER1_SEQ=lambda w: get_recipe_info(w, "fwd_primer", mode="ONT"),
-        # ADAPTER2_SEQ=lambda w: get_recipe_info(w, "rev_primer", mode="ONT"),
         ADAPTER1_SEQ=lambda w: get_fwd_primer(w, mode="ONT"),  # the primer next to the barcode
         ADAPTER2_SEQ=lambda w: get_rev_primer(w, mode="ONT"),
-        # ADAPTER1_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio <-
-        # ADAPTER2_SEQ="ATGTACTCTGCGTTGATACCACTGCTT",  #TXG/Curio <-
-        # ADAPTER1_SEQ="CCCTCTCTCTCTCTTTCCTCTCTC", # RNAConnect/CT
-        # ADAPTER2_SEQ="GAGAGAGGAAAGAGAGAGAGAGGG",  # RNAConnect/CT
-        # ADAPTER2_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio - rev
-        # ADAPTER1_SEQ="ATGTACTCTGCGTTGATACCACTGCTT",  #TXG/Curio - rev
         VSEARCH_MIN_ADAPTER_ID=0.7,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/logs/1a_adapter_scan.log",
@@ -121,7 +113,7 @@ rule ont_1a_call_adapter_scan:
             --batch_size {params.BATCH_SIZE} \
             --adapter1_seq "{params.ADAPTER1_SEQ}" \
             --adapter2_seq "{params.ADAPTER2_SEQ}" \
-            --min_adapter_id {params.VSEARCH_MIN_ADAPTER_ID} \
+            --min_adapter_match {params.VSEARCH_MIN_ADAPTER_ID} \
         1> {log.log} \
         2> {log.err}
         """
@@ -259,13 +251,8 @@ rule ont_1a_split_fastq_to_R1_R2:
         R2_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_adapter_R2.fq.gz",
         AMBIG_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_adapter_ambiguous.fq.gz",
     params:
-        # ANCHOR_SEQ=lambda w: get_recipe_info(w, "fwd_primer"),
-        # ANCHOR_SEQ="CTACACGACGCTCTTCCGATCT",  #TXG/Curio
-        # ANCHOR_SEQ="CCCTCTCTCTCTCTTTCCTCTCTCCT",  # RNAConnect/CT
-        # ANCHOR_SEQ="TCTTTCCTCTCTCCT",  # RNAConnect/CT
-        # ANCHOR_SEQ="ACGCTCTTCCGATCT",  #TXG/Curio
         ANCHOR_SEQ=lambda w: get_fwd_primer(w, mode="ONT"),  # the primer next to the barcode
-        SPLIT_SEQ="T" * 6,
+        SPLIT_SEQ="T" * 8,  # sequence to split on (polyT capture sequence)
         SPLIT_OFFSET=8,  # offset from 3' end of split seq on which to split
         MAX_OFFSET=200,
     resources:

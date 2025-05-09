@@ -84,36 +84,36 @@ rule ont_1g_add_isoquant_genes_to_bam:
 
 
 # Add isoquant transcript tag (IT) to bam...
-# rule ont_1g_add_isoquant_transcripts_to_bam:
-#     input:
-#         BAM="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam",
-#         BAI="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam.bai",
-#         TSV="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/isoquant/isoquant.read_assignments.tsv.gz",
-#     output:
-#         BAM="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig_it.bam",
-#     params:
-#         READ_ID_COLUMN=0,
-#         TAG="IT",  # corrected barcode tag
-#         TAG_COLUMN=3,  # column in tsv with gene tag
-#     log:
-#         log="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/tsv2tag_5_IT.log",
-#         err="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/tsv2tag_5_IT.err",
-#     conda:
-#         f"{workflow.basedir}/envs/parasail.yml"
-#     resources:
-#         mem="16G",
-#     threads: 1
-#     shell:
-#         """
-#         python scripts/py/tsv2tag.py --in_bam {input.BAM} \
-#             --in_tsv {input.TSV} \
-#             --out_bam {output.BAM} \
-#             --readIDColumn {params.READ_ID_COLUMN} \
-#             --tagColumns {params.TAG_COLUMN} \
-#             --tags {params.TAG} \
-#         1> {log.log} \
-#         2> {log.err}
-#         """
+rule ont_1g_add_isoquant_transcripts_to_bam:
+    input:
+        BAM="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam",
+        BAI="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam.bai",
+        TSV="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/isoquant/isoquant.read_assignments.tsv.gz",
+    output:
+        BAM="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig_it.bam",
+    params:
+        READ_ID_COLUMN=0,
+        TAG="IT",  # corrected barcode tag
+        TAG_COLUMN=3,  # column in tsv with gene tag
+    log:
+        log="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/tsv2tag_5_IT.log",
+        err="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/tsv2tag_5_IT.err",
+    conda:
+        f"{workflow.basedir}/envs/parasail.yml"
+    resources:
+        mem="16G",
+    threads: 1
+    shell:
+        """
+        python scripts/py/tsv2tag.py --in_bam {input.BAM} \
+            --in_tsv {input.TSV} \
+            --out_bam {output.BAM} \
+            --readIDColumn {params.READ_ID_COLUMN} \
+            --tagColumns {params.TAG_COLUMN} \
+            --tags {params.TAG} \
+        1> {log.log} \
+        2> {log.err}
+        """
 
 
 # Generate count matrix w/ umi-tools
