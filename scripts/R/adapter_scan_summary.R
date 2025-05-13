@@ -150,7 +150,10 @@ p1 <- ggplot(summary, aes(x = lab, y = count)) +
   )
 
 # 2. Average read length by lab
-p2 <- ggplot(data, aes(x = lab, y = readlength)) +
+p2 <- ggplot(
+  data, 
+  aes(x = lab, y = readlength)
+  ) +
   geom_violin(fill = "darkgreen") +
   labs(
     title = "Read Length Distribution by Label", 
@@ -160,8 +163,11 @@ p2 <- ggplot(data, aes(x = lab, y = readlength)) +
   theme_minimal() +
   current_theme
 
-# 3. Average start position
-p3 <- ggplot(data, aes(x = lab, y = start)) +
+# 3. Average start position for insert
+p3 <- ggplot(
+  data[data$lab != "no_adapters", ],
+  aes(x = lab, y = start)
+  ) +
   geom_violin(fill = "orange") +
   labs(
     title = "Start Position of Adapter 1", 
@@ -171,8 +177,10 @@ p3 <- ggplot(data, aes(x = lab, y = start)) +
   theme_minimal() +
   current_theme
 
-# 4. Average start position, normalized to read length
-p4 <- ggplot(data, aes(x = lab, y = normStart)) +
+# 4. Average start position for insert, normalized to read length
+p4 <- ggplot(
+  data[data$lab != "no_adapters", ],
+  aes(x = lab, y = normStart)) +
   geom_violin(fill = "purple") +
   labs(
     title = "Start Position of Adapter 1, relative to read length", 
@@ -183,21 +191,18 @@ p4 <- ggplot(data, aes(x = lab, y = normStart)) +
   current_theme
 
 # 5. Read length distribution by lab
-p5 <- ggplot(data, aes(x = readlen, fill = lab)) +
-  geom_histogram(bins = 30, position = "dodge") +
-  labs(
-    title = "Read Length Distribution by Lab", 
-    x = "Read Length", 
-    y = "Count"
-  ) +
-  theme_minimal() +
-  theme(legend.position = "bottom")
+# p5 <- ggplot(
+#   data,
+#   aes(x = readlen, fill = lab)) +
+#   geom_histogram(bins = 30, position = "dodge") +
+#   labs(
+#     title = "Read Length Distribution by Lab", 
+#     x = "Read Length", 
+#     y = "Count"
+#   ) +
+#   theme_minimal() +
+#   theme(legend.position = "bottom")
 
-# Combine all plots using patchwork
-# combined_plot <- (p1 + p2) / (p3 + p4) / p5 +
-#   plot_layout(heights = c(1, 1, 1.5)) +
-#   plot_annotation(title = "Adapter Scan Summary",
-#                   theme = theme(plot.title = element_text(size = 16, hjust = 0.5, face="bold")))
 
 combined_plot <- (p1 + p2) / (p3 + p4) +
   plot_layout(heights = c(1, 1)) +

@@ -5,7 +5,7 @@ default-resources:
   threads: 1
 
 set-threads:
-  ilmn_1a_merge_fastqs: 28
+  ont_1a_merge_formats: 24
   ilmn_1b_cutadapt: 8
   ilmn_1b_cutadapt2: 8
   ilmn_1b_R1_hardTrimming: 24
@@ -57,7 +57,6 @@ set-threads:
   ont_1a_adapter_scan_results: 1
   ont_1a_merge_scan_lists: 1
   ont_1a_subset_fastq_by_adapter_type: 1
-  ont_1a_split_fastq_to_R1_R2: 16
   ont_1a_compress_merged_fq: 8
   ont_1a_split_fastq_to_R1_R2: 24
   ont_1b_cutadapt: 24
@@ -69,11 +68,12 @@ set-threads:
   ont_1c_tsv_bc_correction: 24
   ont_1d_genome_align_minimap2_genome: 16
   ont_1d_genome_sort_compress_output: 1
-  ont_1d_genome_featureCounts: 1
-  ont_1d_genome_add_featureCounts_to_bam: 1
   ont_1d_genome_add_corrected_barcodes: 1
   ont_1d_genome_add_umis: 1
   ont_1d_genome_filter_bam_empty_tags: 1
+  ont_1d_genome_featureCounts: 1
+  ont_1d_genome_add_featureCounts_to_bam: 1
+  ont_1d_genome_split_bam_by_strand: 1
   ont_1d_genome_umitools_count: 1
   ont_1d_genome_counts_to_sparse: 1
   ont_1d_genome_cache_h5ad_minimap2: 1
@@ -87,6 +87,11 @@ set-threads:
   ont_1d_txome_counts_to_sparse: 1
   ont_1d_txome_cache_preQC_h5ad_minimap2: 1
   ont_1d_txome_cache_preQC_seurat_minimap2: 1
+  ont_1e_kallisto_lr: 16
+  ont_1e_bus2mat_lr: 1
+  ont_1e_compress_kb_outs: 1
+  ont_1e_cache_preQC_seurat_kallisto_lr: 1
+  ont_1f_sort_gtf: 1
   ont_1f_ultra_pipeline_genome: 16
   ont_1f_ultra_sort_compress_output: 1
   ont_1f_ultra_featureCounts: 1

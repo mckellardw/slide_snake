@@ -29,7 +29,7 @@ rule ont_1a_merge_formats:
 
 
 # TODO
-# Remove super short reads that likely do not have a barcode...
+# Remove super short reads that likely do not have a barcode... Might not be worth it?
 rule ont_1a_length_filter:
     input:
         FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged.fq.gz",

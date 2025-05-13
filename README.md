@@ -42,7 +42,7 @@ nohup snakemake -k -p --use-conda --conda-frontend mamba -j 36 > snake.log 2>&1 
 ```
 
 
-## Helpful links:
+# Helpful links:
 - [Barcode download from Curio](https://curiobioscience.com/support/barcode/)
 - Extract DNB barcode whitelist for StereoSeq with [ST_BarcodeMap](https://github.com/STOmics/ST_BarcodeMap) 
   - Use the "mask format change" code mentioned in the `README`; example:

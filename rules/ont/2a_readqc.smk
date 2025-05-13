@@ -94,12 +94,12 @@ rule ont_2a_readQC_2_postCutadapt:
 # └────┴──────┴───────────────────────────────────────────────────────┘
 rule ont_2a_readQC_3_bam:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam",
-        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam.bai",
+        BAM="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam",
+        BAI="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam.bai",
     output:
-        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/3_aligned/{RECIPE}_qc.tsv",
+        TSV="{OUTDIR}/{SAMPLE}/ont/readqc/3_aligned/{ALIGNER}/{RECIPE}_qc.tsv",
     params:
-        TAGS="AS NM GN CB UR",
+        TAGS="AS NM GN CB UR IG IT",
         CHUNK_SIZE=500000,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/readqc/3_aligned/{RECIPE}_qc.log",

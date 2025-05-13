@@ -196,6 +196,8 @@ def determine_strand_from_parasail(
     read_seq,
     read_id,
     read_info,
+    adapter1_seq,
+    adapter2_seq,
 ):
     """
     Determine the strand orientation and update the read_info dictionary.
@@ -231,41 +233,99 @@ def determine_strand_from_parasail(
     new_read_id = align_df["target"].iloc[0]
 
     if single_end_mode:
-        # single adapter mode
-        if all(s == "+" for s in strands):
-            strand = "+"
-            start = min(align_df["qihi"].tolist())
-            end = max(align_df["qilo"].tolist())
-            readlen = end - start
-            lab = "full_len"
-        elif all(s == "-" for s in strands):
-            strand = "-"
-            start = min(align_df["qihi"].tolist())
-            end = len(read_seq)
-            readlen = end - start
-            lab = "adapter1_single"
-        else:
-            strand = "="
-    else:  # normal paired adapters mode
-        if all(s == "+" for s in strands):
-            strand = "+"
+        # print(f"{adapter_config} | {read_id} | {strands}") # debugging
+
+        if len(adapter1_seq) == 1:
+            # simple single adapter cases
             match adapter_config:
-                case "adapter1_f_0-adapter2_r_0":
+                case "adapter1_0_f-adapter1_0_r":
+                    strand = "+"
                     start = min(align_df["qihi"].tolist())
                     end = max(align_df["qilo"].tolist())
                     readlen = end - start
                     lab = "full_len"
-                case "adapter1_f_0-adapter1_r_0":
+                case "adapter1_0_r-adapter1_0_f":
+                    strand = "-"
                     start = min(align_df["qihi"].tolist())
                     end = max(align_df["qilo"].tolist())
                     readlen = end - start
-                    lab = "double_adapter1"
-                case "adapter1_f_0":
+                    lab = "full_len"
+                case "adapter1_0_f":
+                    strand = "+"
                     start = min(align_df["qihi"].tolist())
                     end = len(read_seq)
                     readlen = end - start
                     lab = "adapter1_single"
-                case "adapter2_r_0":
+                case "adapter1_0_r":
+                    strand = "-"
+                    start = min(align_df["qihi"].tolist())
+                    end = len(read_seq)
+                    readlen = end - start
+                    lab = "adapter1_single"
+                case _:
+                    strand = "+"
+                    start = min(align_df["qihi"].tolist())
+                    end = len(read_seq)
+                    readlen = end - start
+                    lab = "other"
+        elif len(adapter1_seq) == 2:
+            # single-end w/ a helper adapter
+            match adapter_config:
+                case "adapter1_0_f-adapter1_1_f-adapter1_0_r":
+                    strand = "+"
+                    start = min(align_df["qihi"].tolist())
+                    end = max(align_df["qilo"].tolist())
+                    readlen = end - start
+                    lab = "full_len"
+                case "adapter1_0_f-adapter1_1_r-adapter1_0_r":
+                    strand = "-"
+                    start = min(align_df["qihi"].tolist())
+                    end = max(align_df["qilo"].tolist())
+                    readlen = end - start
+                    lab = "full_len"
+                case "adapter1_0_f-adapter1_1_f":
+                    strand = "+"
+                    start = min(align_df["qihi"].tolist())
+                    end = len(read_seq)
+                    readlen = end - start
+                    lab = "adapter1_single"
+                case "adapter1_0_f-adapter1_1_r":
+                    strand = "-"
+                    start = min(align_df["qihi"].tolist())
+                    end = len(read_seq)
+                    readlen = end - start
+                    lab = "adapter1_single"
+                case _:
+                    strand = "+"
+                    start = min(align_df["qihi"].tolist())
+                    end = len(read_seq)
+                    readlen = end - start
+                    lab = "other"
+        else:
+            print_error(
+                f"ERROR: 3 adapter1 sequences not supported for single-end mode."
+            )
+
+    else:  # normal paired adapters mode
+        if all(s == "+" for s in strands):
+            strand = "+"
+            match adapter_config:
+                case "adapter1_0_f-adapter2_0_r":
+                    start = min(align_df["qihi"].tolist())
+                    end = max(align_df["qilo"].tolist())
+                    readlen = end - start
+                    lab = "full_len"
+                case "adapter1_0_f-adapter1_0_r":
+                    start = min(align_df["qihi"].tolist())
+                    end = max(align_df["qilo"].tolist())
+                    readlen = end - start
+                    lab = "double_adapter1"
+                case "adapter1_0_f":
+                    start = min(align_df["qihi"].tolist())
+                    end = len(read_seq)
+                    readlen = end - start
+                    lab = "adapter1_single"
+                case "adapter2_0_r":
                     start = 0
                     end = max(align_df["qilo"].tolist())
                     readlen = end - start
@@ -278,18 +338,18 @@ def determine_strand_from_parasail(
         elif all(s == "-" for s in strands):  # TODO- flip start/end for RCed reads!
             strand = "-"
             match adapter_config:
-                case "adapter2_f_0-adapter1_r_0":
+                case "adapter2_0_f-adapter1_0_r":
                     # simple neg case
                     start = min(align_df["qihi"].tolist())
                     end = max(align_df["qilo"].tolist())
                     readlen = end - start
                     lab = "full_len"
-                case "adapter1_r_0":
+                case "adapter1_0_r":
                     start = min(align_df["qihi"].tolist())
                     end = len(read_seq)
                     readlen = end - start
                     lab = "adapter1_single"
-                case "adapter2_f_0":
+                case "adapter2_0_f":
                     start = 0
                     end = max(align_df["qilo"].tolist())
                     readlen = end - start
@@ -314,34 +374,34 @@ def determine_strand_from_parasail(
                 strand = "="  # ambiguous strand
 
             match adapter_config:
-                case "adapter1_f_0-adapter1_r_0" | "adapter1_r_0-adapter1_f_0":
+                case "adapter1_0_f-adapter1_0_r" | "adapter1_0_r-adapter1_0_f":
                     start = min(align_df["qihi"].tolist())
                     end = max(align_df["qilo"].tolist())
                     readlen = end - start
                     lab = "adapter1_double"
-                case "adapter2_f_0-adapter2_r_0" | "adapter2_r_0-adapter2_f_0":
+                case "adapter2_0_f-adapter2_0_r" | "adapter2_0_r-adapter2_0_f":
                     start = min(align_df["qihi"].tolist())
                     end = max(align_df["qilo"].tolist())
                     readlen = end - start
                     lab = "adapter2_double"
-                # TODO- cases for concatemers - eg: "adapter1_f_0-adapter2_r_0-adapter2_f_0-adapter1_r_0"
+                # TODO- cases for concatemers - eg: "adapter1_0_f-adapter2_0_r-adapter2_0_f-adapter1_0_r"
                 case _:
                     start = 0
                     end = len(read_seq)
                     readlen = len(read_seq)
                     lab = "other_ambiguous"
 
-        read_info = add_entry_to_read_info(
-            read_info=read_info,
-            orig_read_id=read_id,
-            new_read_id=new_read_id,
-            readlen=readlen,
-            start=start,
-            end=end,
-            strand=strand,
-            adapter_config=adapter_config,
-            lab=lab,
-        )
+    read_info = add_entry_to_read_info(
+        read_info=read_info,
+        orig_read_id=read_id,
+        new_read_id=new_read_id,
+        readlen=readlen,
+        start=start,
+        end=end,
+        strand=strand,
+        adapter_config=adapter_config,
+        lab=lab,
+    )
 
     return read_info
 
@@ -371,7 +431,7 @@ def parse_parasail(
                 alignments.append(
                     {
                         "target": read_id,
-                        "query": f"adapter1_f_{i}",
+                        "query": f"adapter1_{i}_f",
                         "qilo": alignment.end_ref - len(adapter) + 1,  # start
                         "qihi": alignment.end_ref + 1,  # end
                         "qstrand": "+",
@@ -390,7 +450,7 @@ def parse_parasail(
                 alignments.append(
                     {
                         "target": read_id,
-                        "query": f"adapter1_r_{i}",
+                        "query": f"adapter1_{i}_r",
                         "qilo": alignment_rc.end_ref - len(adapter) + 1,
                         "qihi": alignment_rc.end_ref + 1,
                         "qstrand": "-",
@@ -410,7 +470,7 @@ def parse_parasail(
                     alignments.append(
                         {
                             "target": read_id,
-                            "query": f"adapter2_f_{i}",
+                            "query": f"adapter2_{i}_f",
                             "qilo": result.end_ref - len(adapter) + 1,
                             "qihi": result.end_ref + 1,
                             "qstrand": "-",
@@ -429,7 +489,7 @@ def parse_parasail(
                     alignments.append(
                         {
                             "target": read_id,
-                            "query": f"adapter2_r_{i}",
+                            "query": f"adapter2_{i}_r",
                             "qilo": alignment_rc.end_ref - len(adapter) + 1,
                             "qihi": alignment_rc.end_ref + 1,
                             "qstrand": "+",
@@ -463,6 +523,8 @@ def parse_parasail(
                 read_seq,
                 read_id,
                 read_info,
+                adapter1_seq,
+                adapter2_seq,
             )
         else:
             # add ambiguous entry to read_info
@@ -472,7 +534,7 @@ def parse_parasail(
                 new_read_id=read_id,
                 readlen=len(read_seq),
                 start=0,
-                end=0,
+                end=len(read_seq),
                 strand="=",
                 adapter_config="ambiguous",
                 lab="no_adapters",
@@ -652,8 +714,8 @@ def main(args):
         f"Output TSV:                       {args.output_tsv}\n"
         f"Threads:                          {args.threads}\n"
         f"Batch size:                       {args.batch_size}\n"
-        f"Adapter1 sequence:                {args.adapter1_seq}\n"
-        f"Adapter2 sequence:                {args.adapter2_seq}\n"
+        f"Adapter1 sequence(s):             {args.adapter1_seq}\n"
+        f"Adapter2 sequence(s):             {args.adapter2_seq}\n"
         f"Minimum adapter % match:          {args.min_adapter_match}\n"
     )
 
@@ -681,11 +743,11 @@ def main(args):
     # Print all sequences used in the search
     print_log(f"All sequences used in the search:")
     for i, seq in enumerate(args.adapter1_seq):
-        print(f"Adapter1-{i}: {seq}")
+        print(f"adapter1_{i}: {seq}")
     print("")
     if not args.single_end_mode:
         for i, seq in enumerate(args.adapter2_seq):
-            print(f"Adapter2-{i}: {seq}")
+            print(f"adapter2_{i}: {seq}")
         print("")
 
     # If specified batch size is > total number of reads, reduce batch size

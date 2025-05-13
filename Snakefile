@@ -70,9 +70,9 @@ wildcard_constraints:
 
 
 ### include rules #######################################################################
-# Barcode handling ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Barcode handling ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 include: "rules/0a_barcode_maps.smk"
-# Short-read module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Short-read module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## fastq preprocessing & QC
 include: "rules/short_read/1a_mergefqs.smk"
 include: "rules/short_read/1b_trimming.smk"
@@ -89,11 +89,6 @@ include: "rules/short_read/3q_star_qualimap.smk"
 include: "rules/short_read/3u_star_uTAR.smk"
 ## kallisto/bustools alignment
 include: "rules/short_read/4a_kbpython.smk"
-
-
-# include: "rules/short_read/4b_kbpython_nac.smk"
-
-
 ## small RNA stuff #TODO
 include: "rules/short_read/5a_mirge.smk"
 ## scanpy stuff
@@ -111,10 +106,10 @@ include: "rules/ont/1d_minimap2_genome.smk"
 include: "rules/ont/1d_minimap2_transcriptome.smk"
 # include: "rules/ont/1e_kallisto-lr.smk"
 include: "rules/ont/1f_ultra_genome.smk"
+include: "rules/ont/1g_isoquant.smk"
 ## QC
 include: "rules/ont/2a_readqc.smk"
 include: "rules/ont/2b_qualimap.smk"
-include: "rules/ont/2_fastqc.smk"
 
 
 ### Build targets #################################################################################
@@ -227,10 +222,7 @@ ilmn_STAR_cache = [
     for RECIPE in RECIPE_DICT[SAMPLE]
     for SOLO in ["Gene", "GeneFull"]
     for ALGO in ["UniqueAndMult-EM", "matrix"]
-    for FILE in [
-        # "h5ad",
-        "rds"
-    ]
+    for FILE in ["h5ad", "rds"]
 ]
 
 ## anndata files (with spatial info) - kallisto
@@ -275,13 +267,14 @@ ont_barcodes = [
     ]
 ]
 
-ont_adapter_scan_summary = [
+ont_preprocessing_summary = [
     f"{OUTDIR}/{SAMPLE}/ont/{FILE}"
     for SAMPLE in ONT.keys()
     for RECIPE in RECIPE_ONT_DICT[SAMPLE]
     for FILE in [
         f"logs/1a_adapter_scan_summary.csv",
-        f"logs/1a_adapter_scan_summary.pdf",
+        f"plots/1a_adapter_scan_summary.png",
+        # f"plots/1b_cutadapt_summary.png",
     ]
 ]
 
@@ -290,8 +283,8 @@ ont_minimap_genome = [
     for SAMPLE in ONT.keys()
     for RECIPE in RECIPE_ONT_DICT[SAMPLE]
     for FILE in [
-        f"sorted_gn_cb.bam",
-        "sorted_filtered_gn_cb_ub_pos.bam",
+        f"sorted_filtered_cb_ub_gn.bam",
+        # "sorted_filtered_cb_ub_gn_pos.bam",
         f"raw/output.h5ad",
         # f"raw/output.rds",
     ]
@@ -315,22 +308,22 @@ ont_ultra_genome = [
     for SAMPLE in ONT.keys()
     for RECIPE in RECIPE_ONT_DICT[SAMPLE]
     for FILE in [
-        f"sorted_gn_cb.bam",
+        f"sorted_filtered_cb_ub.bam",
         f"raw/umitools_counts.tsv.gz",
         f"raw/output.h5ad",
         # f"raw/output.rds",
     ]
 ]
 
-# ONT fastqc - not really useful, but I coded it out...
-ont_fastqc = [
-    f"{OUTDIR}/{SAMPLE}/ont/fastqc/{TRIM}"
+ont_isoquant = [
+    f"{OUTDIR}/{SAMPLE}/ont/{ALIGN}/{RECIPE}/{FILE}"
     for SAMPLE in ONT.keys()
-    for READ in ["R1", "R2"]
-    for TRIM in [
-        "ont_preAdapterScan",
-        f"ont_preCutadapt_{READ}",
-        f"ont_postCutadapt_{READ}",
+    for ALIGN in ["minimap2"] # , "ultra"
+    for RECIPE in RECIPE_ONT_DICT[SAMPLE]
+    for FILE in [
+        f"sorted_filtered_cb_ub_gn_ig.bam",
+        f"isoquant/output.h5ad",
+        # f"raw/output.rds",
     ]
 ]
 
@@ -378,21 +371,22 @@ ont_qualimap = [
 rule all:
     input:
         # ilmn_barcodes,
-        ilmn_rRNA_qualimap,
-        ilmn_STAR_dedup_bams,
+        # ilmn_rRNA_qualimap,
+        #ilmn_STAR_dedup_bams,
         ilmn_STAR_counts,
-        ilmn_STAR_qualimap,
-        # ilmn_STAR_unmapped_fastqc,  #
+        #ilmn_STAR_qualimap,
+        # ilmn_STAR_unmapped_fastqc,
         # ilmn_STAR_uTAR,
-        # ilmn_mirge_bulk, #
+        # ilmn_mirge_bulk,  #
         ilmn_STAR_cache,
-        # ilmn_kb_cache,
-        ilmn_fastqc,
-        ilmn_readqc,
+        #ilmn_kb_cache,
+        # ilmn_fastqc,
+        # ilmn_readqc,
         ont_barcodes,
-        ont_adapter_scan_summary,
+        ont_preprocessing_summary,
         ont_minimap_genome,
-        ont_minimap_txome,
-        ont_ultra_genome,
-        ont_readqc,
-        ont_qualimap,
+        # ont_minimap_txome,
+        # ont_ultra_genome,
+        ont_isoquant,
+        # ont_readqc,
+        #ont_qualimap,

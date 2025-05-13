@@ -12,16 +12,18 @@ rule ont_1c_fastq_call_bc_from_adapter:
         BC_LENGTHS=lambda w: get_recipe_info(w, "BC_length", mode="ONT"),
         BC_OFFSETS=lambda w: get_recipe_info(w, "BC_offset", mode="ONT"),
         BC_POSITIONS=lambda w: get_recipe_info(w, "BC_position", mode="ONT"),
-        BC_ADAPTER_MISMATCHES=lambda w: round(
-            len(get_recipe_info(w, "BC_adapter", mode="ONT")) * 0.1
-        ),
+        # BC_ADAPTER_MISMATCHES=lambda w: round(
+        #     len(get_recipe_info(w, "BC_adapter", mode="ONT")) * 0.1
+        # ),
+        BC_ADAPTER_MISMATCHES=0.7,
         UMI_ADAPTERS=lambda w: get_recipe_info(w, "UMI_adapter", mode="ONT"),
         UMI_LENGTHS=lambda w: get_recipe_info(w, "UMI_length", mode="ONT"),
         UMI_OFFSETS=lambda w: get_recipe_info(w, "UMI_offset", mode="ONT"),
         UMI_POSITIONS=lambda w: get_recipe_info(w, "UMI_position", mode="ONT"),
-        UMI_ADAPTER_MISMATCHES=lambda w: round(
-            len(get_recipe_info(w, "UMI_adapter", mode="ONT")) * 0.1
-        ),
+        # UMI_ADAPTER_MISMATCHES=lambda w: round(
+        #     len(get_recipe_info(w, "UMI_adapter", mode="ONT")) * 0.1
+        # ),
+        UMI_ADAPTER_MISMATCHES=0.7,
     log:
         log="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/1c_fastq_call_bc_from_adapter.log",
         err="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/1c_fastq_call_bc_from_adapter.err",
@@ -39,12 +41,12 @@ rule ont_1c_fastq_call_bc_from_adapter:
             --bc_lengths {params.BC_LENGTHS} \
             --bc_offsets {params.BC_OFFSETS} \
             --bc_positions {params.BC_POSITIONS} \
-            --bc_mismatches {params.BC_ADAPTER_MISMATCHES} \
+            --bc_min_adapter_match {params.BC_ADAPTER_MISMATCHES} \
             --umi_adapters {params.UMI_ADAPTERS} \
             --umi_lengths {params.UMI_LENGTHS} \
             --umi_offsets {params.UMI_OFFSETS} \
             --umi_positions {params.UMI_POSITIONS} \
-            --umi_mismatches {params.UMI_ADAPTER_MISMATCHES} \
+            --umi_min_adapter_match {params.UMI_ADAPTER_MISMATCHES} \
             --threads {threads} \
             --stats_out {output.STATS_TSV} \
         1> {log.log} \

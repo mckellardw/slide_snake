@@ -556,14 +556,14 @@ if __name__ == "__main__":
     print_log("Run finished.")
     print(
         f"Summary:\n"
-        f"   # Total reads processed:                  {read_count}\n"
-        f"   # Reads w/ all barcodes found:            {bc_match_count} ({bc_match_count/read_count*100:.2f}%)\n"
-        f"   # Reads w/ one or more barcodes missing:  {bc_missing_count} ({bc_missing_count/read_count*100:.2f}%)\n"
-        f"   # Reads w/ no barcodes:                   {no_bc_count} ({no_bc_count/read_count*100:.2f}%)\n"
+        f"   # Total reads processed:                  {read_count:,}\n"
+        f"   # Reads w/ all barcodes found:            {bc_match_count:,} ({bc_match_count/read_count*100:.2f}%)\n"
+        f"   # Reads w/ one or more barcodes missing:  {bc_missing_count:,} ({bc_missing_count/read_count*100:.2f}%)\n"
+        f"   # Reads w/ no barcodes:                   {no_bc_count:,} ({no_bc_count/read_count*100:.2f}%)\n"
         f"\n"
-        f"   # Reads w/ all UMIs found:                {umi_match_count} ({umi_match_count/read_count*100:.2f}%)\n"
-        f"   # Reads w/ at least one UMI missing:      {umi_missing_count} ({umi_missing_count/read_count*100:.2f}%)\n"
-        f"   # Reads w/ no UMIs:                       {no_umi_count} ({no_umi_count/read_count*100:.2f}%)\n"
+        f"   # Reads w/ all UMIs found:                {umi_match_count:,} ({umi_match_count/read_count*100:.2f}%)\n"
+        f"   # Reads w/ at least one UMI missing:      {umi_missing_count:,} ({umi_missing_count/read_count*100:.2f}%)\n"
+        f"   # Reads w/ no UMIs:                       {no_umi_count:,} ({no_umi_count/read_count*100:.2f}%)\n"
         f"\n"
     )
 
