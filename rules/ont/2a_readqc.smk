@@ -102,8 +102,8 @@ rule ont_2a_readQC_3_bam:
         TAGS="AS NM GN CB UR IG IT",
         CHUNK_SIZE=500000,
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/readqc/3_aligned/{RECIPE}_qc.log",
-        err="{OUTDIR}/{SAMPLE}/ont/readqc/3_aligned/{RECIPE}_qc.err",
+        log="{OUTDIR}/{SAMPLE}/ont/readqc/3_aligned/{ALIGNER}/{RECIPE}_qc.log",
+        err="{OUTDIR}/{SAMPLE}/ont/readqc/3_aligned/{ALIGNER}/{RECIPE}_qc.err",
     resources:
         mem="8G",
     threads: config["CORES"]

@@ -5,16 +5,16 @@
 # Qualimap QC on alignment outputs
 rule ont_2b_qualimap:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/{REF}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam",
-        BAI="{OUTDIR}/{SAMPLE}/ont/{REF}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam.bai",
+        BAM="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam",
+        BAI="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam.bai",
     output:
-        TXT="{OUTDIR}/{SAMPLE}/ont/qualimap/{REF}/{RECIPE}/rnaseq/rnaseq_qc_results.txt",
-        PDF="{OUTDIR}/{SAMPLE}/ont/qualimap/{REF}/{RECIPE}/rnaseq/report.pdf",
+        TXT="{OUTDIR}/{SAMPLE}/ont/qualimap/{ALIGNER}/{RECIPE}/rnaseq/rnaseq_qc_results.txt",
+        PDF="{OUTDIR}/{SAMPLE}/ont/qualimap/{ALIGNER}/{RECIPE}/rnaseq/report.pdf",
     params:
         GENES_GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/qualimap/{REF}/{RECIPE}/rnaseq/rnaseq.log",
-        err="{OUTDIR}/{SAMPLE}/ont/qualimap/{REF}/{RECIPE}/rnaseq/rnaseq.err",
+        log="{OUTDIR}/{SAMPLE}/ont/qualimap/{ALIGNER}/{RECIPE}/rnaseq/rnaseq.log",
+        err="{OUTDIR}/{SAMPLE}/ont/qualimap/{ALIGNER}/{RECIPE}/rnaseq/rnaseq.err",
     resources:
         mem="32G",
     threads: 1
@@ -57,14 +57,14 @@ rule ont_2b_qualimap_readqc_summary2csv:
 # Qualimap BAM QC on alignment outputs
 rule ont_2b_qualimap_bamqc:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/{REF}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam",
-        BAI="{OUTDIR}/{SAMPLE}/ont/{REF}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam.bai",
+        BAM="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam",
+        BAI="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam.bai",
     output:
-        REPORT="{OUTDIR}/{SAMPLE}/ont/qualimap/{REF}/{RECIPE}/bamqc/report.pdf",
-        CSV="{OUTDIR}/{SAMPLE}/ont/qualimap/{REF}/{RECIPE}/bamqc/genome_results.txt",
+        REPORT="{OUTDIR}/{SAMPLE}/ont/qualimap/{ALIGNER}/{RECIPE}/bamqc/report.pdf",
+        CSV="{OUTDIR}/{SAMPLE}/ont/qualimap/{ALIGNER}/{RECIPE}/bamqc/genome_results.txt",
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/qualimap/{REF}/{RECIPE}/bamqc/bamqc.log",
-        err="{OUTDIR}/{SAMPLE}/ont/qualimap/{REF}/{RECIPE}/bamqc/bamqc.err",
+        log="{OUTDIR}/{SAMPLE}/ont/qualimap/{ALIGNER}/{RECIPE}/bamqc/bamqc.log",
+        err="{OUTDIR}/{SAMPLE}/ont/qualimap/{ALIGNER}/{RECIPE}/bamqc/bamqc.err",
     resources:
         mem="16G",
     threads: 1

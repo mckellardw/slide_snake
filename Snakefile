@@ -333,11 +333,12 @@ ont_readqc = [
     for SAMPLE in ONT.keys()
     for READ in ["R1", "R2"]
     for RECIPE in RECIPE_ONT_DICT[SAMPLE]
+    for ALIGN in ["minimap2"]  # , "ultra"
     for TRIM in [
         # f"0_rawInput/merged",
         f"1_preCutadapt/{READ}",
         f"2_postCutadapt/{READ}",
-        f"3_aligned/{RECIPE}",
+        f"3_aligned/{ALIGN}/{RECIPE}",
     ]
     for FILE in ["tsv.gz", "png"]
 ]
