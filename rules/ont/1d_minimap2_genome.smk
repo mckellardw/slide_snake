@@ -142,7 +142,7 @@ rule ont_1d_genome_add_umis:
         """
 
 
-# Filter BAM based on cell barcode and UMI
+# Remove reads which don't have a cell barcode and UMI
 rule ont_1d_genome_filter_bam_empty_tags:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_cb_ub.bam",
@@ -159,6 +159,8 @@ rule ont_1d_genome_filter_bam_empty_tags:
         samtools view -h {input.BAM} \
         | awk -v tag={params.CELL_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
         | awk -v tag={params.UMI_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
+        | awk -v tag={params.CELL_TAG} -f scripts/awk/bam_filterMissingTag.awk \
+        | awk -v tag={params.UMI_TAG} -f scripts/awk/bam_filterMissingTag.awk \
         | samtools view -b \
         > {output.BAM}
         """

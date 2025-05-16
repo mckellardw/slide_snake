@@ -13,6 +13,7 @@ from matplotlib import cm
 def knee_plot(
     adata,
     xlim=[0, 20000],
+    obs_column=None,
     line_width=2,
     line_color="b",
     title="Knee plot",
@@ -20,7 +21,12 @@ def knee_plot(
     figsize=(10, 7),
     verbose=False,
 ):
-    knee = np.sort((np.array(adata.X.sum(axis=1))).flatten())[::-1]
+    if obs_column is not None:
+        knee = np.sort((np.array(adata.obs[obs_column].values)).flatten())[::-1]
+        ylabel = obs_column
+    else:
+        knee = np.sort((np.array(adata.X.sum(axis=1))).flatten())[::-1]
+        ylabel = "UMI Counts"
 
     if expected_num_cells > len(knee):
         expected_num_cells = len(knee) - 1
@@ -31,7 +37,7 @@ def knee_plot(
     ax.axvline(x=expected_num_cells, linewidth=1, color="k")
     ax.axhline(y=knee[expected_num_cells], linewidth=1, color="k")
 
-    ax.set_ylabel("UMI Counts")
+    ax.set_ylabel(ylabel)
     ax.set_xlabel("Ranked Barcodes")
     ax.set_title(title)
 

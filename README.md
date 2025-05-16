@@ -9,11 +9,20 @@
 - Please see `documentation/*.md` for detailed info on custom recipes, pipeline details, etc.
 
 ### Installation:
-Install base environment w/ `mamba`:
+1. Clone the repository:
+```
+git clone https://github.com/mckellardw/slide_snake.git
+```
+
+2. Build base environment w/ `mamba`:
 ```
 mamba env create --name slsn --file=envs/slsn.yml
 mamba activate slsn
 ```
+
+3. Run on the provided test data for Visium, SlideSeq/Seeker, and Patho-DBIT with the default sample sheet (see below for runtime options).
+
+4. Build your own sample sheet (see `docs/1_sam)
 
 ### How to set up a run:
   1. Install and ensure that the executable paths are functioning
@@ -22,6 +31,7 @@ mamba activate slsn
       - Add the recipe(s) for each sample, separated by spaces. 
   3. Comment out any unwanted output files in the target rule in `Snakefile`
   4. Run the snakemake pipeline!
+
 
 ## Runtime details
 ### Example local run:
@@ -34,7 +44,6 @@ Make sure the [slurm plugin](https://snakemake.github.io/snakemake-plugin-catalo
 ```
 snakemake -k -p --nt --use-conda --conda-frontend mamba --executor slurm --workflow-profile profiles/slurm -j 24
 ```
-*Note*, this pipeline was written with snakemake v8
 
 Or, my preferred way to run it in the background:
 ```
