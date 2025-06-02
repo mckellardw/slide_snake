@@ -1,0 +1,8 @@
+name: stringtie
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - samtools
+  - stringtie=3.0.0
