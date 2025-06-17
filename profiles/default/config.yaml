@@ -308,6 +308,21 @@ set-resources:
     mem_mb: 16000
   ont_1f_ultra_cache_h5ad_ultra:
     mem: 32G
+    mem_mb: 16000  
+  ont_1g_isoquant:
+    mem: 64G
+    mem_mb: 64000
+  ont_1g_umitools_count:
+    mem: 16G
+    mem_mb: 16000
+  ont_1g_counts_to_sparse:
+    mem: 16G
+    mem_mb: 16000
+  ont_1g_cache_h5ad:
+    mem: 16G
+    mem_mb: 16000
+  ont_1g_cache_seurat:
+    mem: 16G
     mem_mb: 16000
   ont_2a_readQC_0_rawInput:
     mem: 8G
