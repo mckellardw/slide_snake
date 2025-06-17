@@ -552,8 +552,8 @@ def get_STAR_extra_params(w):
                 star_info[key] = RECIPE_SHEET[key]["seeker_adapterInsert_total"]
             elif "seeker" in recipe:
                 star_info[key] = RECIPE_SHEET[key]["seeker_total"]
-            elif "microST" in recipe:
-                star_info[key] = RECIPE_SHEET[key]["microST_ligation_total"]
+            elif "miST" in recipe:
+                star_info[key] = RECIPE_SHEET[key]["miST_ligation_total"]
             elif "decoder" in recipe:
                 star_info[key] = RECIPE_SHEET[key]["decoderseq_total"]
             else:

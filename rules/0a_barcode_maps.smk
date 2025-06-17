@@ -115,12 +115,12 @@ rule BC_write_whitelist_variants:
             )
             pd.Series(bc_us).to_csv(output.BC_US, header=False, index=False)
 
-        elif "microST" in recipes:
+        elif "miST" in recipes:
             bc_1 = [bc[:10] for bc in list(bc_map[0])]
             bc_2 = [bc[10:] for bc in list(bc_map[0])]
             bc_us = [bc[:10] + "_" + bc[10:] for bc in list(bc_map[0])]
             with open(log.log, "a") as log_file:
-                log_file.write("Processed 'microST' barcodes\n")
+                log_file.write("Processed 'miST' barcodes\n")
 
             bc_us_map = bc_map.copy()
             bc_us_map.iloc[:, 0] = bc_us
@@ -164,7 +164,7 @@ rule BC_insert_adapter_into_list:
     params:
         ADAPTER=lambda w: get_recipe_info(w, "internal_adapter", mode="list")[0],
         BC_PRIMER=lambda w: get_recipe_info(w, "fwd_primer", mode="list")[0],
-        recipes_to_split=["seeker", "microST", "decoder"],
+        recipes_to_split=["seeker", "miST", "decoder"],
     # resources:
     threads: 1
     run:
@@ -189,7 +189,7 @@ rule BC_insert_adapter_into_list:
                     for item1, item2 in zip(bc_1, bc_2)
                 ]
 
-            elif "microST" in recipes:
+            elif "miST" in recipes:
                 # split for 2 separate barcodes
                 bc_1 = [bc[0:10] for bc in list(bc_map[0])]
                 bc_2 = [bc[10:] for bc in list(bc_map[0])]

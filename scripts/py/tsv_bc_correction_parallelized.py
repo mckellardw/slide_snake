@@ -69,6 +69,17 @@ def currentTime():
     return time.strftime("%D | %H:%M:%S", time.localtime())
 
 
+def print_log(msg):
+    """Print a log message with the current time."""
+    print(f"{currentTime()} | {msg}")
+
+
+def print_error(msg):
+    """Print an error message with the current time."""
+    print(f"{currentTime()} | ERROR: {msg}", file=sys.stderr)
+    sys.exit(1)
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Correct barcodes in a TSV file.")
     parser.add_argument("--tsv_in", required=True, help="Path to the input TSV file.")
@@ -334,6 +345,10 @@ def load_whitelist(whitelist_path, k):
     :rtype: list, dict
     """
     wl = []
+    # Check if the whitelist file is empty
+    if os.stat(whitelist_path).st_size == 0:
+        print_error(f"Error: Whitelist file '{whitelist_path}' is empty.")
+        sys.exit(1)
     with open(whitelist_path) as file:
         for line in file:
             bc = line.strip().split("-")[0]
@@ -497,7 +512,7 @@ def process_tsv(
                         #     continue
 
                         if len(barcode) != len(whitelist[0]):
-                            print(
+                            print_error(
                                 f"Error: Barcode length [{len(barcode)}] does not match whitelist [{len(whitelist[0])}] for read ID [{read_id}]"
                             )
                             sys.exit(1)
@@ -550,7 +565,7 @@ def process_tsv(
                         writer_full.writerow(row2write)
                         writer_slim.writerow([read_id, "".join(concat_corrected_bc)])
     if n_corrected == 0:
-        print(f"WARNING - NO BARCODES MATCHED THE WHITELIST")
+        print_error(f"WARNING - NO BARCODES MATCHED THE WHITELIST")
     if verbose:
         print(f"{time.time()-processStartTime:.2f} - Finished correcting!")
 
@@ -566,7 +581,7 @@ if __name__ == "__main__":
 
     # Check if input TSV file exists
     if not os.path.isfile(args.tsv_in):
-        print(f"Error: Input TSV file '{args.tsv_in}' does not exist.")
+        print_error(f"Error: Input TSV file '{args.tsv_in}' does not exist.")
         sys.exit(1)
 
     # Check if whitelist files exist
@@ -589,7 +604,7 @@ if __name__ == "__main__":
 
     # Add check for whitelist files matching bc_columns when concat_bcs is False
     if not args.concat_bcs and len(args.whitelist_files) != len(args.bc_columns):
-        print(
+        print_error(
             f"Error: Number of whitelist files ({len(args.whitelist_files)}) does not match the number of barcode columns ({len(args.bc_columns)}) when concat_bcs is set to False."
         )
         sys.exit(1)
@@ -601,12 +616,16 @@ if __name__ == "__main__":
         num_columns = len(header)
 
         if args.id_column >= num_columns:
-            print(f"Error: Read ID column index ({args.id_column}) is out of range.")
+            print_error(
+                f"Error: Read ID column index ({args.id_column}) is out of range."
+            )
             sys.exit(1)
 
         for bc_column in args.bc_columns:
             if bc_column >= num_columns:
-                print(f"Error: Barcode column index ({bc_column}) is out of range.")
+                print_error(
+                    f"Error: Barcode column index ({bc_column}) is out of range."
+                )
                 sys.exit(1)
 
     # Print run settings for log files ----
@@ -634,7 +653,7 @@ if __name__ == "__main__":
     if args.concat_bcs and len(list(args.whitelist_files)) > 1:
         # merge linked barcode lists (SlideSeq)
         if len(list(args.whitelist_files)) == len(list(args.bc_columns)):
-            print(
+            print_log(
                 f"Concatenating the [{len(list(args.whitelist_files))}] barcode lists given..."
             )
             sub_whitelists = {}
@@ -650,7 +669,7 @@ if __name__ == "__main__":
             kmer_to_bc_indexes[0] = generate_kmer_index(wl, args.k)
 
         else:
-            print(
+            print_error(
                 f"Need a merged barcode whitelist, and parameter lengths don't match!"
             )
             sys.exit(1)
@@ -665,7 +684,7 @@ if __name__ == "__main__":
 
     # Single-threaded = verbose
     if args.threads == 1:
-        print(f"{currentTime()} - Running on {args.threads} thread...")
+        print_log(f"Running on {args.threads} thread...")
         print("")
 
         process_tsv(
@@ -684,12 +703,12 @@ if __name__ == "__main__":
 
     # Multi-threaded = not verbose
     elif args.threads > 1:
-        print(f"{currentTime()} - Running on {args.threads} threads...")
+        print_log(f"Running on {args.threads} threads...")
         # Source: https://superfastpython.com/multiprocessing-pool-for-loop/
         import multiprocessing
 
         print("")
-        print(f"{currentTime()} - Splitting input tsv...")
+        print_log(f"Splitting input tsv...")
         temp_dir = generate_temp_dir_name()
 
         if not os.path.exists(temp_dir):
@@ -700,7 +719,7 @@ if __name__ == "__main__":
             file_path=args.tsv_in, temp_dir=temp_dir, num_chunks=args.threads
         )
 
-        print(f"{currentTime()} - Correcting {n_bcs:,} barcodes...")
+        print_log(f"Correcting {n_bcs:,} barcodes...")
 
         temp_tsvs_out_full = [
             fn.replace(".tsv", "_corr_full.tsv") for fn in temp_tsvs_in
@@ -730,7 +749,7 @@ if __name__ == "__main__":
             multi_out = pool.starmap(process_tsv, items)
 
         print("")
-        print(f"{currentTime()} - Concatenating results...")
+        print_log(f"Concatenating results...")
         concatenate_files(
             filenames=temp_tsvs_out_full, output_filename=args.tsv_out_full
         )
@@ -738,11 +757,11 @@ if __name__ == "__main__":
             filenames=temp_tsvs_out_slim, output_filename=args.tsv_out_slim
         )
 
-        print(f"{currentTime()} - Removing temp files (temp_dir: `{temp_dir}`)...")
+        print_log(f"Removing temp files (temp_dir: `{temp_dir}`)...")
         os.system(f"rm -rf {temp_dir}") if os.path.exists(temp_dir) else None
 
-        print(f"{currentTime()} - Done!")
+        print_log(f"Done!")
         print("")
         print(f"Finished in {time.time() - startTime:.2f} seconds")
     else:
-        print(f"Incorrect number of threads specified [{args.threads}]...")
+        print_error(f"Incorrect number of threads specified [{args.threads}]...")
