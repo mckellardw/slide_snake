@@ -1,36 +1,198 @@
-# Sample sheets in `slide_snake`
+# Sample Sheets in `slide_snake`
 
-In this pipeline, sample sheets are used to keep things organized, and to add flexibility to the alignment and preprocessing options. Here are a few important notes about how to prepare your sample sheet:
+Sample sheets are the central configuration files that tell `slide_snake` how to process your spatial RNA-seq data. They provide flexibility in specifying different analysis parameters, reference genomes, and processing recipes for each sample.
+
+## Overview
+
+The sample sheet is a CSV file that contains all the necessary information about your samples, including:
+- Input FASTQ file paths
+- Reference genome locations  
+- Processing recipes to apply
+- Platform-specific parameters
+- Quality control settings
+
+## Quick Start
+
+1. **Use the template**: Start with `docs/example_sample_sheet.csv`
+2. **Edit for your data**: Modify paths and parameters for your samples
+3. **Update config**: Set `SAMPLE_SHEET_PATH` in `config.yaml` to point to your sample sheet
+4. **Validate**: Run `snakemake -n` to check for errors
 
 ## Sample Sheet Columns
 
-1. **sampleID**: Unique identifier for each sample. Used for labeling and tracking samples throughout the workflow.
-2. **fastq_R1**: Path to the Read 1 FASTQ file(s). Multiple files can be separated by spaces, or represented with regular expressions.
-3. **fastq_R2**: Path to the Read 2 FASTQ file(s). Multiple files can be separated by spaces, or represented with regular expressions.
-4. **recipe**: Recipe(s) to use for each sample. Multiple recipes can be separated by spaces. Specifies the preprocessing and alignment strategies to be applied.
-5. **recipe_ONT**: Recipe(s) for ONT data. Multiple recipes can be separated by spaces. Specifies the preprocessing and alignment strategies for Oxford Nanopore Technologies data.
-6. **whitelist**: Path to the barcode whitelist file. Used for demultiplexing and identifying valid barcodes.
-7. **species**: Species name (e.g., human, mouse). Used to select the appropriate reference genome and annotation files.
-8. **STAR_ref**: Path to the STAR reference genome directory. Used for alignment with the STAR aligner.
-10. **kb_idx**: Path to the kallisto index file. Used for pseudo-alignment with kallisto.
-11. **kb_t2g**: Path to the kallisto transcript-to-gene mapping file. Used for converting transcript-level counts to gene-level counts.
-12. **rRNA_ref**: Path to the rRNA reference file for BWA. Used for aligning and quantifying rRNA reads.
-13. **rRNA_gtf**: Path to the GTF file for rRNA annotations. Used for annotating rRNA reads.
-14. **genome_fa**: Path to the genome FASTA file. Used for various steps requiring the reference genome sequence.
-9. **genes_gtf**: Path to the GTF file for gene annotations. Used for annotating aligned reads and generating gene counts.
-15. **cDNA_fa**: Path to the transcripts/cDNA FASTA file. Used for long-read transcriptome alignment w/ minimap2.
+### Required Columns
 
+| Column | Description | Example |
+|--------|-------------|---------|
+| `sampleID` | Unique identifier for each sample | `sample_001_visium` |
+| `fastq_R1` | Path to Read 1 FASTQ file(s) | `data/sample1_R1.fq.gz` |
+| `fastq_R2` | Path to Read 2 FASTQ file(s) | `data/sample1_R2.fq.gz` |
+| `recipe` | Processing recipe(s) for short reads | `visium` or `visium seeker` |
+| `species` | Species name for reference selection | `human`, `mouse`, `rat` |
 
-## Example Sample Sheet
+### Platform Detection Columns
 
-Here is an example of a sample sheet in CSV format:
+| Column | Description | Example |
+|--------|-------------|---------|
+| `whitelist` | Path to barcode whitelist file | `resources/visium_whitelist/whitelist.txt` |
+| `recipe_ONT` | Recipe(s) for Oxford Nanopore data | `visium_ont` |
 
+### Reference Genome Columns
+
+| Column | Description | Required For | Example |
+|--------|-------------|--------------|---------|
+| `STAR_ref` | STAR genome index directory | STAR alignment | `/path/to/STAR_index/` |
+| `kb_idx` | Kallisto index file | Kallisto alignment | `/path/to/transcriptome.idx` |
+| `kb_t2g` | Transcript-to-gene mapping | Kallisto alignment | `/path/to/t2g.txt` |
+| `genome_fa` | Reference genome FASTA | Various analyses | `/path/to/genome.fa` |
+| `genes_gtf` | Gene annotation GTF file | Gene quantification | `/path/to/genes.gtf` |
+| `cDNA_fa` | Transcript sequences FASTA | ONT transcriptome alignment | `/path/to/transcripts.fa` |
+
+### Quality Control Columns
+
+| Column | Description | Example |
+|--------|-------------|---------|
+| `rRNA_ref` | rRNA reference for filtering | `/path/to/rRNA_ref.fa` |
+| `rRNA_gtf` | rRNA annotation GTF file | `/path/to/rRNA.gtf` |
+
+## File Path Specifications
+
+### Multiple Files
+Specify multiple FASTQ files in several ways:
 ```csv
-sampleID,fastq_R1,fastq_R2,recipe,recipe_ONT,whitelist,species,STAR_ref,genes_gtf,kb_idx,kb_t2g,rRNA_ref,rRNA_gtf,genome_fa
-test_Human_Lymphoma_DLBCL_Region2_10um,data/test_pathodbit/SAMN43151516_10k_R2.fq.gz,data/test_pathodbit/SAMN43151516_10k_R1.fq.gz,dbit-pretrim,,/gpfs/commons/groups/innovation/dwm/slide_snake/resources/dbit_whitelist/Spatial_barcode_100x100.txt,human,/gpfs/commons/groups/innovation/dwm/genomes/homo_sapiens/STAR/GRCh38_GENCODEv47,/gpfs/commons/groups/innovation/dwm/genomes/homo_sapiens/gencode/release_v47/gencode.v47.annotation.gtf,/gpfs/commons/groups/innovation/dwm/genomes/homo_sapiens/kallisto/GRCh38_GENCODEv47/transcriptome.idx,/gpfs/commons/groups/innovation/dwm/genomes/homo_sapiens/kallisto/GRCh38_GENCODEv47/t2g.txt,/gpfs/commons/groups/innovation/dwm/ref_snake/out/homo_sapiens/rRNA/bwa_mem2/ref.fa.gz,/gpfs/commons/groups/innovation/dwm/ref_snake/out/homo_sapiens/rRNA/raw/annotations.gtf,/gpfs/commons/groups/innovation/dwm/genomes/homo_sapiens/gencode/release_v47/GRCh38.primary_assembly.genome.fa
+# Space-separated files
+fastq_R1,fastq_R2
+"file1_R1.fq.gz file2_R1.fq.gz","file1_R2.fq.gz file2_R2.fq.gz"
+
+# Glob patterns (use with caution)
+fastq_R1,fastq_R2
+"data/sample*_R1.fq.gz","data/sample*_R2.fq.gz"
 ```
 
-## Notes
-- Ensure that all file paths are correct and accessible.
-- Multiple recipes can be passed for each sample, separated by spaces. This is useful for benchmarking different preprocessing and alignment strategies.
-- The sample sheet should be saved as a CSV file and the path to this file should be specified in the config.yaml file under SAMPLE_SHEET_PATH.
+### Path Types
+- **Absolute paths**: `/full/path/to/file.fq.gz`
+- **Relative paths**: `data/file.fq.gz` (relative to workflow directory)
+- **Compressed files**: `.gz`, `.bz2` files are automatically handled
+
+## Recipe Specifications
+
+### Single Recipe
+```csv
+recipe
+visium
+```
+
+### Multiple Recipes
+Use spaces to separate multiple recipes for benchmarking:
+```csv
+recipe
+"visium visium_total"
+```
+
+This will run both standard and total RNA alignment strategies.
+
+## Species and Reference Configuration
+
+Common species configurations:
+
+### Human (GRCh38)
+```csv
+species,STAR_ref,genes_gtf,kb_idx,kb_t2g
+human,/path/to/GRCh38_STAR/,/path/to/gencode.v47.gtf,/path/to/human.idx,/path/to/human_t2g.txt
+```
+
+### Mouse (GRCm39) 
+```csv
+species,STAR_ref,genes_gtf,kb_idx,kb_t2g  
+mouse,/path/to/GRCm39_STAR/,/path/to/gencode.vM36.gtf,/path/to/mouse.idx,/path/to/mouse_t2g.txt
+```
+
+## Platform-Specific Examples
+
+### 10x Visium
+```csv
+sampleID,fastq_R1,fastq_R2,recipe,whitelist,species,STAR_ref,genes_gtf,kb_idx,kb_t2g
+visium_sample,data/visium_R1.fq.gz,data/visium_R2.fq.gz,visium,resources/visium_whitelist/whitelist.txt,human,/ref/GRCh38_STAR,/ref/gencode.v47.gtf,/ref/human.idx,/ref/human_t2g.txt
+```
+
+### Curio Seeker
+```csv
+sampleID,fastq_R1,fastq_R2,recipe,whitelist,species,STAR_ref,genes_gtf,kb_idx,kb_t2g
+seeker_sample,data/seeker_R1.fq.gz,data/seeker_R2.fq.gz,seeker_MatchLinker,data/barcodes.txt,mouse,/ref/GRCm39_STAR,/ref/gencode.vM36.gtf,/ref/mouse.idx,/ref/mouse_t2g.txt
+```
+
+### DBIT-seq
+```csv
+sampleID,fastq_R1,fastq_R2,recipe,whitelist,species,STAR_ref,genes_gtf,kb_idx,kb_t2g
+dbit_sample,data/dbit_R1.fq.gz,data/dbit_R2.fq.gz,dbit-pretrim,resources/dbit_whitelist/Spatial_barcode_100x100.txt,human,/ref/GRCh38_STAR,/ref/gencode.v47.gtf,/ref/human.idx,/ref/human_t2g.txt
+```
+
+### Oxford Nanopore (ONT)
+```csv
+sampleID,fastq_R1,fastq_R2,recipe,recipe_ONT,whitelist,species,cDNA_fa,genes_gtf
+ont_sample,data/ont_reads.fq.gz,,visium,visium_ont,resources/visium_whitelist/whitelist.txt,human,/ref/transcripts.fa,/ref/gencode.v47.gtf
+```
+
+## Advanced Configuration
+
+### Custom Recipes
+Create custom recipes by modifying `resources/recipe_sheet.csv`. See [Recipes Documentation](2_recipes.md) for details.
+
+### rRNA Filtering
+Enable ribosomal RNA filtering:
+```csv
+rRNA_ref,rRNA_gtf
+/path/to/rRNA_BWA_index,/path/to/rRNA_annotations.gtf
+```
+
+### Quality Control Parameters
+The pipeline automatically handles:
+- FastQC analysis on raw and processed reads
+- Alignment quality assessment with Qualimap
+- Read mapping statistics
+- Barcode correction statistics
+
+## Validation and Troubleshooting
+
+### Check Sample Sheet Format
+```bash
+# Dry run to validate sample sheet
+snakemake -n --use-conda
+
+# Check specific sample
+snakemake -n out/{SAMPLE_ID}/illumina/STAR/{RECIPE}/counts_filtered/
+```
+
+### Common Issues
+
+**Issue**: File paths not found
+- **Solution**: Use absolute paths or verify relative paths from workflow directory
+
+**Issue**: Recipe not recognized  
+- **Solution**: Check recipe name exists in `resources/recipe_sheet.csv`
+
+**Issue**: Reference files missing
+- **Solution**: Verify all reference paths exist and are readable
+
+**Issue**: Multiple files not processed
+- **Solution**: Ensure proper quoting of space-separated file lists
+
+### Best Practices
+
+1. **Use absolute paths** when possible to avoid path resolution issues
+2. **Test with small datasets** before running full analyses  
+3. **Keep consistent naming** across samples for easier downstream analysis
+4. **Document your recipes** if creating custom analysis parameters
+5. **Validate references** ensure all reference files exist and are properly formatted
+6. **Use version control** to track changes to your sample sheets
+
+## Example Sample Sheets
+
+### Complete Example
+```csv
+sampleID,fastq_R1,fastq_R2,recipe,recipe_ONT,whitelist,species,STAR_ref,genes_gtf,kb_idx,kb_t2g,rRNA_ref,rRNA_gtf,genome_fa,cDNA_fa
+test_visium,data/visium_R1.fq.gz,data/visium_R2.fq.gz,visium,,resources/visium_whitelist/whitelist.txt,human,/ref/GRCh38_STAR,/ref/gencode.v47.gtf,/ref/human.idx,/ref/human_t2g.txt,/ref/rRNA_BWA,/ref/rRNA.gtf,/ref/GRCh38.fa,/ref/transcripts.fa
+test_seeker,data/seeker_R1.fq.gz,data/seeker_R2.fq.gz,"seeker_MatchLinker seeker_std",,data/seeker_barcodes.txt,mouse,/ref/GRCm39_STAR,/ref/gencode.vM36.gtf,/ref/mouse.idx,/ref/mouse_t2g.txt,/ref/rRNA_BWA,/ref/rRNA.gtf,/ref/GRCm39.fa,/ref/mouse_transcripts.fa
+```
+
+This comprehensive sample sheet demonstrates multi-recipe analysis and complete reference specification.

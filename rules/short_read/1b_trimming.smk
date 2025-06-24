@@ -4,7 +4,6 @@
 
 
 # TSO & homopolymer trimming
-# TODO: add "{ADAPTER};noindels" to adapter sequence trimming? - *Note- do not do this for the BB_ADAPTER
 rule ilmn_1b_cutadapt:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/merged_R1.fq.gz",
@@ -18,7 +17,6 @@ rule ilmn_1b_cutadapt:
         R1_LENGTH=lambda w: min(
             get_recipe_info(w, info_col="R1_finalLength", mode="ILMN")
         ),
-        # R1_LENGTH = 50,
         QUALITY_MIN=20,
         MIN_R2_LENGTH=12,
         OVERLAP=5,
@@ -84,7 +82,6 @@ rule ilmn_1b_cutadapt2:
         R1_LENGTH=lambda w: min(
             get_recipe_info(w, info_col="R1_finalLength", mode="ILMN")
         ),
-        # R1_LENGTH = 50,
         QUALITY_MIN=20,
         MIN_R2_LENGTH=12,
         OVERLAP=5,

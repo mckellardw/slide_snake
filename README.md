@@ -1,12 +1,12 @@
 # `slide_snake`
-# [***UNDER CONSTRUCTION***]
 ![slide_snake](images/slide_snake_logo.png)
 ## Flexible processing for spatial RNA-sequencing data
 
 `slide_snake` is a snakemake workflow for preprocessing, alignment, and quantification of spatial RNA-sequencing data, designed to work for any commercial or custom platform. 
 
 ## Getting started
-- Please see `documentation/*.md` for detailed info on custom recipes, pipeline details, etc.
+- Please see `docs/*.md` for detailed info on custom recipes, pipeline details, etc.
+  - *warning* - the documentation was mostly written by Claude Sonnet 4...
 
 ### Installation:
 1. Clone the repository:
@@ -22,7 +22,7 @@ mamba activate slsn
 
 3. Run on the provided test data for Visium, SlideSeq/Seeker, and Patho-DBIT with the default sample sheet (see below for runtime options).
 
-4. Build your own sample sheet (see `docs/1_sam)
+4. Build your own sample sheet (see `docs/1_sample_sheets.md`)
 
 ### How to set up a run:
   1. Install and ensure that the executable paths are functioning

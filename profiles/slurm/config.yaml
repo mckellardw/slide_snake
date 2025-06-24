@@ -1,11 +1,18 @@
+default-resources:=============================================================
+# slide_snake SLURM Profile Configuration
+# =============================================================================
+# This profile is optimized for SLURM cluster execution with cpu partition
+# Specifically configured for NE1 cluster environment
+
+# Default resource allocation for all rules
 default-resources:
-  slurm_partition: pe2
-  slurm_account: innovation
-  runtime: 1:00:00
-  nodes: 1
-  mem_mb: 8192
-  mem: 8G
-  threads: 1
+  slurm_partition: pe2      # SLURM partition to use (cpu partition)
+  slurm_account: innovation # SLURM account for job submission
+  runtime: 1:00:00          # Maximum runtime (HH:MM:SS)
+  nodes: 1                  # Number of nodes per job
+  mem_mb: 8192             # Default memory in MB
+  mem: 8G                  # Default memory as string
+  threads: 1               # Default thread count
 
 set-threads:
   ilmn_1a_merge_fastqs: 24

@@ -30,7 +30,6 @@ rule ont_1d_genome_align_minimap2_genome:
     params:
         EXTRA_FLAGS=lambda wildcards: RECIPE_SHEET["mm2_extra"][wildcards.RECIPE],
         REF=lambda wildcards: SAMPLE_SHEET["genome_fa"][wildcards.SAMPLE],
-        # JUNC_BED=lambda wildcards: SAMPLE_SHEET["mm2_junc_bed"][wildcards.SAMPLE],
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/minimap2.log",
     resources:

@@ -1,3 +1,79 @@
+# Extract rRNA sequences from cDNA fasta file
+rule ilmn_2a_extract_rRNA_fasta:
+    input:
+        CDNA_FA=lambda w: SAMPLE_SHEET["cdna_fa"][w.SAMPLE],
+    output:
+        FASTA_rRNA="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_sequences.fa.gz",
+    log:
+        log="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/extract_rRNA.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/extract_rRNA.err",
+    resources:
+        mem="16G",
+        time="0:30:00",
+    threads: 1
+    shell:
+        """
+        bash scripts/bash/fa_extract_rRNA.sh \
+            {input.CDNA_FA} \
+            {output.FASTA_rRNA} \
+        1> {log.log} \
+        2> {log.err}
+        """
+
+
+# Build GTF file from rRNA fasta sequences
+rule ilmn_2a_build_rRNA_gtf:
+    input:
+        CDNA_FA=lambda w: SAMPLE_SHEET["cdna_fa"][w.SAMPLE],
+    output:
+        GTF_rRNA="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_annotations.gtf.gz",
+    log:
+        log="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/build_rRNA_gtf.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/build_rRNA_gtf.err",
+    resources:
+        mem="16G",
+        time="0:30:00",
+    threads: 1
+    shell:
+        """
+        bash scripts/bash/fa_build_rRNA_gtf.sh \
+            {input.CDNA_FA} \
+            {output.GTF_rRNA} \
+        1> {log.log} \
+        2> {log.err}
+        """
+
+
+# Build BWA index for rRNA sequences
+rule ilmn_2a_build_rRNA_bwa_index:
+    input:
+        FASTA_rRNA="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_sequences.fa.gz",
+    output:
+        BWA_INDEX_FILES=multiext(
+            "{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_sequences.fa.gz",
+            ".0123",
+            ".amb",
+            ".ann",
+            ".bwt.2bit.64",
+            ".pac",
+        ),
+    log:
+        log="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/build_bwa_index.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/build_bwa_index.err",
+    resources:
+        mem="32G",
+        time="1:00:00",
+    threads: config["CORES"]
+    conda:
+        f"{workflow.basedir}/envs/bwa.yml"
+    shell:
+        """
+        bwa-mem2 index {input.FASTA_rRNA} \
+        1> {log.log} \
+        2> {log.err}
+        """
+
+
 # Filter out rRNA reads w/ bwa alignment
 # VASAseq implementation - https://github.com/anna-alemany/VASAseq/blob/main/mapping/ribo-bwamem.sh
 ##TODO incorporate VASAseq style "long"/short read handling with multiple align steps
@@ -10,12 +86,20 @@
 rule ilmn_2a_bwa_rRNA_align:
     input:
         R2_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R2.fq.gz",
+        BWA_INDEX_FILES=multiext(
+            "{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_sequences.fa.gz",
+            ".0123",
+            ".amb",
+            ".ann",
+            ".bwt.2bit.64",
+            ".pac",
+        ),
     output:
         BAM1=temp("{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/aligned.sam"),
         BAM2="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/aligned_sorted.bam",
         R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/no_rRNA_R2.fq",
     params:
-        BWA_REF=lambda w: get_bwa_ref(w, mode="rRNA"),
+        BWA_REF="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_sequences.fa.gz",
         MIN_ALIGNSCORE=40,
     log:
         log="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/bwa_mem.log",

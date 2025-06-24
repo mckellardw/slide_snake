@@ -33,9 +33,9 @@
 #############################################
 rule ilmn_3e_STARcustom_firstPass:
     input:
-        FQS=lambda w: get_fqs(w, return_type="list", mode="ILMN")
+        FQS=lambda w: get_fqs(w, return_type="list", mode="ILMN"),
     output:
-        SJ="{OUTDIR}/{SAMPLE}/short_read/STARcustom/{RECIPE}/firstPass/_STARpass1/SJ.out.tab"
+        SJ="{OUTDIR}/{SAMPLE}/short_read/STARcustom/{RECIPE}/firstPass/_STARpass1/SJ.out.tab",
     params:
         STAR_REF=lambda w: get_STAR_ref(w),
         STAR_EXTRA=lambda w: get_STAR_extra_params(w)["STAR_extra"],
@@ -61,10 +61,11 @@ rule ilmn_3e_STARcustom_firstPass:
         1> {log.log} 2> {log.err}
         """
 
+
 rule ilmn_3e_STARcustom_secondPass:
     input:
         FQS=lambda w: get_fqs(w, return_type="list", mode="ILMN"),
-        SJ="{OUTDIR}/{SAMPLE}/short_read/STARcustom/{RECIPE}/firstPass/_STARpass1/SJ.out.tab"
+        SJ="{OUTDIR}/{SAMPLE}/short_read/STARcustom/{RECIPE}/firstPass/_STARpass1/SJ.out.tab",
     output:
         BAM="{OUTDIR}/{SAMPLE}/short_read/STARcustom/{RECIPE}/Aligned.sortedByCoord.out.bam",
         UNMAPPED=[
@@ -103,19 +104,21 @@ rule ilmn_3e_STARcustom_secondPass:
         2> {log.err}
         """
 
+
 rule ilmn_3e_gzip_unmapped_fastq:
     input:
         FQ_R1="{OUTDIR}/{SAMPLE}/short_read/STARcustom/{RECIPE}/Unmapped.out.mate1",
-        FQ_R2="{OUTDIR}/{SAMPLE}/short_read/STARcustom/{RECIPE}/Unmapped.out.mate2"
+        FQ_R2="{OUTDIR}/{SAMPLE}/short_read/STARcustom/{RECIPE}/Unmapped.out.mate2",
     output:
         FQ_R1="{OUTDIR}/{SAMPLE}/short_read/STARcustom/{RECIPE}/Unmapped.out.mate1.fq.gz",
-        FQ_R2="{OUTDIR}/{SAMPLE}/short_read/STARcustom/{RECIPE}/Unmapped.out.mate2.fq.gz"
+        FQ_R2="{OUTDIR}/{SAMPLE}/short_read/STARcustom/{RECIPE}/Unmapped.out.mate2.fq.gz",
     threads: config["CORES"]
     shell:
         """
         pigz -p {threads} -c {input.FQ_R1} > {output.FQ_R1}
         pigz -p {threads} -c {input.FQ_R2} > {output.FQ_R2}
         """
+
 
 # Add CB to gene-tagged .bam
 rule ilmn_3N_STARcustom_add_corrected_barcodes:
@@ -147,6 +150,7 @@ rule ilmn_3N_STARcustom_add_corrected_barcodes:
         1> {log.log} \
         2> {log.err}
         """
+
 
 # Split BAM by strand
 rule ilmn_3N_STARcustom_split_bam_by_strand:
@@ -226,7 +230,6 @@ rule ilmn_3N_STARcustom_cache_preQC_h5ad_minimap2:
         FEATS="{OUTDIR}/{SAMPLE}/short_read/STARcustom/{RECIPE}/raw/features.tsv.gz",
         MAT="{OUTDIR}/{SAMPLE}/short_read/STARcustom/{RECIPE}/raw/matrix.mtx.gz",
         BC_map=lambda w: get_bc_map(w, mode="short_read"),
-        # BC_map="{OUTDIR}/{SAMPLE}/bc/map_underscore.txt",
     output:
         H5AD="{OUTDIR}/{SAMPLE}/short_read/STARcustom/{RECIPE}/raw/output.h5ad",
         QC_PLOTS="{OUTDIR}/{SAMPLE}/short_read/STARcustom/{RECIPE}/raw/qc_plots.png",
@@ -250,4 +253,4 @@ rule ilmn_3N_STARcustom_cache_preQC_h5ad_minimap2:
             --qc_plot_file {output.QC_PLOTS} \
         1> {log.log} \
         2> {log.err}
-        
+        """

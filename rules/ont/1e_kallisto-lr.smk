@@ -1,6 +1,7 @@
-#TODO
+# TODO
 # github: https://github.com/COMBINE-lab/oarfish
-# documentation: 
+# documentation:
+
 
 rule ont_1e_kallisto_lr:
     input:
@@ -37,7 +38,6 @@ rule ont_1e_kallisto_lr:
             --r1fq {input.FQS[0]} \
             --r2fq {input.FQS[1]}
         """
-
 
 
 rule ont_1e_bus2mat_lr:

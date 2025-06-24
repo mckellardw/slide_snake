@@ -1,18 +1,129 @@
 # Recipes for `slide_snake`
 
-The default receipe sheet is stored in `resources/recipe_sheet.csv`. Change the path in `config/config.yaml` if you would like to point to a custom version. If you want to add a custom recipe, read below!
+Recipes are the core configuration system in `slide_snake` that define how your spatial RNA-seq data should be processed. They specify everything from barcode extraction strategies to alignment parameters, making the pipeline modular and allowing for easy comparison of different preprocessing approaches.
 
-## **Recipe descriptions**:
-"Recipes" are descriptions for the alignment workflow- how to trim the barcode read, whether or not to filter out ribosomal RNA reads, additional alignment parameters, etc. One goal of `slide_snake` is to make the alignment preprocessing modular so that all of these parameters can be compared directly and rigorously. Please note the following:
-  - Recipe names are generally written f"{platform}_{barcode_processing}_{alignment_strategy}_{rRNA_filtering}"
-    - **platform** - name of the spatial array from the commercial (visium, seeker, stomics, etc.) or in-house/custom method (decoderseq, microST, etc.)
-    - **barcode_processing** - strategy to either trim down the Read1 file or call barcodes off known adapter sequences
-    - **alignment_strategy** - default parameterization used if this is missing; for total RNA datasets, the "total" option will better accomodate multimappers, etc.
-    - **rRNA_filtering** - how to remove rRNA sequenes (bwa or ribodetector)
-  - Multiple recipes can be passed for each sample. Include as many as you would like, each separated by a space in the sample sheet. This is useful for benchmarking.
-  - You can also add a new recipe! Just add a new line to `resources/recipe_sheet.csv` and give it a unique name in the 1st column.
+## Overview
 
-## Recipe Fields:
+Recipes solve a key challenge in spatial RNA-seq analysis: different platforms and experimental setups require different processing strategies. Rather than creating separate pipelines, `slide_snake` uses recipes to standardize and modularize these differences.
+
+### Key Benefits
+- **Modular Processing**: Mix and match different barcode extraction, alignment, and filtering strategies
+- **Benchmarking**: Run multiple recipes on the same sample to compare approaches  
+- **Reproducibility**: Standardized parameter sets ensure consistent results
+- **Extensibility**: Easy to add new platforms or custom processing strategies
+
+## Recipe Configuration
+
+**Key Parameters:**
+- Cell barcode: 16bp at start of R1
+- UMI: 12bp following barcode
+- Standard 10x whitelist
+- Compatible with Space Ranger outputs
+
+</details>
+
+### Curio Seeker/SlideSeq
+
+<details>
+<summary><strong>Seeker Recipe Strategies</strong></summary>
+
+Seeker data presents unique challenges due to barcode synthesis artifacts (indels, low quality). Multiple strategies are available:
+
+| Recipe | Strategy | Best For |
+|--------|----------|----------|
+| `seeker` | Fixed position extraction | High-quality barcode synthesis |
+| `seeker_hardTrim` | Hard trim + STARsolo correction | Moderate quality issues |
+| `seeker_MatchLinker` | Adapter-based extraction | **Recommended** - handles indels |
+| `seeker_MatchLinker_total` | Adapter-based + total RNA | Degraded samples |
+
+**Adapter-Based Processing (`seeker_MatchLinker`):**
+- Searches for adapter sequence with 2 mismatches allowed
+- Extracts barcodes/UMIs relative to adapter position
+- Handles synthesis indels effectively
+- Best performance with Curio Seeker data
+
+</details>
+
+### StereoSeq/STOmics (BGI)
+
+<details>
+<summary><strong>STOmics Recipes</strong></summary>
+
+| Recipe | Description | Notes |
+|--------|-------------|-------|
+| `stomics` | Standard STOmics processing | For DNB arrays |
+| `stomics_total` | Total RNA alignment | Enhanced multi-mapper handling |
+| `stomics_std_rRNA-bwa` | Standard + rRNA filtering | BWA-based filtering |
+| `stomics_std_ribodetector` | Standard + rRNA filtering | ML-based filtering |
+
+**Requirements:**
+- Need DNB barcode whitelist (use ST_BarcodeMap)
+- High-density array format
+- Standard Illumina-style processing
+
+</details>
+
+### DBIT-seq
+
+<details>
+<summary><strong>DBIT Recipes</strong></summary>
+
+| Recipe | Description | Features |
+|--------|-------------|-----------|
+| `dbit-pretrim` | Pre-trim adapter sequences | Handles DBIT adapter structure |
+| `dbit-pretrim_total` | Pre-trim + total RNA | For total RNA libraries |
+
+**Characteristics:**
+- Spatial barcodes in deterministic grid pattern
+- Custom adapter trimming required
+- Works with 10x100 or 50x50 grids
+
+</details>
+
+### DecoderSeq
+
+<details>
+<summary><strong>DecoderSeq Recipes</strong></summary>
+
+| Recipe | Description | Reference |
+|--------|-------------|-----------|
+| `decoder` | Standard DecoderSeq processing | [Cao et al, Nat Biotechnol 2024](https://www.nature.com/articles/s41587-023-02086-y) |
+| `decoder_total` | Total RNA alignment | Enhanced gene detection |
+
+**Features:**
+- Single-cell resolution spatial transcriptomics
+- Compatible with standard Illumina processing
+- High spatial resolution
+
+</details>
+
+## Technology Specifications
+d Configuration
+
+### rRNA Filtering Options
+
+**BWA-based filtering:**
+- Fast, reference-based
+- Requires rRNA BWA index
+- Good for known rRNA sequences
+
+**RiboDetector:**
+- Machine learning-based
+- No reference required
+- Better for novel rRNA detection
+
+### Total RNA vs Standard
+- **Standard**: Optimized for mRNA (unique alignments)
+- **Total RNA**: Allows multi-mappers, better for repetitive regions
+
+### Quality Control Integration
+All recipes automatically include:
+- FastQC on raw and processed reads
+- Alignment statistics
+- Barcode correction metrics
+- UMI deduplication stats
+
+This comprehensive recipe system allows `slide_snake` to handle the diverse landscape of spatial RNA-seq technologies while maintaining consistency and reproducibility.
 | **Field**                | **Description**                                                                                                       | **Required** | **Example for `seeker_internalTrim`**   |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------- | ------------ | --------------------------------------- |
 | `R1_finalLength`         | Minimum final length of Read1 after trimming.                                                                         | both         | 32                                      |
