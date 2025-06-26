@@ -79,6 +79,22 @@ make livehtml
 - ✅ **Error Detection**: Build fails on warnings to catch issues early
 - ✅ **GitHub Pages**: Automatic `.nojekyll` file generation
 
+## Troubleshooting
+
+### Common Issues Fixed
+
+1. **CSV Syntax Highlighting Warnings**: 
+   - **Issue**: Pygments doesn't recognize 'csv' as a valid lexer
+   - **Solution**: Added `suppress_warnings = ['misc.highlighting_failure']` to `conf.py`
+
+2. **Missing _static Directory**:
+   - **Issue**: Sphinx expects `_static` directory to exist
+   - **Solution**: Created `_static/.gitkeep` to ensure directory exists in version control
+
+3. **Build Failures on Warnings**:
+   - **Issue**: `fail_on_warning: true` causes build to fail on minor warnings
+   - **Solution**: Properly configured warning suppression for known issues
+
 ## Next Steps
 
 1. **Connect to Read the Docs**: 

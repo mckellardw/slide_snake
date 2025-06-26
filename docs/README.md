@@ -22,6 +22,18 @@ sphinx-build -b latex . _build/latex
 
 The built documentation will be available in the `_build/` directory.
 
+### Test Read the Docs Compatibility
+```bash
+# Run the test script (Unix/Linux/macOS)
+../test_docs.sh
+
+# Or on Windows
+../test_docs.bat
+
+# Or manually test with same flags as Read the Docs
+python -m sphinx -T -W --keep-going -b html -d _build/doctrees -D language=en . _build/html
+```
+
 ## Read the Docs Integration
 
 The documentation is automatically built and deployed by Read the Docs when changes are pushed to the main branch. The configuration is defined in the `.readthedocs.yaml` file in the root of the repository.
