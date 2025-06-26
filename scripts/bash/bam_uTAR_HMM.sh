@@ -121,10 +121,10 @@ bedtools coverage -nonamecheck -a ${f}_merge${MERGEBP}.sorted.bed -b <(zcat ${TM
 rm ${TMPDIR}/tmp.genome
 
 log_with_timestamp "Filtering the HMM blocks by coverage..."
-cat ${f}_merge${MERGEBP}.sorted.bed_count | awk 'BEGIN{OFS="\t"} ($7 >= '$MINCOV'){print $1, $2, $3, $4, $5, $6, $7}' | gzip > ${OUTDIR}/TAR_reads.bed.gz
+cat ${f}_merge${MERGEBP}.sorted.bed_count | awk 'BEGIN{OFS="\t"} ($7 >= '$MINCOV'){print $1, $2, $3, $4, $5, $6, $7}' | gzip > ${OUTDIR}/TAR_raw.bed.gz
 
-log_with_timestamp "#### Please examine if major chromosomes are all present in the final TAR_reads.bed.gz file ####"
-zcat ${OUTDIR}/TAR_reads.bed.gz | cut -f 1 | uniq
+log_with_timestamp "#### Please examine if major chromosomes are all present in the final TAR_raw.bed.gz file ####"
+zcat ${OUTDIR}/TAR_raw.bed.gz | cut -f 1 | uniq
 
 # log_with_timestamp "Linking the final TAR_reads.bed.gz file to the working directory"
 # ln -sf ${TMPDIR}/TAR_reads.bed.gz ${OUTDIR}/TAR_reads.bed.gz

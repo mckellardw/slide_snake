@@ -5,6 +5,7 @@ channels:
   - defaults
 dependencies:
   - bedtools
+  - htslib
   - ucsc-gtftogenepred
   - ucsc-bedtogenepred
   - ucsc-genepredtogtf

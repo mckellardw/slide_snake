@@ -27,11 +27,11 @@ rule ilmn_3u_filter_noGN:
     output:
         BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.noGN.dedup.bam",
     params:
-        TAG="GN",  # param not actually used
+        TAG="GN",
     shell:
         """
         samtools view -h {input.BAM} \
-        | awk -v tag=GN -f scripts/awk/bam_keepEmptyTag.awk \
+        | awk -v tag={params.TAG} -f scripts/awk/bam_keepEmptyTag.awk \
         | samtools view -b -o {output.BAM}
         """
 
@@ -44,6 +44,8 @@ rule ilmn_3u_calcHMMbed:
     output:
         BED=temp("{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/TAR_raw.bed.gz"),
     threads: config["CORES"]
+    resources:
+        mem_mb=65536  # 64GB in MB
     params:
         MEM="64G",
         MERGEBP=100,  # default 100 (Note- window size across genome is 50bp)
@@ -56,6 +58,18 @@ rule ilmn_3u_calcHMMbed:
         f"{workflow.basedir}/envs/hmm.yml"
     shell:
         """
+        # Validate input BAM file
+        if ! samtools quickcheck {input.BAM}; then
+            echo "Error: Input BAM file {input.BAM} is corrupted or invalid" 2> {log.err}
+            exit 1
+        fi
+        
+        # Check if uTAR_HMM.R script exists
+        if [ ! -f scripts/R/uTAR_HMM.R ]; then
+            echo "Error: Required script scripts/R/uTAR_HMM.R not found" 2> {log.err}
+            exit 1
+        fi
+        
         bash scripts/bash/bam_uTAR_HMM.sh \
             --bam {input.BAM} \
             --threads {threads} \
@@ -75,6 +89,8 @@ rule ilmn_3u_filter_out_aTARs:
         BED="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/uTAR.bed.gz",
     params:
         GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
+    resources:
+        mem_mb=8000
     conda:
         f"{workflow.basedir}/envs/ucsc.yml"
     shell:
@@ -115,6 +131,8 @@ rule ilmn_3u_tagReads:
             "{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/Aligned.sortedByCoord.noGN.dedup.bam.featureCounts.bam"
         ),
     threads: config["CORES"]
+    resources:
+        mem_mb=16000
     log:
         log="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/featureCounts.log",
         err="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/featureCounts.err",
@@ -135,7 +153,7 @@ rule ilmn_3u_tagReads:
             -o {output.DIR} \
             -R BAM \
             {input.BAM} \
-        1> {log.log}
+        1> {log.log} \
         2> {log.err}
         """
 
@@ -194,6 +212,8 @@ rule ilmn_3u_counts_long2mtx:
         MTX="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/uTAR.mtx",
         GENES="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/uTAR_genes.tsv.gz",
         CELLS="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/uTAR_cells.tsv.gz",
+    conda:
+        f"{workflow.basedir}/envs/scanpy.yml"
     shell:
         """
         python scripts/long2mtx.py \
