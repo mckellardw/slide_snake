@@ -326,7 +326,7 @@ STAR \
 
 Once references are prepared, configure your sample sheet:
 
-```csv
+```text
 sampleID,species,STAR_ref,genes_gtf,kb_idx,kb_t2g,genome_fa,cDNA_fa,rRNA_ref,rRNA_gtf
 sample1,human,/ref/homo_sapiens/STAR/,/ref/homo_sapiens/genes.gtf,/ref/homo_sapiens/kallisto/transcriptome.idx,/ref/homo_sapiens/kallisto/t2g.txt,/ref/homo_sapiens/genome.fa,/ref/homo_sapiens/transcripts.fa,/ref/homo_sapiens/rRNA/rRNA.fa,/ref/homo_sapiens/rRNA/rRNA.gtf
 ```

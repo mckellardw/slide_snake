@@ -43,6 +43,18 @@ extensions = [
 # Source file suffixes
 source_suffix = ['.rst', '.md']
 
+# MyST parser configuration
+myst_enable_extensions = [
+    "colon_fence",
+    "deflist",
+    "html_image",
+    "linkify",  # Now included via linkify-it-py package
+    "replacements",
+    "smartquotes",
+    "substitution",
+    "tasklist",
+]
+
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'README.md']
 
@@ -83,7 +95,3 @@ intersphinx_mapping = {
 # -- Options for copy button extension ---------------------------------------
 copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
 copybutton_prompt_is_regexp = True
-
-# -- Suppress warnings for unknown lexers ------------------------------------
-# This suppresses warnings about 'csv' lexer not being known by Pygments
-suppress_warnings = ['misc.highlighting_failure']

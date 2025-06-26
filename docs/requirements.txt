@@ -6,5 +6,7 @@ sphinx-rtd-theme>=1.0,<3.0
 myst-parser>=0.18,<5.0
 # Additional useful extensions
 sphinx-copybutton>=0.5,<1.0
+# Required for MyST linkify extension
+linkify-it-py>=2.0,<3.0
 # Optional: Uncomment if you need mermaid diagrams
 # sphinxcontrib-mermaid>=0.7,<2.0

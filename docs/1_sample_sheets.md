@@ -59,7 +59,7 @@ The sample sheet is a CSV file that contains all the necessary information about
 
 ### Multiple Files
 Specify multiple FASTQ files in several ways:
-```csv
+```text
 # Space-separated files
 fastq_R1,fastq_R2
 "file1_R1.fq.gz file2_R1.fq.gz","file1_R2.fq.gz file2_R2.fq.gz"
@@ -77,14 +77,14 @@ fastq_R1,fastq_R2
 ## Recipe Specifications
 
 ### Single Recipe
-```csv
+```text
 recipe
 visium
 ```
 
 ### Multiple Recipes
 Use spaces to separate multiple recipes for benchmarking:
-```csv
+```text
 recipe
 "visium visium_total"
 ```
@@ -96,13 +96,13 @@ This will run both standard and total RNA alignment strategies.
 Common species configurations:
 
 ### Human (GRCh38)
-```csv
+```text
 species,STAR_ref,genes_gtf,kb_idx,kb_t2g
 human,/path/to/GRCh38_STAR/,/path/to/gencode.v47.gtf,/path/to/human.idx,/path/to/human_t2g.txt
 ```
 
 ### Mouse (GRCm39) 
-```csv
+```text
 species,STAR_ref,genes_gtf,kb_idx,kb_t2g  
 mouse,/path/to/GRCm39_STAR/,/path/to/gencode.vM36.gtf,/path/to/mouse.idx,/path/to/mouse_t2g.txt
 ```
@@ -110,25 +110,25 @@ mouse,/path/to/GRCm39_STAR/,/path/to/gencode.vM36.gtf,/path/to/mouse.idx,/path/t
 ## Platform-Specific Examples
 
 ### 10x Visium
-```csv
+```text
 sampleID,fastq_R1,fastq_R2,recipe,whitelist,species,STAR_ref,genes_gtf,kb_idx,kb_t2g
 visium_sample,data/visium_R1.fq.gz,data/visium_R2.fq.gz,visium,resources/visium_whitelist/whitelist.txt,human,/ref/GRCh38_STAR,/ref/gencode.v47.gtf,/ref/human.idx,/ref/human_t2g.txt
 ```
 
 ### Curio Seeker
-```csv
+```text
 sampleID,fastq_R1,fastq_R2,recipe,whitelist,species,STAR_ref,genes_gtf,kb_idx,kb_t2g
 seeker_sample,data/seeker_R1.fq.gz,data/seeker_R2.fq.gz,seeker_MatchLinker,data/barcodes.txt,mouse,/ref/GRCm39_STAR,/ref/gencode.vM36.gtf,/ref/mouse.idx,/ref/mouse_t2g.txt
 ```
 
 ### DBIT-seq
-```csv
+```text
 sampleID,fastq_R1,fastq_R2,recipe,whitelist,species,STAR_ref,genes_gtf,kb_idx,kb_t2g
 dbit_sample,data/dbit_R1.fq.gz,data/dbit_R2.fq.gz,dbit-pretrim,resources/dbit_whitelist/Spatial_barcode_100x100.txt,human,/ref/GRCh38_STAR,/ref/gencode.v47.gtf,/ref/human.idx,/ref/human_t2g.txt
 ```
 
 ### Oxford Nanopore (ONT)
-```csv
+```text
 sampleID,fastq_R1,fastq_R2,recipe,recipe_ONT,whitelist,species,cDNA_fa,genes_gtf
 ont_sample,data/ont_reads.fq.gz,,visium,visium_ont,resources/visium_whitelist/whitelist.txt,human,/ref/transcripts.fa,/ref/gencode.v47.gtf
 ```
@@ -140,7 +140,7 @@ Create custom recipes by modifying `resources/recipe_sheet.csv`. See [Recipes Do
 
 ### rRNA Filtering
 Enable ribosomal RNA filtering:
-```csv
+```text
 rRNA_ref,rRNA_gtf
 /path/to/rRNA_BWA_index,/path/to/rRNA_annotations.gtf
 ```
@@ -189,7 +189,7 @@ snakemake -n out/{SAMPLE_ID}/illumina/STAR/{RECIPE}/counts_filtered/
 ## Example Sample Sheets
 
 ### Complete Example
-```csv
+```text
 sampleID,fastq_R1,fastq_R2,recipe,recipe_ONT,whitelist,species,STAR_ref,genes_gtf,kb_idx,kb_t2g,rRNA_ref,rRNA_gtf,genome_fa,cDNA_fa
 test_visium,data/visium_R1.fq.gz,data/visium_R2.fq.gz,visium,,resources/visium_whitelist/whitelist.txt,human,/ref/GRCh38_STAR,/ref/gencode.v47.gtf,/ref/human.idx,/ref/human_t2g.txt,/ref/rRNA_BWA,/ref/rRNA.gtf,/ref/GRCh38.fa,/ref/transcripts.fa
 test_seeker,data/seeker_R1.fq.gz,data/seeker_R2.fq.gz,"seeker_MatchLinker seeker_std",,data/seeker_barcodes.txt,mouse,/ref/GRCm39_STAR,/ref/gencode.vM36.gtf,/ref/mouse.idx,/ref/mouse_t2g.txt,/ref/rRNA_BWA,/ref/rRNA.gtf,/ref/GRCm39.fa,/ref/mouse_transcripts.fa

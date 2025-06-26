@@ -30,7 +30,7 @@ New helper functions in `rules/0_utils.smk`:
 ### Step 1: Update Recipe Sheet
 Add a new row to `resources/recipe_sheet.csv` with the following key fields:
 
-```csv
+```text
 recipe_name,BC_length,BC_concat,internal_adapter,fwd_primer,...
 new_recipe,10 8,True,ACGTACGT,CTACACGACGCTCTTCCGATCT,...
 ```
@@ -69,7 +69,7 @@ Check that the following files are generated correctly:
 ## Example Configurations
 
 ### Seeker-type (Split barcodes with adapter)
-```csv
+```text
 BC_length: "8 6"
 BC_concat: True  
 internal_adapter: "TCTTCAGCGTTCCCGAGA"
@@ -77,7 +77,7 @@ fwd_primer: "CTACACGACGCTCTTCCGATCT"
 ```
 
 ### Visium-type (Single barcode)
-```csv
+```text
 BC_length: "16"
 BC_concat: True
 internal_adapter: ""
@@ -85,7 +85,7 @@ fwd_primer: "CTACACGACGCTCTTCCGATCT"
 ```
 
 ### STOmics-type (Single barcode)
-```csv
+```text
 BC_length: "25"
 BC_concat: True
 internal_adapter: ""
