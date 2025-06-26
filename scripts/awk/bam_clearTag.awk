@@ -1,18 +1,20 @@
 # bam_clearTag.awk
-##  Removes a tag from reads/entries
+## Removes a tag from reads/entries
 
 # Usage:
-## samtools view -h input.bam | awk -v tag=AS -f bam_removeTags.awk > output.sam
+## samtools view -h input.bam | awk -v tag=AS -f bam_clearTag.awk > output.sam
 
 BEGIN {
     OFS = "\t"
 }
 
+# Keep header lines
 /^@/ {
     print
     next
 }
 
+# Remove specified tag from alignment records
 {
     output = ""
     for(i = 1; i <= NF; i++) {
