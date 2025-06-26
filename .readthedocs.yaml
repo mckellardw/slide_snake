@@ -27,8 +27,8 @@ sphinx:
   fail_on_warning: true
 
 # Optionally build your docs in additional formats such as PDF and ePub
+# PDF generation disabled due to LaTeX Unicode issues with bullet characters
 formats:
-  - pdf
   - epub
 
 # Optional but recommended, declare the Python requirements required

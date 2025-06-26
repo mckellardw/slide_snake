@@ -95,3 +95,24 @@ intersphinx_mapping = {
 # -- Options for copy button extension ---------------------------------------
 copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
 copybutton_prompt_is_regexp = True
+
+# -- Options for LaTeX output -----------------------------------------------
+latex_elements = {
+    # The paper size ('letterpaper' or 'a4paper').
+    'papersize': 'letterpaper',
+    
+    # The font size ('10pt', '11pt' or '12pt').
+    'pointsize': '10pt',
+    
+    # Additional stuff for the LaTeX preamble to handle Unicode
+    'preamble': r'''
+\usepackage[utf8]{inputenc}
+\usepackage{newunicodechar}
+\usepackage{pmboxdraw}
+\DeclareUnicodeCharacter{25CF}{\textbullet}
+\DeclareUnicodeCharacter{2022}{\textbullet}
+''',
+    
+    # Remove blank pages
+    'extraclassoptions': 'openany,oneside',
+}

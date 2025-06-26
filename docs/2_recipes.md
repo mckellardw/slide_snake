@@ -213,9 +213,9 @@ representing the locational information of the barcode, UMI, and the DNA (where 
 biological read to be mapped):
 
 -x a,b,c:d,e,f:g,h,i
-● a: barcode file number, b: barcode start position, c: barcode end position
-● d: UMI file number, e: UMI start position, f: UMI end position
-● g: DNA file number, h: DNA start position, i: DNA end position
+- a: barcode file number, b: barcode start position, c: barcode end position
+- d: UMI file number, e: UMI start position, f: UMI end position
+- g: DNA file number, h: DNA start position, i: DNA end position
 
 Important notes: File numbers and positions are zero-indexed. If no specific end position
 exists (i.e. the end position is the very end of the read), the end position should be set to 0. If
