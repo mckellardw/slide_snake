@@ -9,6 +9,14 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.12"
+  # Commands to run before building the documentation
+  jobs:
+    post_create_environment:
+      # Install additional system packages if needed
+      - pip install --upgrade pip setuptools wheel
+    post_install:
+      # Ensure all dependencies are properly installed
+      - pip check
 
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:
@@ -16,16 +24,16 @@ sphinx:
   # You can configure Sphinx to use a different builder, for instance use the dirhtml builder for simpler URLs
   # builder: "dirhtml"
   # Fail on all warnings to avoid broken references
-  # fail_on_warning: true
+  fail_on_warning: true
 
 # Optionally build your docs in additional formats such as PDF and ePub
-# formats:
-#   - pdf
-#   - epub
+formats:
+  - pdf
+  - epub
 
 # Optional but recommended, declare the Python requirements required
 # to build your documentation
 # See https://docs.readthedocs.io/en/stable/guides/reproducible-builds.html
-# python:
-#   install:
-#     - requirements: docs/requirements.txt
+python:
+  install:
+    - requirements: docs/requirements.txt
