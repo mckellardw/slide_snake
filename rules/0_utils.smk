@@ -702,3 +702,61 @@ def max_sum_of_entries(lst):
             max_sum = current_sum
 
     return max_sum
+
+
+# Helper functions for barcode processing
+def get_barcode_config(w):
+    """
+    Get barcode configuration for a given recipe.
+    
+    Returns a dictionary with barcode processing parameters.
+    """
+    try:
+        recipe_info = {}
+        
+        # Get basic barcode info
+        recipe_info['bc_lengths'] = get_recipe_info(w, 'BC_length', mode='list')
+        recipe_info['bc_concat'] = get_recipe_info(w, 'BC_concat', mode='list')
+        
+        # Parse barcode lengths
+        if recipe_info['bc_lengths'] and isinstance(recipe_info['bc_lengths'][0], str):
+            recipe_info['bc_lengths_parsed'] = [int(x) for x in recipe_info['bc_lengths'][0].split()]
+        else:
+            recipe_info['bc_lengths_parsed'] = recipe_info['bc_lengths']
+        
+        # Determine if barcodes should be split
+        recipe_info['needs_splitting'] = (
+            recipe_info['bc_lengths_parsed'] and 
+            len(recipe_info['bc_lengths_parsed']) >= 2 and
+            recipe_info['bc_concat'] and
+            str(recipe_info['bc_concat'][0]).lower() == 'true'
+        )
+        
+        return recipe_info
+        
+    except Exception as e:
+        print(f"Error getting barcode config: {e}")
+        return {}
+
+def get_recipe_barcode_strategy(w):
+    """
+    Determine the barcode processing strategy for a recipe.
+    
+    Returns one of: 'split', 'single', 'none'
+    """
+    try:
+        recipes = get_recipes(w, mode="list")
+        recipe_str = "".join(recipes) if recipes else ""
+        
+        # Check if this is a recipe that needs barcode splitting
+        split_recipes = ['seeker', 'decoder', 'miST']
+        if any(recipe in recipe_str for recipe in split_recipes):
+            config = get_barcode_config(w)
+            if config.get('needs_splitting', False):
+                return 'split'
+        
+        return 'single'
+        
+    except Exception as e:
+        print(f"Error determining barcode strategy: {e}")
+        return 'single'

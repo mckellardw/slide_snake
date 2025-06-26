@@ -2,6 +2,23 @@
 
 This directory contains toy datasets for testing various spatial transcriptomics technologies supported by slide_snake. Each dataset is reduced in size for quick testing and demonstration purposes.
 
+## Visium/STRS (`test_visium/`)
+
+### STRS/Skeletal muscle - "vy3C"
+- [GEO link](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE161318)
+- [barcode map](https://github.com/mckellardw/slide_snake/blob/main/resources/visium_whitelist/visium-v1_coordinates.txt)
+- [Citation](https://www.nature.com/articles/s41587-022-01517-6) - see Fig 2
+- Visium/STRS data
+- Both Illumina and ONT reads available in toy data
+
+### Visium/olfactory bulb - "sit_mob"
+- [GEO link](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE153859)
+- [barcode map](https://github.com/mckellardw/slide_snake/blob/main/resources/visium_whitelist/visium-v1_coordinates.txt)
+- [Citation](https://doi.org/10.1093/nar/gkad169)
+- First Visium long-read (Oxford Nanopore) data
+- Both Illumina and ONT reads available in toy data (#TODO)
+
+
 ## Seeker/SlideSeq_v2 (`test_seeker/`)
 
 ### `Heart_Control` - Seeker/heart
@@ -9,15 +26,6 @@ This directory contains toy datasets for testing various spatial transcriptomics
 - [barcode map](https://github.com/mckellardw/slide_snake/blob/main/data/test_seeker/A0004_043_BeadBarcodes.txt)
 - [Citation](https://www.nature.com/articles/s44161-022-00138-1) - see Fig 4
 - Seeker data generated on reovirus-infected mouse heart
-- Both Illumina and ONT reads available in toy data
-
-## Visium/STRS (`test_visium/`)
-
-### vy3C - STRS/SkM
-- [GEO link](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE161318)
-- [barcode map](https://github.com/mckellardw/slide_snake/blob/main/resources/visium_whitelist/visium-v1_coordinates.txt)
-- [Citation](https://www.nature.com/articles/s41587-022-01517-6) - see Fig 2
-- Visium/STRS data
 - Both Illumina and ONT reads available in toy data
 
 ## Patho-dBIT (`test_pathodbit/`)
@@ -88,7 +96,3 @@ done
 The data directory also contains example sample sheets for testing:
 - `test_sample_sheet_minimal.csv` - Minimal sample sheet format
 - `test_sample_sheet.csv` - Complete sample sheet with all optional fields
-
-## Usage
-
-Each test dataset can be used with slide_snake by creating appropriate sample sheets that reference the files in these directories. See the documentation for more information on creating sample sheets and running the pipeline.

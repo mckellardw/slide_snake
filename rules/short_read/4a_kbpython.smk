@@ -1,7 +1,7 @@
 #############################################
 ## kb-python pseudoalignment
-##  source: https:/github.com/pachterlab/kb_python
-##  info: https:/www.kallistobus.tools/  [currently very out of date]
+##  source: https://github.com/pachterlab/kb_python
+##  info: https://www.kallistobus.tools/  [currently very out of date]
 #############################################
 rule ilmn_4a_kbpython_std:
     input:
@@ -48,9 +48,6 @@ rule ilmn_4a_kbpython_std:
         1> {log.log} \
         2> {log.err}
         """
-
-
-# {resources.mem}
 
 
 rule ilmn_4a_kbpython_std_remove_suffix:
