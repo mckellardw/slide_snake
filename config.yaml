@@ -37,3 +37,6 @@ MIRGE_LIB: resources/miRge3_Lib
 ########################################################################################################
 # R1_PRIMER: "CTACACGACGCTCTTCCGATCT" # R1 primer (used in Visium & Seeker)
 MAX_SHORT_READ_LENGTH: 34 # max read length for reads to be aligned to short RNA references
+
+# rRNA filtering options
+# RRNA_KEYWORDS: "rRNA,Mt_rRNA,ribosomal_RNA,5S_rRNA,5.8S_rRNA,18S_rRNA,28S_rRNA,12S_rRNA,16S_rRNA"  # Default keywords for rRNA detection

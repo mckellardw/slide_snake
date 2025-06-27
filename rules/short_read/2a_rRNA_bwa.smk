@@ -4,6 +4,8 @@ rule ilmn_2a_extract_rRNA_fasta:
         CDNA_FA=lambda w: SAMPLE_SHEET["cdna_fa"][w.SAMPLE],
     output:
         FASTA_rRNA="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_sequences.fa.gz",
+    params:
+        RRNA_KEYWORDS=config.get("RRNA_KEYWORDS", "rRNA,Mt_rRNA,ribosomal_RNA,5S_rRNA,5.8S_rRNA,18S_rRNA,28S_rRNA,12S_rRNA,16S_rRNA"),
     log:
         log="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/extract_rRNA.log",
         err="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/extract_rRNA.err",
@@ -16,6 +18,7 @@ rule ilmn_2a_extract_rRNA_fasta:
         bash scripts/bash/fa_extract_rRNA.sh \
             {input.CDNA_FA} \
             {output.FASTA_rRNA} \
+            "{params.RRNA_KEYWORDS}" \
         1> {log.log} \
         2> {log.err}
         """
@@ -27,6 +30,8 @@ rule ilmn_2a_build_rRNA_gtf:
         CDNA_FA=lambda w: SAMPLE_SHEET["cdna_fa"][w.SAMPLE],
     output:
         GTF_rRNA="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_annotations.gtf.gz",
+    params:
+        RRNA_KEYWORDS=config.get("RRNA_KEYWORDS", "rRNA,Mt_rRNA,ribosomal_RNA,5S_rRNA,5.8S_rRNA,18S_rRNA,28S_rRNA,12S_rRNA,16S_rRNA"),
     log:
         log="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/build_rRNA_gtf.log",
         err="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/build_rRNA_gtf.err",
@@ -39,6 +44,7 @@ rule ilmn_2a_build_rRNA_gtf:
         bash scripts/bash/fa_build_rRNA_gtf.sh \
             {input.CDNA_FA} \
             {output.GTF_rRNA} \
+            "{params.RRNA_KEYWORDS}" \
         1> {log.log} \
         2> {log.err}
         """
