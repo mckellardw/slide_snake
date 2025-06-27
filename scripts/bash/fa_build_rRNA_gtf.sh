@@ -47,7 +47,29 @@ echo "Total sequences in input: ${TOTAL_SEQS}"
 
 # Create AWK pattern for flexible keyword matching
 KEYWORDS_PATTERN=$(echo "${KEYWORDS}" | sed 's/,/|/g')
-echo "Pattern for matching: gene_biotype:(${KEYWORDS_PATTERN})"
+echo "Pattern for matching: (${KEYWORDS_PATTERN})"
+
+# Analyze header format first
+echo "Analyzing header format..."
+if [[ ${FASTA_cDNA} == *.gz ]]; then
+    SAMPLE_HEADER=$(zcat "${FASTA_cDNA}" | head -1)
+else
+    SAMPLE_HEADER=$(head -1 "${FASTA_cDNA}")
+fi
+echo "Sample header: ${SAMPLE_HEADER}"
+
+# Check if headers use pipe-delimited format (like Ensembl) or space-delimited (like GENCODE)
+if [[ ${SAMPLE_HEADER} == *"|"* ]]; then
+    echo "Detected pipe-delimited format (Ensembl-style)"
+    DELIMITER="|"
+    FIELD_SEP="|"
+    echo "Will search in last field for gene type"
+else
+    echo "Detected space-delimited format (GENCODE-style)"
+    DELIMITER=" "
+    FIELD_SEP=" "
+    echo "Will search in field 5 for gene_biotype"
+fi
 
 # Manually build gtf with this hideous awk code...
 # Handle both compressed and uncompressed input files
@@ -59,42 +81,77 @@ else
 fi \
 | awk \
     -v RS=">" \
-    -v FS=" " \
+    -v FS="${FIELD_SEP}" \
     -vOFS='' \
-    -v pattern="gene_biotype:(${KEYWORDS_PATTERN})" \
-    '$5 ~ pattern {
-        seqname = $1;
-        source = "custom";
-        feature = "exon";
-        start = "1";
-
-        n=split($0, lines, "\n");
-        len = 0;
-        for (i = 2; i <= n; ++i) {
-            len += length(lines[i]);
+    -v pattern="(${KEYWORDS_PATTERN})" \
+    -v delimiter="${DELIMITER}" \
+    'BEGIN { count = 0 }
+    NR > 1 {
+        # Check if this sequence matches rRNA pattern
+        match_found = 0
+        if (delimiter == "|") {
+            # For pipe-delimited (Ensembl): check last field
+            if (NF > 0 && $NF ~ pattern) {
+                match_found = 1
+            }
+        } else {
+            # For space-delimited (GENCODE): check field 5 for gene_biotype
+            if ($5 ~ ("gene_biotype:" pattern)) {
+                match_found = 1
+            }
         }
-        end = len;
-
-        score = ".";
-        strand = "+";
-        frame = ".";
         
-        split($4, b, ":");
-        gene_id = b[2];
-        split($6, c, ":");
-        transcript_type = c[2];
-        split($7, d, ":");
-        transcript_name = d[2];
-        split($7, e, ":");
-        gene_name = e[2];
-        split($5, f, ":");
-        gene_type = f[2];
+        if (match_found) {
+            seqname = $1;
+            source = "custom";
+            feature = "exon";
+            start = "1";
 
-        attributes = "gene_id \"" gene_id "\"; transcript_id \"" seqname "\"; gene_type \"" gene_type "\"; gene_name \"" gene_name "\"; transcript_type \"" transcript_type "\"; transcript_name \"" transcript_name "\";";
+            n=split($0, lines, "\n");
+            len = 0;
+            for (i = 2; i <= n; ++i) {
+                len += length(lines[i]);
+            }
+            end = len;
 
-        print seqname,"\t", source,"\t", feature,"\t", start,"\t", end,"\t", score,"\t", strand,"\t", frame,"\t", attributes;
-        count++;
-    } END { print "Generated " count " GTF entries" > "/dev/stderr" }' \
+            score = ".";
+            strand = "+";
+            frame = ".";
+            
+            # Handle different header formats for attribute extraction
+            if (delimiter == "|") {
+                # For pipe-delimited (Ensembl): extract from pipe-separated fields
+                # Format: >ENSMUST00000082908.3|ENSMUSG00000064842.3|-|-|Gm26206-201|Gm26206|110|snRNA|
+                gene_id = ($2 != "") ? $2 : "unknown"
+                transcript_id = ($1 != "") ? $1 : "unknown"
+                gene_name = ($6 != "") ? $6 : "unknown"
+                transcript_name = ($5 != "") ? $5 : "unknown"
+                gene_type = ($NF != "") ? $NF : "unknown"
+                transcript_type = gene_type
+            } else {
+                # For space-delimited (GENCODE): extract from colon-separated values
+                split($4, b, ":");
+                gene_id = (length(b) > 1) ? b[2] : "unknown";
+                split($6, c, ":");
+                transcript_type = (length(c) > 1) ? c[2] : "unknown";
+                split($7, d, ":");
+                transcript_name = (length(d) > 1) ? d[2] : "unknown";
+                gene_name = transcript_name;
+                split($5, f, ":");
+                gene_type = (length(f) > 1) ? f[2] : "unknown";
+            }
+
+            attributes = "gene_id \"" gene_id "\"; transcript_id \"" transcript_id "\"; gene_type \"" gene_type "\"; gene_name \"" gene_name "\"; transcript_type \"" transcript_type "\"; transcript_name \"" transcript_name "\";";
+
+            print seqname,"\t", source,"\t", feature,"\t", start,"\t", end,"\t", score,"\t", strand,"\t", frame,"\t", attributes;
+            count++;
+        }
+    } END { 
+        print "Generated " count " GTF entries" > "/dev/stderr"
+        if (count == 0) {
+            print "WARNING: No GTF entries generated!" > "/dev/stderr"
+        }
+    }' \
 | tee >(echo "Compressing and writing GTF output..." > /dev/stderr) \
 | gzip \
 > ${GTF_rRNA}
@@ -103,6 +160,24 @@ fi \
 echo "Counting generated GTF entries..."
 GTF_ENTRIES=$(zcat "${GTF_rRNA}" | wc -l)
 echo "Successfully generated ${GTF_ENTRIES} GTF entries"
+
+# Check if output is empty and throw error
+if [ "${GTF_ENTRIES}" -eq 0 ]; then
+    echo "ERROR: No GTF entries were generated!"
+    echo "This could be due to:"
+    echo "  1. No rRNA sequences in the input file"
+    echo "  2. Different header format than expected"
+    echo "  3. Keywords don't match the gene types in your file"
+    echo ""
+    echo "Please check:"
+    echo "  - Header format in your input file"
+    echo "  - Available gene types in your FASTA headers"
+    echo "  - RRNA_KEYWORDS configuration"
+    echo ""
+    echo "Sample header from your file: ${SAMPLE_HEADER}"
+    rm -f "${GTF_rRNA}"  # Clean up empty output file
+    exit 1
+fi
 
 # Calculate runtime and output info
 END_TIME=$(date +%s)

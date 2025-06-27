@@ -47,9 +47,31 @@ echo "Total sequences in input: ${TOTAL_SEQS}"
 
 # Create AWK pattern for flexible keyword matching
 KEYWORDS_PATTERN=$(echo "${KEYWORDS}" | sed 's/,/|/g')
-echo "Pattern for matching: gene_biotype:(${KEYWORDS_PATTERN})"
+echo "Pattern for matching: (${KEYWORDS_PATTERN})"
 
-# Fields for fasta are different for GENCODE
+# Analyze header format first
+echo "Analyzing header format..."
+if [[ ${FASTA_cDNA} == *.gz ]]; then
+    SAMPLE_HEADER=$(zcat "${FASTA_cDNA}" | head -1)
+else
+    SAMPLE_HEADER=$(head -1 "${FASTA_cDNA}")
+fi
+echo "Sample header: ${SAMPLE_HEADER}"
+
+# Check if headers use pipe-delimited format (like Ensembl) or space-delimited (like GENCODE)
+if [[ ${SAMPLE_HEADER} == *"|"* ]]; then
+    echo "Detected pipe-delimited format (Ensembl-style)"
+    DELIMITER="|"
+    FIELD_SEP="|"
+    echo "Will search in last field for gene type"
+else
+    echo "Detected space-delimited format (GENCODE-style)"
+    DELIMITER=" "
+    FIELD_SEP=" "
+    echo "Will search in field 5 for gene_biotype"
+fi
+
+# Fields for fasta are different for GENCODE vs Ensembl
 # Handle both compressed and uncompressed input files
 echo "Extracting rRNA sequences..."
 if [[ ${FASTA_cDNA} == *.gz ]]; then
@@ -59,9 +81,32 @@ else
 fi \
 | awk \
     -v RS="\n>" \
-    -v FS=" " \
-    -v pattern="gene_biotype:(${KEYWORDS_PATTERN})" \
-    '$5 ~ pattern { print ">"$0; count++ } END { print "Extracted " count " rRNA sequences" > "/dev/stderr" }' \
+    -v FS="${FIELD_SEP}" \
+    -v pattern="(${KEYWORDS_PATTERN})" \
+    -v delimiter="${DELIMITER}" \
+    'BEGIN { count = 0 }
+    NR > 1 {
+        # For pipe-delimited (Ensembl): check last field
+        if (delimiter == "|") {
+            if (NF > 0 && $NF ~ pattern) {
+                print ">" $0
+                count++
+            }
+        }
+        # For space-delimited (GENCODE): check field 5 for gene_biotype
+        else {
+            if ($5 ~ ("gene_biotype:" pattern)) {
+                print ">" $0
+                count++
+            }
+        }
+    }
+    END { 
+        print "Extracted " count " rRNA sequences" > "/dev/stderr"
+        if (count == 0) {
+            print "WARNING: No rRNA sequences found!" > "/dev/stderr"
+        }
+    }' \
 | tee >(echo "Compressing and writing output..." > /dev/stderr) \
 | gzip \
 > ${FASTA_rRNA}
@@ -70,6 +115,24 @@ fi \
 echo "Counting extracted sequences..."
 EXTRACTED_SEQS=$(zcat "${FASTA_rRNA}" | grep -c "^>")
 echo "Successfully extracted ${EXTRACTED_SEQS} rRNA sequences"
+
+# Check if output is empty and throw error
+if [ "${EXTRACTED_SEQS}" -eq 0 ]; then
+    echo "ERROR: No rRNA sequences were extracted!"
+    echo "This could be due to:"
+    echo "  1. No rRNA sequences in the input file"
+    echo "  2. Different header format than expected"
+    echo "  3. Keywords don't match the gene types in your file"
+    echo ""
+    echo "Please check:"
+    echo "  - Header format in your input file"
+    echo "  - Available gene types in your FASTA headers"
+    echo "  - RRNA_KEYWORDS configuration"
+    echo ""
+    echo "Sample header from your file: ${SAMPLE_HEADER}"
+    rm -f "${FASTA_rRNA}"  # Clean up empty output file
+    exit 1
+fi
 
 # Calculate runtime and output info
 END_TIME=$(date +%s)
