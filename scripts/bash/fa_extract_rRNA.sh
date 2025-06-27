@@ -11,7 +11,12 @@ FASTA_cDNA=$1
 FASTA_rRNA=$2
 
 # Fields for fasta are different for GENCODE
-zcat ${FASTA_cDNA} \
+# Handle both compressed and uncompressed input files
+if [[ ${FASTA_cDNA} == *.gz ]]; then
+    zcat ${FASTA_cDNA}
+else
+    cat ${FASTA_cDNA}
+fi \
 | awk \
     -v RS="\n>" \
     -v FS=" " '$5=="gene_biotype:rRNA" || $5=="gene_biotype:Mt_rRNA" { print ">"$0 }' \

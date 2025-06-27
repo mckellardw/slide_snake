@@ -53,18 +53,34 @@ def save_sparse_matrix(matrix, var_names, obs_names, output_dir):
     os.remove(f"{output_dir}/barcodes.tsv")
 
 
-def main():
+def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Convert a tsv.gz file to a sparse matrix in mtx format."
     )
     parser.add_argument("tsv_gz_path", type=str, help="Path to the input tsv.gz file")
     parser.add_argument("output_dir", type=str, help="Path to the output directory")
-    args = parser.parse_args()
+    parser.add_argument(
+        "-v", "--verbose", 
+        action="store_true", 
+        help="Enable verbose output (default: False)"
+    )
+    return parser.parse_args()
+
+
+def main():
+    args = parse_arguments()
+
+    if args.verbose:
+        print(f"Processing file: {args.tsv_gz_path}")
+        print(f"Output directory: {args.output_dir}")
 
     # Open the tsv.gz file
     with gzip.open(args.tsv_gz_path, "rt") as f:
         # Skip the first line
         next(f)
+        
+        if args.verbose:
+            print("Reading data from tsv.gz file...")
 
         # Initialize lists to store data
         data_vars = []
@@ -83,6 +99,11 @@ def main():
     # Get unique var_names
     var_names = list(set(data_vars))
     obs_names = list(set(data_obs))
+    
+    if args.verbose:
+        print(f"Found {len(var_names)} unique features")
+        print(f"Found {len(obs_names)} unique observations")
+        print(f"Non-zero entries: {len(data)}")
     # print(f"vars - {len(var_names)}")
     # print(f"obs - {len(obs_names)}")
 
@@ -94,10 +115,17 @@ def main():
     data_vars = [var_name_to_idx[var_name] for var_name in data_vars]
     data_obs = [row_name_to_idx[row_name] for row_name in data_obs]
 
+    if args.verbose:
+        print("Creating sparse matrix...")
+
     # Initialize sparse matrix
     matrix = sp.csr_matrix(
         (data, (data_obs, data_vars)), shape=(len(obs_names), len(var_names))
     )
+
+    if args.verbose:
+        print(f"Matrix shape: {matrix.shape}")
+        print("Saving matrix to output directory...")
 
     # Save sparse matrix to npz file
     # save_npz_matrix(

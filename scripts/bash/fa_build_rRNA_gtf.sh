@@ -11,7 +11,12 @@ FASTA_cDNA=$1
 GTF_rRNA=$2
 
 # Manually build gtf with this hideous awk code...
-zcat ${FASTA_cDNA} \
+# Handle both compressed and uncompressed input files
+if [[ ${FASTA_cDNA} == *.gz ]]; then
+    zcat ${FASTA_cDNA}
+else
+    cat ${FASTA_cDNA}
+fi \
 | awk \
     -v RS=">" \
     -v FS=" " \
