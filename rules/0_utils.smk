@@ -1,6 +1,7 @@
 import os
 import re
 import glob
+import pandas as pd
 
 
 #### Utility rules ############################
@@ -33,66 +34,145 @@ def check_sample_sheet(SAMPLE_SHEET):
         "kb_idx": [".idx"],
         "kb_t2g": [".txt"],
         "genes_gtf": [".gtf"],
+        "cdna_fa": [".fa", ".fa.gz"],  # Added for rRNA filtering
     }
 
     ONT_requirements = {
         "ONT": [".fq.gz", ".fastq.gz", ".bam", ".cram"],
         "genome_fa": [".fa"],
         "genes_gtf": [".gtf"],
-        "cdna_fa": [".fa"],
+        "cdna_fa": [".fa", ".fa.gz"],
+    }
+
+    # Recipe-specific requirements
+    recipe_specific_requirements = {
+        "rRNA-bwa": {
+            "short_read": ["cdna_fa"],  # Need cDNA FASTA for BWA rRNA filtering
+            "ont": []
+        },
+        "ribodetector": {
+            "short_read": [],
+            "ont": []
+        },
+        "visium": {
+            "short_read": ["STAR_ref", "genes_gtf"],
+            "ont": ["genome_fa", "genes_gtf", "cdna_fa"]
+        },
+        "seeker": {
+            "short_read": ["STAR_ref", "genes_gtf", "kb_idx", "kb_t2g"],
+            "ont": ["genome_fa", "genes_gtf", "cdna_fa"]
+        },
+        "stomics": {
+            "short_read": ["STAR_ref", "genes_gtf"],
+            "ont": ["genome_fa", "genes_gtf", "cdna_fa"]
+        },
+        "decoder": {
+            "short_read": ["STAR_ref", "genes_gtf"],
+            "ont": ["genome_fa", "genes_gtf", "cdna_fa"]
+        },
+        "miST": {
+            "short_read": ["STAR_ref", "genes_gtf"],
+            "ont": ["genome_fa", "genes_gtf", "cdna_fa"]
+        }
     }
 
     missing_files = []
     empty_fields = []
+    recipe_errors = []
     duplicate_samples = SAMPLE_SHEET["sampleID"].duplicated()
     duplicate_sample_names = SAMPLE_SHEET["sampleID"][duplicate_samples].tolist()
 
     for index, row in SAMPLE_SHEET.iterrows():
         sample_id = row["sampleID"]
 
-        # Check additional requirements based on recipe
+        # Check short read recipes and requirements
         if row["recipe"]:
+            recipes = row["recipe"].split()
+            
+            # Check recipe-specific requirements
+            for recipe in recipes:
+                if recipe in recipe_specific_requirements:
+                    required_fields = recipe_specific_requirements[recipe]["short_read"]
+                    for field in required_fields:
+                        if field not in row or not row[field]:
+                            recipe_errors.append((sample_id, f"Recipe '{recipe}' requires field '{field}' but it's missing or empty"))
+                        elif field in short_read_requirements:
+                            # Check file existence and extension
+                            file_paths = str(row[field]).split()
+                            for file_path in file_paths:
+                                if file_path and file_path != "nan":
+                                    if not any(file_path.endswith(ext) for ext in short_read_requirements[field]):
+                                        recipe_errors.append((sample_id, f"File {file_path} for recipe '{recipe}' field '{field}' does not have correct extension {short_read_requirements[field]}"))
+                                    elif not glob.glob(file_path) and not re.search(r"\{.*\}", file_path):
+                                        missing_files.append((sample_id, file_path))
+
+            # Check general short read requirements
             for column, exts in short_read_requirements.items():
                 if column not in row:
                     continue
-                file_paths = row[column].split()
-                if not file_paths:
-                    empty_fields.append((sample_id, column))
-                for file_path in file_paths:
-                    if file_path:
-                        if column == "STAR_ref" and not os.path.isdir(file_path):
-                            print(
-                                f"WARNING: {file_path} for sample {sample_id} was not found, or is not a directory."
-                            )
-                            missing_files.append((sample_id, file_path))
-                        elif not any(re.search(f"{ext}$", file_path) for ext in exts):
-                            print(
-                                f"WARNING: File {file_path} for sample {sample_id} does not have the correct extension {exts}"
-                            )
-                        elif not glob.glob(file_path) and not re.search(
-                            r"\{.*\}", file_path
-                        ):
-                            missing_files.append((sample_id, file_path))
+                file_paths = str(row[column]).split() if row[column] else []
+                if not file_paths or (len(file_paths) == 1 and file_paths[0] == ""):
+                    # Only mark as empty if it's required for the recipes being used
+                    is_required = any(column in recipe_specific_requirements.get(recipe, {}).get("short_read", []) for recipe in recipes)
+                    if is_required:
+                        empty_fields.append((sample_id, column))
+                else:
+                    for file_path in file_paths:
+                        if file_path and file_path != "nan":
+                            if column == "STAR_ref" and not os.path.isdir(file_path):
+                                print(f"WARNING: {file_path} for sample {sample_id} was not found, or is not a directory.")
+                                missing_files.append((sample_id, file_path))
+                            elif not any(re.search(f"{ext}$", file_path) for ext in exts):
+                                print(f"WARNING: File {file_path} for sample {sample_id} does not have the correct extension {exts}")
+                            elif not glob.glob(file_path) and not re.search(r"\{.*\}", file_path):
+                                missing_files.append((sample_id, file_path))
 
+        # Check ONT recipes and requirements
         if row["recipe_ONT"]:
+            ont_recipes = row["recipe_ONT"].split()
+            
+            # Check recipe-specific requirements for ONT
+            for recipe in ont_recipes:
+                if recipe in recipe_specific_requirements:
+                    required_fields = recipe_specific_requirements[recipe]["ont"]
+                    for field in required_fields:
+                        if field not in row or not row[field]:
+                            recipe_errors.append((sample_id, f"ONT recipe '{recipe}' requires field '{field}' but it's missing or empty"))
+                        elif field in ONT_requirements:
+                            # Check file existence and extension
+                            file_paths = str(row[field]).split()
+                            for file_path in file_paths:
+                                if file_path and file_path != "nan":
+                                    if not any(file_path.endswith(ext) for ext in ONT_requirements[field]):
+                                        recipe_errors.append((sample_id, f"File {file_path} for ONT recipe '{recipe}' field '{field}' does not have correct extension {ONT_requirements[field]}"))
+                                    elif not glob.glob(file_path) and not re.search(r"\{.*\}", file_path):
+                                        missing_files.append((sample_id, file_path))
+
+            # Check general ONT requirements
             for column, exts in ONT_requirements.items():
                 if column not in row:
                     continue
-                file_paths = row[column].split()
-                if not file_paths:
-                    empty_fields.append((sample_id, column))
-                for file_path in file_paths:
-                    if file_path and not any(
-                        re.search(f"{ext}$", file_path) for ext in exts
-                    ):
-                        print(
-                            f"WARNING: File {file_path} for sample {sample_id} does not have the correct extension {exts}"
-                        )
+                file_paths = str(row[column]).split() if row[column] else []
+                if not file_paths or (len(file_paths) == 1 and file_paths[0] == ""):
+                    # Only mark as empty if it's required for the recipes being used
+                    is_required = any(column in recipe_specific_requirements.get(recipe, {}).get("ont", []) for recipe in ont_recipes)
+                    if is_required:
+                        empty_fields.append((sample_id, column))
+                else:
+                    for file_path in file_paths:
+                        if file_path and file_path != "nan" and not any(re.search(f"{ext}$", file_path) for ext in exts):
+                            print(f"WARNING: File {file_path} for sample {sample_id} does not have the correct extension {exts}")
 
+    # Report issues
     if empty_fields:
         print("WARNING: The following required fields are empty:")
         for sample_id, column in empty_fields:
             print(f"Sample {sample_id}: {column}")
+
+    if recipe_errors:
+        print("WARNING: Recipe-specific requirement errors:")
+        for sample_id, error in recipe_errors:
+            print(f"Sample {sample_id}: {error}")
 
     if duplicate_samples.any():
         print("WARNING: Duplicate sample IDs found in the sample sheet:")
@@ -103,9 +183,7 @@ def check_sample_sheet(SAMPLE_SHEET):
         print("WARNING: The following files are missing:")
         for sample_id, file_path in missing_files:
             print(f"Sample {sample_id}: {file_path}")
-        raise FileNotFoundError(
-            "Some required files are missing. Please check the log for details."
-        )
+        raise FileNotFoundError("Some required files are missing. Please check the log for details.")
 
 
 def check_recipe_sheet(RECIPE_SHEET, RECIPE_DICT, RECIPE_ONT_DICT):
@@ -136,16 +214,25 @@ def check_recipe_sheet(RECIPE_SHEET, RECIPE_DICT, RECIPE_ONT_DICT):
         "featureCounts_extra",
         "mm2_extra",
     ]
-    missing_columns = [
-        col for col in required_columns if col not in RECIPE_SHEET.columns
-    ]
+    
+    # Recipe-specific required columns
+    recipe_specific_columns = {
+        "rRNA-bwa": ["fwd_primer", "rev_primer"],
+        "ribodetector": ["fwd_primer", "rev_primer"],
+        "visium": ["STAR_soloType", "STAR_soloCB", "STAR_soloUMI", "BC_length", "UMI_length"],
+        "seeker": ["BC_length", "UMI_length", "STAR_soloType", "kb_x"],
+        "stomics": ["STAR_soloType", "STAR_soloCB", "STAR_soloUMI", "BC_length", "UMI_length"],
+        "decoder": ["BC_length", "UMI_length", "STAR_soloType"],
+        "miST": ["BC_length", "UMI_length", "STAR_soloType"],
+    }
+    
+    missing_columns = [col for col in required_columns if col not in RECIPE_SHEET.columns]
     duplicate_recipes = RECIPE_SHEET.index.duplicated()
     duplicate_recipe_names = RECIPE_SHEET.index[duplicate_recipes].tolist()
+    recipe_config_errors = []
 
     if missing_columns:
-        print(
-            "WARNING: The following required columns are missing from the recipe sheet:"
-        )
+        print("WARNING: The following required columns are missing from the recipe sheet:")
         for col in missing_columns:
             print(f"- {col}")
 
@@ -154,11 +241,61 @@ def check_recipe_sheet(RECIPE_SHEET, RECIPE_DICT, RECIPE_ONT_DICT):
         for recipe in duplicate_recipe_names:
             print(f"Recipe {recipe}")
 
+    # Get all recipes used in sample sheets
     RECIPES = unlist(RECIPE_DICT, unique=True) + unlist(RECIPE_ONT_DICT, unique=True)
+    
     for RECIPE in RECIPES:
         if RECIPE not in list(RECIPE_SHEET.index):
-            print(f"WARNING: `{RECIPE}` not found in recipe sheet!")
+            print(f"ERROR: Recipe '{RECIPE}' not found in recipe sheet!")
             print(f"Fix RECIPE_SHEET [{config['RECIPE_SHEET']}] and try again!")
+            recipe_config_errors.append(f"Recipe '{RECIPE}' missing from recipe sheet")
+        else:
+            # Check recipe-specific requirements
+            if RECIPE in recipe_specific_columns:
+                required_cols = recipe_specific_columns[RECIPE]
+                for col in required_cols:
+                    if col in RECIPE_SHEET.columns:
+                        value = RECIPE_SHEET.loc[RECIPE, col]
+                        if pd.isna(value) or str(value).strip() == "":
+                            recipe_config_errors.append(f"Recipe '{RECIPE}' missing required parameter '{col}'")
+                    else:
+                        recipe_config_errors.append(f"Recipe '{RECIPE}' requires column '{col}' which is missing from recipe sheet")
+            
+            # Validate specific parameter formats
+            try:
+                # Check BC_length format
+                if 'BC_length' in RECIPE_SHEET.columns and not pd.isna(RECIPE_SHEET.loc[RECIPE, 'BC_length']):
+                    bc_length = str(RECIPE_SHEET.loc[RECIPE, 'BC_length'])
+                    if bc_length.strip():
+                        # Should be either a single number or space-separated numbers
+                        try:
+                            [int(x) for x in bc_length.split()]
+                        except ValueError:
+                            recipe_config_errors.append(f"Recipe '{RECIPE}' has invalid BC_length format: '{bc_length}'")
+                
+                # Check UMI_length format
+                if 'UMI_length' in RECIPE_SHEET.columns and not pd.isna(RECIPE_SHEET.loc[RECIPE, 'UMI_length']):
+                    umi_length = str(RECIPE_SHEET.loc[RECIPE, 'UMI_length'])
+                    if umi_length.strip():
+                        try:
+                            int(umi_length)
+                        except ValueError:
+                            recipe_config_errors.append(f"Recipe '{RECIPE}' has invalid UMI_length format: '{umi_length}'")
+                
+                # Check BC_concat format
+                if 'BC_concat' in RECIPE_SHEET.columns and not pd.isna(RECIPE_SHEET.loc[RECIPE, 'BC_concat']):
+                    bc_concat = str(RECIPE_SHEET.loc[RECIPE, 'BC_concat']).lower()
+                    if bc_concat not in ['true', 'false', '1', '0']:
+                        recipe_config_errors.append(f"Recipe '{RECIPE}' has invalid BC_concat value: '{bc_concat}' (should be True/False)")
+                        
+            except KeyError as e:
+                recipe_config_errors.append(f"Recipe '{RECIPE}' not found in recipe sheet: {e}")
+    
+    if recipe_config_errors:
+        print("ERROR: Recipe configuration errors found:")
+        for error in recipe_config_errors:
+            print(f"- {error}")
+        raise ValueError("Recipe configuration errors found. Please fix your recipe sheet.")
 
 
 # Select input reads based on alignment recipe
@@ -760,3 +897,141 @@ def get_recipe_barcode_strategy(w):
     except Exception as e:
         print(f"Error determining barcode strategy: {e}")
         return 'single'
+
+
+def validate_recipe_compatibility(SAMPLE_SHEET, RECIPE_SHEET):
+    """
+    Validate that recipes specified in sample sheet are compatible and have all required parameters.
+    """
+    compatibility_errors = []
+    
+    for index, row in SAMPLE_SHEET.iterrows():
+        sample_id = row["sampleID"]
+        
+        # Check short read recipes
+        if row["recipe"]:
+            recipes = row["recipe"].split()
+            
+            # Check for incompatible recipe combinations
+            incompatible_combinations = [
+                (["rRNA-bwa", "ribodetector"], "Cannot use both BWA and ribodetector for rRNA filtering"),
+                (["visium", "seeker"], "Visium and Seeker are incompatible spatial technologies"),
+                (["stomics", "seeker"], "Stomics and Seeker are incompatible spatial technologies"),
+                (["visium", "stomics"], "Visium and Stomics are incompatible spatial technologies"),
+            ]
+            
+            for incompatible_recipes, error_msg in incompatible_combinations:
+                if all(recipe in recipes for recipe in incompatible_recipes):
+                    compatibility_errors.append((sample_id, f"Short read recipes: {error_msg}"))
+            
+            # Check if recipes exist in recipe sheet
+            for recipe in recipes:
+                if recipe not in RECIPE_SHEET.index:
+                    compatibility_errors.append((sample_id, f"Short read recipe '{recipe}' not found in recipe sheet"))
+        
+        # Check ONT recipes
+        if row["recipe_ONT"]:
+            ont_recipes = row["recipe_ONT"].split()
+            
+            # Check for incompatible ONT recipe combinations
+            ont_incompatible_combinations = [
+                (["visium", "seeker"], "Visium and Seeker are incompatible spatial technologies"),
+                (["stomics", "seeker"], "Stomics and Seeker are incompatible spatial technologies"),
+                (["visium", "stomics"], "Visium and Stomics are incompatible spatial technologies"),
+            ]
+            
+            for incompatible_recipes, error_msg in ont_incompatible_combinations:
+                if all(recipe in ont_recipes for recipe in incompatible_recipes):
+                    compatibility_errors.append((sample_id, f"ONT recipes: {error_msg}"))
+            
+            # Check if ONT recipes exist in recipe sheet
+            for recipe in ont_recipes:
+                if recipe not in RECIPE_SHEET.index:
+                    compatibility_errors.append((sample_id, f"ONT recipe '{recipe}' not found in recipe sheet"))
+        
+        # Check cross-platform compatibility
+        if row["recipe"] and row["recipe_ONT"]:
+            short_recipes = row["recipe"].split()
+            ont_recipes = row["recipe_ONT"].split()
+            
+            # Warn about potential spatial technology mismatches
+            spatial_techs = ["visium", "stomics", "seeker", "decoder", "miST"]
+            short_spatial = [r for r in short_recipes if r in spatial_techs]
+            ont_spatial = [r for r in ont_recipes if r in spatial_techs]
+            
+            if short_spatial and ont_spatial and short_spatial != ont_spatial:
+                compatibility_errors.append((sample_id, f"Spatial technology mismatch: short read uses {short_spatial}, ONT uses {ont_spatial}"))
+    
+    if compatibility_errors:
+        print("ERROR: Recipe compatibility issues found:")
+        for sample_id, error in compatibility_errors:
+            print(f"Sample {sample_id}: {error}")
+        raise ValueError("Recipe compatibility errors found. Please fix your sample sheet.")
+    
+    return True
+
+
+def comprehensive_sample_sheet_validation(SAMPLE_SHEET, RECIPE_SHEET, RECIPE_DICT, RECIPE_ONT_DICT):
+    """
+    Comprehensive validation of sample sheet, recipe sheet, and their cross-references.
+    """
+    print("=== Starting comprehensive sample sheet validation ===")
+    
+    # Step 1: Basic sample sheet validation
+    print("1. Checking sample sheet structure and file requirements...")
+    check_sample_sheet(SAMPLE_SHEET)
+    
+    # Step 2: Recipe sheet validation
+    print("2. Checking recipe sheet structure and parameters...")
+    check_recipe_sheet(RECIPE_SHEET, RECIPE_DICT, RECIPE_ONT_DICT)
+    
+    # Step 3: Recipe compatibility validation
+    print("3. Checking recipe compatibility and cross-references...")
+    validate_recipe_compatibility(SAMPLE_SHEET, RECIPE_SHEET)
+    
+    # Step 4: Advanced cross-validation
+    print("4. Performing advanced cross-validation...")
+    advanced_validation_errors = []
+    
+    for index, row in SAMPLE_SHEET.iterrows():
+        sample_id = row["sampleID"]
+        
+        # Check if rRNA filtering is specified but cdna_fa is missing
+        if row["recipe"]:
+            recipes = row["recipe"].split()
+            if "rRNA-bwa" in recipes:
+                if not row.get("cdna_fa") or str(row["cdna_fa"]).strip() == "" or str(row["cdna_fa"]) == "nan":
+                    advanced_validation_errors.append((sample_id, "Recipe 'rRNA-bwa' requires 'cdna_fa' field but it's missing or empty"))
+        
+        if row["recipe_ONT"]:
+            ont_recipes = row["recipe_ONT"].split()
+            # Most ONT workflows need cdna_fa for gene annotation
+            ont_needs_cdna = ["visium", "seeker", "stomics", "decoder", "miST"]
+            if any(recipe in ont_needs_cdna for recipe in ont_recipes):
+                if not row.get("cdna_fa") or str(row["cdna_fa"]).strip() == "" or str(row["cdna_fa"]) == "nan":
+                    advanced_validation_errors.append((sample_id, f"ONT recipes {ont_needs_cdna} require 'cdna_fa' field but it's missing or empty"))
+        
+        # Check barcode/UMI consistency
+        if row["recipe"]:
+            recipes = row["recipe"].split()
+            spatial_recipes = ["visium", "seeker", "stomics", "decoder", "miST"]
+            if any(recipe in spatial_recipes for recipe in recipes):
+                # These recipes should have consistent barcode configurations
+                for recipe in recipes:
+                    if recipe in spatial_recipes and recipe in RECIPE_SHEET.index:
+                        bc_length = RECIPE_SHEET.loc[recipe, 'BC_length'] if 'BC_length' in RECIPE_SHEET.columns else None
+                        umi_length = RECIPE_SHEET.loc[recipe, 'UMI_length'] if 'UMI_length' in RECIPE_SHEET.columns else None
+                        
+                        if pd.isna(bc_length) or str(bc_length).strip() == "":
+                            advanced_validation_errors.append((sample_id, f"Spatial recipe '{recipe}' has empty BC_length"))
+                        if pd.isna(umi_length) or str(umi_length).strip() == "":
+                            advanced_validation_errors.append((sample_id, f"Spatial recipe '{recipe}' has empty UMI_length"))
+    
+    if advanced_validation_errors:
+        print("ERROR: Advanced validation errors found:")
+        for sample_id, error in advanced_validation_errors:
+            print(f"Sample {sample_id}: {error}")
+        raise ValueError("Advanced validation errors found. Please fix your configuration.")
+    
+    print("=== Sample sheet validation completed successfully ===")
+    return True
