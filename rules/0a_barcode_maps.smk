@@ -54,7 +54,7 @@ rule BC_write_whitelist_variants:
     params:
         BC_LENGTHS=lambda w: get_recipe_info(w, info_col="BC_length", mode="list"),
         BC_CONCAT=lambda w: get_recipe_info(w, info_col="BC_concat", mode="list"),
-        RECIPES=lambda w: get_recipe_info(w, info_col="recipe", mode="list"),
+        RECIPES=lambda w: get_recipes(w, mode="list"),
     # resources:
     threads: 1
     log:
