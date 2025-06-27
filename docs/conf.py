@@ -49,14 +49,22 @@ myst_enable_extensions = [
     "deflist",
     "html_image",
     "linkify",  # Now included via linkify-it-py package
-    "replacements",
-    "smartquotes",
     "substitution",
     "tasklist",
 ]
 
+# Disable potentially problematic MyST features for LaTeX compatibility
+myst_suppress_warnings = [
+    "myst.xref_missing",
+]
+
+# Suppress warnings that can cause build failures
+suppress_warnings = [
+    'epub.unknown_project_files',
+]
+
 templates_path = ['_templates']
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'README.md']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'README.md', '.nojekyll']
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -111,6 +119,13 @@ latex_elements = {
 \usepackage{pmboxdraw}
 \DeclareUnicodeCharacter{25CF}{\textbullet}
 \DeclareUnicodeCharacter{2022}{\textbullet}
+\DeclareUnicodeCharacter{2023}{\textbullet}
+\DeclareUnicodeCharacter{2043}{\textbullet}
+\DeclareUnicodeCharacter{204C}{\textbullet}
+\DeclareUnicodeCharacter{204D}{\textbullet}
+\DeclareUnicodeCharacter{25E6}{\textbullet}
+\DeclareUnicodeCharacter{2043}{\textbullet}
+\DeclareUnicodeCharacter{00B7}{\textbullet}
 ''',
     
     # Remove blank pages
