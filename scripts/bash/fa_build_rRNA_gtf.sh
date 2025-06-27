@@ -58,14 +58,14 @@ else
 fi
 echo "Sample header: ${SAMPLE_HEADER}"
 
-# Check if headers use pipe-delimited format (like Ensembl) or space-delimited (like GENCODE)
+# Check if headers use pipe-delimited format (GENCODE newer format) or space-delimited (GENCODE older format)
 if [[ ${SAMPLE_HEADER} == *"|"* ]]; then
-    echo "Detected pipe-delimited format (Ensembl-style)"
+    echo "Detected pipe-delimited format (GENCODE pipe-separated)"
     DELIMITER="|"
     FIELD_SEP="|"
     echo "Will search in last field for gene type"
 else
-    echo "Detected space-delimited format (GENCODE-style)"
+    echo "Detected space-delimited format (GENCODE space-separated)"
     DELIMITER=" "
     FIELD_SEP=" "
     echo "Will search in field 5 for gene_biotype"
@@ -90,12 +90,17 @@ fi \
         # Check if this sequence matches rRNA pattern
         match_found = 0
         if (delimiter == "|") {
-            # For pipe-delimited (Ensembl): check last field
-            if (NF > 0 && $NF ~ pattern) {
+            # For pipe-delimited (GENCODE newer format): check last non-empty field
+            # Remove trailing pipe if present and check the actual last field
+            header_line = $0
+            gsub(/\|$/, "", header_line)
+            split(header_line, fields, "|")
+            last_field = fields[length(fields)]
+            if (last_field ~ pattern) {
                 match_found = 1
             }
         } else {
-            # For space-delimited (GENCODE): check field 5 for gene_biotype
+            # For space-delimited (GENCODE older format): check field 5 for gene_biotype
             if ($5 ~ ("gene_biotype:" pattern)) {
                 match_found = 1
             }
@@ -120,16 +125,21 @@ fi \
             
             # Handle different header formats for attribute extraction
             if (delimiter == "|") {
-                # For pipe-delimited (Ensembl): extract from pipe-separated fields
-                # Format: >ENSMUST00000082908.3|ENSMUSG00000064842.3|-|-|Gm26206-201|Gm26206|110|snRNA|
-                gene_id = ($2 != "") ? $2 : "unknown"
-                transcript_id = ($1 != "") ? $1 : "unknown"
-                gene_name = ($6 != "") ? $6 : "unknown"
-                transcript_name = ($5 != "") ? $5 : "unknown"
-                gene_type = ($NF != "") ? $NF : "unknown"
+                # For pipe-delimited (GENCODE newer format): extract from pipe-separated fields
+                # Format: >ENSMUST00020183801.1|ENSMUSG00002075470.1|-|-|Gm56290-201|Gm56290|112|rRNA|
+                # Remove trailing pipe and split again for proper field extraction
+                header_clean = $0
+                gsub(/\|$/, "", header_clean)
+                split(header_clean, clean_fields, "|")
+                
+                gene_id = (clean_fields[2] != "") ? clean_fields[2] : "unknown"
+                transcript_id = (clean_fields[1] != "") ? clean_fields[1] : "unknown"
+                gene_name = (clean_fields[6] != "") ? clean_fields[6] : "unknown"
+                transcript_name = (clean_fields[5] != "") ? clean_fields[5] : "unknown"
+                gene_type = (clean_fields[length(clean_fields)] != "") ? clean_fields[length(clean_fields)] : "unknown"
                 transcript_type = gene_type
             } else {
-                # For space-delimited (GENCODE): extract from colon-separated values
+                # For space-delimited (GENCODE older format): extract from colon-separated values
                 split($4, b, ":");
                 gene_id = (length(b) > 1) ? b[2] : "unknown";
                 split($6, c, ":");

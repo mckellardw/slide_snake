@@ -58,14 +58,14 @@ else
 fi
 echo "Sample header: ${SAMPLE_HEADER}"
 
-# Check if headers use pipe-delimited format (like Ensembl) or space-delimited (like GENCODE)
+# Check if headers use pipe-delimited format (GENCODE newer format) or space-delimited (GENCODE older format)
 if [[ ${SAMPLE_HEADER} == *"|"* ]]; then
-    echo "Detected pipe-delimited format (Ensembl-style)"
+    echo "Detected pipe-delimited format (GENCODE pipe-separated)"
     DELIMITER="|"
     FIELD_SEP="|"
     echo "Will search in last field for gene type"
 else
-    echo "Detected space-delimited format (GENCODE-style)"
+    echo "Detected space-delimited format (GENCODE space-separated)"
     DELIMITER=" "
     FIELD_SEP=" "
     echo "Will search in field 5 for gene_biotype"
@@ -86,14 +86,19 @@ fi \
     -v delimiter="${DELIMITER}" \
     'BEGIN { count = 0 }
     NR > 1 {
-        # For pipe-delimited (Ensembl): check last field
+        # For pipe-delimited (GENCODE newer format): check last non-empty field
         if (delimiter == "|") {
-            if (NF > 0 && $NF ~ pattern) {
-                print ">" $0
+            # Remove trailing pipe if present and check the actual last field
+            header_line = $0
+            gsub(/\|$/, "", header_line)
+            split(header_line, fields, "|")
+            last_field = fields[length(fields)]
+            if (last_field ~ pattern) {
+                print ">" $0  # Keep original format
                 count++
             }
         }
-        # For space-delimited (GENCODE): check field 5 for gene_biotype
+        # For space-delimited (GENCODE older format): check field 5 for gene_biotype
         else {
             if ($5 ~ ("gene_biotype:" pattern)) {
                 print ">" $0
