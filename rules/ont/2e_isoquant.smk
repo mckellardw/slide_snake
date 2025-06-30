@@ -1,6 +1,6 @@
 # isoquant documentation - https://ablab.github.io/IsoQuant/
 # TODO- dedup bam before isoquant
-rule ont_1g_isoquant:
+rule ont_2e_isoquant:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn.bam.bai",
@@ -17,8 +17,8 @@ rule ont_1g_isoquant:
         # GENE_TAG="GN",  # GN XS
         # UMI_TAG="UR",  # uncorrected = UR; corrected = UB
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/logs/{RECIPE}/1g_{ALIGNER}_isoquant.log",
-        err="{OUTDIR}/{SAMPLE}/ont/logs/{RECIPE}/1g_{ALIGNER}_isoquant.err",
+        log="{OUTDIR}/{SAMPLE}/ont/logs/{RECIPE}/2e_{ALIGNER}_isoquant.log",
+        err="{OUTDIR}/{SAMPLE}/ont/logs/{RECIPE}/2e_{ALIGNER}_isoquant.err",
     threads: config["CORES"]
     conda:
         f"{workflow.basedir}/envs/isoquant.yml"
@@ -51,7 +51,7 @@ rule ont_1g_isoquant:
 
 
 # Add isoquant gene tag (IG) to bam...
-rule ont_1g_add_isoquant_genes_to_bam:
+rule ont_2e_add_isoquant_genes_to_bam:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn.bam.bai",
@@ -84,7 +84,7 @@ rule ont_1g_add_isoquant_genes_to_bam:
 
 
 # Add isoquant transcript tag (IT) to bam...
-rule ont_1g_add_isoquant_transcripts_to_bam:
+rule ont_2e_add_isoquant_transcripts_to_bam:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam.bai",
@@ -117,7 +117,7 @@ rule ont_1g_add_isoquant_transcripts_to_bam:
 
 
 # Generate count matrix w/ umi-tools
-rule ont_1g_umitools_count:
+rule ont_2e_umitools_count:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam.bai",
@@ -128,8 +128,8 @@ rule ont_1g_umitools_count:
         GENE_TAG="GN",  #GN XS
         UMI_TAG="UR",
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/logs/{RECIPE}/1g_{ALIGNER}_umitools_count.log",
-        err="{OUTDIR}/{SAMPLE}/ont/logs/{RECIPE}/1g_{ALIGNER}_umitools_count.err",
+        log="{OUTDIR}/{SAMPLE}/ont/logs/{RECIPE}/2e_{ALIGNER}_umitools_count.log",
+        err="{OUTDIR}/{SAMPLE}/ont/logs/{RECIPE}/2e_{ALIGNER}_umitools_count.err",
     resources:
         mem="16G",
     threads: 1
@@ -151,7 +151,7 @@ rule ont_1g_umitools_count:
 
 
 # Convert long-format counts from umi_tools to market-matrix format (.mtx)
-rule ont_1g_counts_to_sparse:
+rule ont_2e_counts_to_sparse:
     input:
         COUNTS="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/isoquant/umitools_counts.tsv.gz",
     output:
@@ -171,7 +171,7 @@ rule ont_1g_counts_to_sparse:
 
 
 # make anndata object with spatial coordinates
-rule ont_1g_cache_h5ad:
+rule ont_2e_cache_h5ad:
     input:
         BCS="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/isoquant/barcodes.tsv.gz",
         FEATS="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/isoquant/features.tsv.gz",
@@ -211,7 +211,7 @@ rule ont_1g_cache_h5ad:
 
 
 # make Seurat object with spatial coordinates
-rule ont_1g_cache_seurat:
+rule ont_2e_cache_seurat:
     input:
         BCS="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/isoquant/barcodes.tsv.gz",
         FEATS="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/isoquant/features.tsv.gz",

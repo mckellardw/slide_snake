@@ -1,7 +1,7 @@
 # Align w/ minimap2
 ## minimap2 docs - https://lh3.github.io/minimap2/minimap2.html
 ## see oarfish requirements - https://github.com/COMBINE-lab/oarfish?tab=readme-ov-file#choosing-minimap2-alignment-options
-rule ont_1d_txome_align_minimap2_transcriptome:
+rule ont_2b_txome_align_minimap2_transcriptome:
     input:
         FQ=lambda w: get_fqs(w, return_type="list", mode="ONT")[1],
     output:
@@ -39,7 +39,7 @@ rule ont_1d_txome_align_minimap2_transcriptome:
 
 
 # Add CB to gene-tagged .bam
-rule ont_1d_txome_add_corrected_barcodes:
+rule ont_2b_txome_add_corrected_barcodes:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned.bam",
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_corrected.tsv",
@@ -71,7 +71,7 @@ rule ont_1d_txome_add_corrected_barcodes:
 
 
 # Add UMI (UR) to barcoded & gene-tagged .bam
-rule ont_1d_txome_add_umis:
+rule ont_2b_txome_add_umis:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_cb.bam",
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_filtered.tsv",
@@ -103,7 +103,7 @@ rule ont_1d_txome_add_umis:
 
 
 # Generate count matrix w/ umi-tools
-rule ont_1d_txome_filter_bam_empty_tags:
+rule ont_2b_txome_filter_bam_empty_tags:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_cb_ub.bam",
         # BAI="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_gn_cb_ub.bam.bai",
@@ -129,7 +129,7 @@ rule ont_1d_txome_filter_bam_empty_tags:
 
 # Sort aligned_filtered_cb_ub.bam by CB tag
 ## see more oarfish requirements here - https://github.com/COMBINE-lab/oarfish?tab=readme-ov-file#notes-about-single-cell-mode
-rule ont_1d_txome_sort_by_cb:
+rule ont_2b_txome_sort_by_cb:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_cb_ub.bam",
     output:
@@ -152,7 +152,7 @@ rule ont_1d_txome_sort_by_cb:
 # Run oarfish alignment mode transcript quantification
 # github: https://github.com/COMBINE-lab/oarfish
 # TODO- --short-quant?
-rule ont_1d_txome_oarfish_quant:
+rule ont_2b_txome_oarfish_quant:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub.bam",
         # BAI="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub.bam.bai",
@@ -192,7 +192,7 @@ rule ont_1d_txome_oarfish_quant:
 
 
 # Generate count matrix w/ umi-tools
-rule ont_1d_txome_umitools_count:
+rule ont_2b_txome_umitools_count:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_gn_cb_ub.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_gn_cb_ub.bam.bai",
@@ -224,7 +224,7 @@ rule ont_1d_txome_umitools_count:
 
 
 # Convert long-format counts from umi_tools to market-matrix format (.mtx)
-rule ont_1d_txome_counts_to_sparse:
+rule ont_2b_txome_counts_to_sparse:
     input:
         COUNTS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/umitools_counts.tsv.gz",
     output:
@@ -244,7 +244,7 @@ rule ont_1d_txome_counts_to_sparse:
 
 
 # make anndata object with spatial coordinates
-rule ont_1d_txome_cache_preQC_h5ad_minimap2:
+rule ont_2b_txome_cache_preQC_h5ad_minimap2:
     input:
         BCS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/barcodes.tsv.gz",
         FEATS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/features.tsv.gz",
@@ -277,7 +277,7 @@ rule ont_1d_txome_cache_preQC_h5ad_minimap2:
 
 
 # make Seurat object with spatial coordinates
-rule ont_1d_txome_cache_preQC_seurat_minimap2:
+rule ont_2b_txome_cache_preQC_seurat_minimap2:
     input:
         BCS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/barcodes.tsv.gz",
         FEATS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/features.tsv.gz",

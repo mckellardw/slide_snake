@@ -1,15 +1,9 @@
 
 .. slide_snake documentation master file
 
-Welcome to slide_snake's documentation!
 ========================================
 
-**slide_snake** is a Snakemake workflow for preprocessing, alignment, and quantification of spatial RNA-sequencing data, designed to work for any commercial or custom platform.
-
-.. image:: ../images/slide_snake_logo.png
-   :alt: slide_snake logo
-   :align: center
-   :width: 300px
+**slide_snake** is a [Snakemake](https://snakemake.readthedocs.io/en/stable/) workflow for preprocessing, alignment, and quantification of spatial RNA-sequencing data, designed to work for any commercial or custom platform. Specifically, we aim to support custom workflows for which existing pipelines don't quite cut it - starting with total RNA data.
 
 .. toctree::
    :maxdepth: 2
@@ -17,7 +11,8 @@ Welcome to slide_snake's documentation!
 
    0_install
    1_sample_sheets
-   2_recipes
+   2a_recipes
+   2b_barcode_processing_guide
 
 .. toctree::
    :maxdepth: 2
@@ -26,7 +21,6 @@ Welcome to slide_snake's documentation!
    3a_short_read_pipeline
    3b_ont_pipeline
    4_output_file_tree
-   barcode_processing_guide
 
 .. toctree::
    :maxdepth: 2

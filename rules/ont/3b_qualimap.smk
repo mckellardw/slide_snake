@@ -3,7 +3,7 @@
 
 
 # Qualimap QC on alignment outputs
-rule ont_2b_qualimap:
+rule ont_3b_qualimap:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam.bai",
@@ -38,7 +38,7 @@ rule ont_2b_qualimap:
 
 
 # Convert the unfortunately formatted qc results from qualimap into a readable format
-rule ont_2b_qualimap_readqc_summary2csv:
+rule ont_3b_qualimap_readqc_summary2csv:
     input:
         TXT="{OUTDIR}/{SAMPLE}/ont/qualimap/{TOOL}/rnaseq_qc_results.txt",
     output:
@@ -55,7 +55,7 @@ rule ont_2b_qualimap_readqc_summary2csv:
 
 
 # Qualimap BAM QC on alignment outputs
-rule ont_2b_qualimap_bamqc:
+rule ont_3b_qualimap_bamqc:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam.bai",
@@ -85,7 +85,7 @@ rule ont_2b_qualimap_bamqc:
 
 
 # Convert the unfortunately formatted qc results from qualimap into a readable format
-rule ont_2b_qualimap_bamqc_summary2csv:
+rule ont_3b_qualimap_bamqc_summary2csv:
     input:
         TXT="{OUTDIR}/{SAMPLE}/ont/qualimap/{TOOL}/genome_results.txt",
     output:

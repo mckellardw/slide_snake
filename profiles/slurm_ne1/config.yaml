@@ -79,49 +79,49 @@ set-threads:
   ont_1c_fastq_call_bc_from_adapter: 1
   ont_1c_filter_read_barcodes: 1
   ont_1c_tsv_bc_correction: 24
-  ont_1d_genome_align_minimap2_genome: 24
-  ont_1d_genome_sort_compress_output: 1
-  ont_1d_genome_featureCounts: 1
-  ont_1d_genome_add_featureCounts_to_bam: 1
-  ont_1d_genome_add_corrected_barcodes: 1
-  ont_1d_genome_add_umis: 1
-  ont_1d_genome_filter_bam_empty_tags: 1
-  ont_1d_genome_umitools_count: 1
-  ont_1d_genome_counts_to_sparse: 1
-  ont_1d_genome_cache_h5ad_minimap2: 1
-  ont_1d_txome_align_minimap2_txome: 1
-  ont_1d_txome_add_corrected_barcodes: 1
-  ont_1d_txome_add_umis: 1
-  ont_1d_txome_filter_bam_empty_tags: 1
-  ont_1d_txome_sort_by_cb: 1
-  ont_1d_txome_oarfish_quant: 24
-  ont_1d_txome_umitools_count: 1
-  ont_1d_txome_counts_to_sparse: 1
-  ont_1d_txome_cache_preQC_h5ad_minimap2: 1
-  ont_1d_txome_cache_preQC_seurat_minimap2: 1
-  ont_1f_ultra_pipeline_genome: 24
-  ont_1f_ultra_sort_compress_output: 1
-  ont_1f_ultra_featureCounts: 1
-  ont_1f_ultra_add_featureCounts_to_bam: 1
-  ont_1f_ultra_add_corrected_barcodes: 1
-  ont_1f_ultra_add_umis: 1
-  ont_1f_ultra_filter_bam_empty_tags: 1
-  ont_1f_ultra_umitools_count: 1
-  ont_1f_ultra_counts_to_sparse: 1
-  ont_1f_ultra_cache_h5ad_ultra: 1
-  ont_2a_readQC_0_rawInput: 24
-  ont_2a_readQC_1_preCutadapt: 24
-  ont_2a_readQC_2_postCutadapt: 24
-  ont_2a_readQC_3_bam: 24
-  ont_2a_readQC_downsample: 1
-  ont_2a_readQC_summaryplot: 24
-  ont_2b_qualimap_minimap2: 1
-  ont_2b_qualimap_STAR: 1
-  ont_2b_qualimap_summary2csv: 1
+  ont_2a_genome_align_minimap2_genome: 24
+  ont_2a_genome_sort_compress_output: 1
+  ont_2a_genome_featureCounts: 1
+  ont_2a_genome_add_featureCounts_to_bam: 1
+  ont_2a_genome_add_corrected_barcodes: 1
+  ont_2a_genome_add_umis: 1
+  ont_2a_genome_filter_bam_empty_tags: 1
+  ont_2a_genome_umitools_count: 1
+  ont_2a_genome_counts_to_sparse: 1
+  ont_2a_genome_cache_h5ad_minimap2: 1
+  ont_3b_txome_align_minimap2_txome: 1
+  ont_3b_txome_add_corrected_barcodes: 1
+  ont_3b_txome_add_umis: 1
+  ont_3b_txome_filter_bam_empty_tags: 1
+  ont_3b_txome_sort_by_cb: 1
+  ont_3b_txome_oarfish_quant: 24
+  ont_3b_txome_umitools_count: 1
+  ont_3b_txome_counts_to_sparse: 1
+  ont_3b_txome_cache_preQC_h5ad_minimap2: 1
+  ont_3b_txome_cache_preQC_seurat_minimap2: 1
+  ont_2d_ultra_pipeline_genome: 24
+  ont_2d_ultra_sort_compress_output: 1
+  ont_2d_ultra_featureCounts: 1
+  ont_2d_ultra_add_featureCounts_to_bam: 1
+  ont_2d_ultra_add_corrected_barcodes: 1
+  ont_2d_ultra_add_umis: 1
+  ont_2d_ultra_filter_bam_empty_tags: 1
+  ont_2d_ultra_umitools_count: 1
+  ont_2d_ultra_counts_to_sparse: 1
+  ont_2d_ultra_cache_h5ad_ultra: 1
+  ont_3a_readQC_0_rawInput: 24
+  ont_3a_readQC_1_preCutadapt: 24
+  ont_3a_readQC_2_postCutadapt: 24
+  ont_3a_readQC_3_bam: 24
+  ont_3a_readQC_downsample: 1
+  ont_3a_readQC_summaryplot: 24
+  ont_3b_qualimap_minimap2: 1
+  ont_3b_qualimap_STAR: 1
+  ont_3b_qualimap_summary2csv: 1
   ilmn_3q_qualimap_bamqc_STAR_raw: 1
   ilmn_3q_qualimap_bamqc_STAR_dedup: 1
   ilmn_2c_qualimap_bamqc_rRNA_bwa: 1
-  ont_2b_qualimap_bamqc: 1
+  ont_3b_qualimap_bamqc: 1
 
 # -------------------------------------------------------------------------
   # Illumina Short-Read Processing
@@ -313,128 +313,128 @@ set-resources:
   ont_1c_tsv_bc_correction:
     mem: 32G
     mem_mb: 32000
-  ont_1d_genome_align_minimap2_genome:
+  ont_2a_genome_align_minimap2_genome:
     mem: 128G
     mem_mb: 128000
-  ont_1d_genome_sort_compress_output:
+  ont_2a_genome_sort_compress_output:
     mem: 16G
     mem_mb: 16000
-  ont_1d_genome_featureCounts:
+  ont_2a_genome_featureCounts:
     mem: 32G
-  ont_1d_genome_add_featureCounts_to_bam:
+  ont_2a_genome_add_featureCounts_to_bam:
     mem: 16G
     mem_mb: 16000
-  ont_1d_genome_add_corrected_barcodes:
+  ont_2a_genome_add_corrected_barcodes:
     mem: 16G
     mem_mb: 16000
-  ont_1d_genome_add_umis:
+  ont_2a_genome_add_umis:
     mem: 16G
     mem_mb: 16000
-  ont_1d_genome_filter_bam_empty_tags:
+  ont_2a_genome_filter_bam_empty_tags:
     mem: 16G
     mem_mb: 16000
-  ont_1d_genome_umitools_count:
+  ont_2a_genome_umitools_count:
     mem: 16G
     mem_mb: 16000
-  ont_1d_genome_counts_to_sparse:
+  ont_2a_genome_counts_to_sparse:
     mem: 16G
     mem_mb: 16000
-  ont_1d_genome_cache_h5ad_minimap2:
+  ont_2a_genome_cache_h5ad_minimap2:
     mem: 16G
     mem_mb: 16000
-  ont_1d_txome_align_minimap2_txome:
+  ont_3b_txome_align_minimap2_txome:
     mem: 128G
     mem_mb: 128000
-  ont_1d_txome_sort_compress_output:
+  ont_3b_txome_sort_compress_output:
     mem: 16G
     mem_mb: 16000
-  ont_1d_txome_featureCounts:
+  ont_3b_txome_featureCounts:
     mem: 32G
     mem_mb: 32000
-  ont_1d_txome_add_featureCounts_to_bam:
+  ont_3b_txome_add_featureCounts_to_bam:
     mem: 16G
     mem_mb: 16000
-  ont_1d_txome_add_corrected_barcodes:
+  ont_3b_txome_add_corrected_barcodes:
     mem: 16G
     mem_mb: 16000
-  ont_1d_txome_add_umis:
+  ont_3b_txome_add_umis:
     mem: 16G
     mem_mb: 16000
-  ont_1d_txome_filter_bam_empty_tags:
+  ont_3b_txome_filter_bam_empty_tags:
     mem: 16G
     mem_mb: 16000
-  ont_1d_txome_umitools_count:
+  ont_3b_txome_umitools_count:
     mem: 16G
     mem_mb: 16000
-  ont_1d_txome_counts_to_sparse:
+  ont_3b_txome_counts_to_sparse:
     mem: 16G
     mem_mb: 16000
-  ont_1d_txome_cache_h5ad_minimap2:
+  ont_3b_txome_cache_h5ad_minimap2:
     mem: 16G
     mem_mb: 16000  
-  ont_1f_ultra_pipeline_genome:
+  ont_2d_ultra_pipeline_genome:
     mem: 128G
     mem_mb: 128000
-  ont_1f_ultra_sort_compress_output:
+  ont_2d_ultra_sort_compress_output:
     mem: 16G
     mem_mb: 16000
-  ont_1f_ultra_featureCounts:
+  ont_2d_ultra_featureCounts:
     mem: 32G
-  ont_1f_ultra_add_featureCounts_to_bam:
+  ont_2d_ultra_add_featureCounts_to_bam:
     mem: 16G
     mem_mb: 16000
-  ont_1f_ultra_add_corrected_barcodes:
+  ont_2d_ultra_add_corrected_barcodes:
     mem: 16G
     mem_mb: 16000
-  ont_1f_ultra_add_umis:
+  ont_2d_ultra_add_umis:
     mem: 16G
     mem_mb: 16000
-  ont_1f_ultra_filter_bam_empty_tags:
+  ont_2d_ultra_filter_bam_empty_tags:
     mem: 16G
     mem_mb: 16000
-  ont_1f_ultra_umitools_count:
+  ont_2d_ultra_umitools_count:
     mem: 16G
     mem_mb: 16000
-  ont_1f_ultra_counts_to_sparse:
+  ont_2d_ultra_counts_to_sparse:
     mem: 16G
     mem_mb: 16000
-  ont_1f_ultra_cache_h5ad_ultra:
+  ont_2d_ultra_cache_h5ad_ultra:
     mem: 16G
     mem_mb: 16000
-  ont_1g_isoquant:
+  ont_2e_isoquant:
     mem: 64G
     mem_mb: 64000
-  ont_1g_umitools_count:
+  ont_2e_umitools_count:
     mem: 16G
     mem_mb: 16000
-  ont_1g_counts_to_sparse:
+  ont_2e_counts_to_sparse:
     mem: 16G
     mem_mb: 16000
-  ont_1g_cache_h5ad:
+  ont_2e_cache_h5ad:
     mem: 16G
     mem_mb: 16000
-  ont_1g_cache_seurat:
+  ont_2e_cache_seurat:
     mem: 16G
     mem_mb: 16000
-  ont_2a_readQC_0_rawInput:
+  ont_3a_readQC_0_rawInput:
     mem: 8G
-  ont_2a_readQC_1_preCutadapt:
+  ont_3a_readQC_1_preCutadapt:
     mem: 8G
-  ont_2a_readQC_2_postCutadapt:
+  ont_3a_readQC_2_postCutadapt:
     mem: 8G
-  ont_2a_readQC_3_bam:
+  ont_3a_readQC_3_bam:
     mem: 8G
-  ont_2a_readQC_downsample:
+  ont_3a_readQC_downsample:
     mem: 4G
-  ont_2a_readQC_summaryplot:
+  ont_3a_readQC_summaryplot:
     mem: 8G
-  ont_2b_qualimap_minimap2:
+  ont_3b_qualimap_minimap2:
     mem: 32G
     mem_mb: 32000
-  ont_2b_qualimap_STAR:
+  ont_3b_qualimap_STAR:
     mem: 32G
     mem_mb: 32000
-  ont_2b_qualimap_summary2csv:
+  ont_3b_qualimap_summary2csv:
     mem: 8G
   ilmn_3q_qualimap_bamqc_STAR_raw:
     mem: 16G
@@ -445,6 +445,6 @@ set-resources:
   ilmn_2c_qualimap_bamqc_rRNA_bwa:
     mem: 16G
     mem_mb: 16000
-  ont_2b_qualimap_bamqc:
+  ont_3b_qualimap_bamqc:
     mem: 16G
     mem_mb: 16000

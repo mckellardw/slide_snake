@@ -28,61 +28,7 @@ rule ont_1a_merge_formats:
         """
 
 
-# TODO
-# Remove super short reads that likely do not have a barcode... Might not be worth it?
-rule ont_1a_length_filter:
-    input:
-        FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged.fq.gz",
-    input:
-        FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_filtered.fq.gz",
-    params:
-        MIN_LENGTH=20,
-    threads: config["CORES"]
-    shell:
-        """
-        seqkit seq -m {params.MIN_LENGTH} {input.FQ} \
-        | gzip \
-        > {output.FQ}
-        """
-
-
-# TODO
-## add chunking rule here to improve parallelization & run times
-## when to merge again?
-## Could also split input files into chunks **during** merge- just specify chunk size?
-## Remove super short reads that likely do not have a barcode...
-
-
-# rule ont_1a_pychopper:
-#     input:
-#         MERGED_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged.fq.gz",
-#     input:
-#         MERGED_FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_chopped.fq.gz",
-#     params:
-#         MIN_LENGTH=100,
-#     log:
-#         log="{OUTDIR}/{SAMPLE}/ont/logs/1a_pychopper.log",
-#     conda:
-#         f"{workflow.basedir}/envs/pychopper.yml"
-#     resources:
-#         mem="16G",
-#     threads: 56
-#     shell:
-#         """
-#         """
-
-
-def get_unique_primer_pairs(w):
-    recipes = get_all_recipes(w, mode="ONT")
-    primer_pairs = set()
-    for recipe in recipes:
-        fwd_primer = get_recipe_info(recipe, "fwd_primer", mode="ONT")
-        rev_primer = get_recipe_info(recipe, "rev_primer", mode="ONT")
-        primer_pairs.add((fwd_primer, rev_primer))
-    return primer_pairs
-
-
-# TODO- refactor this to allow for more flexible stranding!
+# Scan the merged fastq for adapter sequences and output stranded reads
 rule ont_1a_call_adapter_scan:
     input:
         FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged.fq.gz",
@@ -98,7 +44,6 @@ rule ont_1a_call_adapter_scan:
         log="{OUTDIR}/{SAMPLE}/ont/logs/1a_adapter_scan.log",
         err="{OUTDIR}/{SAMPLE}/ont/logs/1a_adapter_scan.err",
     conda:
-        # f"{workflow.basedir}/envs/adapter_scan.yml"
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
         mem="16G",
@@ -117,10 +62,6 @@ rule ont_1a_call_adapter_scan:
         1> {log.log} \
         2> {log.err}
         """
-        # python scripts/py/adapter_scan_parasail.py \
-        # python scripts/py/adapter_scan_parasail_v2.py \
-        # python scripts/py/adapter_scan_vsearch_v2.py \
-        # python scripts/py/adapter_scan_vsearch_v3.py \
 
 
 # Write lists of read IDs for each adapter type
@@ -130,7 +71,7 @@ rule ont_1a_readIDs_by_adapter_type:
         FQ="{OUTDIR}/{SAMPLE}/ont/tmp/merged_stranded.fq.gz",
     output:
         FULL_LEN="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/full_len.txt",  # keep
-        # SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/adapter1_single.txt",  # keep incomplete read
+        # SINGLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/adapter1_single.txt",  # keep incomplete read?
         # DOUBLE_ADAPTER1="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/double_adapter1.txt",  # toss
         # DOUBLE_ADAPTER2="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/double_adapter2.txt",  # toss
         # NO_ADAPTERS="{OUTDIR}/{SAMPLE}/ont/adapter_scan_readids/no_adapters.txt",  # toss

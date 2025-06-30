@@ -102,14 +102,14 @@ include: "rules/ont/1a_preprocessing.smk"
 include: "rules/ont/1b_trimming.smk"
 include: "rules/ont/1c_barcode_calling.smk"
 ## alignment
-include: "rules/ont/1d_minimap2_genome.smk"
-include: "rules/ont/1d_minimap2_transcriptome.smk"
-# include: "rules/ont/1e_kallisto-lr.smk"
-include: "rules/ont/1f_ultra_genome.smk"
-include: "rules/ont/1g_isoquant.smk"
+include: "rules/ont/2a_minimap2_genome.smk"
+include: "rules/ont/2b_minimap2_transcriptome.smk"
+# include: "rules/ont/2c_kallisto-lr.smk"
+include: "rules/ont/2d_ultra_genome.smk"
+include: "rules/ont/2e_isoquant.smk"
 ## QC
-include: "rules/ont/2a_readqc.smk"
-include: "rules/ont/2b_qualimap.smk"
+include: "rules/ont/3a_readqc.smk"
+include: "rules/ont/3b_qualimap.smk"
 
 
 ### Build targets #################################################################################

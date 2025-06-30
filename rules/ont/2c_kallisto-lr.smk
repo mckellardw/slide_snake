@@ -3,7 +3,7 @@
 # documentation:
 
 
-rule ont_1e_kallisto_lr:
+rule ont_2c_kallisto_lr:
     input:
         FQ=lambda w: get_fqs(w, return_type="list", mode="ONT"),
         BC="{OUTDIR}/{SAMPLE}/bc/whitelist.txt",
@@ -40,7 +40,7 @@ rule ont_1e_kallisto_lr:
         """
 
 
-rule ont_1e_bus2mat_lr:
+rule ont_2c_bus2mat_lr:
     input:
         BUS="{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/output.corrected.bus",
         TRANSCRIPTS="{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/transcripts.txt",
@@ -74,7 +74,7 @@ rule ont_1e_bus2mat_lr:
 
 
 # gzip the count matrix, etc.
-rule ont_1e_compress_kb_outs:
+rule ont_2c_compress_kb_outs:
     input:
         BCS="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/output.barcodes.txt",
         GENES="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/output.genes.txt",

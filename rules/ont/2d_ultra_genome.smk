@@ -1,7 +1,7 @@
 # Align w/ ultra
 ## ultra docs - https://github.com/ksahlin/ultra?tab=readme-ov-file#USAGE
 
-# rule ont_1f_ultra_index_genome:
+# rule ont_2d_ultra_index_genome:
 #     input:
 #         FA=lambda wildcards: SAMPLE_SHEET["genome_fa"][wildcards.SAMPLE],
 #     output:
@@ -48,7 +48,7 @@ rule ont_1f_sort_gtf:
         # sort -k1,1 -k4,4n {input.GTF} > {output.GTF}
 
 
-rule ont_1f_ultra_pipeline_genome:
+rule ont_2d_ultra_pipeline_genome:
     input:
         FQ=lambda w: get_fqs(w, return_type="list", mode="ONT")[1],
         GTF="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted.gtf",
@@ -83,7 +83,7 @@ rule ont_1f_ultra_pipeline_genome:
 
 
 # Sort and compresss ultra output
-rule ont_1f_ultra_sort_compress_output:
+rule ont_2d_ultra_sort_compress_output:
     input:
         SAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/reads.sam",
     output:
@@ -103,7 +103,7 @@ rule ont_1f_ultra_sort_compress_output:
 
 
 # Add CB to BAM
-rule ont_1f_ultra_add_corrected_barcodes:
+rule ont_2d_ultra_add_corrected_barcodes:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted.bam",
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_corrected.tsv",
@@ -135,7 +135,7 @@ rule ont_1f_ultra_add_corrected_barcodes:
 
 
 # Add UMI (UR) to barcoded BAM
-rule ont_1f_ultra_add_umis:
+rule ont_2d_ultra_add_umis:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_cb.bam",
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_filtered.tsv",
@@ -167,7 +167,7 @@ rule ont_1f_ultra_add_umis:
 
 
 # Generate count matrix w/ umi-tools
-rule ont_1f_ultra_filter_bam_empty_tags:
+rule ont_2d_ultra_filter_bam_empty_tags:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_cb_ub.bam",
         # BAI="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_cb_ub.bam.bai",
@@ -191,7 +191,7 @@ rule ont_1f_ultra_filter_bam_empty_tags:
 
 
 # Assign feature (transcript ID) to each alignment
-rule ont_1f_ultra_featureCounts:
+rule ont_2d_ultra_featureCounts:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_filtered_cb_ub.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_filtered_cb_ub.bam.bai",
@@ -236,7 +236,7 @@ rule ont_1f_ultra_featureCounts:
 
 
 # Add gene tag (GN) to BAM
-rule ont_1f_ultra_add_featureCounts_to_bam:
+rule ont_2d_ultra_add_featureCounts_to_bam:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_filtered_cb_ub.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_filtered_cb_ub.bam.bai",
@@ -269,7 +269,7 @@ rule ont_1f_ultra_add_featureCounts_to_bam:
 
 
 # Generate count matrix w/ umi-tools
-rule ont_1f_ultra_umitools_count:
+rule ont_2d_ultra_umitools_count:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_filtered_cb_ub_gn.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/sorted_filtered_cb_ub_gn.bam.bai",
@@ -301,7 +301,7 @@ rule ont_1f_ultra_umitools_count:
 
 
 # Convert long-format counts from umi_tools to market-matrix format (.mtx)
-rule ont_1f_ultra_counts_to_sparse:
+rule ont_2d_ultra_counts_to_sparse:
     input:
         COUNTS="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/raw/umitools_counts.tsv.gz",
     output:
@@ -321,7 +321,7 @@ rule ont_1f_ultra_counts_to_sparse:
 
 
 # make anndata object with spatial coordinates
-rule ont_1f_ultra_cache_preQC_h5ad_ultra:
+rule ont_2d_ultra_cache_preQC_h5ad_ultra:
     input:
         BCS="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/raw/barcodes.tsv.gz",
         FEATS="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/raw/features.tsv.gz",
