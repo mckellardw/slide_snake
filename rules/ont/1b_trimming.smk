@@ -94,7 +94,7 @@ rule ont_1b_R1_hardTrimming:
         | awk -v s={params.CB1end} \
             -v S={params.CB2start} \
             -v E={params.CB2end} \
-            -f scripts/awk/hardTrimFq.awk \
+            -f scripts/awk/fq_hardTrim.awk \
         > {output.R1_FQ.strip('.gz')}
 
         pigz -f -p{threads} {output.R1_FQ.strip('.gz')}

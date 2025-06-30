@@ -203,8 +203,19 @@ ilmn_STAR_uTAR = [
 ]
 
 # Module 4 - kallisto & bustools
-##
-# TODO
+## kallisto-bustools outputs
+ilmn_kbpython = [
+    f"{OUTDIR}/{SAMPLE}/short_read/kbpython_{KB}/{RECIPE}/counts_unfiltered/{FILE}"
+    for SAMPLE in R2_FQS.keys()
+    for RECIPE in RECIPE_DICT[SAMPLE]
+    for KB in ["std"]  # TODO "nac", "tcc"
+    for FILE in [
+        "output.mtx.gz",
+        "output_genes.tsv.gz",
+        "output_cells.tsv.gz",
+        "qc_plots.png",
+    ]
+]
 
 # Module 5 - small RNA
 ## miRge3.0 pseudobulk analysis

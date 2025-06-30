@@ -216,7 +216,7 @@ rule ilmn_3u_counts_long2mtx:
         f"{workflow.basedir}/envs/scanpy.yml"
     shell:
         """
-        python scripts/long2mtx.py \
+        python scripts/py/long2mtx.py \
             --umitools_tsv {input.TSV} \
             --out_mat {output.MTX} \
             --output-format mtx
