@@ -136,7 +136,7 @@ ont_sample,data/ont_reads.fq.gz,,visium,visium_ont,resources/visium_whitelist/wh
 ## Advanced Configuration
 
 ### Custom Recipes
-Create custom recipes by modifying `resources/recipe_sheet.csv`. See [Recipes Documentation](2_recipes.md) for details.
+Create custom recipes by modifying `resources/recipe_sheet.csv`. See [Recipes Documentation](2a_recipes.md) for details.
 
 ### rRNA Filtering
 Enable ribosomal RNA filtering:

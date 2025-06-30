@@ -4,11 +4,10 @@ rule ilmn_2c_qualimapQC_rRNA_bwa:
     input:
         BAM="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/aligned_sorted.bam",
         BAI="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/aligned_sorted.bam.bai",
+        GTF_rRNA="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_annotations.gtf.gz",
     output:
         TXT="{OUTDIR}/{SAMPLE}/short_read/qualimap/rRNA/bwa/rnaseq/rnaseq_qc_results.txt",
         PDF="{OUTDIR}/{SAMPLE}/short_read/qualimap/rRNA/bwa/rnaseq/report.pdf",
-    params:
-        GENES_GTF=lambda wildcards: SAMPLE_SHEET["rRNA_gtf"][wildcards.SAMPLE],
     log:
         log="{OUTDIR}/{SAMPLE}/short_read/qualimap/rRNA/bwa/rnaseq_qc.log",
         err="{OUTDIR}/{SAMPLE}/short_read/qualimap/rRNA/bwa/rnaseq_qc.err",
@@ -25,7 +24,7 @@ rule ilmn_2c_qualimapQC_rRNA_bwa:
             -bam {input.BAM} \
             --sequencing-protocol strand-specific-forward \
             --sorted \
-            -gtf {params.GENES_GTF} \
+            -gtf {input.GTF_rRNA} \
             --java-mem-size={resources.mem} \
             -outdir $(dirname {output.TXT}) \
             -outformat pdf \
@@ -35,7 +34,7 @@ rule ilmn_2c_qualimapQC_rRNA_bwa:
 
 
 # Convert qualimap summary to readable .csv
-rule ilmn_2c_qualimap_readqc_summary2csv_rRNA_STAR:
+rule ilmn_2c_qualimap_readqc_summary2csv_rRNA_bwa:
     input:
         TXT="{OUTDIR}/{SAMPLE}/short_read/qualimap/rRNA/{TOOL}/rnaseq/rnaseq_qc_results.txt",
     output:
@@ -82,7 +81,7 @@ rule ilmn_2c_qualimap_bamqc_rRNA_bwa:
 
 
 # Convert qualimap summary to readable .csv
-rule ilmn_2c_qualimap_bamqc_summary2csv_rRNA_STAR:
+rule ilmn_2c_qualimap_bamqc_summary2csv_rRNA_bwa:
     input:
         TXT="{OUTDIR}/{SAMPLE}/short_read/qualimap/rRNA/bwa/bamqc/genome_results.txt",
     output:
