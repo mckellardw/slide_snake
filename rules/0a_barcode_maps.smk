@@ -53,7 +53,6 @@ rule BC_write_whitelist_variants:
         BC_US="{OUTDIR}/{SAMPLE}/bc/whitelist_underscore.txt",  # Barcode With Underscore for STAR
     params:
         BC_LENGTHS=lambda w: get_recipe_info(w, info_col="BC_length", mode="list")[0],
-        BC_CONCAT=lambda w: get_recipe_info(w, info_col="BC_concat", mode="list")[0],
         RECIPES=lambda w: get_recipes(w, mode="list"),
     threads: 1
     log:
@@ -70,8 +69,6 @@ rule BC_write_whitelist_variants:
             --bc-uniq-2 {output.BC_UNIQ_2} \
             --bc-us {output.BC_US} \
             --bc-lengths "{params.BC_LENGTHS}" \
-            --bc-concat "{params.BC_CONCAT}" \
-            --recipes "{params.RECIPES}" \
         > {log.log} \
         2> {log.err}
         """

@@ -43,26 +43,8 @@ def print_error(msg):
     sys.exit(1)
 
 
-def get_recipe_type(recipes):
-    """Determine the recipe type based on the recipes list."""
-    recipe_str = "".join(recipes)
-
-    # Check for specific recipe patterns
-    if "seeker" in recipe_str:
-        return "seeker"
-    elif "decoder" in recipe_str:
-        return "decoder"
-    elif "miST" in recipe_str:
-        return "miST"
-    else:
-        return "default"
-
-
-def get_barcode_lengths(bc_lengths, recipes):
+def get_barcode_lengths(bc_lengths):
     """Get barcode lengths for splitting."""
-    recipe_type = get_recipe_type(recipes)
-
-    # Get lengths from recipe sheet or use defaults
     if bc_lengths and len(bc_lengths) > 0:
         # Parse lengths from recipe sheet (e.g., "8 6" -> [8, 6])
         if isinstance(bc_lengths[0], str):
@@ -70,46 +52,22 @@ def get_barcode_lengths(bc_lengths, recipes):
         else:
             lengths = bc_lengths
     else:
-        # Default lengths based on recipe type
-        if recipe_type == "seeker":
-            lengths = [8, 6]
-        elif recipe_type == "decoder":
-            lengths = [8, 8]
-        elif recipe_type == "miST":
-            lengths = [10, 10]
-        else:
-            lengths = []
-
+        lengths = []
     return lengths
 
 
-def should_concatenate_barcodes(bc_concat, recipes):
-    """Check if barcodes should be concatenated."""
-    if bc_concat and len(bc_concat) > 0:
-        concat_val = bc_concat[0]
-        if isinstance(concat_val, str):
-            return concat_val.lower() == "true"
-        else:
-            return bool(concat_val)
-
-    # Default behavior based on recipe type
-    recipe_type = get_recipe_type(recipes)
-    return recipe_type in ["seeker", "decoder", "miST"]
-
-
-def split_barcodes(bc_map, bc_lengths, recipes):
-    """Split barcodes based on recipe configuration."""
-    recipe_type = get_recipe_type(recipes)
-    lengths = get_barcode_lengths(bc_lengths, recipes)
+def split_barcodes(bc_map, bc_lengths):
+    """Split barcodes based on provided lengths."""
+    lengths = get_barcode_lengths(bc_lengths)
 
     if not lengths or len(lengths) < 2:
-        print_log(f"No barcode splitting performed for {recipe_type}. Barcodes will be written as-is.")
+        print_log("No barcode splitting performed. Barcodes will be written as-is.")
         return None, None, None
 
     bc_1_length = lengths[0]
     bc_2_length = lengths[1] if len(lengths) > 1 else 0
     print_log(
-        f"Splitting barcodes for {recipe_type}: first {bc_1_length} bases to BC_1, next {bc_2_length} bases to BC_2."
+        f"Splitting barcodes: first {bc_1_length} bases to BC_1, next {bc_2_length} bases to BC_2."
     )
 
     # Split barcodes
@@ -117,9 +75,7 @@ def split_barcodes(bc_map, bc_lengths, recipes):
     bc_2 = [bc[bc_1_length:] for bc in list(bc_map[0])]
     bc_us = [f"{bc[:bc_1_length]}_{bc[bc_1_length:]}" for bc in list(bc_map[0])]
 
-    print_log(
-        f"Split barcodes for {recipe_type}: {bc_1_length}+{len(bc_2[0]) if bc_2 else 0}bp"
-    )
+    print_log(f"Split barcodes: {bc_1_length}+{len(bc_2[0]) if bc_2 else 0}bp")
 
     return bc_1, bc_2, bc_us
 
@@ -180,17 +136,21 @@ def create_default_files(bc_map, output_files):
     )
 
 
-def process_barcodes(bc_map, recipes, bc_lengths, bc_concat, output_files):
+def process_barcodes(bc_map, bc_lengths, output_files):
     """Process barcodes and generate output files."""
-    recipe_type = get_recipe_type(recipes)
-    should_split = (
-        should_concatenate_barcodes(bc_concat, recipes)
-        and len(get_barcode_lengths(bc_lengths, recipes)) >= 2
-    )
-
+    lengths = get_barcode_lengths(bc_lengths)
+    should_split = False
+    if lengths and len(lengths) >= 2:
+        first_barcode = str(bc_map.iloc[0, 0])
+        total_split_length = sum(lengths)
+        if total_split_length < len(first_barcode):
+            should_split = True
+        else:
+            print_log(
+                f"Not splitting: sum of --bc-lengths ({total_split_length}) >= barcode length ({len(first_barcode)}). Writing barcodes as-is."
+            )
     if should_split:
-        bc_1, bc_2, bc_us = split_barcodes(bc_map, bc_lengths, recipes)
-
+        bc_1, bc_2, bc_us = split_barcodes(bc_map, bc_lengths)
         if bc_1 is not None and bc_2 is not None and bc_us is not None:
             # Create underscore map
             bc_us_map = bc_map.copy()
@@ -245,7 +205,7 @@ def process_barcodes(bc_map, recipes, bc_lengths, bc_concat, output_files):
                 f"  {len(bc_us):,} barcodes\n"
             )
 
-            print_log(f"Processed {recipe_type} barcodes with splitting\n")
+            print_log(f"Processed barcodes with splitting\n")
         else:
             create_default_files(bc_map, output_files)
     else:
@@ -255,35 +215,31 @@ def process_barcodes(bc_map, recipes, bc_lengths, bc_concat, output_files):
 def parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description="Process barcode whitelists for different spatial RNA-seq technologies",
+        description="Process barcode whitelists for spatial RNA-seq barcodes.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Process Seeker barcodes with splitting
-  python process_barcode_whitelist.py \\
-    --bc-map-file input/map.txt \\
-    --bc-us-map output/map_underscore.txt \\
-    --bc-1 output/whitelist_1.txt \\
-    --bc-2 output/whitelist_2.txt \\
-    --bc-uniq-1 output/whitelist_uniq_1.txt \\
-    --bc-uniq-2 output/whitelist_uniq_2.txt \\
-    --bc-us output/whitelist_underscore.txt \\
-    --bc-lengths "8 6" \\
-    --bc-concat true \\
-    --recipes seeker
+  # Process barcodes with splitting
+  python process_barcode_whitelist.py \
+    --bc-map-file input/map.txt \
+    --bc-us-map output/map_underscore.txt \
+    --bc-1 output/whitelist_1.txt \
+    --bc-2 output/whitelist_2.txt \
+    --bc-uniq-1 output/whitelist_uniq_1.txt \
+    --bc-uniq-2 output/whitelist_uniq_2.txt \
+    --bc-us output/whitelist_underscore.txt \
+    --bc-lengths "8 6"
 
-  # Process Visium barcodes (no splitting)
-  python process_barcode_whitelist.py \\
-    --bc-map-file input/map.txt \\
-    --bc-us-map output/map_underscore.txt \\
-    --bc-1 output/whitelist_1.txt \\
-    --bc-2 output/whitelist_2.txt \\
-    --bc-uniq-1 output/whitelist_uniq_1.txt \\
-    --bc-uniq-2 output/whitelist_uniq_2.txt \\
-    --bc-us output/whitelist_underscore.txt \\
-    --bc-lengths "" \\
-    --bc-concat false \\
-    --recipes visium
+  # Process barcodes (no splitting)
+  python process_barcode_whitelist.py \
+    --bc-map-file input/map.txt \
+    --bc-us-map output/map_underscore.txt \
+    --bc-1 output/whitelist_1.txt \
+    --bc-2 output/whitelist_2.txt \
+    --bc-uniq-1 output/whitelist_uniq_1.txt \
+    --bc-uniq-2 output/whitelist_uniq_2.txt \
+    --bc-us output/whitelist_underscore.txt \
+    --bc-lengths ""
         """,
     )
 
@@ -329,16 +285,6 @@ Examples:
         help="Space-separated barcode lengths for splitting (e.g., '8 6')",
     )
 
-    parser.add_argument(
-        "--bc-concat",
-        default="false",
-        help="Whether to concatenate/split barcodes (true/false)",
-    )
-
-    parser.add_argument(
-        "--recipes", default="", help="Comma-separated list of recipes being processed"
-    )
-
     return parser.parse_args()
 
 
@@ -356,15 +302,20 @@ def main():
         f"Output BC_UNIQ_2:    {args.bc_uniq_2}\n"
         f"Output BC_US:        {args.bc_us}\n"
         f"BC Lengths:          {args.bc_lengths}\n"
-        f"BC Concat:           {args.bc_concat}\n"
-        f"Recipes:             {args.recipes}\n"
         f"\n"
     )
 
     # Parameter checks
     if not args.bc_map_file or not Path(args.bc_map_file).exists():
         print_error(f"Input barcode map file does not exist: {args.bc_map_file}")
-    for out_file in [args.bc_us_map, args.bc_1, args.bc_2, args.bc_uniq_1, args.bc_uniq_2, args.bc_us]:
+    for out_file in [
+        args.bc_us_map,
+        args.bc_1,
+        args.bc_2,
+        args.bc_uniq_1,
+        args.bc_uniq_2,
+        args.bc_us,
+    ]:
         if not out_file:
             print_error(f"Missing output file path for: {out_file}")
     if not args.bc_lengths:
@@ -374,10 +325,6 @@ def main():
             _ = [int(x) for x in str(args.bc_lengths).split()]
         except Exception:
             print_error(f"Could not parse --bc-lengths: {args.bc_lengths}")
-    if not args.recipes:
-        print_log("Warning: --recipes is empty. Default recipe logic will be used.")
-    if not (args.bc_concat.lower() == "true" or args.bc_concat.lower() == "false"):
-        print_log(f"Warning: --bc-concat should be 'true' or 'false', got: {args.bc_concat}")
 
     try:
         # Create output directories if they don't exist
@@ -399,13 +346,6 @@ def main():
         if args.bc_lengths.strip():
             bc_lengths = [args.bc_lengths.strip()]
 
-        bc_concat = [args.bc_concat.lower() == "true"]
-
-        # Parse recipes
-        recipes = []
-        if args.recipes.strip():
-            recipes = [r.strip() for r in args.recipes.split(",")]
-
         # Load barcode map
         bc_map = pd.read_csv(args.bc_map_file, sep="\t", header=None)
         print_log(f"Loaded barcode map with {len(bc_map)} entries")
@@ -413,15 +353,14 @@ def main():
         # Process barcodes using functional approach
         process_barcodes(
             bc_map=bc_map,
-            recipes=recipes,
             bc_lengths=bc_lengths,
-            bc_concat=bc_concat,
-            output_files=output_files
+            output_files=output_files,
         )
 
     except Exception as e:
         print_error(f"Error processing barcodes: {e}")
         import traceback
+
         traceback.print_exc()
 
 
