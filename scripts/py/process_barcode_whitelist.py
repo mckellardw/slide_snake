@@ -140,15 +140,41 @@ def create_default_files(bc_map, output_files, verbosity=2):
     """Create default files for recipes that don't need barcode splitting."""
     # Copy original map with underscore (no split, so just copy first column)
     bc_map.to_csv(output_files["BC_US_MAP"], header=False, index=False, sep="\t")
+    log_message(
+        f"Saved barcode map with underscores to: {output_files['BC_US_MAP']}",
+        verbosity=verbosity,
+    )
+    log_message(
+        f"{len(bc_map)} barcodes written to {output_files['BC_US_MAP']}",
+        verbosity=verbosity,
+    )
 
     # Always write unique barcode lists for every chemistry
     uniq_1 = pd.Series(bc_map[0]).drop_duplicates()
     uniq_1.to_csv(output_files["BC_UNIQ_1"], header=False, index=False)
+    percent_uniq_1 = 100.0 * len(uniq_1) / len(bc_map) if len(bc_map) > 0 else 0.0
+    log_message(
+        f"Saved unique barcode 1 whitelist to: {output_files['BC_UNIQ_1']}",
+        verbosity=verbosity,
+    )
+    log_message(
+        f"{len(uniq_1)} unique barcodes written to {output_files['BC_UNIQ_1']} ({percent_uniq_1:.2f}% unique)",
+        verbosity=verbosity,
+    )
 
     # For BC_UNIQ_2, if a second column exists, use it; otherwise, do not write the file
     if bc_map.shape[1] > 1:
         uniq_2 = pd.Series(bc_map[1]).drop_duplicates()
         uniq_2.to_csv(output_files["BC_UNIQ_2"], header=False, index=False)
+        percent_uniq_2 = 100.0 * len(uniq_2) / len(bc_map) if len(bc_map) > 0 else 0.0
+        log_message(
+            f"Saved unique barcode 2 whitelist to: {output_files['BC_UNIQ_2']}",
+            verbosity=verbosity,
+        )
+        log_message(
+            f"{len(uniq_2)} unique barcodes written to {output_files['BC_UNIQ_2']} ({percent_uniq_2:.2f}% unique)",
+            verbosity=verbosity,
+        )
     else:
         # Remove file if it exists and would be empty
         try:
@@ -161,6 +187,14 @@ def create_default_files(bc_map, output_files, verbosity=2):
 
     # Create simple whitelist (underscore version is just the first column)
     pd.Series(bc_map[0]).to_csv(output_files["BC_US"], header=False, index=False)
+    log_message(
+        f"Saved underscore barcode whitelist to: {output_files['BC_US']}",
+        verbosity=verbosity,
+    )
+    log_message(
+        f"{len(bc_map)} barcodes written to {output_files['BC_US']}",
+        verbosity=verbosity,
+    )
 
     log_message(
         "Processed default barcodes (no splitting, unique lists written)",
@@ -189,15 +223,72 @@ def process_barcodes(bc_map, recipes, bc_lengths, bc_concat, output_files, verbo
             bc_us_map.to_csv(
                 output_files["BC_US_MAP"], header=False, index=False, sep="\t"
             )
+            log_message(
+                f"Saved barcode map with underscores to: {output_files['BC_US_MAP']}",
+                verbosity=verbosity,
+            )
+            log_message(
+                f"{len(bc_us_map)} barcodes written to {output_files['BC_US_MAP']}",
+                verbosity=verbosity,
+            )
+
             pd.Series(bc_1).to_csv(output_files["BC_1"], header=False, index=False)
+            log_message(
+                f"Saved barcode 1 whitelist to: {output_files['BC_1']}",
+                verbosity=verbosity,
+            )
+            log_message(
+                f"{len(bc_1)} barcodes written to {output_files['BC_1']}",
+                verbosity=verbosity,
+            )
+
             pd.Series(bc_2).to_csv(output_files["BC_2"], header=False, index=False)
-            pd.Series(list(set(bc_1))).to_csv(
+            log_message(
+                f"Saved barcode 2 whitelist to: {output_files['BC_2']}",
+                verbosity=verbosity,
+            )
+            log_message(
+                f"{len(bc_2)} barcodes written to {output_files['BC_2']}",
+                verbosity=verbosity,
+            )
+
+            uniq_1 = list(set(bc_1))
+            pd.Series(uniq_1).to_csv(
                 output_files["BC_UNIQ_1"], header=False, index=False
             )
-            pd.Series(list(set(bc_2))).to_csv(
+            percent_uniq_1 = 100.0 * len(uniq_1) / len(bc_1) if len(bc_1) > 0 else 0.0
+            log_message(
+                f"Saved unique barcode 1 whitelist to: {output_files['BC_UNIQ_1']}",
+                verbosity=verbosity,
+            )
+            log_message(
+                f"{len(uniq_1)} unique barcodes written to {output_files['BC_UNIQ_1']} ({percent_uniq_1:.2f}% unique)",
+                verbosity=verbosity,
+            )
+
+            uniq_2 = list(set(bc_2))
+            pd.Series(uniq_2).to_csv(
                 output_files["BC_UNIQ_2"], header=False, index=False
             )
+            percent_uniq_2 = 100.0 * len(uniq_2) / len(bc_2) if len(bc_2) > 0 else 0.0
+            log_message(
+                f"Saved unique barcode 2 whitelist to: {output_files['BC_UNIQ_2']}",
+                verbosity=verbosity,
+            )
+            log_message(
+                f"{len(uniq_2)} unique barcodes written to {output_files['BC_UNIQ_2']} ({percent_uniq_2:.2f}% unique)",
+                verbosity=verbosity,
+            )
+
             pd.Series(bc_us).to_csv(output_files["BC_US"], header=False, index=False)
+            log_message(
+                f"Saved underscore barcode whitelist to: {output_files['BC_US']}",
+                verbosity=verbosity,
+            )
+            log_message(
+                f"{len(bc_us)} barcodes written to {output_files['BC_US']}",
+                verbosity=verbosity,
+            )
 
             log_message(
                 f"Processed {recipe_type} barcodes with splitting",
@@ -226,7 +317,6 @@ Examples:
     --bc-uniq-1 output/whitelist_uniq_1.txt \\
     --bc-uniq-2 output/whitelist_uniq_2.txt \\
     --bc-us output/whitelist_underscore.txt \\
-    --log-file output/info.log \\
     --bc-lengths "8 6" \\
     --bc-concat true \\
     --recipes seeker
@@ -240,7 +330,6 @@ Examples:
     --bc-uniq-1 output/whitelist_uniq_1.txt \\
     --bc-uniq-2 output/whitelist_uniq_2.txt \\
     --bc-us output/whitelist_underscore.txt \\
-    --log-file output/info.log \\
     --bc-lengths "" \\
     --bc-concat false \\
     --recipes visium
@@ -281,11 +370,6 @@ Examples:
         "--bc-us",
         required=True,
         help="Path to output underscore barcode whitelist file",
-    )
-
-    parser.add_argument(
-        "--log-file",
-        help="Path to output log file (deprecated - now prints to console)",
     )
 
     parser.add_argument(
@@ -333,10 +417,6 @@ def main():
         for output_file in output_files.values():
             Path(output_file).parent.mkdir(parents=True, exist_ok=True)
 
-        # Create log file directory if specified (for backward compatibility)
-        if args.log_file:
-            Path(args.log_file).parent.mkdir(parents=True, exist_ok=True)
-
         # Parse parameters
         bc_lengths = []
         if args.bc_lengths.strip():
@@ -368,13 +448,6 @@ def main():
             print_log(
                 f"Successfully processed barcodes for recipes: {', '.join(recipes) if recipes else 'default'}"
             )
-
-        # Write to log file if specified (for backward compatibility)
-        if args.log_file:
-            with open(args.log_file, "w") as f:
-                f.write(
-                    f"Processed barcodes for recipes: {', '.join(recipes) if recipes else 'default'}\n"
-                )
 
     except Exception as e:
         print_error(f"Error processing barcodes: {e}")
