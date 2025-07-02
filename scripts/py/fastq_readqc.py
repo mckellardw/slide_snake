@@ -7,6 +7,8 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 import time
 import mmap
 import subprocess
+import random
+import string
 
 # Usage:
 """
@@ -16,6 +18,22 @@ python scripts/py/fastq_readqc.py \
     --cores 4 \
     --chunk_size 1000
 """
+
+
+def currentTime():
+    """Return the current time formatted as 'MM/DD/YY | HH:MM:SS'."""
+    return time.strftime("%D | %H:%M:%S", time.localtime())
+
+
+def print_log(msg):
+    """Print a log message with the current time."""
+    print(f"{currentTime()} | {msg}")
+
+
+def print_error(msg):
+    """Print an error message with the current time."""
+    print(f"{currentTime()} | ERROR: {msg}", file=sys.stderr)
+    sys.exit(1)
 
 
 def count_reads_in_fastq(fastq_file):
@@ -53,14 +71,10 @@ def remove_file_if_exists(file_path):
     if os.path.exists(file_path):
         try:
             os.remove(file_path)
-            print(
-                f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Removed old output file [{file_path}]..."
-            )
+            print_log(f"Removed old output file [{file_path}]...")
             return True
         except OSError as e:
-            print(
-                f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Error: {e.strerror}. Unable to remove '{file_path}'."
-            )
+            print_error(f"Error: {e.strerror}. Unable to remove '{file_path}'.")
             return False
     else:
         return False
@@ -157,13 +171,9 @@ def worker(fastq_file, tsv_file, start, chunk_size, temp_dir):
     try:
         for read_metrics in calculate_metrics(fastq_file, start, chunk_size):
             write_tsv(read_metrics, temp_file)
-        print(
-            f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Worker completed for chunk starting at {start}"
-        )
+        print_log(f"Worker completed for chunk starting at {start}")
     except Exception as e:
-        print(
-            f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Error in worker for chunk starting at {start}: {str(e)}"
-        )
+        print_error(f"Error in worker for chunk starting at {start}: {str(e)}")
         raise
 
 
@@ -181,20 +191,18 @@ def merge_tsv_files(temp_dir, final_tsv_file):
 
 def process_reads(fastq_file, tsv_file, chunk_size=100000, cores=1):
     # Determine the number of chunks to process
-    print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Counting reads...")
+    print_log("Counting reads...")
     total_reads = count_reads_in_fastq(fastq_file)
-    print(
-        f"{time.strftime('%D - %H:%M:%S', time.localtime())} | {total_reads:,} total reads found..."
-    )
+    print_log(f"{total_reads:,} total reads found...")
 
     total_chunks = (
         total_reads + chunk_size - 1
     ) // chunk_size  # Round up to cover all reads
-    print(
-        f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Calculating across {total_chunks} chunks..."
-    )
+    print_log(f"Calculating across {total_chunks} chunks...")
 
-    temp_dir = os.path.join(os.path.dirname(tsv_file), "temp_chunks")
+    # Generate a random 12-character string for temp dir
+    rand_str = "".join(random.choices(string.ascii_letters + string.digits, k=12))
+    temp_dir = os.path.join(os.path.dirname(tsv_file), f"tmp_{rand_str}")
     os.makedirs(temp_dir, exist_ok=True)
 
     with ProcessPoolExecutor(max_workers=cores) as executor:
@@ -210,18 +218,14 @@ def process_reads(fastq_file, tsv_file, chunk_size=100000, cores=1):
             try:
                 result = future.result()
                 completed_chunks += 1
-                print(
-                    f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Completed chunks {completed_chunks}/{total_chunks} ({(completed_chunks/total_chunks)*100:.2f}%)"
+                print_log(
+                    f"Completed chunks {completed_chunks}/{total_chunks} ({(completed_chunks/total_chunks)*100:.2f}%)"
                 )
             except Exception as e:
-                print(
-                    f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Error in chunk: {str(e)}"
-                )
+                print_error(f"Error in chunk: {str(e)}")
 
     merge_tsv_files(temp_dir, tsv_file)
-    print(
-        f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Merged all chunks into {tsv_file}"
-    )
+    print_log(f"Merged all chunks into {tsv_file}")
     # Clean up temporary directory
     for temp_file in os.listdir(temp_dir):
         os.remove(os.path.join(temp_dir, temp_file))
@@ -252,10 +256,7 @@ def parse_args():
 def main(fastq_file, tsv_file, cores, chunk_size):
     # Check if the input FASTQ file exists
     if not os.path.exists(fastq_file):
-        print(
-            f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Error: Input FASTQ file '{fastq_file}' does not exist."
-        )
-        sys.exit(1)
+        print_error(f"Input FASTQ file '{fastq_file}' does not exist.")
 
     # Make output directory if needed
     output_dir = os.path.dirname(tsv_file)
@@ -264,13 +265,11 @@ def main(fastq_file, tsv_file, cores, chunk_size):
 
     output_removed = remove_file_if_exists(tsv_file)
 
-    print(
-        f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Processing reads across {cores} cores..."
-    )
+    print_log(f"Processing reads across {cores} cores...")
 
     process_reads(fastq_file, tsv_file, chunk_size, cores)
 
-    print(f"{time.strftime('%D - %H:%M:%S', time.localtime())} | Done!")
+    print_log("Done!")
 
 
 if __name__ == "__main__":

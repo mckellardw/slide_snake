@@ -60,9 +60,10 @@ def parse_arguments():
     parser.add_argument("tsv_gz_path", type=str, help="Path to the input tsv.gz file")
     parser.add_argument("output_dir", type=str, help="Path to the output directory")
     parser.add_argument(
-        "-v", "--verbose", 
-        action="store_true", 
-        help="Enable verbose output (default: False)"
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Enable verbose output (default: False)",
     )
     return parser.parse_args()
 
@@ -78,7 +79,7 @@ def main():
     with gzip.open(args.tsv_gz_path, "rt") as f:
         # Skip the first line
         next(f)
-        
+
         if args.verbose:
             print("Reading data from tsv.gz file...")
 
@@ -99,7 +100,7 @@ def main():
     # Get unique var_names
     var_names = list(set(data_vars))
     obs_names = list(set(data_obs))
-    
+
     if args.verbose:
         print(f"Found {len(var_names)} unique features")
         print(f"Found {len(obs_names)} unique observations")

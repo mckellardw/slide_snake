@@ -71,7 +71,6 @@ set-threads:
   ont_1a_subset_fastq_by_adapter_type: 1
   ont_1a_split_fastq_to_R1_R2: 24
   ont_1a_compress_merged_fq: 8
-  ont_1a_split_fastq_to_R1_R2: 24
   ont_1b_cutadapt: 24
   ont_1b_R1_hardTrimming: 24
   ont_1b_R1_internalTrim: 24
@@ -177,7 +176,7 @@ set-resources:
     mem: 128000000000
     mem_mb: 128000
   ilmn_3a_STARsolo_secondPass:
-    mem: 220000000000
+    mem: 320000000000
     mem_mb: 220000
   ilmn_3c_strand_split_bam:
     mem: 8G
