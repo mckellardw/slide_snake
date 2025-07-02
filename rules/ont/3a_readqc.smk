@@ -147,8 +147,8 @@ rule ont_3a_readQC_summaryplot:
         mem="8G",
     threads: 1
     log:
-        log="{OUTDIR}/{SAMPLE}/short_read/readqc/{TRIM}/{READ}_qc.log",
-        err="{OUTDIR}/{SAMPLE}/short_read/readqc/{TRIM}/{READ}_qc.err",
+        log="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc.log",
+        err="{OUTDIR}/{SAMPLE}/ont/readqc/{TRIM}/{READ}_qc.err",
     conda:
         f"{workflow.basedir}/envs/ggplot2.yml"
     shell:
