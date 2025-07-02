@@ -141,14 +141,7 @@ def process_barcodes(bc_map, bc_lengths, output_files):
     lengths = get_barcode_lengths(bc_lengths)
     should_split = False
     if lengths and len(lengths) >= 2:
-        first_barcode = str(bc_map.iloc[0, 0])
-        total_split_length = sum(lengths)
-        if total_split_length < len(first_barcode):
-            should_split = True
-        else:
-            print_log(
-                f"Not splitting: sum of --bc-lengths ({total_split_length}) >= barcode length ({len(first_barcode)}). Writing barcodes as-is."
-            )
+        should_split = True
     if should_split:
         bc_1, bc_2, bc_us = split_barcodes(bc_map, bc_lengths)
         if bc_1 is not None and bc_2 is not None and bc_us is not None:
