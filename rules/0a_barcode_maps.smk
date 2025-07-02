@@ -52,13 +52,13 @@ rule BC_write_whitelist_variants:
         BC_UNIQ_2="{OUTDIR}/{SAMPLE}/bc/whitelist_uniq_2.txt",  # Barcode #2, unique values
         BC_US="{OUTDIR}/{SAMPLE}/bc/whitelist_underscore.txt",  # Barcode With Underscore for STAR
     params:
-        BC_LENGTHS=lambda w: get_recipe_info(w, info_col="BC_length", mode="list"),
-        BC_CONCAT=lambda w: get_recipe_info(w, info_col="BC_concat", mode="list"),
+        BC_LENGTHS=lambda w: get_recipe_info(w, info_col="BC_length", mode="list")[0],
+        BC_CONCAT=lambda w: get_recipe_info(w, info_col="BC_concat", mode="list")[0],
         RECIPES=lambda w: get_recipes(w, mode="list"),
     threads: 1
     log:
-        stdout="{OUTDIR}/{SAMPLE}/bc/process_barcode_whitelist.log",
-        stderr="{OUTDIR}/{SAMPLE}/bc/process_barcode_whitelist.err",
+        log="{OUTDIR}/{SAMPLE}/bc/process_barcode_whitelist.log",
+        err="{OUTDIR}/{SAMPLE}/bc/process_barcode_whitelist.err",
     shell:
         """
         python scripts/py/process_barcode_whitelist.py \

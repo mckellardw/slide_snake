@@ -103,7 +103,7 @@ def split_barcodes(bc_map, bc_lengths, recipes):
     lengths = get_barcode_lengths(bc_lengths, recipes)
 
     if not lengths or len(lengths) < 2:
-        print_log(f"No barcode splitting needed for {recipe_type}")
+        print_log(f"No barcode splitting performed for {recipe_type}. Barcodes will be written as-is.")
         return None, None, None
 
     bc_1_length = lengths[0]
@@ -339,13 +339,6 @@ Examples:
         "--recipes", default="", help="Comma-separated list of recipes being processed"
     )
 
-    parser.add_argument(
-        "--verbosity",
-        type=int,
-        default=2,
-        help="Verbosity level (0=quiet, 1=error, 2=info, 3=debug)",
-    )
-
     return parser.parse_args()
 
 
@@ -365,9 +358,26 @@ def main():
         f"BC Lengths:          {args.bc_lengths}\n"
         f"BC Concat:           {args.bc_concat}\n"
         f"Recipes:             {args.recipes}\n"
-        f"Verbosity:           {args.verbosity}\n"
         f"\n"
     )
+
+    # Parameter checks
+    if not args.bc_map_file or not Path(args.bc_map_file).exists():
+        print_error(f"Input barcode map file does not exist: {args.bc_map_file}")
+    for out_file in [args.bc_us_map, args.bc_1, args.bc_2, args.bc_uniq_1, args.bc_uniq_2, args.bc_us]:
+        if not out_file:
+            print_error(f"Missing output file path for: {out_file}")
+    if not args.bc_lengths:
+        print_log("Warning: --bc-lengths is empty. No splitting will be performed.")
+    else:
+        try:
+            _ = [int(x) for x in str(args.bc_lengths).split()]
+        except Exception:
+            print_error(f"Could not parse --bc-lengths: {args.bc_lengths}")
+    if not args.recipes:
+        print_log("Warning: --recipes is empty. Default recipe logic will be used.")
+    if not (args.bc_concat.lower() == "true" or args.bc_concat.lower() == "false"):
+        print_log(f"Warning: --bc-concat should be 'true' or 'false', got: {args.bc_concat}")
 
     try:
         # Create output directories if they don't exist
@@ -398,8 +408,7 @@ def main():
 
         # Load barcode map
         bc_map = pd.read_csv(args.bc_map_file, sep="\t", header=None)
-        if args.verbosity >= 2:
-            print_log(f"Loaded barcode map with {len(bc_map)} entries")
+        print_log(f"Loaded barcode map with {len(bc_map)} entries")
 
         # Process barcodes using functional approach
         process_barcodes(
@@ -407,21 +416,13 @@ def main():
             recipes=recipes,
             bc_lengths=bc_lengths,
             bc_concat=bc_concat,
-            output_files=output_files,
-            verbosity=args.verbosity,
+            output_files=output_files
         )
-
-        if args.verbosity >= 2:
-            print_log(
-                f"Successfully processed barcodes for recipes: {', '.join(recipes) if recipes else 'default'}"
-            )
 
     except Exception as e:
         print_error(f"Error processing barcodes: {e}")
-        if args.verbosity >= 3:
-            import traceback
-
-            traceback.print_exc()
+        import traceback
+        traceback.print_exc()
 
 
 if __name__ == "__main__":
