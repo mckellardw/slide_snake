@@ -70,7 +70,6 @@ rule BC_write_whitelist_variants:
             --bc-uniq-1 {output.BC_UNIQ_1} \
             --bc-uniq-2 {output.BC_UNIQ_2} \
             --bc-us {output.BC_US} \
-            --log-file {log.log} \
             --bc-lengths "{params.BC_LENGTHS}" \
             --bc-concat "{params.BC_CONCAT}" \
             --recipes "{params.RECIPES}" \
