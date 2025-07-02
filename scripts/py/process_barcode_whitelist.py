@@ -138,20 +138,32 @@ def split_barcodes(bc_map, bc_lengths, recipes, verbosity=2):
 
 def create_default_files(bc_map, output_files, verbosity=2):
     """Create default files for recipes that don't need barcode splitting."""
-    # Copy original map
+    # Copy original map with underscore (no split, so just copy first column)
     bc_map.to_csv(output_files["BC_US_MAP"], header=False, index=False, sep="\t")
 
-    # Create empty files for unused outputs
-    Path(output_files["BC_1"]).touch()
-    Path(output_files["BC_2"]).touch()
-    Path(output_files["BC_UNIQ_1"]).touch()
-    Path(output_files["BC_UNIQ_2"]).touch()
+    # Always write unique barcode lists for every chemistry
+    uniq_1 = pd.Series(bc_map[0]).drop_duplicates()
+    uniq_1.to_csv(output_files["BC_UNIQ_1"], header=False, index=False)
 
-    # Create simple whitelist
+    # For BC_UNIQ_2, if a second column exists, use it; otherwise, do not write the file
+    if bc_map.shape[1] > 1:
+        uniq_2 = pd.Series(bc_map[1]).drop_duplicates()
+        uniq_2.to_csv(output_files["BC_UNIQ_2"], header=False, index=False)
+    else:
+        # Remove file if it exists and would be empty
+        try:
+            Path(output_files["BC_UNIQ_2"]).unlink(missing_ok=True)
+        except Exception:
+            pass
+
+    # Only write BC_1 and BC_2 if they would have content (i.e., splitting is performed)
+    # For default/no-split, do not write these files
+
+    # Create simple whitelist (underscore version is just the first column)
     pd.Series(bc_map[0]).to_csv(output_files["BC_US"], header=False, index=False)
 
     log_message(
-        "Processed default barcodes (no splitting)", level="info", verbosity=verbosity
+        "Processed default barcodes (no splitting, unique lists written)", level="info", verbosity=verbosity
     )
 
 
