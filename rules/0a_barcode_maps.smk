@@ -57,7 +57,6 @@ rule BC_write_whitelist_variants:
         RECIPES=lambda w: get_recipes(w, mode="list"),
     threads: 1
     log:
-        log="{OUTDIR}/{SAMPLE}/bc/info.log",
         stdout="{OUTDIR}/{SAMPLE}/bc/process_barcode_whitelist.log",
         stderr="{OUTDIR}/{SAMPLE}/bc/process_barcode_whitelist.err",
     shell:
@@ -73,5 +72,6 @@ rule BC_write_whitelist_variants:
             --bc-lengths "{params.BC_LENGTHS}" \
             --bc-concat "{params.BC_CONCAT}" \
             --recipes "{params.RECIPES}" \
-            > {log.stdout} 2> {log.stderr}
+        > {log.log} \
+        2> {log.err}
         """
