@@ -163,7 +163,9 @@ def create_default_files(bc_map, output_files, verbosity=2):
     pd.Series(bc_map[0]).to_csv(output_files["BC_US"], header=False, index=False)
 
     log_message(
-        "Processed default barcodes (no splitting, unique lists written)", level="info", verbosity=verbosity
+        "Processed default barcodes (no splitting, unique lists written)",
+        level="info",
+        verbosity=verbosity,
     )
 
 

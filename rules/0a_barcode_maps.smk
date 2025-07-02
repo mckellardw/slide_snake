@@ -55,10 +55,11 @@ rule BC_write_whitelist_variants:
         BC_LENGTHS=lambda w: get_recipe_info(w, info_col="BC_length", mode="list"),
         BC_CONCAT=lambda w: get_recipe_info(w, info_col="BC_concat", mode="list"),
         RECIPES=lambda w: get_recipes(w, mode="list"),
-    # resources:
     threads: 1
     log:
         log="{OUTDIR}/{SAMPLE}/bc/info.log",
+        stdout="{OUTDIR}/{SAMPLE}/bc/process_barcode_whitelist.log",
+        stderr="{OUTDIR}/{SAMPLE}/bc/process_barcode_whitelist.err",
     shell:
         """
         python scripts/py/process_barcode_whitelist.py \
@@ -72,38 +73,6 @@ rule BC_write_whitelist_variants:
             --log-file {log.log} \
             --bc-lengths "{params.BC_LENGTHS}" \
             --bc-concat "{params.BC_CONCAT}" \
-            --recipes "{params.RECIPES}"
-        """
-
-
-# For Seeker - Insert the adapter sequence into the bead barcodes for barcode matching/alignment
-rule BC_insert_adapter_into_list:
-    input:
-        BC_MAP="{OUTDIR}/{SAMPLE}/bc/map.txt",
-    output:
-        BC_ADAPTER="{OUTDIR}/{SAMPLE}/bc/whitelist_adapter.txt",
-        BC_ADAPTER_R1="{OUTDIR}/{SAMPLE}/bc/whitelist_adapter_r1.txt",
-        BC_ADAPTER_MAP="{OUTDIR}/{SAMPLE}/bc/map_adapter.txt",
-        BC_ADAPTER_R1_MAP="{OUTDIR}/{SAMPLE}/bc/map_adapter_R1.txt",
-    params:
-        ADAPTER=lambda w: get_recipe_info(w, "internal_adapter", mode="list")[0],
-        BC_PRIMER=lambda w: get_recipe_info(w, "fwd_primer", mode="list")[0],
-        BC_LENGTHS=lambda w: get_recipe_info(w, "BC_length", mode="list"),
-        RECIPES=lambda w: get_recipe_info(w, "recipe", mode="list"),
-        recipes_to_split=["seeker", "miST", "decoder"],
-    # resources:
-    threads: 1
-    shell:
-        """
-        python scripts/py/process_adapter_insertion.py \
-            --bc-map-file {input.BC_MAP} \
-            --bc-adapter {output.BC_ADAPTER} \
-            --bc-adapter-r1 {output.BC_ADAPTER_R1} \
-            --bc-adapter-map {output.BC_ADAPTER_MAP} \
-            --bc-adapter-r1-map {output.BC_ADAPTER_R1_MAP} \
-            --adapter "{params.ADAPTER}" \
-            --bc-primer "{params.BC_PRIMER}" \
-            --bc-lengths "{params.BC_LENGTHS}" \
             --recipes "{params.RECIPES}" \
-            --recipes-to-split "{params.recipes_to_split}"
+            > {log.stdout} 2> {log.stderr}
         """
