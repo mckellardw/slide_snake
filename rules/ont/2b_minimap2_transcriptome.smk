@@ -128,17 +128,17 @@ rule ont_2b_txome_filter_bam_empty_tags:
         """
 
 
-# Sort aligned_filtered_cb_ub.bam by CB tag
+# Sort .bam by XB tag
 ## see more oarfish requirements here - https://github.com/COMBINE-lab/oarfish?tab=readme-ov-file#notes-about-single-cell-mode
-rule ont_2b_txome_sort_by_cb:
+rule ont_2b_txome_sort_by_xb:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_cb_ub_xb.bam",
     output:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub_xb.bam",
     params:
-        BC_TAG="CB",  # corrected barcode tag
+        BC_TAG="XB",  
     log:
-        err="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/sort_by_cb.err",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/sort_by_xb.err",
     resources:
         mem="16G",
     threads: 1
@@ -153,6 +153,7 @@ rule ont_2b_txome_sort_by_cb:
 rule ont_2b_txome_dedup_by_xb:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub_xb.bam",
+        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub_xb.bam.bai",
     output:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub_xb_dedup.bam",
     log:
