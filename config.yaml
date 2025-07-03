@@ -7,7 +7,9 @@
 SAMPLE_SHEET_PATH: data/test_sample_sheet_minimal.csv # toy data, just 1 recipe each
 # SAMPLE_SHEET_PATH: data/test_sample_sheet.csv # toy data, lots of recipes - will test every module
 
+########################################################################################################
 # Resource parameters 
+########################################################################################################
 CORES: 8                # how many cores to give each process
 MEMLIMIT: 121916827066  # limit in bytes  
 MEMLIMIT_MB: 256000     # limit in megabytes

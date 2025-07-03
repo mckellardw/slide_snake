@@ -1,10 +1,11 @@
-name: hmm
+name: utar
 channels:
   - bioconda
   - conda-forge
   - defaults
 dependencies:
-  - bioconductor-grohmm
-  - samtools
   - bedtools
+  - bioconductor-grohmm
   - pigz
+  - samtools
+  - r-argparse

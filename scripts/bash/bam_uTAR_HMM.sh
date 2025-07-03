@@ -126,9 +126,6 @@ cat ${f}_merge${MERGEBP}.sorted.bed_count | awk 'BEGIN{OFS="\t"} ($7 >= '$MINCOV
 log_with_timestamp "#### Please examine if major chromosomes are all present in the final TAR_raw.bed.gz file ####"
 zcat ${OUTDIR}/TAR_raw.bed.gz | cut -f 1 | uniq
 
-# log_with_timestamp "Linking the final TAR_reads.bed.gz file to the working directory"
-# ln -sf ${TMPDIR}/TAR_reads.bed.gz ${OUTDIR}/TAR_reads.bed.gz
-
 log_with_timestamp "Moving intermediate files to ${TMPDIR}/toremove ..."
 mv ${TMPDIR}/chr* ${TMPDIR}/toremove/.
 

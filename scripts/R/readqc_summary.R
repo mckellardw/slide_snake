@@ -1,6 +1,4 @@
-#!/usr/bin/env Rscript
-
-# Load necessary libraries
+# readqv_summary.R
 library(readr)
 library(ggplot2)
 library(patchwork)
@@ -10,25 +8,27 @@ library(ggforce)
 
 # Define the options for command-line arguments
 option_list <- list(
-    make_option(
-        c("-f", "--file"),
-        type = "character", default = NULL, help = "Input data file name",
-        metavar = "character"
-    ),
-    make_option(
-        c("-o", "--out"),
-        type = "character", 
-        default = "combined_plot.png",
-        help = "Output file name for the combined plot [default= %default]",
-        metavar = "character"
-    ),
-    make_option(
-        c("-s", "--sample"),
-        type = "integer", 
-        default = 1000000, 
-        help = "Number of reads to downsample [default= %default]",
-        metavar = "integer"
-    )
+  make_option(
+    c("-f", "--file"),
+    type = "character",
+    default = NULL,
+    help = "Input data file name",
+    metavar = "character"
+  ),
+  make_option(
+    c("-o", "--out"),
+    type = "character",
+    default = "combined_plot.png",
+    help = "Output file name for the combined plot [default= %default]",
+    metavar = "character"
+  ),
+  make_option(
+    c("-s", "--sample"),
+    type = "integer",
+    default = 1000000,
+    help = "Number of reads to downsample [default= %default]",
+    metavar = "integer"
+  )
 )
 
 ## Example input:
@@ -49,218 +49,182 @@ opt <- parse_args(opt_parser)
 
 # Check if the input file is provided --------------------------------------------
 if (is.null(opt$file)) {
-    print_help(opt_parser)
-    stop("Input file must be supplied.\n", call. = FALSE)
+  print_help(opt_parser)
+  stop("Input file must be supplied.\n", call. = FALSE)
 }
 
 big.text <- 10
 small.text <- 8
 
 custom_theme <- theme_minimal() +
- theme(
+  theme(
     # Centered titles
-    plot.title = element_text(hjust = 0.5, face="bold", size=big.text),
-    axis.title.x = element_text(hjust = 0.5, size=small.text, face = "bold"),
-    axis.title.y = element_text(hjust = 0.5, size=small.text, face = "bold"),
+    plot.title = element_text(hjust = 0.5, face = "bold", size = big.text),
+    axis.title.x = element_text(hjust = 0.5, size = small.text, face = "bold"),
+    axis.title.y = element_text(hjust = 0.5, size = small.text, face = "bold"),
     
     # Black axes
     axis.line = element_line(color = "black"),
     axis.ticks = element_line(color = "black"),
-    axis.text = element_text(color = "black", size=small.text),
+    axis.text = element_text(color = "black", size = small.text),
     
     # Scientific notation for y-axis
     axis.text.y = element_text(angle = 0, hjust = 1)
-) 
+  )
 
 # Function to load the data
-load_data <- function(data_file, n_max=Inf){    
-    # Read the data
-    df <- read_tsv(
-        data_file,
-        na = c("", "NA", "None"),
-        n_max=n_max
-    )
-
-    # Downsample
-    if(n_max < nrow(df)){
-        df <- df[sample(nrow(df), n_max), ]
-    }
-    
-    return(df)
+load_data <- function(data_file, n_max = Inf) {
+  # Read the data
+  df <- read_tsv(data_file,
+                 na = c("", "NA", "None"),
+                 n_max = n_max)
+  
+  # Downsample
+  if (n_max < nrow(df)) {
+    df <- df[sample(nrow(df), n_max),]
+  }
+  
+  return(df)
 }
 
 
 # Function to read data and create plots --------------------------------------------
 create_plots <- function(df, data_file, out_file) {
-    
-    if(grepl("short_read", data_file)){
-        readLength.binwidth <- 1
+  if (grepl("short_read", data_file)) {
+    readLength.binwidth <- 1
+  } else{
+    readLength.binwidth <- 50
+  }
+  
+  
+  # Summary histograms (left column)
+  plot.gc <- ggplot(df, aes(x = GC_Percent)) +
+    geom_histogram(binwidth = 1,
+                   fill = "red",
+                   alpha = 0.5) +
+    custom_theme +
+    scale_y_continuous(labels = label_scientific()) +
+    ggtitle("GC Percentage Distribution")
+  
+  plot.readLength <- ggplot(df, aes(x = Read_Length)) +
+    geom_histogram(binwidth = readLength.binwidth,
+                   fill = "blue",
+                   alpha = 0.5) +
+    custom_theme +
+    lims(x = c(0, 10000)) +
+    scale_y_continuous(# trans="log10",
+      labels = label_scientific()) +
+    ggtitle("Read Length Distribution")
+  
+  plot.homoploymer <- ggplot(df,
+                             aes(x = Longest_Homopolymer / Read_Length,
+                                 fill = Homopolymer_Base)) +
+    geom_histogram(binwidth = 0.01,
+                   color = "black") +
+    custom_theme +
+    # scale_x_continuous(trans='log2') +
+    xlim(0, 0.25) +
+    scale_y_continuous(labels = label_scientific()) +
+    ggtitle("Longest Homopolymer Fraction") +
+    theme(legend.position = "bottom")
+  
+  
+  # Summary scatter plots (right column)
+  scatter.gc <- ggplot(df,
+                       aes(x = Read_Length,
+                           y = GC_Percent)) +
+    # geom_hex(binwidth = c(NA,1)) +
+    geom_point(size = 0.1,
+               alpha = 0.2) +
+    custom_theme +
+    # scale_y_continuous(labels = label_scientific()) +
+    ggtitle("Read Length vs. GC Percentage")
+  
+  
+  plot.readLength.zoom <- ggplot(df,
+                                 aes(x = Read_Length)) +
+    geom_histogram(binwidth = readLength.binwidth,
+                   fill = "blue",
+                   alpha = 0.5) +
+    custom_theme +
+    lims(x = c(0, 5000)) +
+    scale_y_continuous(# trans="log10",
+      labels = label_scientific()) +
+    ggtitle("Small RNAs")
+  
+  
+  vln.homopolymer <- ggplot(df,
+                            aes(x = Homopolymer_Base,
+                                y = Longest_Homopolymer,
+                                fill = Homopolymer_Base)) +
+    geom_violin() +
+    custom_theme +
+    # lims(y=c(0,200))+
+    # scale_y_continuous(trans="log10") +
+    scale_y_log10() +
+    ggtitle("Longest Homopolymer Length") +
+    theme(legend.position = "bottom")
+  
+  # Re-size Read1 and Read2 plots..
+  if (grepl("R1", data_file)) {
+    if (grepl("short_read", data_file)) {
+      scatter.gc <- scatter.gc + xlim(0, 160)
+      plot.readLength <- plot.readLength + xlim(0, NA)
+      plot.readLength.zoom <-
+        plot.readLength.zoom + xlim(0, 50)
     } else{
-        readLength.binwidth <- 50
+      scatter.gc <- scatter.gc + xlim(0, 1000)
+      plot.readLength.zoom <-
+        plot.readLength.zoom + xlim(0, 100)
     }
-
-
-    # Summary histograms (left column)
-    plot.gc <- ggplot(df, aes(x = GC_Percent)) +
-        geom_histogram(
-            binwidth = 1, 
-            fill = "red", 
-            alpha = 0.5
-        ) +
-        custom_theme +
-        scale_y_continuous(labels = label_scientific()) +
-        ggtitle("GC Percentage Distribution")
-
-    plot.readLength <- ggplot(df, aes(x = Read_Length)) +
-        geom_histogram(
-            binwidth = readLength.binwidth, 
-            fill = "blue", 
-            alpha = 0.5
-        ) +
-        custom_theme +
-        lims(
-            x=c(0,10000)
-        )+
-        scale_y_continuous(
-            # trans="log10",
-            labels = label_scientific()
-        ) +
-        ggtitle("Read Length Distribution")
-
-    plot.homoploymer <- ggplot(
-            df, 
-            aes(
-                x = Longest_Homopolymer/Read_Length, 
-                fill=Homopolymer_Base
-            )
-        ) +
-        geom_histogram(
-            binwidth = 0.01,
-            color="black"
-        ) +
-        custom_theme +
-        # scale_x_continuous(trans='log2') +
-        xlim(0,0.25)+
-        scale_y_continuous(labels = label_scientific()) +
-        ggtitle("Longest Homopolymer Fraction") +
-        theme(legend.position = "bottom")
-
-
-    # Summary scatter plots (right column)
-    scatter.gc <- ggplot(
-        df, 
-        aes(
-            x = Read_Length,
-            y = GC_Percent
-            )
-        ) +
-        # geom_hex(binwidth = c(NA,1)) +
-        geom_point(
-            size=0.1,
-            alpha=0.2
-        )+
-        custom_theme +
-        # scale_y_continuous(labels = label_scientific()) +
-        ggtitle("Read Length vs. GC Percentage")
-
     
-    plot.readLength.zoom <- ggplot(
-            df, 
-            aes(x = Read_Length)
-        ) +
-        geom_histogram(
-            binwidth = readLength.binwidth, 
-            fill = "blue", alpha = 0.5
-        ) +
-        custom_theme +
-        lims(
-            x=c(0,5000)
-        )+
-        scale_y_continuous(
-            # trans="log10",
-            labels = label_scientific()
-        ) +
-        ggtitle("Small RNAs")
-
-    
-    vln.homopolymer <- ggplot(
-            df, 
-            aes(
-                x = Homopolymer_Base,
-                y = Longest_Homopolymer,
-                fill = Homopolymer_Base
-            )
-        ) +
-        geom_violin() +
-        custom_theme +
-        # lims(y=c(0,200))+
-        # scale_y_continuous(trans="log10") +
-        scale_y_log10()+
-        ggtitle("Longest Homopolymer Length") +
-        theme(legend.position = "bottom")
-
-    # Re-size Read1 and Read2 plots..
-    if(grepl("R1", data_file)){
-        if(grepl("short_read", data_file)){
-            scatter.gc <- scatter.gc + xlim(0,160)
-            plot.readLength <- plot.readLength + xlim(0,NA)
-            plot.readLength.zoom <- plot.readLength.zoom + xlim(0,50)
-        } else{
-            scatter.gc <- scatter.gc + xlim(0,1000)
-            plot.readLength.zoom <- plot.readLength.zoom + xlim(0,100)
-        }
-        
-    } else if(grepl("R2", data_file)){
-        median_read_length <- median(df$Read_Length, na.rm = TRUE)
-        plot.readLength.zoom <- plot.readLength.zoom + xlim(0, median_read_length)
-        plot.readLength <- plot.readLength + xlim(0,NA)
-    }
-
-    # Combine plots using patchwork
-    combined_plot <- wrap_plots(
-        wrap_plots(
-            plot.gc,
-            scatter.gc,
-            ncol=2
-        ),
-        wrap_plots(
-            plot.readLength,
-            plot.readLength.zoom,
-            ncol=2
-        ),
-        wrap_plots(
-            plot.homoploymer + theme(legend.position = "none"),
-            vln.homopolymer + theme(legend.position = "none"),
-            ncol=2
-        ),
-        ncol=1
-    ) + plot_layout(guides = "collect") & theme(legend.position = "bottom")
-
-    # Infer the device from the filename extension
-    device <- tools::file_ext(out_file)
-    device <- gsub("^\\.", "", device)  # Remove the dot from the extension
-
-    # Save the combined plot
-    ggsave(
-        out_file, 
-        plot = combined_plot, 
-        device = device,
-        width = 240,
-        height = 240,
-        units = "mm",#c("in", "cm", "mm", "px"),
-        dpi = 300,
-        create.dir = T
-    )
+  } else if (grepl("R2", data_file)) {
+    median_read_length <- median(df$Read_Length, na.rm = TRUE)
+    plot.readLength.zoom <-
+      plot.readLength.zoom + xlim(0, median_read_length)
+    plot.readLength <- plot.readLength + xlim(0, NA)
+  }
+  
+  # Combine plots using patchwork
+  combined_plot <- wrap_plots(
+    wrap_plots(plot.gc,
+               scatter.gc,
+               ncol = 2),
+    wrap_plots(plot.readLength,
+               plot.readLength.zoom,
+               ncol = 2),
+    wrap_plots(
+      plot.homoploymer + theme(legend.position = "none"),
+      vln.homopolymer + theme(legend.position = "none"),
+      ncol = 2
+    ),
+    ncol = 1
+  ) + plot_layout(guides = "collect") &
+    theme(legend.position = "bottom")
+  
+  # Infer the device from the filename extension
+  device <- tools::file_ext(out_file)
+  device <-
+    gsub("^\\.", "", device)  # Remove the dot from the extension
+  
+  # Save the combined plot
+  ggsave(
+    out_file,
+    plot = combined_plot,
+    device = device,
+    width = 240,
+    height = 240,
+    units = "mm",
+    #c("in", "cm", "mm", "px"),
+    dpi = 300,
+    create.dir = T
+  )
 }
 
 # Run the function with the provided arguments --------------------------------------------
-df <- load_data(
-    opt$file, 
-    opt$sample
-)
+df <- load_data(opt$file,
+                opt$sample)
 
-create_plots(
-    df, 
-    opt$file,
-    opt$out
-)
+create_plots(df,
+             opt$file,
+             opt$out)

@@ -1,21 +1,19 @@
 # R --vanilla --slave --args --input_file=PREFIX.bed --output_dir=$(pwd) < uTAR_HMM.R
 
 # Arguments here
-args = commandArgs(TRUE)
-input_f <- NULL
-output_dir <- NULL
+suppressPackageStartupMessages(library(argparse))
+suppressPackageStartupMessages(library(groHMM, quietly = TRUE))
+suppressPackageStartupMessages(library(GenomicRanges, quietly = TRUE))
 
-for (arg in args) {
-  if (grepl("--input_file=", arg)) {
-    input_f <- sub("--input_file=", "", arg)
-  } else if (grepl("--output_dir=", arg)) {
-    output_dir <- sub("--output_dir=", "", arg)
-  }
-}
+# Argument parsing with argparse
+parser <-
+  ArgumentParser(description = "Run HMM on BED file to call TARs")
+parser$add_argument("--input_file", required = TRUE, help = "Input BED file")
+parser$add_argument("--output_dir", required = TRUE, help = "Output directory")
+args <- parser$parse_args()
 
-if (is.null(input_f) || is.null(output_dir)) {
-  stop("Both --input_file and --output_dir arguments must be provided.")
-}
+input_f <- args$input_file
+output_dir <- args$output_dir
 
 # Ensure the input file exists
 if (!file.exists(input_f)) {
@@ -27,18 +25,15 @@ if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }
 
-suppressPackageStartupMessages(library(groHMM, quietly = TRUE))
-suppressPackageStartupMessages(library(GenomicRanges, quietly = TRUE))
-
 # Function to convert GRanges to BED format
 GRangeTobed <- function(gr, f_name) {
   df <- data.frame(
-    seqnames = seqnames(gr),
+    seqnames = as.character(seqnames(gr)),
     starts = start(gr) - 1,
     ends = end(gr),
-    names = c(rep(".", length(gr))),
-    scores = c(rep(".", length(gr))),
-    strands = strand(gr)
+    names = rep(".", length(gr)),
+    scores = rep(".", length(gr)),
+    strands = as.character(strand(gr))
   )
   write.table(
     df,
@@ -105,10 +100,12 @@ detectTranscripts_AllEM <- function(reads = NULL,
   
   # Cast counts to a real, and combine +/- strand into one list variable
   FT <- list()
-  for (i in 1:nFp)
+  for (i in 1:nFp) {
     FT[[i]] <- as.double(Fp[[i]] + 1)
-  for (i in 1:nFm)
+  }
+  for (i in 1:nFm) {
     FT[[i + nFp]] <- as.double(Fm[[i]] + 1)
+  }
   
   # Free unused memory
   remove(Fp)
@@ -171,7 +168,7 @@ detectTranscripts_AllEM <- function(reads = NULL,
   BWem[[4]] <- GRanges(
     seqnames = Rle(ANS$chrom),
     ranges = IRanges(ANS$start, ANS$end - 1),
-    strand = Rle(strand(ANS$strand)),
+    strand = Rle(ANS$strand),
     type = Rle("tx", NROW(ANS)),
     ID = paste(ANS$chrom, "_", ANS$start, ANS$strand, sep = "")
   )
@@ -190,22 +187,26 @@ detectTranscripts_AllEM <- function(reads = NULL,
 cat("Importing input BED file:", input_f, "\n")
 S_split <- tryCatch({
   import(input_f, format = "BED")
-}, error = function(e) {
+},
+error = function(e) {
   stop(paste("Error importing BED file:", input_f, "\n", e$message))
 })
 
 cat("Running HMM detection...\n")
 hmmResult_AllEM_split <- tryCatch({
   detectTranscripts_AllEM(S_split)
-}, error = function(e) {
+},
+error = function(e) {
   stop(paste("Error running HMM detection on file:", input_f, "\n", e$message))
 })
 
-output_file <- file.path(output_dir, paste0(tools::file_path_sans_ext(basename(input_f)), "_HMM.bed"))
+output_file <-
+  file.path(output_dir, paste0(tools::file_path_sans_ext(basename(input_f)), "_HMM.bed"))
 cat("Writing output to:", output_file, "\n")
 tryCatch({
   GRangeTobed(hmmResult_AllEM_split$transcripts, output_file)
-}, error = function(e) {
+},
+error = function(e) {
   stop(paste("Error writing output BED file:", output_file, "\n", e$message))
 })
 

@@ -2,25 +2,8 @@
 # Link to paper: https://www.nature.com/articles/s41467-021-22496-3
 
 
-# convert GTF to REFFlat, save in your cellranger reference
-# 	not run if REFFlat file exists -  will only need to run this once for each reference genome
-# rule ilmn_3u_convertToRefFlat:
-#     input:
-#         GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
-#     output:
-#         TMP=temp("{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/tmp.refFlat"),
-#         REFFLAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/genes.refFlat",
-#     conda:
-#         f"{workflow.basedir}/envs/ucsc.yml"
-#     shell:
-#         """
-#         gtfToGenePred -genePredExt -geneNameAsName2 {input.GTF} {output.TMP}
-#         paste <(cut -f 12 refFlat.tmp) <(cut -f 1-10 refFlat.tmp) > {output.REFFLAT}
-#         """
-
-
 # Filter BAM to remove reads without GN tag
-## Deduped BAM file already has reads without CB/UB tags removed
+## Deduped BAM file already has reads with no CB/UB tags removed
 rule ilmn_3u_filter_noGN:
     input:
         BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.out.dedup.bam",
@@ -47,33 +30,20 @@ rule ilmn_3u_calcHMMbed:
     resources:
         mem_mb=65536  # 64GB in MB
     params:
-        MEM="64G",
+        # MEM="64G",
         MERGEBP=100,  # default 100 (Note- window size across genome is 50bp)
         THRESH=10000000,  # default 10000000 (Note- number of reads to use for HMM)
-        PL="scripts",  # Path to SingleCellHMM.R
     log:
-        log="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/calcHMMbed.log",
-        err="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/calcHMMbed.err",
+        log="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/run_hmm.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/run_hmm.err",
     conda:
-        f"{workflow.basedir}/envs/hmm.yml"
+        f"{workflow.basedir}/envs/utar.yml"
     shell:
         """
-        # Validate input BAM file
-        if ! samtools quickcheck {input.BAM}; then
-            echo "Error: Input BAM file {input.BAM} is corrupted or invalid" 2> {log.err}
-            exit 1
-        fi
-        
-        # Check if uTAR_HMM.R script exists
-        if [ ! -f scripts/R/uTAR_HMM.R ]; then
-            echo "Error: Required script scripts/R/uTAR_HMM.R not found" 2> {log.err}
-            exit 1
-        fi
-        
         bash scripts/bash/bam_uTAR_HMM.sh \
             --bam {input.BAM} \
             --threads {threads} \
-            --mem {params.MEM} \
+            --mem {resources.mem_mb} \
             --mergebp {params.MERGEBP} \
             --thresh {params.THRESH} \
             --outdir $(dirname {output.BED}) \
@@ -107,7 +77,7 @@ rule ilmn_3u_bed_to_gtf:
     input:
         BEDGZ="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/uTAR.bed.gz",
     output:
-        GTF="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/uTAR.withDir.gtf",
+        GTF="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/uTAR.gtf",
     conda:
         f"{workflow.basedir}/envs/ucsc.yml"
     shell:
@@ -122,7 +92,7 @@ rule ilmn_3u_bed_to_gtf:
 rule ilmn_3u_tagReads:
     input:
         BAM="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Aligned.sortedByCoord.noGN.dedup.bam",
-        TAR_GTF="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/uTAR.withDir.gtf",
+        TAR_GTF="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/uTAR.gtf",
     output:
         DIR=directory(
             "{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/gene_assigned"
