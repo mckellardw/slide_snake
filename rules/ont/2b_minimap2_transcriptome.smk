@@ -108,11 +108,12 @@ rule ont_2b_txome_filter_bam_empty_tags:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_cb_ub.bam",
         # BAI="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_gn_cb_ub.bam.bai",
     output:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_cb_ub.bam",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_cb_ub_xb.bam",
     params:
         CELL_TAG="CB",  # uncorrected = CR; corrected = CB
         GENE_TAG="GN",  # GN XS
         UMI_TAG="UR",  # uncorrected = UR; corrected = UB
+        COMBINED_TAGS="XB",  # combined tag
     resources:
         mem="16G",
     threads: 1
@@ -121,19 +122,19 @@ rule ont_2b_txome_filter_bam_empty_tags:
         samtools view -h {input.BAM} \
         | awk -v tag={params.CELL_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
         | awk -v tag={params.UMI_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
+        | awk -v tags={params.CELL_TAG},{params.UMI_TAG} -v outtag={params.COMBINED_TAGS} -f bam_combineTags.awk \
         | samtools view -b \
         > {output.BAM}
         """
-        # | awk -v tag={params.GENE_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
 
 
 # Sort aligned_filtered_cb_ub.bam by CB tag
 ## see more oarfish requirements here - https://github.com/COMBINE-lab/oarfish?tab=readme-ov-file#notes-about-single-cell-mode
 rule ont_2b_txome_sort_by_cb:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_cb_ub.bam",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_cb_ub_xb.bam",
     output:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub.bam",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub_xb.bam",
     params:
         BC_TAG="CB",  # corrected barcode tag
     log:
@@ -148,13 +149,39 @@ rule ont_2b_txome_sort_by_cb:
         samtools sort -t {params.BC_TAG} -o {output.BAM} {input.BAM} 2> {log.err}
         """
 
+# Deduplicate BAM file based on XB tag using umi_tools
+rule ont_2b_txome_dedup_by_xb:
+    input:
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub_xb.bam",
+    output:
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub_xb_dedup.bam",
+    log:
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/dedup_by_xb.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/dedup_by_xb.err",
+    params:
+        TAG="XB",
+    threads: 1
+    resources:
+        mem="16G",
+    conda:
+        f"{workflow.basedir}/envs/umi_tools.yml"
+    shell:
+        """
+        umi_tools dedup \
+            --extract-umi-method=tag \
+            --umi-tag={params.TAG} \
+            -I {input.BAM} \
+            -S {output.BAM} \
+            1> {log.log} \
+            2> {log.err}
+        """
 
 # Run oarfish alignment mode transcript quantification
 # github: https://github.com/COMBINE-lab/oarfish
 # TODO- --short-quant?
 rule ont_2b_txome_oarfish_quant:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub.bam",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub_xb.bam",
         # BAI="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub.bam.bai",
     output:
         DIR=directory("{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish"),
@@ -175,15 +202,15 @@ rule ont_2b_txome_oarfish_quant:
         mkdir -p {output.DIR}
 
         oarfish \
-            -a {input.BAM} \
-            -o {output.DIR}/P \
-            -j {threads} \
+            --alignments {input.BAM} \
+            --output {output.DIR}/P \
+            --threads {threads} \
             --filter-group no-filters \
             --model-coverage \
             --single-cell \
             --verbose \
         1> >(awk -f scripts/awk/remove_ansi.awk > {log.log}) \
-        2> {log.err}
+        2> >(awk -f scripts/awk/remove_ansi.awk > {log.err}
         """
 
 
