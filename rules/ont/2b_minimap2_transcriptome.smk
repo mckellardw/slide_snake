@@ -113,7 +113,7 @@ rule ont_2b_txome_filter_bam_empty_tags:
         CELL_TAG="CB",  # uncorrected = CR; corrected = CB
         GENE_TAG="GN",  # GN XS
         UMI_TAG="UR",  # uncorrected = UR; corrected = UB
-        COMBINED_TAGS="XB",  # combined tag
+        COMBINED_TAG="XB",  # combined tag
     resources:
         mem="16G",
     threads: 1
@@ -122,7 +122,8 @@ rule ont_2b_txome_filter_bam_empty_tags:
         samtools view -h {input.BAM} \
         | awk -v tag={params.CELL_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
         | awk -v tag={params.UMI_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
-        | awk -v tags={params.CELL_TAG},{params.UMI_TAG} -v outtag={params.COMBINED_TAGS} -f scripts/awk/bam_combineTags.awk \
+        | awk -v tags={params.CELL_TAG},{params.UMI_TAG} -v outtag={params.COMBINED_TAG} -f scripts/awk/bam_combineTags.awk \
+        | awk -v tag={params.COMBINED_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
         | samtools view -b \
         > {output.BAM}
         """
@@ -136,7 +137,7 @@ rule ont_2b_txome_sort_by_xb:
     output:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub_xb.bam",
     params:
-        BC_TAG="XB",  
+        BC_TAG="XB",
     log:
         err="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/sort_by_xb.err",
     resources:
@@ -148,6 +149,7 @@ rule ont_2b_txome_sort_by_xb:
         """
         samtools sort -t {params.BC_TAG} -o {output.BAM} {input.BAM} 2> {log.err}
         """
+
 
 # Deduplicate BAM file based on XB tag using umi_tools
 rule ont_2b_txome_dedup_by_xb:
@@ -177,6 +179,7 @@ rule ont_2b_txome_dedup_by_xb:
         2> {log.err}
         """
 
+
 # Run oarfish alignment mode transcript quantification
 # github: https://github.com/COMBINE-lab/oarfish
 # TODO- --short-quant?
@@ -190,6 +193,7 @@ rule ont_2b_txome_oarfish_quant:
         QUANT="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/P.quant",
         PQ="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/P.infreps.pq",
         AMBIG="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/P.ambig_info.tsv",
+        BC="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/P.barcodes.txt",
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/oarfish.log",
         err="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/oarfish.err",
@@ -211,7 +215,7 @@ rule ont_2b_txome_oarfish_quant:
             --single-cell \
             --verbose \
         1> >(awk -f scripts/awk/remove_ansi.awk > {log.log}) \
-        2> >(awk -f scripts/awk/remove_ansi.awk > {log.err}
+        2> >(awk -f scripts/awk/remove_ansi.awk > {log.err})
         """
 
 
@@ -220,35 +224,35 @@ rule ont_2b_txome_oarfish_quant:
 
 
 # Generate count matrix w/ umi-tools
-rule ont_2b_txome_umitools_count:
-    input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_gn_cb_ub.bam",
-        BAI="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_gn_cb_ub.bam.bai",
-    output:
-        COUNTS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/umitools_counts.tsv.gz",
-    params:
-        CELL_TAG="CB",  # uncorrected = CR
-        GENE_TAG="GN",  #GN XS
-        UMI_TAG="UR",
-    log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/umitools_count.log",
-    resources:
-        mem="16G",
-    threads: 1
-    conda:
-        f"{workflow.basedir}/envs/umi_tools.yml"
-    shell:
-        """
-        umi_tools count --extract-umi-method=tag \
-            --per-gene \
-            --per-cell \
-            --cell-tag={params.CELL_TAG} \
-            --gene-tag={params.GENE_TAG}  \
-            --umi-tag={params.UMI_TAG}  \
-            --log={log.log} \
-            -I {input.BAM} \
-            -S {output.COUNTS} 
-        """
+# rule ont_2b_txome_umitools_count:
+#     input:
+#         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_gn_cb_ub.bam",
+#         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_gn_cb_ub.bam.bai",
+#     output:
+#         COUNTS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/umitools_counts.tsv.gz",
+#     params:
+#         CELL_TAG="CB",  # uncorrected = CR
+#         GENE_TAG="GN",  #GN XS
+#         UMI_TAG="UR",
+#     log:
+#         log="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/umitools_count.log",
+#     resources:
+#         mem="16G",
+#     threads: 1
+#     conda:
+#         f"{workflow.basedir}/envs/umi_tools.yml"
+#     shell:
+#         """
+#         umi_tools count --extract-umi-method=tag \
+#             --per-gene \
+#             --per-cell \
+#             --cell-tag={params.CELL_TAG} \
+#             --gene-tag={params.GENE_TAG}  \
+#             --umi-tag={params.UMI_TAG}  \
+#             --log={log.log} \
+#             -I {input.BAM} \
+#             -S {output.COUNTS}
+#         """
 
 
 # Convert long-format counts from umi_tools to market-matrix format (.mtx)
@@ -268,6 +272,26 @@ rule ont_2b_txome_counts_to_sparse:
         """
         mkdir -p $(dirname {output.COUNTS})
         python scripts/py/long2mtx.py {input.COUNTS} $(dirname {output.COUNTS})
+        """
+
+
+rule ont_2b_txome_compress_oarfish_matrix:
+    input:
+        BCS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/P.barcodes.txt",
+        FEATS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/features.txt",
+        MAT="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/P.count.mtx",
+    output:
+        BCS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/barcodes.tsv.gz",
+        FEATS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/features.tsv.gz",
+        MAT="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/matrix.mtx.gz",
+    threads: 8
+    shell:
+        """
+        mkdir -p $(dirname {output.MAT})
+        cp {input.BCS} {output.BCS}
+        cp {input.FEATS} {output.FEATS}
+        cp {input.MAT} {output.MAT}
+        pigz -p {threads} {output.BCS} {output.FEATS} {output.MAT}
         """
 
 
