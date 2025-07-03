@@ -306,9 +306,9 @@ ont_minimap_txome = [
     for SAMPLE in ONT.keys()
     for RECIPE in RECIPE_ONT_DICT[SAMPLE]
     for FILE in [
-        f"aligned_filtered_sorted_cb_ub.bam",  # input to oarfish
+        f"aligned_filtered_sorted_cb_ub_xb.bam",  # input to oarfish
         f"oarfish/P.meta_info.json",
-        # f"aligned_gn_cb.bam",
+        # f"aligned_filtered_sorted_cb_ub_xb_gn.bam",
         # f"raw/output.h5ad",
         # f"raw/output.rds",
     ]

@@ -122,7 +122,7 @@ rule ont_2b_txome_filter_bam_empty_tags:
         samtools view -h {input.BAM} \
         | awk -v tag={params.CELL_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
         | awk -v tag={params.UMI_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
-        | awk -v tags={params.CELL_TAG},{params.UMI_TAG} -v outtag={params.COMBINED_TAGS} -f bam_combineTags.awk \
+        | awk -v tags={params.CELL_TAG},{params.UMI_TAG} -v outtag={params.COMBINED_TAGS} -f scripts/awk/bam_combineTags.awk \
         | samtools view -b \
         > {output.BAM}
         """
@@ -172,8 +172,8 @@ rule ont_2b_txome_dedup_by_xb:
             --umi-tag={params.TAG} \
             -I {input.BAM} \
             -S {output.BAM} \
-            1> {log.log} \
-            2> {log.err}
+        1> {log.log} \
+        2> {log.err}
         """
 
 # Run oarfish alignment mode transcript quantification

@@ -9,6 +9,12 @@ BEGIN {
     n_tags = split(tags, tag_list, ",")
 }
 
+# Keep header lines
+/^@/ {
+    print
+    next
+}
+
 # Process alignment records (skip header lines)
 !/^@/ {
     # Store original fields
