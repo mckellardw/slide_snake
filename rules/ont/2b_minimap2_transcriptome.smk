@@ -182,11 +182,9 @@ rule ont_2b_txome_dedup_by_xb:
 
 # Run oarfish alignment mode transcript quantification
 # github: https://github.com/COMBINE-lab/oarfish
-# TODO- --short-quant?
 rule ont_2b_txome_oarfish_quant:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub_xb.bam",
-        # BAI="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub.bam.bai",
     output:
         DIR=directory("{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish"),
         JSON="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/P.meta_info.json",
@@ -218,67 +216,11 @@ rule ont_2b_txome_oarfish_quant:
         2> >(awk -f scripts/awk/remove_ansi.awk > {log.err})
         """
 
-
-# Code snippet to remove the annoying ANSI codes from the log file:
-## sed -r 's/\x1B\[[0-9;]*[mK]//g' oarfish.err > oarfish_cleaned.err
-
-
-# Generate count matrix w/ umi-tools
-# rule ont_2b_txome_umitools_count:
-#     input:
-#         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_gn_cb_ub.bam",
-#         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_gn_cb_ub.bam.bai",
-#     output:
-#         COUNTS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/umitools_counts.tsv.gz",
-#     params:
-#         CELL_TAG="CB",  # uncorrected = CR
-#         GENE_TAG="GN",  #GN XS
-#         UMI_TAG="UR",
-#     log:
-#         log="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/umitools_count.log",
-#     resources:
-#         mem="16G",
-#     threads: 1
-#     conda:
-#         f"{workflow.basedir}/envs/umi_tools.yml"
-#     shell:
-#         """
-#         umi_tools count --extract-umi-method=tag \
-#             --per-gene \
-#             --per-cell \
-#             --cell-tag={params.CELL_TAG} \
-#             --gene-tag={params.GENE_TAG}  \
-#             --umi-tag={params.UMI_TAG}  \
-#             --log={log.log} \
-#             -I {input.BAM} \
-#             -S {output.COUNTS}
-#         """
-
-
-# Convert long-format counts from umi_tools to market-matrix format (.mtx)
-rule ont_2b_txome_counts_to_sparse:
-    input:
-        COUNTS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/umitools_counts.tsv.gz",
-    output:
-        BCS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/barcodes.tsv.gz",
-        FEATS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/features.tsv.gz",
-        COUNTS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/matrix.mtx.gz",
-    resources:
-        mem="16G",
-    threads: 1
-    conda:
-        f"{workflow.basedir}/envs/scanpy.yml"
-    shell:
-        """
-        mkdir -p $(dirname {output.COUNTS})
-        python scripts/py/long2mtx.py {input.COUNTS} $(dirname {output.COUNTS})
-        """
-
-
+# Compress and rename oarfish outputs to match TXG format
 rule ont_2b_txome_compress_oarfish_matrix:
     input:
         BCS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/P.barcodes.txt",
-        FEATS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/features.txt",
+        FEATS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/P.features.txt",
         MAT="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/P.count.mtx",
     output:
         BCS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/raw/barcodes.tsv.gz",
