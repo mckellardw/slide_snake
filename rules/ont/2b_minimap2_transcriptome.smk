@@ -44,7 +44,7 @@ rule ont_2b_txome_add_corrected_barcodes:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned.bam",
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_corrected.tsv",
     output:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_cb.bam",
+        BAM=temp("{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_cb.bam"),
     params:
         READ_ID_COLUMN=0,
         BARCODE_TAG="CB",  # corrected barcode
@@ -76,7 +76,7 @@ rule ont_2b_txome_add_umis:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_cb.bam",
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_filtered.tsv",
     output:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_cb_ub.bam",
+        BAM=temp("{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_cb_ub.bam"),
     params:
         READ_ID_COLUMN=0,
         UMI_TSV_COLUMN=-1,  # last column
@@ -108,7 +108,7 @@ rule ont_2b_txome_filter_bam_empty_tags:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_cb_ub.bam",
         # BAI="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_gn_cb_ub.bam.bai",
     output:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_cb_ub_xb.bam",
+        BAM=temp("{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_cb_ub_xb.bam"),
     params:
         CELL_TAG="CB",  # uncorrected = CR; corrected = CB
         GENE_TAG="GN",  # GN XS
@@ -135,7 +135,7 @@ rule ont_2b_txome_sort_by_xb:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_cb_ub_xb.bam",
     output:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub_xb.bam",
+        BAM=temp("{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub_xb.bam"),
     params:
         BC_TAG="XB",
     log:
@@ -157,7 +157,7 @@ rule ont_2b_txome_dedup_by_xb:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub_xb.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub_xb.bam.bai",
     output:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub_xb_dedup.bam",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_dedup_cb_ub_xb.bam",
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/dedup_by_xb.log",
         err="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/dedup_by_xb.err",
@@ -184,7 +184,7 @@ rule ont_2b_txome_dedup_by_xb:
 # github: https://github.com/COMBINE-lab/oarfish
 rule ont_2b_txome_oarfish_quant:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_cb_ub_xb.bam",
+        BAM="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/aligned_filtered_sorted_dedup_cb_ub_xb.bam",
     output:
         DIR=directory("{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish"),
         JSON="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/P.meta_info.json",
@@ -193,8 +193,7 @@ rule ont_2b_txome_oarfish_quant:
         AMBIG="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/P.ambig_info.tsv",
         BC="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/P.barcodes.txt",
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/oarfish.log",
-        err="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/oarfish.err",
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/oarfish.log", # oarfish prints log to stderr
     resources:
         mem="32G",
     threads: 16
@@ -212,8 +211,7 @@ rule ont_2b_txome_oarfish_quant:
             --model-coverage \
             --single-cell \
             --verbose \
-        1> >(awk -f scripts/awk/remove_ansi.awk > {log.log}) \
-        2> >(awk -f scripts/awk/remove_ansi.awk > {log.err})
+        2> >(awk -f scripts/awk/remove_ansi.awk > {log.log})
         """
 
 # Compress and rename oarfish outputs to match TXG format
