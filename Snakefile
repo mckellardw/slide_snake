@@ -329,7 +329,7 @@ ont_isoquant = [
     for FILE in [
         f"sorted_filtered_cb_ub_gn_ig.bam",
         f"isoquant/output.h5ad",
-        f"raw/output.rds",
+        f"isoquant/output.rds",
     ]
 ]
 

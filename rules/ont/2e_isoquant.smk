@@ -17,8 +17,8 @@ rule ont_2e_isoquant:
         # GENE_TAG="GN",  # GN XS
         # UMI_TAG="UR",  # uncorrected = UR; corrected = UB
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/logs/{RECIPE}/2e_{ALIGNER}_isoquant.log",
-        err="{OUTDIR}/{SAMPLE}/ont/logs/{RECIPE}/2e_{ALIGNER}_isoquant.err",
+        log="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/logs/isoquant.log",
+        err="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/logs/isoquant.err",
     threads: config["CORES"]
     conda:
         f"{workflow.basedir}/envs/isoquant.yml"
@@ -63,8 +63,8 @@ rule ont_2e_add_isoquant_genes_to_bam:
         TAG="IG",  # corrected barcode tag
         TAG_COLUMN=4,  # column in tsv with gene tag
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/tsv2tag_4_IG.log",
-        err="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/tsv2tag_4_IG.err",
+        log="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/logs/tsv2tag_4_IG.log",
+        err="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/logs/tsv2tag_4_IG.err",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
@@ -96,8 +96,8 @@ rule ont_2e_add_isoquant_transcripts_to_bam:
         TAG="IT",  # corrected barcode tag
         TAG_COLUMN=3,  # column in tsv with gene tag
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/tsv2tag_5_IT.log",
-        err="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/tsv2tag_5_IT.err",
+        log="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/logs/tsv2tag_5_IT.log",
+        err="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/logs/tsv2tag_5_IT.err",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
@@ -185,8 +185,8 @@ rule ont_2e_cache_h5ad:
         GTF_FEATURE_TYPE="gene",  # feature type in gtf to use 
         GTF_ID="gene_id",  # gtf attribute used to match var_names in adata
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/isoquant/cache_h5ad.log",
-        err="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/isoquant/cache_h5ad.err",
+        log="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/logs/cache_isoquant_h5ad.log",
+        err="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/logs/cache_isoquant_h5ad.err",
     threads: 1
     conda:
         f"{workflow.basedir}/envs/scanpy.yml"
@@ -219,9 +219,12 @@ rule ont_2e_cache_seurat:
         BC_map=lambda w: get_bc_map(w, mode="ONT"),
     output:
         SEURAT="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/isoquant/output.rds",
+    params:
+        FEAT_COL=1,  # column in features file to use as feature names (R is 1-indexed)
+        TRANSPOSE="False",  # whether to transpose the matrix (default is False)
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/isoquant/cache_seurat.log",
-        err="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/isoquant/cache_seurat.err",
+        log="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/logs/cache_isoquant_seurat.log",
+        err="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/logs/cache_isoquant_seurat.err",
     threads: 1
     conda:
         f"{workflow.basedir}/envs/seurat.yml"
@@ -233,6 +236,8 @@ rule ont_2e_cache_seurat:
             --bc_in {input.BCS} \
             --bc_map {input.BC_map} \
             --seurat_out {output.SEURAT} \
+            --feat_col {params.FEAT_COL} \
+            --transpose {params.TRANSPOSE} \
         1> {log.log} \
         2> {log.err}
         """

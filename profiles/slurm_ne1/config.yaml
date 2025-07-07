@@ -108,6 +108,7 @@ set-threads:
   ont_2d_ultra_umitools_count: 1
   ont_2d_ultra_counts_to_sparse: 1
   ont_2d_ultra_cache_h5ad_ultra: 1
+  ont_2d_ultra_cache_seurat_ultra: 1
   ont_3a_readQC_0_rawInput: 24
   ont_3a_readQC_1_preCutadapt: 24
   ont_3a_readQC_2_postCutadapt: 24
@@ -399,6 +400,9 @@ set-resources:
     mem_mb: 16000
   ont_2d_ultra_cache_h5ad_ultra:
     mem: 16G
+    mem_mb: 16000
+  ont_2d_ultra_cache_seurat_ultra:
+    mem: 32G
     mem_mb: 16000
   ont_2e_isoquant:
     mem: 64G

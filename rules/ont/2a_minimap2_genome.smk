@@ -31,7 +31,7 @@ rule ont_2a_genome_align_minimap2_genome:
         EXTRA_FLAGS=lambda wildcards: RECIPE_SHEET["mm2_extra"][wildcards.RECIPE],
         REF=lambda wildcards: SAMPLE_SHEET["genome_fa"][wildcards.SAMPLE],
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/minimap2.log",
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/minimap2.log",
     resources:
         mem="128G",
     threads: config["CORES"]
@@ -40,6 +40,7 @@ rule ont_2a_genome_align_minimap2_genome:
     shell:
         """
         mkdir -p $(dirname {output.SAM_TMP})
+        mkdir -p $(dirname {log.log})
 
         echo "Genome reference:   {params.REF}" > {log.log} 
         echo "Extra flags:        {params.EXTRA_FLAGS}" >> {log.log} 
@@ -89,8 +90,8 @@ rule ont_2a_genome_add_corrected_barcodes:
         BARCODE_TAG="CB",
         BARCODE_TSV_COLUMN=1,
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_1_CB.log",
-        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_1_CB.err",
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/tsv2tag_1_CB.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/tsv2tag_1_CB.err",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
@@ -121,8 +122,8 @@ rule ont_2a_genome_add_umis:
         UMI_TSV_COLUMN=-1,  # last column
         UMI_TAG="UR",  # uncorrected UMI
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_2_UR.log",
-        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_2_UR.err",
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/tsv2tag_2_UR.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/tsv2tag_2_UR.err",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
@@ -222,8 +223,8 @@ rule ont_2a_genome_add_featureCounts_to_bam:
         TAG="GN",  # corrected barcode tag
         TAG_COLUMN=3,
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_3_GN.log",
-        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tsv2tag_3_GN.err",
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/tsv2tag_3_GN.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/tsv2tag_3_GN.err",
     conda:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
@@ -272,8 +273,8 @@ rule ont_2a_genome_umitools_count:
         GENE_TAG="GN",  #GN XS
         UMI_TAG="UR",
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/logs/{RECIPE}/2a_minimap2_umitools_count.log",
-        err="{OUTDIR}/{SAMPLE}/ont/logs/{RECIPE}/2a_minimap2_umitools_count.err",
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/umitools_count.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/umitools_count.err",
     resources:
         mem="16G",
     threads: 1
@@ -329,8 +330,8 @@ rule ont_2a_genome_cache_h5ad_minimap2:
         GTF_FEATURE_TYPE="gene",  # feature type in gtf to use 
         GTF_ID="gene_id",  # gtf attribute used to match var_names in adata
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/cache_h5ad.log",
-        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/cache_h5ad.err",
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/cache_h5ad.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/cache_h5ad.err",
     threads: 1
     conda:
         f"{workflow.basedir}/envs/scanpy.yml"
@@ -363,9 +364,12 @@ rule ont_2a_genome_cache_seurat_minimap2:
         BC_map=lambda w: get_bc_map(w, mode="ONT"),
     output:
         SEURAT="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/output.rds",
+    params:
+        FEAT_COL=1,  
+        TRANSPOSE="False",
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/cache_seurat.log",
-        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/cache_seurat.err",
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/cache_seurat.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/cache_seurat.err",
     threads: 1
     conda:
         f"{workflow.basedir}/envs/seurat.yml"
@@ -377,6 +381,8 @@ rule ont_2a_genome_cache_seurat_minimap2:
             --bc_in {input.BCS} \
             --bc_map {input.BC_map} \
             --seurat_out {output.SEURAT} \
+            --feat_col {params.FEAT_COL} \
+            --transpose {params.TRANSPOSE} \
         1> {log.log} \
         2> {log.err}
         """

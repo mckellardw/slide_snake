@@ -45,7 +45,6 @@ rule ont_1f_sort_gtf:
         """
         gff3sort.pl {input.GTF} > {output.GTF}
         """
-        # sort -k1,1 -k4,4n {input.GTF} > {output.GTF}
 
 
 rule ont_2d_ultra_pipeline_genome:
@@ -357,6 +356,39 @@ rule ont_2d_ultra_cache_preQC_h5ad_ultra:
             --gtf_file {params.GTF} \
             --gtf_feature_type {params.GTF_FEATURE_TYPE} \
             --gtf_id {params.GTF_ID} \
+        1> {log.log} \
+        2> {log.err}
+        """
+
+
+# make Seurat object with spatial coordinates
+rule ont_2d_ultra_cache_seurat_ultra:
+    input:
+        BCS="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/raw/barcodes.tsv.gz",
+        FEATS="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/raw/features.tsv.gz",
+        MAT="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/raw/matrix.mtx.gz",
+        BC_map=lambda w: get_bc_map(w, mode="ONT"),
+    output:
+        SEURAT="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/raw/output.rds",
+    params:
+        FEAT_COL=1,  # column in features file to use as feature names (R is 1-indexed)
+        TRANSPOSE=False,  # whether to transpose the matrix (default is False)
+    log:
+        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/cache_seurat.log",
+        err="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/cache_seurat.err",
+    threads: 1
+    conda:
+        f"{workflow.basedir}/envs/seurat.yml"
+    shell:
+        """
+        Rscript scripts/R/cache_mtx_to_seurat.R \
+            --mat_in {input.MAT} \
+            --feat_in {input.FEATS} \
+            --bc_in {input.BCS} \
+            --bc_map {input.BC_map} \
+            --seurat_out {output.SEURAT} \
+            --feat_col {params.FEAT_COL} \
+            --transpose {params.TRANSPOSE} \
         1> {log.log} \
         2> {log.err}
         """
