@@ -5,7 +5,10 @@ rule ilmn_2a_extract_rRNA_fasta:
     output:
         FASTA_rRNA="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_sequences.fa.gz",
     params:
-        RRNA_KEYWORDS=config.get("RRNA_KEYWORDS", "rRNA,Mt_rRNA,ribosomal_RNA,5S_rRNA,5.8S_rRNA,18S_rRNA,28S_rRNA,12S_rRNA,16S_rRNA"),
+        RRNA_KEYWORDS=config.get(
+            "RRNA_KEYWORDS",
+            "rRNA,Mt_rRNA,ribosomal_RNA,5S_rRNA,5.8S_rRNA,18S_rRNA,28S_rRNA,12S_rRNA,16S_rRNA",
+        ),
     log:
         log="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/extract_rRNA.log",
         err="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/extract_rRNA.err",
@@ -31,7 +34,10 @@ rule ilmn_2a_build_rRNA_gtf:
     output:
         GTF_rRNA="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_annotations.gtf.gz",
     params:
-        RRNA_KEYWORDS=config.get("RRNA_KEYWORDS", "rRNA,Mt_rRNA,ribosomal_RNA,5S_rRNA,5.8S_rRNA,18S_rRNA,28S_rRNA,12S_rRNA,16S_rRNA"),
+        RRNA_KEYWORDS=config.get(
+            "RRNA_KEYWORDS",
+            "rRNA,Mt_rRNA,ribosomal_RNA,5S_rRNA,5.8S_rRNA,18S_rRNA,28S_rRNA,12S_rRNA,16S_rRNA",
+        ),
     log:
         log="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/build_rRNA_gtf.log",
         err="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/build_rRNA_gtf.err",

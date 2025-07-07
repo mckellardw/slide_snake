@@ -28,7 +28,7 @@ rule ilmn_3u_calcHMMbed:
         BED=temp("{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/TAR_raw.bed.gz"),
     threads: config["CORES"]
     resources:
-        mem_mb=65536  # 64GB in MB
+        mem_mb=65536,  # 64GB in MB
     params:
         # MEM="64G",
         MERGEBP=100,  # default 100 (Note- window size across genome is 50bp)
@@ -60,7 +60,7 @@ rule ilmn_3u_filter_out_aTARs:
     params:
         GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
     resources:
-        mem_mb=8000
+        mem_mb=8000,
     conda:
         f"{workflow.basedir}/envs/ucsc.yml"
     shell:
@@ -102,7 +102,7 @@ rule ilmn_3u_tagReads:
         ),
     threads: config["CORES"]
     resources:
-        mem_mb=16000
+        mem_mb=16000,
     log:
         log="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/featureCounts.log",
         err="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/TAR/featureCounts.err",

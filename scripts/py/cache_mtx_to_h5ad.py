@@ -3,7 +3,8 @@
 import pandas as pd
 import argparse
 import gzip
-from scanpy import read_mtx, pl
+from anndata.io import read_mtx
+from scanpy import pl
 from numpy import intersect1d
 import matplotlib.pyplot as plt
 

@@ -242,10 +242,7 @@ ilmn_kb_cache = [
     for SAMPLE in R2_FQS.keys()
     for RECIPE in RECIPE_DICT[SAMPLE]
     for KB in ["std"]  # TODO "nac", "tcc"
-    for FILE in [
-        "h5ad",
-        # "rds"
-    ]
+    for FILE in ["h5ad", "rds"]
 ]
 
 # Module 7 - final QC
@@ -306,11 +303,9 @@ ont_minimap_txome = [
     for SAMPLE in ONT.keys()
     for RECIPE in RECIPE_ONT_DICT[SAMPLE]
     for FILE in [
-        f"aligned_filtered_sorted_cb_ub_xb.bam",  # input to oarfish
-        f"oarfish/P.meta_info.json",
-        # f"aligned_filtered_sorted_cb_ub_xb_gn.bam",
-        # f"raw/output.h5ad",
-        # f"raw/output.rds",
+        f"aligned_filtered_dedup_sorted_cb_ub_xb.bam",
+        f"oarfish/output.h5ad",
+        f"oarfish/output.rds",
     ]
 ]
 
@@ -322,7 +317,7 @@ ont_ultra_genome = [
         f"sorted_filtered_cb_ub.bam",
         f"raw/umitools_counts.tsv.gz",
         f"raw/output.h5ad",
-        # f"raw/output.rds",
+        f"raw/output.rds",
     ]
 ]
 
@@ -334,7 +329,7 @@ ont_isoquant = [
     for FILE in [
         f"sorted_filtered_cb_ub_gn_ig.bam",
         f"isoquant/output.h5ad",
-        # f"raw/output.rds",
+        f"raw/output.rds",
     ]
 ]
 
@@ -347,8 +342,8 @@ ont_readqc = [
     for ALIGN in ["minimap2"]  # , "ultra"
     for TRIM in [
         # f"0_rawInput/merged",
-        f"1_preCutadapt/{READ}",
-        f"2_postCutadapt/{READ}",
+        # f"1_preCutadapt/{READ}",
+        # f"2_postCutadapt/{READ}",
         f"3_aligned/{ALIGN}/{RECIPE}",
     ]
     for FILE in ["tsv.gz", "png"]
@@ -397,7 +392,7 @@ rule all:
         ont_barcodes,
         ont_preprocessing_summary,
         ont_minimap_genome,
-        # ont_minimap_txome,
+        ont_minimap_txome,
         ont_ultra_genome,
         ont_isoquant,
         ont_readqc,
