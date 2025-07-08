@@ -19,14 +19,14 @@ BEGIN {
     found = 0
     for(i = 1; i <= NF; i++) {
         if ($i ~ "^"tag":Z:-$") {
-            nextfile
+            next
         }
         if ($i ~ "^"tag":Z:") {
             found = 1
         }
     }
     if (found == 0) {
-        nextfile
+        next
     }
     print
 }

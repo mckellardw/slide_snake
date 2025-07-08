@@ -273,8 +273,8 @@ rule ont_2a_genome_umitools_count:
         GENE_TAG="GN",  #GN XS
         UMI_TAG="UR",
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/umitools_count.log",
-        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/umitools_count.err",
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/umitools_featurecount.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/umitools_featurecount.err",
     resources:
         mem="16G",
     threads: 1

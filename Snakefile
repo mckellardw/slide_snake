@@ -324,7 +324,7 @@ ont_ultra_genome = [
 ont_isoquant = [
     f"{OUTDIR}/{SAMPLE}/ont/{ALIGN}/{RECIPE}/{FILE}"
     for SAMPLE in ONT.keys()
-    for ALIGN in ["minimap2"]  # , "ultra"
+    for ALIGN in ["minimap2", "ultra"]
     for RECIPE in RECIPE_ONT_DICT[SAMPLE]
     for FILE in [
         f"sorted_filtered_cb_ub_gn_ig.bam",

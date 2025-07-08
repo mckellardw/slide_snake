@@ -119,17 +119,18 @@ rule ont_2e_add_isoquant_transcripts_to_bam:
 # Generate count matrix w/ umi-tools
 rule ont_2e_umitools_count:
     input:
-        BAM="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam",
-        BAI="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam.bai",
+        BAM="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig_it.bam",
+        BAI="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig_it.bam.bai",
     output:
         COUNTS="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/isoquant/umitools_counts.tsv.gz",
     params:
-        CELL_TAG="CB",  # uncorrected = CR
-        GENE_TAG="GN",  #GN XS
-        UMI_TAG="UR",
+        CELL_TAG="CB",  # uncorrected = CR; corrected = CB
+        GENE_TAG="IT",  # isoquant transcript tag
+        # GENE_TAG="IG",  # isoquant gene tag
+        UMI_TAG="UR",  # uncorrected = UR; corrected = UB
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/logs/{RECIPE}/2e_{ALIGNER}_umitools_count.log",
-        err="{OUTDIR}/{SAMPLE}/ont/logs/{RECIPE}/2e_{ALIGNER}_umitools_count.err",
+        log="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/logs/umitools_isoquant.log",
+        err="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/logs/umitools_isoquant.err",
     resources:
         mem="16G",
     threads: 1

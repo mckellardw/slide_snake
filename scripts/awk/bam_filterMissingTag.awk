@@ -25,5 +25,7 @@ BEGIN {
     }
     if (tag_found) {
         print
+    } else {
+        next
     }
 }
