@@ -85,12 +85,12 @@ set-threads:
   ont_3b_txome_oarfish_quant: 16
   ont_3b_txome_umitools_count: 1
   ont_3b_txome_counts_to_sparse: 1
-  ont_3b_txome_cache_preQC_h5ad_minimap2: 1
-  ont_3b_txome_cache_preQC_seurat_minimap2: 1
+  ont_3b_txome_cache_h5ad_minimap2: 1
+  ont_3b_txome_cache_seurat_minimap2: 1
   ont_2c_kallisto_lr: 16
   ont_2c_bus2mat_lr: 1
   ont_2c_compress_kb_outs: 1
-  ont_2c_cache_preQC_seurat_kallisto_lr: 1
+  ont_2c_cache_seurat_kallisto_lr: 1
   ont_1f_sort_gtf: 1
   ont_2d_ultra_pipeline_genome: 16
   ont_2d_ultra_sort_compress_output: 1

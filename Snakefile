@@ -294,7 +294,7 @@ ont_minimap_genome = [
         f"sorted_filtered_cb_ub_gn.bam",
         # "sorted_filtered_cb_ub_gn_pos.bam",
         f"raw/output.h5ad",
-        # f"raw/output.rds",
+        f"raw/output.rds",
     ]
 ]
 

@@ -96,8 +96,8 @@ set-threads:
   ont_3b_txome_oarfish_quant: 24
   ont_3b_txome_umitools_count: 1
   ont_3b_txome_counts_to_sparse: 1
-  ont_3b_txome_cache_preQC_h5ad_minimap2: 1
-  ont_3b_txome_cache_preQC_seurat_minimap2: 1
+  ont_3b_txome_cache_h5ad_minimap2: 1
+  ont_3b_txome_cache_seurat_minimap2: 1
   ont_2d_ultra_pipeline_genome: 24
   ont_2d_ultra_sort_compress_output: 1
   ont_2d_ultra_featureCounts: 1

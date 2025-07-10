@@ -320,7 +320,7 @@ rule ont_2d_ultra_counts_to_sparse:
 
 
 # make anndata object with spatial coordinates
-rule ont_2d_ultra_cache_preQC_h5ad_ultra:
+rule ont_2d_ultra_cache_h5ad_ultra:
     input:
         BCS="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/raw/barcodes.tsv.gz",
         FEATS="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/raw/features.tsv.gz",
@@ -335,8 +335,8 @@ rule ont_2d_ultra_cache_preQC_h5ad_ultra:
         GTF_FEATURE_TYPE="gene",  # feature type in gtf to use 
         GTF_ID="gene_id",  # gtf attribute used to match var_names in adata
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/cache.log",
-        err="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/cache.err",
+        log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/cache_h5ad.log",
+        err="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/cache_h5ad.err",
     threads: 1
     conda:
         f"{workflow.basedir}/envs/scanpy.yml"

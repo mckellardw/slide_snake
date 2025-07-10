@@ -28,6 +28,10 @@ This directory contains toy datasets for testing various spatial transcriptomics
 - Seeker data generated on reovirus-infected mouse heart
 - Both Illumina and ONT reads available in toy data
 
+### Seeker/ONT #TODO
+
+- [NCBI link](https://dataview.ncbi.nlm.nih.gov/object/PRJNA1116561?reviewer=uc7v6e10toqp4lllatmu6vvf53) - still not public, will add once they do...
+
 ## Patho-dBIT (`test_pathodbit/`)
 
 ### `Human_Lymphoma_DLBCL_Region2_10um` 
