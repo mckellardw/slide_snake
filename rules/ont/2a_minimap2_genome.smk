@@ -329,6 +329,7 @@ rule ont_2a_genome_cache_h5ad_minimap2:
         GTF=lambda w: SAMPLE_SHEET["genes_gtf"][w.SAMPLE],
         GTF_FEATURE_TYPE="gene",  # feature type in gtf to use 
         GTF_ID="gene_id",  # gtf attribute used to match var_names in adata
+        FEAT_COL=0,  # column in features.tsv to use as var_names
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/cache_h5ad.log",
         err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/cache_h5ad.err",
@@ -343,7 +344,7 @@ rule ont_2a_genome_cache_h5ad_minimap2:
             --bc_in {input.BCS} \
             --bc_map {input.BC_map} \
             --ad_out {output.H5AD} \
-            --feat_col 0 \
+            --feat_col {params.FEAT_COL} \
             --remove_zero_features \
             --plot_qc \
             --qc_plot_file {output.QC_PLOTS} \

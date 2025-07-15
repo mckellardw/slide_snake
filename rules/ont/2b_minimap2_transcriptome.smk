@@ -234,13 +234,13 @@ rule ont_2b_txome_compress_oarfish_matrix:
         """
         mkdir -p $(dirname {output.MAT})
         pigz -c -p {threads} {input.BCS} > {output.BCS}
-        pigz -c -p {threads} {input.FEATS} > {output.FEATS}
+        awk '{gsub(/\|/, "\t"); print}' {input.FEATS} | pigz -c -p {threads} > {output.FEATS}
         pigz -c -p {threads} {input.MAT} > {output.MAT}
         """
 
 
 # make anndata object with spatial coordinates
-rule ont_2b_txome_cache_preQC_h5ad_minimap2:
+rule ont_2b_txome_cache_h5ad_minimap2:
     input:
         BCS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/barcodes.tsv.gz",
         FEATS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/features.tsv.gz",
@@ -249,7 +249,9 @@ rule ont_2b_txome_cache_preQC_h5ad_minimap2:
         # BC_map="{OUTDIR}/{SAMPLE}/bc/map_underscore.txt",
     output:
         H5AD="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/output.h5ad",
-        QC_PLOTS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/qc_plots.png",
+        QC_PLOTS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/qc_plots.png",    
+    params:
+        FEAT_COL=0,  # column in features.tsv to use as var_names
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/logs/cache_h5ad.log",
         err="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/logs/cache_h5ad.err",
@@ -264,7 +266,7 @@ rule ont_2b_txome_cache_preQC_h5ad_minimap2:
             --bc_in {input.BCS} \
             --bc_map {input.BC_map} \
             --ad_out {output.H5AD} \
-            --feat_col 0 \
+            --feat_col {params.FEAT_COL} \
             --remove_zero_features \
             --plot_qc \
             --qc_plot_file {output.QC_PLOTS} \
@@ -273,7 +275,7 @@ rule ont_2b_txome_cache_preQC_h5ad_minimap2:
 
 
 # make Seurat object with spatial coordinates
-rule ont_2b_txome_cache_preQC_seurat_minimap2:
+rule ont_2b_txome_cache_seurat_minimap2:
     input:
         BCS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/barcodes.tsv.gz",
         FEATS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/features.tsv.gz",
