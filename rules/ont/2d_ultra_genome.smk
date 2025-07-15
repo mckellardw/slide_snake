@@ -372,7 +372,7 @@ rule ont_2d_ultra_cache_seurat:
         SEURAT="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/raw/output.rds",
     params:
         FEAT_COL=1,  # 1=gene_name, 2=gene_id
-        TRANSPOSE="True", 
+        TRANSPOSE="True",
     log:
         log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/cache_seurat.log",
         err="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/cache_seurat.err",

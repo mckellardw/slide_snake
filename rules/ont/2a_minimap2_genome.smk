@@ -367,7 +367,7 @@ rule ont_2a_genome_cache_seurat_minimap2:
     output:
         SEURAT="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/output.rds",
     params:
-        FEAT_COL=1,  
+        FEAT_COL=1,
         TRANSPOSE="False",
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/cache_seurat.log",

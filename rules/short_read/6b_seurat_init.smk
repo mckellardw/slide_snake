@@ -12,11 +12,11 @@ rule ilmn_6a_cache_seurat_STAR:
     output:
         SEURAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.rds",
     params:
-        FEAT_COL=1, # Use gene ID; example: `ENSMUSG00000092837.3    Rpph1   Gene Expression`
+        FEAT_COL=1,  # Use gene ID; example: `ENSMUSG00000092837.3    Rpph1   Gene Expression`
         TRANSPOSE="True",
     threads: 1
     log:
-        log="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/logs{ALGO}_cache_seurat.log",
+        log="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/logs/{ALGO}_cache_seurat.log",
         err="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/logs/{ALGO}_cache_seurat.err",
     conda:
         f"{workflow.basedir}/envs/seurat.yml"
@@ -46,11 +46,11 @@ rule ilmn_6a_cache_seurat_kbpython_std:
     output:
         SEURAT="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/output.rds",
     params:
-        FEAT_COL=1, # Use gene ID; example: `ENSMUSG00000092837.3    Rpph1`
+        FEAT_COL=1,  # Use gene ID; example: `ENSMUSG00000092837.3    Rpph1`
         TRANSPOSE="True",
     log:
-        log="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/cache_seurat.log",
-        err="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/cache_seurat.err",
+        log="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/logs/cache_seurat.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/logs/cache_seurat.err",
     threads: 1
     conda:
         f"{workflow.basedir}/envs/seurat.yml"

@@ -250,7 +250,7 @@ rule ont_2b_txome_cache_h5ad_minimap2:
         # BC_map="{OUTDIR}/{SAMPLE}/bc/map_underscore.txt",
     output:
         H5AD="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/output.h5ad",
-        QC_PLOTS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/qc_plots.png",    
+        QC_PLOTS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/qc_plots.png",
     params:
         FEAT_COL=0,  # column in features.tsv to use as var_names
     log:
@@ -306,4 +306,3 @@ rule ont_2b_txome_cache_seurat_minimap2:
         1> {log.log} \
         2> {log.err}
         """
-

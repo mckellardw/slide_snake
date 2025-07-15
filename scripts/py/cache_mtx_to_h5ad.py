@@ -293,7 +293,9 @@ def main(
 
     # Remove observations with zero features detected
     if remove_zero_features:
-        adata = adata[adata.X.sum(axis=1) > 0, :].copy()  # Make a copy to avoid view warnings
+        adata = adata[
+            adata.X.sum(axis=1) > 0, :
+        ].copy()  # Make a copy to avoid view warnings
 
     # Calculate QC metrics
     adata.obs["n_counts"] = adata.X.sum(axis=1)
