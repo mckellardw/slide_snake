@@ -1,3 +1,5 @@
+#!/usr/bin/env Rscript
+
 # adapter_scan_summary.R
 
 library(readr)
@@ -6,6 +8,8 @@ library(ggplot2)
 library(optparse)
 library(patchwork)
 library(glue)
+
+fill_color <- "black"
 
 # Usage:
 # Rscript scripts/R/adapter_scan_summary.R \
@@ -17,8 +21,10 @@ library(glue)
 
 # Start time
 start_time <- Sys.time()
-cat(glue("Script started at: {format(start_time, '%Y-%m-%d %H:%M:%S')}"),
-    "\n")
+cat(
+  glue("Script started at: {format(start_time, '%Y-%m-%d %H:%M:%S')}"),
+  "\n"
+)
 cat("\n")
 
 # Function to load the data
@@ -38,7 +44,7 @@ load_data <- function(data_file, n_max = Inf) {
     na = c("", "NA", "None"),
     n_max = n_max
   )
-  
+
   return(df)
 }
 
@@ -109,7 +115,8 @@ if (verbose) {
   cat("Reading in tsv...\n")
 }
 data <- load_data(opt$input,
-                  n_max = n_max)
+  n_max = n_max
+)
 cat(glue("Number of reads analyzed: {nrow(data)}"), "\n")
 cat("\n")
 
@@ -152,8 +159,10 @@ summary <- data %>%
     avg_start = round(mean(start), 2),
     avg_normStart = round(mean(normStart), 2)
   )
-cat(glue("Summary statistics computed for {nrow(summary)} groups"),
-    "\n")
+cat(
+  glue("Summary statistics computed for {nrow(summary)} groups"),
+  "\n"
+)
 
 # Write summary to CSV file
 if (verbose) {
@@ -166,52 +175,93 @@ if (verbose) {
   cat("Generating plots...\n")
 }
 
+# Filter data for p2 to within 3 standard deviations
+readlen_mean <- mean(data$readlength, na.rm = TRUE)
+readlen_sd <- sd(data$readlength, na.rm = TRUE)
+data_filtered <- data[abs(data$readlength - readlen_mean) <= 3 * readlen_sd, ]
+
+# Filter data for p3 to within 3 standard deviations (excluding no_adapters)
+labels_to_exclude <- c(
+  "adapter2_single",
+  "adapter2_double",
+  "other",
+  "other_ambiguous",
+  "no_adapters"
+)
+data_no_adapters <- data[!data$lab %in% labels_to_exclude, ]
+start_mean <- mean(data_no_adapters$start, na.rm = TRUE)
+start_sd <- sd(data_no_adapters$start, na.rm = TRUE)
+data_p3_filtered <- data_no_adapters[abs(data_no_adapters$start - start_mean) <= 3 * start_sd, ]
+
+# Log number of points removed
+cat(glue("Read length filtering: {nrow(data) - nrow(data_filtered)} points removed (kept {nrow(data_filtered)}/{nrow(data)})"), "\n")
+cat(glue("Start position filtering: {nrow(data_no_adapters) - nrow(data_p3_filtered)} points removed (kept {nrow(data_p3_filtered)}/{nrow(data_no_adapters)})"), "\n")
+
 current_theme <- theme(
   plot.title = element_text(hjust = 0.5, face = "bold"),
-  axis.text.x = element_text(
-    size = 14,
-    angle = 45,
-    hjust = 1
-  )
+  axis.text.x = element_text(size = 12, angle = 45, hjust = 1),
+  axis.title.x = element_blank()
 )
 
 # 1. Read count by lab
 p1 <- ggplot(summary, aes(x = lab, y = count)) +
   geom_bar(stat = "identity", fill = "steelblue") +
+  labs(
+    title = "Read Count by Type",
+    x = "Read Type",
+    y = "Count"
+  ) +
   theme_minimal() +
-  labs(title = "Read Count by Lab", x = "Lab", y = "Count") +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold"),
-    axis.text.x = element_text(angle = 45, hjust = 1)
-  )
+  current_theme
 
 # 2. Average read length by lab
-p2 <- ggplot(data,
-             aes(x = lab, y = readlength)) +
-  geom_violin(fill = "darkgreen") +
-  labs(title = "Read Length Distribution by Label",
-       x = "Read Type",
-       y = "Read Length") +
+p2 <- ggplot(
+  data_filtered,
+  aes(x = lab, y = readlength)
+) +
+  geom_violin(
+    fill = fill_color,
+    scale = "width"
+  ) +
+  labs(
+    title = "Read Length Distribution by Type",
+    x = "Read Type",
+    y = "Read Length"
+  ) +
   theme_minimal() +
   current_theme
 
 # 3. Average start position for insert
-p3 <- ggplot(data[data$lab != "no_adapters", ],
-             aes(x = lab, y = start)) +
-  geom_violin(fill = "orange") +
-  labs(title = "Start Position of Adapter 1",
-       x = "Read Type",
-       y = "Start Position") +
+p3 <- ggplot(
+  data_p3_filtered,
+  aes(x = lab, y = start)
+) +
+  geom_violin(
+    fill = fill_color,
+    scale = "width"
+  ) +
+  labs(
+    title = "Start Position of Adapter 1",
+    x = "Read Type",
+    y = "Start Position"
+  ) +
   theme_minimal() +
   current_theme
 
 # 4. Average start position for insert, normalized to read length
-p4 <- ggplot(data[data$lab != "no_adapters", ],
-             aes(x = lab, y = normStart)) +
-  geom_violin(fill = "purple") +
-  labs(title = "Start Position of Adapter 1, relative to read length",
-       x = "Read Type",
-       y = "Normalized Start Position") +
+p4 <- ggplot(
+  data_p3_filtered,
+  aes(x = lab, y = normStart)
+) +
+  geom_violin(
+    fill = fill_color,
+    scale = "width"
+  ) +
+  labs(
+    title = "Start Position of Adapter 1, relative to read length",
+    x = "Read Type",
+    y = "Normalized Start Position"
+  ) +
   theme_minimal() +
   current_theme
 
@@ -229,12 +279,13 @@ p4 <- ggplot(data[data$lab != "no_adapters", ],
 #   theme(legend.position = "bottom")
 
 
+# combine into a single plot
 combined_plot <- (p1 + p2) / (p3 + p4) +
   plot_layout(heights = c(1, 1)) +
-  plot_annotation(title = "Adapter Scan Summary",
-                  theme = theme(plot.title = element_text(
-                    size = 16, hjust = 0.5, face = "bold"
-                  )))
+  plot_annotation(
+    title = "Adapter Scan Summary",
+    theme = theme(plot.title = element_text(size = 16, hjust = 0.5, face = "bold"))
+  )
 
 # Save combined plot
 if (verbose) {
@@ -262,9 +313,13 @@ cat("Analysis complete. Summary and combined plot have been saved.\n")
 # End time and run time
 end_time <- Sys.time()
 cat("\n")
-cat(glue("Script ended at: {format(end_time, '%Y-%m-%d %H:%M:%S')}"),
-    "\n")
-cat(glue(
-  "Total run time: {difftime(end_time, start_time, units = 'secs')} seconds"
-),
-"\n")
+cat(
+  glue("Script ended at: {format(end_time, '%Y-%m-%d %H:%M:%S')}"),
+  "\n"
+)
+cat(
+  glue(
+    "Total run time: {difftime(end_time, start_time, units = 'secs')} seconds"
+  ),
+  "\n"
+)

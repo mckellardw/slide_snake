@@ -60,7 +60,7 @@ rule ont_2e_add_isoquant_genes_to_bam:
         BAM="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/sorted_filtered_cb_ub_gn_ig.bam",
     params:
         READ_ID_COLUMN=0,
-        TAG="IG",  # corrected barcode tag
+        TAG="IG",  # isoquant gene tag
         TAG_COLUMN=4,  # column in tsv with gene tag
     log:
         log="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/logs/tsv2tag_4_IG.log",
@@ -222,7 +222,7 @@ rule ont_2e_cache_seurat:
         SEURAT="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/isoquant/output.rds",
     params:
         FEAT_COL=1,  # column in features file to use as feature names (R is 1-indexed)
-        TRANSPOSE="False",  # whether to transpose the matrix (default is False)
+        TRANSPOSE="True",  # whether to transpose the matrix (default is False)
     log:
         log="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/logs/cache_isoquant_seurat.log",
         err="{OUTDIR}/{SAMPLE}/ont/{ALIGNER}/{RECIPE}/logs/cache_isoquant_seurat.err",

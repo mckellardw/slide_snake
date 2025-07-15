@@ -1,6 +1,7 @@
 # cache_tx_to_seurat.R
 
 library(Seurat)
+library(Matrix)
 library(argparse)
 library(glue)
 
@@ -21,13 +22,15 @@ parse_args <- function() {
   parser$add_argument("--bc_map", required = TRUE, help = "Input spatial map file (tsv format)")
   parser$add_argument("--seurat_out", required = TRUE, help = "Output Seurat object file (rds format)")
   parser$add_argument("--feat_col",
-                      type = "integer",
-                      default = 1,
-                      help = "Feature column index in the feature file (default: 1)")
+    type = "integer",
+    default = 1,
+    help = "Feature column index in the feature file (default: 1)"
+  )
   parser$add_argument("--transpose",
-                      type = "logical",
-                      default = FALSE,
-                      help = "Transpose count matrix? (default: FALSE)")
+    type = "logical",
+    default = FALSE,
+    help = "Transpose count matrix? (default: FALSE)"
+  )
   return(parser$parse_args())
 }
 
@@ -43,35 +46,71 @@ main <-
            seurat_out,
            feat_col,
            transpose) {
-    # Load count matrix using Seurat
+    # Load count matrix using Matrix package (more direct approach)
     cat(timestamp(), " - Loading count matrix...\n")
-    counts <-
-      Read10X(
-        data.dir = dirname(mat_in),
-        gene.column = feat_col,
-        cell.column = 1
-      )
+    counts <- Matrix::readMM(mat_in)
+    cat(timestamp(), " - Count matrix dimensions: ", nrow(counts), " x ", ncol(counts), "\n")
     cat(timestamp(), " - Done.\n\n")
-    
+
     if (transpose) {
       counts <- t(counts)
     }
-    
+
     # Load features
     features <- read.table(feat_in, sep = "\t", header = FALSE)
-    rownames(counts) <- features$V1
-    
+
+    # Check if number of features matches number of rows in count matrix
+    if (nrow(features) != nrow(counts)) {
+      cat(
+        timestamp(), " - WARNING: Number of features (", nrow(features),
+        ") does not match number of rows in count matrix (", nrow(counts), ")\n"
+      )
+      cat(timestamp(), " - Using only the first ", nrow(counts), " features\n")
+      features <- features[seq_len(nrow(counts)), , drop = FALSE]
+    }
+
+    # Check for duplicate feature names and make them unique
+    feature_names <- features$V1
+    if (any(duplicated(feature_names))) {
+      n_duplicates <- sum(duplicated(feature_names))
+      cat(timestamp(), " - WARNING: Found ", n_duplicates, " duplicate feature names\n")
+      cat(timestamp(), " - Making feature names unique...\n")
+      feature_names <- make.unique(feature_names)
+    }
+
+    rownames(counts) <- feature_names
+
     # Load barcodes
     barcodes <- read.table(bc_in, sep = "\t", header = FALSE)
-    colnames(counts) <- barcodes$V1
-    
+
+    # Check if number of barcodes matches number of columns in count matrix
+    if (nrow(barcodes) != ncol(counts)) {
+      cat(
+        timestamp(), " - WARNING: Number of barcodes (", nrow(barcodes),
+        ") does not match number of columns in count matrix (", ncol(counts), ")\n"
+      )
+      cat(timestamp(), " - Using only the first ", ncol(counts), " barcodes\n")
+      barcodes <- barcodes[seq_len(ncol(counts)), , drop = FALSE]
+    }
+
+    # Check for duplicate barcode names and make them unique
+    barcode_names <- barcodes$V1
+    if (any(duplicated(barcode_names))) {
+      n_duplicates <- sum(duplicated(barcode_names))
+      cat(timestamp(), " - WARNING: Found ", n_duplicates, " duplicate barcode names\n")
+      cat(timestamp(), " - Making barcode names unique...\n")
+      barcode_names <- make.unique(barcode_names)
+    }
+
+    colnames(counts) <- barcode_names
+
     # Print the number of features and cells loaded
     cat(timestamp(), " - Number of features loaded: ", nrow(counts), "\n")
     cat(timestamp(), " - Number of cells loaded:    ", ncol(counts), "\n")
-    
+
     # Create Seurat object
     seurat_obj <- CreateSeuratObject(counts = counts)
-    
+
     # Load spatial coordinates
     cat(timestamp(), " - Loading spatial barcode map...\n")
     barcode_map <-
@@ -82,23 +121,27 @@ main <-
         col.names = c("barcode", "x", "y")
       )
     cat(timestamp(), " - Done.\n")
-    
+
     rownames(barcode_map) <- barcode_map$barcode
-    
+
     # Match cells between Seurat object and spatial data
     common_cells <-
       intersect(colnames(seurat_obj), rownames(barcode_map))
     if (length(common_cells) == 0) {
       stop("No matching barcodes between data and spatial map")
     } else if (length(common_cells) == length(colnames(seurat_obj))) {
-      cat(timestamp(),
-          " - No barcodes missing between data and spatial map\n")
+      cat(
+        timestamp(),
+        " - No barcodes missing between data and spatial map\n"
+      )
     } else {
-      cat(timestamp(),
-          " - Subsetting Seurat object and spatial data to the common cells\n")
+      cat(
+        timestamp(),
+        " - Subsetting Seurat object and spatial data to the common cells\n"
+      )
       seurat_obj <- subset(seurat_obj, cells = common_cells)
     }
-    
+
     # Warning if barcode_map has more rows than Seurat object has columns
     if (nrow(barcode_map) > ncol(seurat_obj)) {
       cat(
@@ -108,14 +151,14 @@ main <-
         )
       )
     }
-    
+
     # Subset Seurat object and spatial data to the common cells
     embeddings <- as.matrix(barcode_map[common_cells, c("x", "y")])
     colnames(embeddings) <-
       paste0("spatial_", seq_len(ncol(embeddings)))
     seurat_obj[["spatial"]] <-
       CreateDimReducObject(embeddings = embeddings, key = "spatial_")
-    
+
     # Save Seurat object
     saveRDS(seurat_obj, file = seurat_out)
     cat(timestamp(), " - Seurat object saved to", seurat_out, "\n")

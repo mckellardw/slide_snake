@@ -320,7 +320,7 @@ rule ont_2d_ultra_counts_to_sparse:
 
 
 # make anndata object with spatial coordinates
-rule ont_2d_ultra_cache_h5ad_ultra:
+rule ont_2d_ultra_cache_h5ad:
     input:
         BCS="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/raw/barcodes.tsv.gz",
         FEATS="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/raw/features.tsv.gz",
@@ -362,7 +362,7 @@ rule ont_2d_ultra_cache_h5ad_ultra:
 
 
 # make Seurat object with spatial coordinates
-rule ont_2d_ultra_cache_seurat_ultra:
+rule ont_2d_ultra_cache_seurat:
     input:
         BCS="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/raw/barcodes.tsv.gz",
         FEATS="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/raw/features.tsv.gz",
@@ -371,8 +371,8 @@ rule ont_2d_ultra_cache_seurat_ultra:
     output:
         SEURAT="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/raw/output.rds",
     params:
-        FEAT_COL=1,  # column in features file to use as feature names (R is 1-indexed)
-        TRANSPOSE=False,  # whether to transpose the matrix (default is False)
+        FEAT_COL=1,  # 1=gene_name, 2=gene_id
+        TRANSPOSE="True", 
     log:
         log="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/cache_seurat.log",
         err="{OUTDIR}/{SAMPLE}/ont/ultra/{RECIPE}/logs/cache_seurat.err",

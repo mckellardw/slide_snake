@@ -2,7 +2,7 @@
 
 import pandas as pd
 import argparse
-from anndata.io import read_umi_tools
+from anndata import read_umi_tools
 from numpy import intersect1d
 
 # Example usage:

@@ -55,6 +55,7 @@ rule ont_1b_cutadapt:
             --match-read-wildcards \
             --times {params.ADAPTER_COUNT} \
             -G TXG_TSO={params.TXG_TSO} \
+            -G uMRT_TSO={params.uMRT_TSO} \
             --pair-filter=any \
             -o {output.R1_FQ} \
             -p {output.R2_FQ} \

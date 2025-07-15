@@ -5,7 +5,12 @@
 # Specifically configured for NE1 cluster environment
 
 # Default resource allocation for all rules
-default-resources:
+def  ont_2d_ultra_cache_h5ad:
+    mem: 32G
+    mem_mb: 16000  
+  ont_2d_ultra_cache_seurat:
+    mem: 32G
+    mem_mb: 16000esources:
   slurm_partition: cpu      # SLURM partition to use (cpu partition)
   slurm_account: innovation # SLURM account for job submission
   runtime: 1:00:00          # Maximum runtime (HH:MM:SS)
@@ -107,8 +112,8 @@ set-threads:
   ont_2d_ultra_filter_bam_empty_tags: 1
   ont_2d_ultra_umitools_count: 1
   ont_2d_ultra_counts_to_sparse: 1
-  ont_2d_ultra_cache_h5ad_ultra: 1
-  ont_2d_ultra_cache_seurat_ultra: 1
+  ont_2d_ultra_cache_h5ad: 1
+  ont_2d_ultra_cache_seurat: 1
   ont_3a_readQC_0_rawInput: 24
   ont_3a_readQC_1_preCutadapt: 24
   ont_3a_readQC_2_postCutadapt: 24
@@ -398,10 +403,10 @@ set-resources:
   ont_2d_ultra_counts_to_sparse:
     mem: 16G
     mem_mb: 16000
-  ont_2d_ultra_cache_h5ad_ultra:
+  ont_2d_ultra_cache_h5ad:
     mem: 16G
     mem_mb: 16000
-  ont_2d_ultra_cache_seurat_ultra:
+  ont_2d_ultra_cache_seurat:
     mem: 32G
     mem_mb: 16000
   ont_2e_isoquant:

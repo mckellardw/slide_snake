@@ -3,7 +3,7 @@
 import pandas as pd
 import argparse
 import gzip
-from anndata.io import read_mtx
+from anndata import read_mtx
 from scanpy import pl
 from numpy import intersect1d
 import matplotlib.pyplot as plt
@@ -16,8 +16,14 @@ python scripts/py/cache_mtx_to_h5ad.py \
     --bc_in input_barcodes.txt \
     --bc_map input_spatial_map.tsv \
     --ad_out output_anndata.h5ad \
-    --feat_col 1 \
-    --remove_zero_features
+    --feat_cols 1 0 \
+    --transpose \
+    --remove_zero_features \
+    --plot_qc \
+    --qc_plot_file output_qc_plots.png \
+    --gtf_file annotations.gtf \
+    --gtf_feature_type gene \
+    --gtf_id gene_name
 """
 
 

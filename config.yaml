@@ -1,27 +1,24 @@
 ########################################################################################################
 # Run settings
 ########################################################################################################
-
 ## ~~~~~ sample sheet ~~~~~
 ### See `example_sample_sheet.csv` for details
-SAMPLE_SHEET_PATH: data/test_sample_sheet_minimal.csv # toy data, just 1 recipe each
-# SAMPLE_SHEET_PATH: data/test_sample_sheet.csv # toy data, lots of recipes - will test every module
+SAMPLE_SHEET_PATH: data/test_sample_sheet_minimal.csv # toy data; just 1 recipe each
+# SAMPLE_SHEET_PATH: data/test_sample_sheet.csv       # toy data; lots of recipes - will test ~every module
+
+## ~~~~~ output file location ~~~~~
+# **Change these paths for where you want temporary (TMPDIR) and output (OUTDIR) files
+TMPDIR: tmp
+OUTDIR: out
 
 ########################################################################################################
-# Resource parameters 
+# Resource parameters - if not using profiles
 ########################################################################################################
 CORES: 8                # how many cores to give each process
 MEMLIMIT: 121916827066  # limit in bytes  
 MEMLIMIT_MB: 256000     # limit in megabytes
 MEMLIMIT_GB: 200G       # mem limit for kallisto
 N_READS_READQC: 500000  # number of reads to downsample/analyze for readqc scripts
-
-########################################################################################################
-# Important directory file paths
-########################################################################################################
-# **Change these paths for where you want temporary (TMPDIR) and output (OUTDIR) files
-TMPDIR: tmp
-OUTDIR: out
 
 ########################################################################################################
 # Resources - file paths
@@ -33,10 +30,7 @@ FASTQC_ADAPTERS: resources/fastqc_adapters.txt
 MIRGE_LIB: resources/miRge3_Lib
 
 ########################################################################################################
-# Library details
+# Misc.
 ########################################################################################################
-# R1_PRIMER: "CTACACGACGCTCTTCCGATCT" # R1 primer (used in Visium & Seeker)
-MAX_SHORT_READ_LENGTH: 34 # max read length for reads to be aligned to short RNA references
-
 # rRNA filtering options
 # RRNA_KEYWORDS: "rRNA,Mt_rRNA,ribosomal_RNA,5S_rRNA,5.8S_rRNA,18S_rRNA,28S_rRNA,12S_rRNA,16S_rRNA"  # Default keywords for rRNA detection

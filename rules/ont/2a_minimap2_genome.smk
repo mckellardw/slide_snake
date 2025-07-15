@@ -5,7 +5,7 @@ rule ont_2a_genome_generate_junction_bed:
     output:
         JUNC_BED="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/junctions.bed",
     log:
-        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/gff2bed.err",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/gff2bed.err",
     conda:
         f"{workflow.basedir}/envs/minimap2.yml"
     shell:
