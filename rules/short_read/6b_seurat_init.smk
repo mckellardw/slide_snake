@@ -12,21 +12,25 @@ rule ilmn_6a_cache_seurat_STAR:
     output:
         SEURAT="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}.rds",
     params:
-        var_names="gene_symbols",  # Seurat::CreateSeuratObject()
+        FEAT_COL=1, # Use gene ID; example: `ENSMUSG00000092837.3    Rpph1   Gene Expression`
+        TRANSPOSE="True",
     threads: 1
     log:
-        log="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}_cache_rds.log",
-        err="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/{ALGO}_cache_rds.err",
+        log="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/logs{ALGO}_cache_seurat.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/Solo.out/{SOLO}/raw/logs/{ALGO}_cache_seurat.err",
     conda:
         f"{workflow.basedir}/envs/seurat.yml"
     shell:
         """
+        mkdir -p $(dirname {log.log})
         Rscript scripts/R/cache_mtx_to_seurat.R \
             --mat_in {input.MAT} \
             --feat_in {input.FEATS} \
             --bc_in {input.BCS} \
             --bc_map {input.BC_map} \
             --seurat_out {output.SEURAT} \
+            --feat_col {params.FEAT_COL} \
+            --transpose {params.TRANSPOSE} \
         1> {log.log} \
         2> {log.err}
         """
@@ -41,20 +45,26 @@ rule ilmn_6a_cache_seurat_kbpython_std:
         BC_map="{OUTDIR}/{SAMPLE}/bc/map_underscore.txt",
     output:
         SEURAT="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/output.rds",
+    params:
+        FEAT_COL=1, # Use gene ID; example: `ENSMUSG00000092837.3    Rpph1`
+        TRANSPOSE="True",
     log:
-        log="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/cache_rds.log",
-        err="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/cache_rds.err",
+        log="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/cache_seurat.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/cache_seurat.err",
     threads: 1
     conda:
         f"{workflow.basedir}/envs/seurat.yml"
     shell:
         """
+        mkdir -p $(dirname {log.log})
         Rscript scripts/R/cache_mtx_to_seurat.R \
             --mat_in {input.MAT} \
             --feat_in {input.FEATS} \
             --bc_in {input.BCS} \
             --bc_map {input.BC_map} \
             --seurat_out {output.SEURAT} \
+            --feat_col {params.FEAT_COL} \
+            --transpose {params.TRANSPOSE} \
         1> {log.log} \
         2> {log.err}
         """

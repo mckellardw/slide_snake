@@ -60,7 +60,7 @@ rule ilmn_4a_kbpython_std_remove_suffix:
     threads: 1
     shell:
         """
-        sed 's/{params.SUFFIX}//' {input.BCS} > {output.BCS}
+        sed 's/{params.SUFFIX}//; s/_//g' {input.BCS} > {output.BCS}
         """
 
 

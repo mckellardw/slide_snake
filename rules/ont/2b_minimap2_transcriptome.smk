@@ -220,6 +220,7 @@ rule ont_2b_txome_oarfish_quant:
 
 
 # Compress and rename oarfish outputs to match TXG format
+## Also replace pipe character in features.tsv with tab (Important if using GENCODE annotations)
 rule ont_2b_txome_compress_oarfish_matrix:
     input:
         BCS="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/P.barcodes.txt",
@@ -234,7 +235,7 @@ rule ont_2b_txome_compress_oarfish_matrix:
         """
         mkdir -p $(dirname {output.MAT})
         pigz -c -p {threads} {input.BCS} > {output.BCS}
-        awk '{gsub(/\|/, "\t"); print}' {input.FEATS} | pigz -c -p {threads} > {output.FEATS}
+        sed 's/|/\t/g' {input.FEATS} | pigz -c -p {threads} > {output.FEATS}
         pigz -c -p {threads} {input.MAT} > {output.MAT}
         """
 
@@ -284,8 +285,8 @@ rule ont_2b_txome_cache_seurat_minimap2:
     output:
         SEURAT="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/oarfish/output.rds",
     params:
-        FEAT_COL=1,  # column in features file to use as feature names (R is 1-indexed)
-        TRANSPOSE=False,  # whether to transpose the matrix (default is False)
+        FEAT_COL=1,  # Use transcript ID; example: `ENSMUST00000175096.3    ENSMUSG00000092837.3    -       -       Rpph1-201       Rpph1   319     ribozyme`
+        TRANSPOSE="True",
     log:
         log="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/logs/cache_seurat.log",
         err="{OUTDIR}/{SAMPLE}/ont/minimap2_txome/{RECIPE}/logs/cache_seurat.err",

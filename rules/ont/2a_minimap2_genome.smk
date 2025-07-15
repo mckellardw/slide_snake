@@ -338,6 +338,7 @@ rule ont_2a_genome_cache_h5ad_minimap2:
         f"{workflow.basedir}/envs/scanpy.yml"
     shell:
         """
+        mkdir -p $(dirname {log.log})
         python scripts/py/cache_mtx_to_h5ad.py \
             --mat_in {input.MAT} \
             --feat_in {input.FEATS} \
@@ -376,6 +377,7 @@ rule ont_2a_genome_cache_seurat_minimap2:
         f"{workflow.basedir}/envs/seurat.yml"
     shell:
         """
+        mkdir -p $(dirname {log.log})
         Rscript scripts/R/cache_mtx_to_seurat.R \
             --mat_in {input.MAT} \
             --feat_in {input.FEATS} \

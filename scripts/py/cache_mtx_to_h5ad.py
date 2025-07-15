@@ -282,7 +282,7 @@ def main(
 
     # Add the spatial coordinates to the AnnData object
     common_labels = intersect1d(adata.obs_names, spatial_data.index)
-    adata = adata[common_labels, :]
+    adata = adata[common_labels, :].copy()  # Make a copy to avoid view warnings
     spatial_coord = spatial_data.loc[common_labels, ["x", "y"]]
 
     print(
@@ -293,7 +293,7 @@ def main(
 
     # Remove observations with zero features detected
     if remove_zero_features:
-        adata = adata[adata.X.sum(axis=1) > 0, :]
+        adata = adata[adata.X.sum(axis=1) > 0, :].copy()  # Make a copy to avoid view warnings
 
     # Calculate QC metrics
     adata.obs["n_counts"] = adata.X.sum(axis=1)
