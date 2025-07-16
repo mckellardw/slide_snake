@@ -91,9 +91,7 @@ include: "rules/short_read/3u_star_uTAR.smk"
 include: "rules/short_read/4a_kbpython.smk"
 ## small RNA stuff #TODO
 include: "rules/short_read/5a_mirge.smk"
-## scanpy stuff
-include: "rules/short_read/6a_scanpy_init.smk"
-include: "rules/short_read/6b_seurat_init.smk"
+
 include: "rules/short_read/7a_fastqc.smk"
 include: "rules/short_read/7b_readqc.smk"
 # ONT module ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

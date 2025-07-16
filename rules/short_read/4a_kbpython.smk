@@ -81,3 +81,81 @@ rule ilmn_4a_kbpython_std_compress_outs:
         """
         pigz -p{threads} {input.BCS} {input.FEATS} {input.MAT} {input.BCS2}
         """
+
+
+
+# kallisto/bustools outputs
+rule ilmn_4a_cache_seurat_kbpython_std:
+    input:
+        BCS="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes_noSuffix.tsv.gz",
+        FEATS="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/genes.tsv.gz",
+        MAT="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/matrix.mtx.gz",
+        BC_map="{OUTDIR}/{SAMPLE}/bc/map_underscore.txt",
+    output:
+        SEURAT="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/output.rds",
+    params:
+        FEAT_COL=1,  # Use gene ID; example: `ENSMUSG00000092837.3    Rpph1`
+        TRANSPOSE="False",
+    log:
+        log="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/logs/cache_seurat.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/logs/cache_seurat.err",
+    threads: 1
+    conda:
+        f"{workflow.basedir}/envs/seurat.yml"
+    shell:
+        """
+        mkdir -p $(dirname {log.log})
+        Rscript scripts/R/cache_mtx_to_seurat.R \
+            --mat_in {input.MAT} \
+            --feat_in {input.FEATS} \
+            --bc_in {input.BCS} \
+            --bc_map {input.BC_map} \
+            --seurat_out {output.SEURAT} \
+            --feat_col {params.FEAT_COL} \
+            --transpose {params.TRANSPOSE} \
+        1> {log.log} \
+        2> {log.err}
+        """
+
+
+# kallisto/bustools outputs
+rule ilmn_4a_cache_h5ad_kbpython_std:
+    input:
+        BCS="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/barcodes_noSuffix.tsv.gz",
+        FEATS="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/genes.tsv.gz",
+        MAT="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/cellranger/matrix.mtx.gz",
+        BC_map="{OUTDIR}/{SAMPLE}/bc/map.txt",
+    output:
+        H5AD="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/output.h5ad",
+        QC_PLOTS="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/qc_plots.png",
+    params:
+        GTF=lambda w: SAMPLE_SHEET["genes_gtf"][w.SAMPLE],
+        GTF_FEATURE_TYPE="gene",  # feature type in gtf to use 
+        GTF_ID="gene_id",  # gtf attribute used to match var_names in adata
+        FEAT_COL=0,  # column in features.tsv to use as var_names
+    log:
+        log="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/logs/cache_h5ad.log",
+        err="{OUTDIR}/{SAMPLE}/short_read/kbpython_std/{RECIPE}/counts_unfiltered/logs/cache_h5ad.err",
+    threads: 1
+    conda:
+        f"{workflow.basedir}/envs/scanpy.yml"
+    shell:
+        """
+        mkdir -p $(dirname {log.log})
+        python scripts/py/cache_mtx_to_h5ad.py \
+            --mat_in {input.MAT} \
+            --feat_in {input.FEATS} \
+            --bc_in {input.BCS} \
+            --bc_map {input.BC_map} \
+            --ad_out {output.H5AD} \
+            --feat_col {params.FEAT_COL} \
+            --remove_zero_features \
+            --plot_qc \
+            --qc_plot_file {output.QC_PLOTS} \
+            --gtf_file {params.GTF} \
+            --gtf_feature_type {params.GTF_FEATURE_TYPE} \
+            --gtf_id {params.GTF_ID} \
+            --transpose \
+        1> {log.log} \
+        2> {log.err}
+        """

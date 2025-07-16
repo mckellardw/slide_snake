@@ -55,9 +55,10 @@ set-threads:
   ilmn_3u_gzip_counts: 24
   ilmn_4a_kbpython_std: 24
   ilmn_5a_miRge3_pseudobulk: 4
-  ilmn_6a_cache_h5ad_STAR: 1
-  ilmn_6a_cache_seurat_STAR: 1
-  ilmn_6a_cache_seurat_kbpython_std: 1
+  ilmn_3a_cache_seurat_STAR: 1
+  ilmn_3a_cache_h5ad_STAR: 1
+  ilmn_4a_cache_seurat_kbpython_std: 1
+  ilmn_4a_cache_h5ad_kbpython_std: 1
   ilmn_7a_fastQC_preTrim: 24
   ilmn_7a_fastQC_postTrim: 24
   ilmn_7a_fastQC_twiceTrim: 24
@@ -237,16 +238,16 @@ set-resources:
   ilmn_5a_miRge3_pseudobulk:
     mem: 200G
     mem_mb: 200000
-  ilmn_6a_cache_h5ad_STAR:
+  ilmn_3a_cache_h5ad_STAR:
     mem: 64G
     mem_mb: 64000
-  ilmn_6a_cache_seurat_STAR:
+  ilmn_3a_cache_seurat_STAR:
     mem: 64G
     mem_mb: 64000
-  ilmn_6a_cache_seurat_kbpython_std:
+  ilmn_4a_cache_seurat_kbpython_std:
     mem: 64G
     mem_mb: 64000
-  ilmn_6a_cache_h5ad_kbpython_std:
+  ilmn_4a_cache_h5ad_kbpython_std:
     mem: 64G
     mem_mb: 64000
   ilmn_7a_fastQC_preTrim:

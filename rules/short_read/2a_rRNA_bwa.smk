@@ -3,7 +3,7 @@ rule ilmn_2a_extract_rRNA_fasta:
     input:
         CDNA_FA=lambda w: SAMPLE_SHEET["cdna_fa"][w.SAMPLE],
     output:
-        FASTA_rRNA="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_sequences.fa.gz",
+        FASTA_rRNA="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/ref/rRNA_sequences.fa.gz",
     params:
         RRNA_KEYWORDS=config.get(
             "RRNA_KEYWORDS",
@@ -32,7 +32,7 @@ rule ilmn_2a_build_rRNA_gtf:
     input:
         CDNA_FA=lambda w: SAMPLE_SHEET["cdna_fa"][w.SAMPLE],
     output:
-        GTF_rRNA="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_annotations.gtf.gz",
+        GTF_rRNA="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/ref/rRNA_annotations.gtf.gz",
     params:
         RRNA_KEYWORDS=config.get(
             "RRNA_KEYWORDS",
@@ -59,10 +59,10 @@ rule ilmn_2a_build_rRNA_gtf:
 # Build BWA index for rRNA sequences
 rule ilmn_2a_build_rRNA_bwa_index:
     input:
-        FASTA_rRNA="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_sequences.fa.gz",
+        FASTA_rRNA="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/ref/rRNA_sequences.fa.gz",
     output:
         BWA_INDEX_FILES=multiext(
-            "{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_sequences.fa.gz",
+            "{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/ref/rRNA_sequences.fa.gz",
             ".0123",
             ".amb",
             ".ann",
@@ -74,7 +74,6 @@ rule ilmn_2a_build_rRNA_bwa_index:
         err="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/build_bwa_index.err",
     resources:
         mem="32G",
-        time="1:00:00",
     threads: config["CORES"]
     conda:
         f"{workflow.basedir}/envs/bwa.yml"
@@ -99,19 +98,19 @@ rule ilmn_2a_bwa_rRNA_align:
     input:
         R2_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R2.fq.gz",
         BWA_INDEX_FILES=multiext(
-            "{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_sequences.fa.gz",
+            "{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/ref/rRNA_sequences.fa.gz",
             ".0123",
             ".amb",
             ".ann",
             ".bwt.2bit.64",
             ".pac",
         ),
+        BWA_REF="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/ref/rRNA_sequences.fa.gz",
     output:
         BAM1=temp("{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/aligned.sam"),
         BAM2="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/aligned_sorted.bam",
         R2_FQ_BWA_FILTERED="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/no_rRNA_R2.fq",
     params:
-        BWA_REF="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/rRNA_sequences.fa.gz",
         MIN_ALIGNSCORE=40,
     log:
         log="{OUTDIR}/{SAMPLE}/short_read/rRNA/bwa/bwa_mem.log",
@@ -129,7 +128,7 @@ rule ilmn_2a_bwa_rRNA_align:
             -a {output.BAM1} \
             -s {output.BAM2} \
             -n {output.R2_FQ_BWA_FILTERED} \
-            -f {params.BWA_REF} \
+            -f {input.BWA_REF} \
             -q {params.MIN_ALIGNSCORE} \
             -t {threads} \
         1> {log.log} \
