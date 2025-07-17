@@ -1,16 +1,5 @@
-# =============================================================================
-# slide_snake SLURM Profile Configuration (NE1 Cluster)
-# =============================================================================
-# This profile is optimized for SLURM cluster execution with cpu partition
-# Specifically configured for NE1 cluster environment
-
 # Default resource allocation for all rules
-def  ont_2d_ultra_cache_h5ad:
-    mem: 32G
-    mem_mb: 16000  
-  ont_2d_ultra_cache_seurat:
-    mem: 32G
-    mem_mb: 16000esources:
+default-resources:
   slurm_partition: cpu      # SLURM partition to use (cpu partition)
   slurm_account: innovation # SLURM account for job submission
   runtime: 1:00:00          # Maximum runtime (HH:MM:SS)
@@ -22,9 +11,6 @@ def  ont_2d_ultra_cache_h5ad:
 # =============================================================================
 # THREAD ALLOCATION BY RULE
 # =============================================================================
-# Customize thread usage for NE1 cluster execution
-# Thread counts optimized for NE1 cluster nodes
-
 set-threads:
   ilmn_1a_merge_fastqs: 24
   ilmn_1b_cutadapt: 8

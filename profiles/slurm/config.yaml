@@ -1,9 +1,3 @@
-default-resources:=============================================================
-# slide_snake SLURM Profile Configuration
-# =============================================================================
-# This profile is optimized for SLURM cluster execution with cpu partition
-# Specifically configured for NE1 cluster environment
-
 # Default resource allocation for all rules
 default-resources:
   slurm_partition: pe2      # SLURM partition to use (cpu partition)
