@@ -1,5 +1,5 @@
 # Convert gtf to junction bed for minimap2 alignment
-rule ont_2a_genome_generate_junction_bed:
+rule ont_2a_generate_junction_bed:
     input:
         GTF=lambda wildcards: SAMPLE_SHEET["genes_gtf"][wildcards.SAMPLE],
     output:
@@ -21,7 +21,7 @@ rule ont_2a_genome_generate_junction_bed:
 
 # Align w/ minimap2
 ## minimap2 docs - https://lh3.github.io/minimap2/minimap2.html
-rule ont_2a_genome_align_minimap2_genome:
+rule ont_2a_align_minimap2_genome:
     input:
         FQ=lambda w: get_fqs(w, return_type="list", mode="ONT")[1],
         JUNC_BED="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/junctions.bed",
@@ -59,7 +59,7 @@ rule ont_2a_genome_align_minimap2_genome:
 
 
 # Sort and compresss minimap2 output
-rule ont_2a_genome_sort_compress_output:
+rule ont_2a_sort_compress_output:
     input:
         SAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/tmp.sam",
     output:
@@ -79,7 +79,7 @@ rule ont_2a_genome_sort_compress_output:
 
 
 # Add CB to gene-tagged .bam
-rule ont_2a_genome_add_corrected_barcodes:
+rule ont_2a_add_corrected_barcodes:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted.bam",
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_corrected.tsv",
@@ -111,7 +111,7 @@ rule ont_2a_genome_add_corrected_barcodes:
 
 
 # Add UMI (UR) to barcoded .bam
-rule ont_2a_genome_add_umis:
+rule ont_2a_add_umis:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_cb.bam",
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_filtered.tsv",
@@ -143,7 +143,7 @@ rule ont_2a_genome_add_umis:
 
 
 # Remove reads which don't have a cell barcode and UMI
-rule ont_2a_genome_filter_bam_empty_tags:
+rule ont_2a_filter_bam_empty_tags:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_cb_ub.bam",
     output:
@@ -167,7 +167,7 @@ rule ont_2a_genome_filter_bam_empty_tags:
 
 
 # Assign feature (transcript ID) to each alignment
-rule ont_2a_genome_featureCounts:
+rule ont_2a_featureCounts:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_cb_ub.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_cb_ub.bam.bai",
@@ -211,7 +211,7 @@ rule ont_2a_genome_featureCounts:
 
 
 # Add gene tag (GN) to bam...
-rule ont_2a_genome_add_featureCounts_to_bam:
+rule ont_2a_add_featureCounts_to_bam:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_cb_ub.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_cb_ub.bam.bai",
@@ -244,7 +244,7 @@ rule ont_2a_genome_add_featureCounts_to_bam:
 
 
 # Split BAM by strand
-rule ont_2a_genome_split_bam_by_strand:
+rule ont_2a_split_bam_by_strand:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_cb_ub_gn.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_cb_ub_gn.bam.bai",
@@ -262,7 +262,7 @@ rule ont_2a_genome_split_bam_by_strand:
 
 
 # Generate count matrix w/ umi-tools
-rule ont_2a_genome_umitools_count:
+rule ont_2a_umitools_count:
     input:
         BAM="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_cb_ub_gn.bam",
         BAI="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/sorted_filtered_cb_ub_gn.bam.bai",
@@ -296,7 +296,7 @@ rule ont_2a_genome_umitools_count:
 
 
 # Convert long-format counts from umi_tools to market-matrix format (.mtx)
-rule ont_2a_genome_counts_to_sparse:
+rule ont_2a_counts_to_sparse:
     input:
         COUNTS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/umitools_counts.tsv.gz",
     output:
@@ -316,7 +316,7 @@ rule ont_2a_genome_counts_to_sparse:
 
 
 # make anndata object with spatial coordinates
-rule ont_2a_genome_cache_h5ad_minimap2:
+rule ont_2a_cache_h5ad:
     input:
         BCS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/barcodes.tsv.gz",
         FEATS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/features.tsv.gz",
@@ -331,8 +331,8 @@ rule ont_2a_genome_cache_h5ad_minimap2:
         GTF_ID="gene_id",  # gtf attribute used to match var_names in adata
         FEAT_COL=0,  # column in features.tsv to use as var_names
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/cache_h5ad.log",
-        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/cache_h5ad.err",
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/cache_featureCounts_h5ad.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/cache_featureCounts_h5ad.err",
     threads: 1
     conda:
         f"{workflow.basedir}/envs/scanpy.yml"
@@ -358,7 +358,7 @@ rule ont_2a_genome_cache_h5ad_minimap2:
 
 
 # make Seurat object with spatial coordinates
-rule ont_2a_genome_cache_seurat_minimap2:
+rule ont_2a_cache_seurat:
     input:
         BCS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/barcodes.tsv.gz",
         FEATS="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/features.tsv.gz",
@@ -368,10 +368,10 @@ rule ont_2a_genome_cache_seurat_minimap2:
         SEURAT="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/raw/output.rds",
     params:
         FEAT_COL=1,
-        TRANSPOSE="False",
+        TRANSPOSE="True",
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/cache_seurat.log",
-        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/cache_seurat.err",
+        log="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/cache_featureCounts_seurat.log",
+        err="{OUTDIR}/{SAMPLE}/ont/minimap2/{RECIPE}/logs/cache_featureCounts_seurat.err",
     threads: 1
     conda:
         f"{workflow.basedir}/envs/seurat.yml"

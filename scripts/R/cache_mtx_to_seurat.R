@@ -104,9 +104,31 @@ main <-
 
     colnames(counts) <- barcode_names
 
+
     # Print the number of features and cells loaded
     cat(timestamp(), " - Number of features loaded: ", nrow(counts), "\n")
     cat(timestamp(), " - Number of cells loaded:    ", ncol(counts), "\n")
+
+    # --- QC METRICS ---
+    total_umis <- sum(counts)
+    genes_per_cell <- Matrix::colSums(counts > 0)
+    counts_per_cell <- Matrix::colSums(counts)
+    genes_per_feature <- Matrix::rowSums(counts > 0)
+    detected_features <- sum(Matrix::rowSums(counts) > 0)
+    detected_cells <- sum(Matrix::colSums(counts) > 0)
+
+    cat(timestamp(), " - Total number of UMIs:     ", format(total_umis, big.mark = ","), "\n")
+    cat(timestamp(), " - Median genes per cell:    ", median(genes_per_cell), "\n")
+    cat(timestamp(), " - Median UMIs per cell:     ", median(counts_per_cell), "\n")
+    cat(timestamp(), " - Features detected (>0):   ", detected_features, " / ", nrow(counts), "\n")
+    cat(timestamp(), " - Cells detected (>0):      ", detected_cells, " / ", ncol(counts), "\n")
+    cat(timestamp(), " - Max UMIs in a cell:       ", max(counts_per_cell), "\n")
+    cat(timestamp(), " - Max genes in a cell:      ", max(genes_per_cell), "\n")
+    cat(timestamp(), " - Max cells per feature:    ", max(genes_per_feature), "\n")
+    cat(timestamp(), " - Min UMIs in a cell:       ", min(counts_per_cell), "\n")
+    cat(timestamp(), " - Min genes in a cell:      ", min(genes_per_cell), "\n")
+    cat(timestamp(), " - Min cells per feature:    ", min(genes_per_feature), "\n")
+    cat(timestamp(), " - Done QC metrics.\n\n")
 
     # Create Seurat object
     seurat_obj <- CreateSeuratObject(counts = counts)
