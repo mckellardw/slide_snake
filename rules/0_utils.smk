@@ -562,7 +562,12 @@ def get_whitelist(w, return_type=None, mode="STAR"):
                 whitelist = [f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_adapter.txt"]
             else:
                 whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist_adapter.txt"
-        elif "matchLinker" in w.RECIPE or "seeker" in w.RECIPE:
+        elif "hardTrim" in w.RECIPE:
+            if return_type == "list":
+                whitelist = [f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist.txt"]
+            else:
+                whitelist = f"{w.OUTDIR}/{w.SAMPLE}/bc/whitelist.txt"
+        elif "matchLinker" in w.RECIPE or "seeker_std" in w.RECIPE:
             # Use BC_concat=False for combinatorial barcode constructs (DBIT, microST, etc)
             if return_type == "list":
                 if RECIPE_SHEET["BC_concat"][w.RECIPE] and mode in ["STAR", "ILMN"]:
