@@ -33,10 +33,10 @@ Seeker data presents unique challenges due to barcode synthesis artifacts (indel
 |--------|----------|----------|
 | `seeker` | Fixed position extraction | High-quality barcode synthesis |
 | `seeker_hardTrim` | Hard trim + STARsolo correction | Moderate quality issues |
-| `seeker_MatchLinker` | Adapter-based extraction | **Recommended** - handles indels |
-| `seeker_MatchLinker_total` | Adapter-based + total RNA | Degraded samples |
+| `seeker_matchLinker` | Adapter-based extraction | **Recommended** - handles indels |
+| `seeker_matchLinker_total` | Adapter-based + total RNA | Degraded samples |
 
-**Adapter-Based Processing (`seeker_MatchLinker`):**
+**Adapter-Based Processing (`seeker_matchLinker`):**
 - Searches for adapter sequence with 2 mismatches allowed
 - Extracts barcodes/UMIs relative to adapter position
 - Handles synthesis indels effectively
@@ -247,8 +247,8 @@ the reads into a structure that can be handled by this format.
 Because of read quality issues (indels, low Q scores, etc.) in the SlideSeq barcode read, I have added a few custom strategies for handling these data:
 - `seeker` - No hard trimming, and use the base positions for barcode/UMI (*Note*, this recipe doesn't work well w/ Curio Seeker b/c of in/del issues w/ the barcode synthesis)
 - `seeker_hardTrim` - Hard trim the adapter read positions in R1, and use the best barcode correction algorithms in STARsolo
-- `seeker_MatchLinker` - Match the adapter sequence on R1 (w/ 2 mismatches allowed) and infer barcodes/UMIs from that position (*Note* best performer w/ Curio data)
-- `seeker_MatchLinker_total` - Same as `seeker_noTrimMatchLinker`, but with additional STAR parameters for total RNAseq alignment (more multimappers, looser alignment)
+- `seeker_matchLinker` - Match the adapter sequence on R1 (w/ 2 mismatches allowed) and infer barcodes/UMIs from that position (*Note* best performer w/ Curio data)
+- `seeker_matchLinker_total` - Same as `seeker_matchLinker`, but with additional STAR parameters for total RNAseq alignment (more multimappers, looser alignment)
 - `seeker_std_rRNA-bwa` - Standard alignment with rRNA filtering using BWA
 - `seeker_std_ribodetector` - Standard alignment with rRNA filtering using RiboDetector
 - `seeker_std_total_rRNA-bwa` - Total RNA alignment with rRNA filtering using BWA
