@@ -22,6 +22,7 @@ set-threads:
   ilmn_3a_compress_STAR_outs: 16
   ilmn_3d_qualimapQC_STAR: 8
   ilmn_4a_kbpython_std: 16
+  ilmn_4a_kbpython_std_compress_outs: 1
   ilmn_5a_miRge3_pseudobulk: 4
   ilmn_3a_cache_seurat_STAR: 1
   ilmn_3a_cache_h5ad_STAR: 1
