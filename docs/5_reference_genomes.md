@@ -14,30 +14,7 @@ High-quality reference genomes and transcriptomes are essential for accurate spa
 
 ## Quick Start Options
 
-### Option 1: Use `ref_snake` (Recommended)
-
-`ref_snake` is a companion Snakemake pipeline that automates reference preparation:
-
-```bash
-# Clone ref_snake
-git clone https://github.com/mckellardw/ref_snake.git
-cd ref_snake
-
-# Configure for your species
-# Edit config.yaml with desired genome versions
-
-# Run reference preparation
-snakemake -j 8 --use-conda
-```
-
-**Advantages:**
-- Automated download and processing
-- Version control for reproducibility
-- Handles multiple species simultaneously
-- Generates all required file types
-- Includes quality control steps
-
-### Option 2: Manual Preparation
+### Option 1: Manual Preparation (Recommended)
 
 For custom genomes or specific requirements, build references manually following the instructions below.
 
@@ -215,6 +192,30 @@ For BWA-based filtering:
 # Build BWA index
 bwa index rRNA_combined.fa
 ```
+
+### Option 2: Use `ref_snake` 
+
+`ref_snake` is a companion Snakemake pipeline that automates reference preparation:
+
+```bash
+# Clone ref_snake
+git clone https://github.com/mckellardw/ref_snake.git
+cd ref_snake
+
+# Configure for your species
+# Edit config.yaml with desired genome versions
+
+# Run reference preparation
+snakemake -j 8 --use-conda
+```
+
+**Advantages:**
+- Automated download and processing
+- Version control for reproducibility
+- Handles multiple species simultaneously
+- Generates all required file types
+- Includes quality control steps
+
 
 ## Platform-Specific Resources
 
