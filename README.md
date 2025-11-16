@@ -2,6 +2,8 @@
 ![slide_snake](images/slide_snake_logo.png)
 ## Flexible processing for spatial RNA-sequencing data
 
+Check out the full documentation [here](https://slide-snake.readthedocs.io/en/latest/).  
+
 `slide_snake` is a snakemake workflow for preprocessing, alignment, and quantification of spatial RNA-sequencing data, designed to work for any commercial or custom platform. 
 
 ## Getting started
