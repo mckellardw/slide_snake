@@ -156,9 +156,7 @@ rule ont_1b_cutadapt_internalTrimming:
         RECIPE=lambda w: get_recipes(w, mode="ONT"),
         R1_LENGTH=lambda w: min(
             get_recipe_info(w, info_col="R1_finalLength", mode="list")
-        )
-        + len(params.R1),
-        # Add R1 primer length for ONT,
+        ) + 22, # Add R1 primer length for ONT,        
         ADAPTER=lambda w: get_recipe_info(w, "internal_adapter", mode="ONT"),
     resources:
         mem="16G",
