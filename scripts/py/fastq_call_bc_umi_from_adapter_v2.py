@@ -4,6 +4,9 @@ import parasail
 import time
 import os
 import sys
+import tempfile
+import multiprocessing
+import shutil
 
 # Short-read usage:
 ## Visium
@@ -458,77 +461,77 @@ if __name__ == "__main__":
 
     # Run main function ------
     if args.threads > 1:
-        # # Source: https://superfastpython.com/multiprocessing-pool-for-loop/
-        # import multiprocessing
+        print_log(f"Running with {args.threads} threads...")
 
-        # # Split .fq file into {n_core} chunks
-        # os.system(
-        #     # Custom script to split .fq w/ sed in parallel
-        #     f"""
-        #     python scripts/py/splitNfqs.py {args.fq_in} {args.threads} {args.threads}
-        #     """
-        # )
+        # Create temp dir for chunk files
+        tmp_dir = tempfile.mkdtemp(prefix="bc_calling_", dir=os.path.dirname(args.tsv_out) or ".")
 
-        # # Trim each chunked file, in parallel
-        # chunked_fqs_in = [
-        #     f"{args.fq_in.strip('.fq.gz')}_{str(n).zfill(3)}.fq"
-        #     for n in list(range(1, args.threads + 1))
-        # ]
+        try:
+            # Split FASTQ into chunks
+            chunk_fqs = []
+            chunk_tsvs = []
+            chunk_writers = []
+            for i in range(args.threads):
+                chunk_fq = os.path.join(tmp_dir, f"chunk_{i:03d}.fq")
+                chunk_tsv = os.path.join(tmp_dir, f"chunk_{i:03d}.tsv")
+                chunk_fqs.append(chunk_fq)
+                chunk_tsvs.append(chunk_tsv)
+                chunk_writers.append(open(chunk_fq, "w"))
 
-        # # multiprocessing
-        # items = [
-        #     (
-        #         f"{args.fq_in.strip('.fq.gz')}_{str(n).zfill(3)}.fq",
-        #         args.tsv_out,
-        #         args.bc_adapters,
-        #         args.bc_positions,
-        #         args.bc_lengths,
-        #         args.bc_offsets,
-        #         args.bc_min_adapter_match,
-        #         args.umi_adapters,
-        #         args.umi_positions,
-        #         args.umi_lengths,
-        #         args.umi_offsets,
-        #         args.umi_min_adapter_match,
-        #     )
-        #     for n in list(range(1, args.threads + 1))
-        # ]
+            # Distribute reads round-robin across chunk files
+            print_log("Splitting FASTQ into chunks...")
+            read_idx = 0
+            with pysam.FastxFile(args.fq_in) as fastq:
+                for read in fastq:
+                    writer = chunk_writers[read_idx % args.threads]
+                    writer.write(f"@{read.name}\n{read.sequence}\n+\n{read.quality}\n")
+                    read_idx += 1
+            for w in chunk_writers:
+                w.close()
+            print_log(f"Split {read_idx:,} reads into {args.threads} chunks.")
 
-        # with multiprocessing.Pool(args.threads) as pool:
-        #     multi_out = pool.starmap(main, items)
+            # Process chunks in parallel
+            items = [
+                (
+                    chunk_fqs[i],
+                    chunk_tsvs[i],
+                    args.bc_adapters,
+                    args.bc_positions,
+                    args.bc_lengths,
+                    args.bc_offsets,
+                    args.bc_min_adapter_match,
+                    args.umi_adapters,
+                    args.umi_positions,
+                    args.umi_lengths,
+                    args.umi_offsets,
+                    args.umi_min_adapter_match,
+                )
+                for i in range(args.threads)
+            ]
 
-        # if os.path.isfile(args.fq_in.replace(".fq.gz", "_R2.fq.gz")):
-        #     os.system(
-        #         f"""
-        #         rm {' '.join(chunked_fqs_in)}
-        #         """
-        #     )
+            with multiprocessing.Pool(args.threads) as pool:
+                results = pool.starmap(main, items)
 
-        # TODO - need to split main() into multiple functions, to simplify writing output (without adding huge MEM overhead of returning entire output...)
+            # Aggregate stats
+            read_count = sum(r[0] for r in results)
+            bc_match_count = sum(r[1] for r in results)
+            bc_missing_count = sum(r[2] for r in results)
+            no_bc_count = sum(r[3] for r in results)
+            umi_match_count = sum(r[4] for r in results)
+            umi_missing_count = sum(r[5] for r in results)
+            no_umi_count = sum(r[6] for r in results)
 
-        print(f"Multithreading not yet supported, running on 1 thread...")
-        (
-            read_count,
-            bc_match_count,
-            bc_missing_count,
-            no_bc_count,
-            umi_match_count,
-            umi_missing_count,
-            no_umi_count,
-        ) = main(
-            args.fq_in,
-            args.tsv_out,
-            args.bc_adapters,
-            args.bc_positions,
-            args.bc_lengths,
-            args.bc_offsets,
-            args.bc_min_adapter_match,
-            args.umi_adapters,
-            args.umi_positions,
-            args.umi_lengths,
-            args.umi_offsets,
-            args.umi_min_adapter_match,
-        )
+            # Merge chunk TSVs into final output
+            print_log("Merging chunk outputs...")
+            with open(args.tsv_out, "w") as f_out:
+                for chunk_tsv in chunk_tsvs:
+                    if os.path.isfile(chunk_tsv):
+                        with open(chunk_tsv, "r") as f_in:
+                            shutil.copyfileobj(f_in, f_out)
+        finally:
+            # Clean up temp dir
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+
     elif args.threads == 1:
         (
             read_count,

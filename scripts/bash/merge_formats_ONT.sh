@@ -160,7 +160,12 @@ elif [[ $(echo $ONT_reads | wc -w) -eq 1 && $ONT_reads =~ "*" ]]; then
                 case $F in
                     *.bam|*.cram)
                         printf "Adding %s to output bam\n" "$F"
-                        samtools cat -o "$F_base.bam" "$F_base.bam" "$F"
+                        if [[ -f "$F_base.bam" ]]; then
+                            samtools cat -o "$F_base.bam.tmp" "$F_base.bam" "$F"
+                            mv "$F_base.bam.tmp" "$F_base.bam"
+                        else
+                            cp "$F" "$F_base.bam"
+                        fi
                         ;;
                     *.sam)
                         samtools view -bS "$F" >> "$F_base.bam"
@@ -209,7 +214,12 @@ else
                     *.bam|*.cram)
                         if [[ -f $F ]]; then
                             printf "Adding %s to output bam\n" "$F"
-                            samtools cat -o "$F_base.bam" "$F_base.bam" "$F"
+                            if [[ -f "$F_base.bam" ]]; then
+                            samtools cat -o "$F_base.bam.tmp" "$F_base.bam" "$F"
+                            mv "$F_base.bam.tmp" "$F_base.bam"
+                        else
+                            cp "$F" "$F_base.bam"
+                        fi
                         elif [[ $F == *.sam ]]; then
                             samtools view -bS "$F" >> "$F_base.bam"
                         else

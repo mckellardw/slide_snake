@@ -23,7 +23,29 @@
       "Bash(grep -B 2 \"threads: config\\\\[\" rules/short_read/*.smk)",
       "Bash(grep -n \"2> \" rules/short_read/*.smk)",
       "Bash(grep -n build_abs_path /mnt/c/Users/david/Documents/Github/slide_snake/rules/*.smk /mnt/c/Users/david/Documents/Github/slide_snake/rules/**/*.smk)",
-      "Bash(grep -n \"piping\\\\|pipe\\\\|| seqkit\\\\|| samtools\\\\|| bedtools\" rules/short_read/*.smk)"
+      "Bash(grep -n \"piping\\\\|pipe\\\\|| seqkit\\\\|| samtools\\\\|| bedtools\" rules/short_read/*.smk)",
+      "Bash(grep -r \"output:\" /mnt/c/Users/david/Documents/Github/slide_snake/rules/short_read/*.smk)",
+      "Bash(ls -la /mnt/c/Users/david/Documents/Github/slide_snake/data/test_*/)",
+      "Bash(grep -n '\\\\${' /mnt/c/Users/david/Documents/Github/slide_snake/scripts/bash/bam_dedup.sh)",
+      "Bash(grep -n \"bam_dedupByChr\" /mnt/c/Users/david/Documents/Github/slide_snake/scripts/bash/*)",
+      "Bash(grep -n \"memory\\\\|Memory\\\\|RAM\\\\|load\\\\|read.*file\\\\|writelines\\\\|append\" /mnt/c/Users/david/Documents/Github/slide_snake/scripts/py/*.py)",
+      "Bash(for f:*)",
+      "Bash(do printf:*)",
+      "Read(//mnt/c/Users/david/Documents/Github/slide_snake/**)",
+      "Bash(done)",
+      "Bash(git config:*)",
+      "Bash(xxd)",
+      "Bash(apt list:*)",
+      "Bash(dpkg -l dos2unix)",
+      "Bash(python3 -c \":*)",
+      "Bash(grep -cP '\\\\r$')",
+      "Bash(git diff:*)",
+      "Bash(find /mnt/c/Users/david/Documents/Github/slide_snake -name *logo* -o -name *slide_snake*png -o -name *slide_snake*svg)",
+      "Bash(grep -cP '\\\\r$' /mnt/c/Users/david/Documents/Github/slide_snake/docs/example_sample_sheet.csv)",
+      "Bash(grep -cP '\\\\r$' /mnt/c/Users/david/Documents/Github/slide_snake/REVIEW.md)"
+    ],
+    "additionalDirectories": [
+      "/tmp"
     ]
   }
 }

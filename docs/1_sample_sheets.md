@@ -34,8 +34,9 @@ The sample sheet is a CSV file that contains all the necessary information about
 
 | Column | Description | Example |
 |--------|-------------|---------|
-| `whitelist` | Path to barcode whitelist file | `resources/visium_whitelist/whitelist.txt` |
+| `ONT` | Path to Oxford Nanopore FASTQ file(s) | `data/ont_reads.fq.gz` |
 | `recipe_ONT` | Recipe(s) for Oxford Nanopore data | `visium_ont` |
+| `BC_map` | Path to barcode whitelist/map file | `resources/visium_whitelist/visium-v1_coordinates.txt` |
 
 ### Reference Genome Columns
 
@@ -46,13 +47,13 @@ The sample sheet is a CSV file that contains all the necessary information about
 | `kb_t2g` | Transcript-to-gene mapping | Kallisto alignment | `/path/to/t2g.txt` |
 | `genome_fa` | Reference genome FASTA | Various analyses | `/path/to/genome.fa` |
 | `genes_gtf` | Gene annotation GTF file | Gene quantification | `/path/to/genes.gtf` |
-| `cDNA_fa` | Transcript sequences FASTA | ONT transcriptome alignment | `/path/to/transcripts.fa` |
+| `cdna_fa` | Transcript sequences FASTA | ONT transcriptome alignment | `/path/to/transcripts.fa` |
 
 ### Quality Control Columns
 
 | Column | Description | Example |
 |--------|-------------|---------|
-| `rRNA_ref` | rRNA reference for filtering | `/path/to/rRNA_ref.fa` |
+| `bwa_rRNA_ref` | rRNA BWA reference for filtering | `/path/to/rRNA_ref.fa.gz` |
 | `rRNA_gtf` | rRNA annotation GTF file | `/path/to/rRNA.gtf` |
 
 ## File Path Specifications
@@ -111,26 +112,26 @@ mouse,/path/to/GRCm39_STAR/,/path/to/gencode.vM36.gtf,/path/to/mouse.idx,/path/t
 
 ### 10x Visium
 ```text
-sampleID,fastq_R1,fastq_R2,recipe,whitelist,species,STAR_ref,genes_gtf,kb_idx,kb_t2g
+sampleID,fastq_R1,fastq_R2,recipe,BC_map,species,STAR_ref,genes_gtf,kb_idx,kb_t2g
 visium_sample,data/visium_R1.fq.gz,data/visium_R2.fq.gz,visium,resources/visium_whitelist/whitelist.txt,human,/ref/GRCh38_STAR,/ref/gencode.v47.gtf,/ref/human.idx,/ref/human_t2g.txt
 ```
 
 ### Curio Seeker
 ```text
-sampleID,fastq_R1,fastq_R2,recipe,whitelist,species,STAR_ref,genes_gtf,kb_idx,kb_t2g
+sampleID,fastq_R1,fastq_R2,recipe,BC_map,species,STAR_ref,genes_gtf,kb_idx,kb_t2g
 seeker_sample,data/seeker_R1.fq.gz,data/seeker_R2.fq.gz,seeker_MatchLinker,data/barcodes.txt,mouse,/ref/GRCm39_STAR,/ref/gencode.vM36.gtf,/ref/mouse.idx,/ref/mouse_t2g.txt
 ```
 
 ### DBIT-seq
 ```text
-sampleID,fastq_R1,fastq_R2,recipe,whitelist,species,STAR_ref,genes_gtf,kb_idx,kb_t2g
+sampleID,fastq_R1,fastq_R2,recipe,BC_map,species,STAR_ref,genes_gtf,kb_idx,kb_t2g
 dbit_sample,data/dbit_R1.fq.gz,data/dbit_R2.fq.gz,dbit-pretrim,resources/dbit_whitelist/Spatial_barcode_100x100.txt,human,/ref/GRCh38_STAR,/ref/gencode.v47.gtf,/ref/human.idx,/ref/human_t2g.txt
 ```
 
 ### Oxford Nanopore (ONT)
 ```text
-sampleID,fastq_R1,fastq_R2,recipe,recipe_ONT,whitelist,species,cDNA_fa,genes_gtf
-ont_sample,data/ont_reads.fq.gz,,visium,visium_ont,resources/visium_whitelist/whitelist.txt,human,/ref/transcripts.fa,/ref/gencode.v47.gtf
+sampleID,fastq_R1,fastq_R2,recipe,ONT,recipe_ONT,BC_map,species,cdna_fa,genes_gtf
+ont_sample,data/ont_reads.fq.gz,,visium,data/ont_reads.fq.gz,visium_ont,resources/visium_whitelist/visium-v1_coordinates.txt,human,/ref/transcripts.fa,/ref/gencode.v47.gtf
 ```
 
 ## Advanced Configuration
@@ -141,8 +142,8 @@ Create custom recipes by modifying `resources/recipe_sheet.csv`. See [Recipes Do
 ### rRNA Filtering
 Enable ribosomal RNA filtering:
 ```text
-rRNA_ref,rRNA_gtf
-/path/to/rRNA_BWA_index,/path/to/rRNA_annotations.gtf
+bwa_rRNA_ref,rRNA_gtf
+/path/to/rRNA_BWA_index/genome.fa.gz,/path/to/rRNA_annotations.gtf
 ```
 
 ### Quality Control Parameters
@@ -190,9 +191,9 @@ snakemake -n out/{SAMPLE_ID}/illumina/STAR/{RECIPE}/counts_filtered/
 
 ### Complete Example
 ```text
-sampleID,fastq_R1,fastq_R2,recipe,recipe_ONT,whitelist,species,STAR_ref,genes_gtf,kb_idx,kb_t2g,rRNA_ref,rRNA_gtf,genome_fa,cDNA_fa
-test_visium,data/visium_R1.fq.gz,data/visium_R2.fq.gz,visium,,resources/visium_whitelist/whitelist.txt,human,/ref/GRCh38_STAR,/ref/gencode.v47.gtf,/ref/human.idx,/ref/human_t2g.txt,/ref/rRNA_BWA,/ref/rRNA.gtf,/ref/GRCh38.fa,/ref/transcripts.fa
-test_seeker,data/seeker_R1.fq.gz,data/seeker_R2.fq.gz,"seeker_MatchLinker seeker_std",,data/seeker_barcodes.txt,mouse,/ref/GRCm39_STAR,/ref/gencode.vM36.gtf,/ref/mouse.idx,/ref/mouse_t2g.txt,/ref/rRNA_BWA,/ref/rRNA.gtf,/ref/GRCm39.fa,/ref/mouse_transcripts.fa
+sampleID,fastq_R1,fastq_R2,recipe,ONT,recipe_ONT,BC_map,species,STAR_ref,genes_gtf,kb_idx,kb_t2g,bwa_rRNA_ref,rRNA_gtf,genome_fa,cdna_fa
+test_visium,data/visium_R1.fq.gz,data/visium_R2.fq.gz,visium,,,resources/visium_whitelist/visium-v1_coordinates.txt,human,/ref/GRCh38_STAR,/ref/gencode.v47.gtf,/ref/human.idx,/ref/human_t2g.txt,/ref/rRNA_BWA/genome.fa.gz,/ref/rRNA.gtf,/ref/GRCh38.fa,/ref/transcripts.fa
+test_seeker,data/seeker_R1.fq.gz,data/seeker_R2.fq.gz,"seeker_MatchLinker seeker_std",,,data/seeker_barcodes.txt,mouse,/ref/GRCm39_STAR,/ref/gencode.vM36.gtf,/ref/mouse.idx,/ref/mouse_t2g.txt,/ref/rRNA_BWA/genome.fa.gz,/ref/rRNA.gtf,/ref/GRCm39.fa,/ref/mouse_transcripts.fa
 ```
 
 This comprehensive sample sheet demonstrates multi-recipe analysis and complete reference specification.
