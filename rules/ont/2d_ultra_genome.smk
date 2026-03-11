@@ -352,7 +352,6 @@ rule ont_2d_ultra_cache_h5ad:
             --remove_zero_features \
             --plot_qc \
             --qc_plot_file {output.QC_PLOTS} \
-            --qc_plot_file {output.QC_PLOTS} \
             --gtf_file {params.GTF} \
             --gtf_feature_type {params.GTF_FEATURE_TYPE} \
             --gtf_id {params.GTF_ID} \

@@ -9,29 +9,33 @@ import gzip
 def add_sequence_as_tag(
     bam_file, fastq_file, output_bam_file, sequence_tag="BC", quality_tag="BY"
 ):
+    # Build a dictionary of FASTQ read IDs -> (sequence, quality)
+    fastq_dict = {}
+    if fastq_file.endswith(".gz"):
+        fq_handle = gzip.open(fastq_file, "rt")
+    else:
+        fq_handle = open(fastq_file, "r")
+
+    with fq_handle:
+        while True:
+            header = fq_handle.readline().strip()
+            if not header:
+                break
+            sequence = fq_handle.readline().strip()
+            fq_handle.readline()  # skip "+"
+            quality_scores = fq_handle.readline().strip()
+            read_id = header.split(" ")[0][1:]
+            fastq_dict[read_id] = (sequence, quality_scores)
+
     bam = pysam.AlignmentFile(bam_file, "rb")
     new_bam = pysam.AlignmentFile(output_bam_file, "wb", template=bam)
 
-    # Check if the FASTQ file is gzipped
-    if fastq_file.endswith(".gz"):
-        # Open the gzipped FASTQ file
-        with gzip.open(fastq_file, "rt") as fastq:
-            fastq_lines = fastq.readlines()
-    else:
-        # Open the FASTQ file normally
-        with open(fastq_file, "r") as fastq:
-            fastq_lines = fastq.readlines()
-
-    for i in range(0, len(fastq_lines), 4):
-        read_id = fastq_lines[i].strip().split(" ")[0][1:]
-        sequence = fastq_lines[i + 1].strip()
-        quality_scores = fastq_lines[i + 3].strip()
-
-        for read in bam.fetch():
-            if read.query_name == read_id:
-                read.set_tag(sequence_tag, sequence, "Z")
-                read.set_tag(quality_tag, quality_scores, "Z")
-                new_bam.write(read)
+    for read in bam.fetch():
+        if read.query_name in fastq_dict:
+            sequence, quality_scores = fastq_dict[read.query_name]
+            read.set_tag(sequence_tag, sequence, "Z")
+            read.set_tag(quality_tag, quality_scores, "Z")
+            new_bam.write(read)
 
     bam.close()
     new_bam.close()

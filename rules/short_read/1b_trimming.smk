@@ -138,7 +138,7 @@ rule ilmn_1b_R1_hardTrimming:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R1.fq.gz",
     output:
-        R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_hardTrim_R1.fq.gz",  #temp()
+        R1_FQ=temp("{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_hardTrim_R1.fq.gz"),
     params:
         CB1end=8,  #TODO- move to config? or recipe_sheet?
         CB2start=27,
@@ -173,7 +173,7 @@ rule ilmn_1b_R1_internalTrimming:
     input:
         R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_R1.fq.gz",
     output:
-        R1_FQ="{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_internalTrim_R1.fq.gz",  #temp()
+        R1_FQ=temp("{OUTDIR}/{SAMPLE}/short_read/tmp/twiceCut_internalTrim_R1.fq.gz"),
         # INTERNAL_TRIM_QC_LOG="{OUTDIR}/{SAMPLE}short_read/logs/internal_trim_qc.txt",
     params:
         # CB1end=8, 

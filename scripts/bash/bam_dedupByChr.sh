@@ -182,7 +182,7 @@ samtools merge -@ ${CORE} ${OUTBAM} ${TMPDIR}/*.dedup.bam
 
 # Clean up temporary files
 if ! rm -r ${TMPDIR}; then
-    log_message "Warning: Failed to clean up temporary directory: ${TMPDIR}" >>2
+    log_message "Warning: Failed to clean up temporary directory: ${TMPDIR}" >&2
 fi
 
 echo ""

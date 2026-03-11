@@ -80,8 +80,8 @@ load_data <- function(data_file, n_max = Inf) {
                  n_max = n_max)
   
   # Downsample
-  if (n_max < nrow(df)) {
-    df <- df[sample(nrow(df), n_max),]
+  if (nrow(df) > n_max) {
+    df <- df[sample(nrow(df), min(n_max, nrow(df))),]
   }
   
   return(df)

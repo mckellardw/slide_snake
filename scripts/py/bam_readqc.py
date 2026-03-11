@@ -33,13 +33,13 @@ def calculate_metrics_bam(bam_file, tags, chunk_start, chunk_size=10000):
                 gc_percent = (gc_count / read_length) * 100
                 first_base = read.query_sequence[0]
                 last_base = read.query_sequence[-1]
-                homopolymer_lengths = [
-                    len(list(g)) for k, g in groupby(read.query_sequence)
+                homopolymer_runs = [
+                    (k, len(list(g))) for k, g in groupby(read.query_sequence)
                 ]
-                longest_homopolymer = max(homopolymer_lengths)
-                homopolymer_base = read.query_sequence[
-                    homopolymer_lengths.index(longest_homopolymer)
-                ]
+                longest_homopolymer = max(run_len for _, run_len in homopolymer_runs)
+                homopolymer_base = next(
+                    base for base, run_len in homopolymer_runs if run_len == longest_homopolymer
+                )
                 alignment_status = {
                     "is_unmapped": read.is_unmapped,
                     "is_proper_pair": read.is_proper_pair,
@@ -50,7 +50,7 @@ def calculate_metrics_bam(bam_file, tags, chunk_start, chunk_size=10000):
                 for tag in tags:
                     try:
                         tag_values[tag] = read.get_tag(tag)
-                    except:
+                    except KeyError:
                         tag_values[tag] = None
 
                 metrics.append(

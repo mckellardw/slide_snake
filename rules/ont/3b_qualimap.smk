@@ -40,9 +40,9 @@ rule ont_3b_qualimap:
 # Convert the unfortunately formatted qc results from qualimap into a readable format
 rule ont_3b_qualimap_readqc_summary2csv:
     input:
-        TXT="{OUTDIR}/{SAMPLE}/ont/qualimap/{TOOL}/rnaseq_qc_results.txt",
+        TXT="{OUTDIR}/{SAMPLE}/ont/qualimap/{ALIGNER}/{RECIPE}/rnaseq/rnaseq_qc_results.txt",
     output:
-        CSV="{OUTDIR}/{SAMPLE}/ont/qualimap/{TOOL}/rnaseq_qc_results.csv",
+        CSV="{OUTDIR}/{SAMPLE}/ont/qualimap/{ALIGNER}/{RECIPE}/rnaseq/rnaseq_qc_results.csv",
     resources:
         mem="8G",
     threads: 1
@@ -87,9 +87,9 @@ rule ont_3b_qualimap_bamqc:
 # Convert the unfortunately formatted qc results from qualimap into a readable format
 rule ont_3b_qualimap_bamqc_summary2csv:
     input:
-        TXT="{OUTDIR}/{SAMPLE}/ont/qualimap/{TOOL}/genome_results.txt",
+        TXT="{OUTDIR}/{SAMPLE}/ont/qualimap/{ALIGNER}/{RECIPE}/bamqc/genome_results.txt",
     output:
-        CSV="{OUTDIR}/{SAMPLE}/ont/qualimap/{TOOL}/genome_results.csv",
+        CSV="{OUTDIR}/{SAMPLE}/ont/qualimap/{ALIGNER}/{RECIPE}/bamqc/genome_results.csv",
     resources:
         mem="8G",
     threads: 1

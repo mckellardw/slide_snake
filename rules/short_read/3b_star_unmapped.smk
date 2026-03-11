@@ -20,9 +20,10 @@ rule ilmn_3b_fastqc_unmapped:
     conda:
         f"{workflow.basedir}/envs/fastqc.yml"
     shell:
-        """        
-        mv {input.UNMAPPED1} {input.UNMAPPED2}.fq
+        """
+        mv {input.UNMAPPED1} {input.UNMAPPED1}.fq.tmp
         mv {input.UNMAPPED2} {input.UNMAPPED1}.fq
+        mv {input.UNMAPPED1}.fq.tmp {input.UNMAPPED2}.fq
 
         pigz -p{threads} -f {input.UNMAPPED1}.fq {input.UNMAPPED2}.fq
 

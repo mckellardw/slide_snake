@@ -163,7 +163,7 @@ rule ilmn_2a_bwa_rRNA_filter_R1:
         f"{workflow.basedir}/envs/seqkit.yml"
     shell:
         """
-        zcat {input.R1_FQ} | seqkit grep -f {input.NORIBO_LIST} -o {output.R1_FQ_NORIBO}
+        zcat {input.R1_FQ} | seqkit grep --threads {threads} -f {input.NORIBO_LIST} -o {output.R1_FQ_NORIBO}
         """
 
 
@@ -181,7 +181,7 @@ rule ilmn_2a_bwa_rRNA_filter_trimmed_R1:
         f"{workflow.basedir}/envs/seqkit.yml"
     shell:
         """
-        zcat {input.R1_FQ} | seqkit grep -f {input.NORIBO_LIST} -o {output.R1_FQ_NORIBO}
+        zcat {input.R1_FQ} | seqkit grep --threads {threads} -f {input.NORIBO_LIST} -o {output.R1_FQ_NORIBO}
         """
 
 

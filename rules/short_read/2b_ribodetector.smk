@@ -62,12 +62,12 @@ rule ilmn_2b_ribodetector_filter_R1:
         R1_FQ_NORIBO="{OUTDIR}/{SAMPLE}/short_read/rRNA/ribodetector/no_rRNA_R1.fq",
     resources:
         mem="32G",
-    threads: 1
+    threads: config["CORES"]
     conda:
         f"{workflow.basedir}/envs/seqkit.yml"
     shell:
         """
-        zcat {input.R1_FQ} | seqkit grep -f {input.NORIBO_LIST} -o {output.R1_FQ_NORIBO}
+        zcat {input.R1_FQ} | seqkit grep --threads {threads} -f {input.NORIBO_LIST} -o {output.R1_FQ_NORIBO}
         """
 
 
@@ -79,12 +79,12 @@ rule ilmn_2b_ribodetector_filter_trimmed_R1:
         R1_FQ_NORIBO="{OUTDIR}/{SAMPLE}/short_read/rRNA/ribodetector/no_rRNA_{TRIM}_R1.fq",
     resources:
         mem="32G",
-    threads: 1
+    threads: config["CORES"]
     conda:
         f"{workflow.basedir}/envs/seqkit.yml"
     shell:
         """
-        zcat {input.R1_FQ} | seqkit grep -f {input.NORIBO_LIST} -o {output.R1_FQ_NORIBO}
+        zcat {input.R1_FQ} | seqkit grep --threads {threads} -f {input.NORIBO_LIST} -o {output.R1_FQ_NORIBO}
         """
 
 

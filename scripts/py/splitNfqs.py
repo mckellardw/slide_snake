@@ -10,24 +10,27 @@
 
 # imports
 import sys
-import os
-
-# import subprocess
+import subprocess
 
 
 # Function to extract out a section of the fastq file
 def extractReads(fq_in, fq_out, start, stop):
-    os.system(
-        f"""
-        zcat {fq_in} | sed -n '{start},{stop}p' > {fq_out}
-        """
+    subprocess.run(
+        f"zcat {fq_in} | sed -n '{start},{stop}p' > {fq_out}",
+        shell=True,
+        check=True,
     )
 
 
 # Count # of lines
 def countLines(filename):
-    with os.popen("zcat " + filename + "| wc -l") as f:
-        return int(f.read().split()[0])
+    result = subprocess.run(
+        ["bash", "-c", f"zcat '{filename}' | wc -l"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return int(result.stdout.strip().split()[0])
 
 
 # Get arguments
@@ -37,7 +40,7 @@ n_cores = int(sys.argv[3])  # Number of cores to parallelize with
 
 try:  # Optional: number of total lines in fastq file (n_reads*4)
     n_total_lines = int(sys.argv[5])
-except:
+except (IndexError, ValueError):
     n_total_lines = None
 
 # Argument checks

@@ -114,11 +114,11 @@ def calculate_metrics(fastq_file, start, chunk_size=100000):
                         gc_percent = round(gc_count * 100 / len(seq), 2)
                         purine_count = seq.count("G") + seq.count("A")
                         purine_percent = round(purine_count * 100 / len(seq), 2)
-                        homopolymer_lengths = [len(list(g)) for k, g in groupby(seq)]
-                        longest_homopolymer = max(homopolymer_lengths)
-                        homopolymer_base = seq[
-                            homopolymer_lengths.index(longest_homopolymer)
-                        ]
+                        homopolymer_runs = [(k, len(list(g))) for k, g in groupby(seq)]
+                        longest_homopolymer = max(run_len for _, run_len in homopolymer_runs)
+                        homopolymer_base = next(
+                            base for base, run_len in homopolymer_runs if run_len == longest_homopolymer
+                        )
                     else:
                         first_base = None
                         last_base = None

@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /mnt/c/Users/david/Documents/Github/slide_snake/scripts/py/*.py)",
+      "Bash(find /mnt/c/Users/david/Documents/Github/slide_snake -name *.yml -path */.github/* -o -name *.yaml -path */.github/*)",
+      "Bash(wc -l /mnt/c/Users/david/Documents/Github/slide_snake/rules/short_read/*.smk)",
+      "Bash(grep -n \"| grep\\\\|| awk\\\\|| sed\" rules/short_read/*.smk)",
+      "Bash(grep -n \"FQS\\\\[\" rules/ont/*.smk)",
+      "Bash(wc -l /mnt/c/Users/david/Documents/Github/slide_snake/scripts/awk/*.awk)",
+      "Bash(grep -n \"pigz\\\\|gzip\" rules/short_read/*.smk)",
+      "Bash(grep -n \"pigz -p{\" rules/ont/*.smk)",
+      "Bash(grep -n \"resources:\" rules/short_read/*.smk)",
+      "Bash(grep -n \"threads:\" rules/short_read/*.smk)",
+      "Bash(grep -n \"\\\\.bam\\\\.bai\\\\|\\\\.bai\" rules/ont/*.smk)",
+      "Bash(grep -n \"\\\\.split\\\\|\\\\.strip\\\\|\\\\.fq\\\\.gz\\\\|\\\\.fq\\\\.gz''''\" rules/short_read/*.smk)",
+      "Bash(grep -n \"set -euo pipefail\" /mnt/c/Users/david/Documents/Github/slide_snake/scripts/bash/*.sh)",
+      "Bash(python3 -m py_compile /mnt/c/Users/david/Documents/Github/slide_snake/Snakefile)",
+      "Bash(grep -n \"rule.*index\\\\|\\\\.bam.bai\" rules/ont/*.smk)",
+      "Bash(grep -n \"temp\\(\" rules/short_read/*.smk)",
+      "Bash(grep -n \"return\\\\s*$\" /mnt/c/Users/david/Documents/Github/slide_snake/rules/0_utils.smk)",
+      "Bash(grep -B 5 \"threads: 1\" rules/short_read/*.smk)",
+      "Bash(ls -la rules/0*.smk)",
+      "Bash(grep -B 2 \"threads: config\\\\[\" rules/short_read/*.smk)",
+      "Bash(grep -n \"2> \" rules/short_read/*.smk)",
+      "Bash(grep -n build_abs_path /mnt/c/Users/david/Documents/Github/slide_snake/rules/*.smk /mnt/c/Users/david/Documents/Github/slide_snake/rules/**/*.smk)",
+      "Bash(grep -n \"piping\\\\|pipe\\\\|| seqkit\\\\|| samtools\\\\|| bedtools\" rules/short_read/*.smk)"
+    ]
+  }
+}

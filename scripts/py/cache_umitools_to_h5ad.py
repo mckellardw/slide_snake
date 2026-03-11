@@ -70,7 +70,7 @@ def main(
 
     # Add the spatial coordinates to the AnnData object
     common_labels = intersect1d(adata.obs_names, spatial_data.index)
-    adata = adata[common_labels, :]
+    adata = adata[common_labels, :].copy()
     spatial_coord = spatial_data.loc[common_labels, ["x", "y"]]
 
     print(

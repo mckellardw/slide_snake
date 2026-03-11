@@ -35,8 +35,8 @@ rule ont_2c_kallisto_lr:
             --log {log.log} \
             --threads {threads} \
             --memlimit {resources.mem} \
-            --r1fq {input.FQS[0]} \
-            --r2fq {input.FQS[1]}
+            --r1fq {input.FQ[0]} \
+            --r2fq {input.FQ[1]}
         """
 
 
@@ -46,11 +46,11 @@ rule ont_2c_bus2mat_lr:
         TRANSCRIPTS="{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/transcripts.txt",
         ECMAP="{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/matrix.ec",
     output:
-        BCS="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/output.barcodes.txt",
-        GENES="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/output.genes.txt",
-        MAT="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/output.mtx",
+        BCS="{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/raw/output.barcodes.txt",
+        GENES="{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/raw/output.genes.txt",
+        MAT="{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/raw/output.mtx",
     log:
-        log="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/bustools_count.log",
+        log="{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/raw/bustools_count.log",
     threads: 1
     run:
         KB_T2G = T2G_DICT[wildcards.SAMPLE]
@@ -76,15 +76,15 @@ rule ont_2c_bus2mat_lr:
 # gzip the count matrix, etc.
 rule ont_2c_compress_kb_outs:
     input:
-        BCS="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/output.barcodes.txt",
-        GENES="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/output.genes.txt",
-        MAT="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/output.mtx",
+        BCS="{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/raw/output.barcodes.txt",
+        GENES="{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/raw/output.genes.txt",
+        MAT="{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/raw/output.mtx",
     output:
-        BCS="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/output.barcodes.txt.gz",
-        GENES="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/output.genes.txt.gz",
-        MAT="{OUTDIR}/{SAMPLE}/ont/kb_lr{RECIPE}/raw/output.mtx.gz",
+        BCS="{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/raw/output.barcodes.txt.gz",
+        GENES="{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/raw/output.genes.txt.gz",
+        MAT="{OUTDIR}/{SAMPLE}/ont/kb_lr/{RECIPE}/raw/output.mtx.gz",
     threads: config["CORES"]
     shell:
         """
-        pigz -p{resources.threads} {input.BCS} {input.GENES} {input.MAT}
+        pigz -p{threads} {input.BCS} {input.GENES} {input.MAT}
         """

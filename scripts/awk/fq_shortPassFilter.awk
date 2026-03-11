@@ -4,20 +4,17 @@
 # Usage:
 ## awk -v maxLength=650 -f fq_shortPassFilter.awk input.fastq > shortReads.fastq
 
-# TODO - fix this so that the extra "+" and read IDs are not also written...
-
-# Process FASTQ records
+# Process FASTQ records (4 lines per record)
 {
-    pos = NR % 4
-    if (pos == 2) {         # Sequence line
-        if (length($0) >= maxLength) {
-            print $0
-        }
-    } else if (pos == 4) {  # Quality line
-        if (length($0) >= maxLength) {
-            print $0
-        }
-    } else {                # Header and separator lines
-        print $0
+    header = $0
+    getline seq
+    getline sep
+    getline qual
+
+    if (length(seq) >= maxLength) {
+        print header
+        print seq
+        print sep
+        print qual
     }
 }

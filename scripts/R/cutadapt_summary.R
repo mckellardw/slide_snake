@@ -14,10 +14,8 @@ plot_cutadapt_summary <- function(json_file, out_file) {
     Reads = c("Total", "With Adapters"),
     Count = c(data$total_reads, data$reads_with_adapters)
  )
-for(name in names(data$adapters_read1rna_snake/scripts/R/readqc_summary.R))
-
  # Plot the summary
- p <- ggplot(summary_data, aes(x = Reads, y = Count)) +
+ p <- ggplot(summary_data_r1, aes(x = Reads, y = Count)) +
     geom_bar(stat = "identity", fill = "steelblue") +
     theme_minimal() +
     labs(title = "Cutadapt Summary", x = "Reads", y = "Count") +

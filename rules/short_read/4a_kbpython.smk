@@ -42,7 +42,7 @@ rule ilmn_4a_kbpython_std:
             -w {input.BC} \
             --cellranger \
             --overwrite \
-            -m 32G \
+            -m {resources.mem} \
             -t {threads} {params.KB_EXTRA} \
             {input.FQS[0]} {input.FQS[1]} \
         1> {log.log} \

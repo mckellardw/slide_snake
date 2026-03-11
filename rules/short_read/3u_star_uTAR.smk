@@ -65,6 +65,7 @@ rule ilmn_3u_filter_out_aTARs:
         f"{workflow.basedir}/envs/ucsc.yml"
     shell:
         """
+        set -eo pipefail
         gtfToGenePred {params.GTF} stdout \
         | genePredToBed stdin stdout \
         | bedtools intersect -v -a {input.BED} -b stdin \
@@ -82,6 +83,7 @@ rule ilmn_3u_bed_to_gtf:
         f"{workflow.basedir}/envs/ucsc.yml"
     shell:
         """
+        set -eo pipefail
         zcat {input.BEDGZ} \
         | bedToGenePred stdin stdout \
         | genePredToGtf file stdin {output.GTF}

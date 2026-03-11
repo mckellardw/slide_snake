@@ -686,7 +686,7 @@ def write_tmp_fastx_files_for_processing(n_batches, args):
     batch_id = 1
     with pysam.FastxFile(args.fq_in, "r") as f_in:
         for i, entry in enumerate(f_in):
-            if (i > 0) & (i % args.batch_size == 0):
+            if (i > 0) and (i % args.batch_size == 0):
                 batch_id += 1
             f_out = fastq_fs[batch_id]
             f_out.write("@" + str(entry.name) + "\n")

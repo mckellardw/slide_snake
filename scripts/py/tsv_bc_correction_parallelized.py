@@ -207,23 +207,25 @@ def split_file(file_path, temp_dir, num_chunks):
             pass
 
     # Open the original file and start writing the chunks
-    with open(file_path, "r") as infile:
-        chunk_index = 0
-        line_count = 0
-        for line in infile:
-            # Determine the output file name
-            output_file_name = chunk_file_names[chunk_index]
+    # Keep file handles open to avoid repeated open/close per line
+    chunk_handles = [open(fn, "w") for fn in chunk_file_names]
+    try:
+        with open(file_path, "r") as infile:
+            chunk_index = 0
+            line_count = 0
+            for line in infile:
+                chunk_handles[chunk_index].write(line)
+                line_count += 1
 
-            # Open the output file
-            with open(output_file_name, "a") as outfile:
-                outfile.write(line)
-
-            line_count += 1
-
-            # Check if we have reached the next chunk
-            if line_count >= chunk_size:
-                line_count = 0
-                chunk_index += 1
+                # Check if we have reached the next chunk
+                if line_count >= chunk_size:
+                    line_count = 0
+                    chunk_index += 1
+                    if chunk_index >= num_chunks:
+                        chunk_index = num_chunks - 1
+    finally:
+        for fh in chunk_handles:
+            fh.close()
 
     return chunk_file_names, n_bcs
 

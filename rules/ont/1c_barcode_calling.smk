@@ -31,7 +31,7 @@ rule ont_1c_fastq_call_bc_from_adapter:
         f"{workflow.basedir}/envs/parasail.yml"
     resources:
         mem="32G",
-    threads: 1
+    threads: config["CORES"]
     shell:
         """
         mkdir -p $(dirname {log.log})
@@ -62,7 +62,8 @@ rule ont_1c_filter_barcodes:
         TSV="{OUTDIR}/{SAMPLE}/ont/barcodes_umis/{RECIPE}/barcodes_filtered.tsv",
     shell:
         """
-        cat {input.TSV} | grep -vP "\t-" > {output.TSV}
+        set -eo pipefail
+        grep -vP "\t-" {input.TSV} > {output.TSV} || [[ $? -eq 1 ]]
         """
 
 

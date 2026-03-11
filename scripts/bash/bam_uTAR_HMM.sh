@@ -58,7 +58,7 @@ bedtools bamtobed -i ${INPUT_BAM} -split \
 
 log_with_timestamp "Splitting and sorting completed."
 
-zcat ${TMPDIR}/${PREFIX}_split.sorted.bed.gz | awk -v TMPDIR=${TMPDIR} '{print $0 >> TMPDIR"/"$1".bed"}'
+zcat ${TMPDIR}/${PREFIX}_split.sorted.bed.gz | awk -v TMPDIR="${TMPDIR}" '{print $0 >> TMPDIR"/"$1".bed"}'
 find ${TMPDIR} -name "*.bed" -size -1024k -delete
 wc ${TMPDIR}/chr*.bed -l > ${TMPDIR}/chr_read_count.txt
 
@@ -73,13 +73,16 @@ wait_a_second() {
 	done
 }
 
+pids=()
 for f in ${TMPDIR}/*.bed
 do
   wait_a_second
   log_with_timestamp "Processing chromosome file: ${f}"
   Rscript --vanilla scripts/R/uTAR_HMM.R --input_file=${f} --output_dir=${TMPDIR} 2>&1 & pids+=($!)
 done
-wait "${pids[@]}"
+if [ ${#pids[@]} -gt 0 ]; then
+  wait "${pids[@]}"
+fi
 
 log_with_timestamp "HMM processing completed for all chromosomes."
 

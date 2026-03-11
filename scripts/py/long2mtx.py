@@ -97,9 +97,9 @@ def main():
                 data_obs.append(obs)
                 data.append(float(val))
 
-    # Get unique var_names
-    var_names = list(set(data_vars))
-    obs_names = list(set(data_obs))
+    # Get unique var_names (preserve order)
+    var_names = list(dict.fromkeys(data_vars))
+    obs_names = list(dict.fromkeys(data_obs))
 
     if args.verbose:
         print(f"Found {len(var_names)} unique features")

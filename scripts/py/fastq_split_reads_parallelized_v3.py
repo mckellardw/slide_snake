@@ -3,6 +3,7 @@
 import argparse
 import pysam
 import os
+import subprocess
 import time
 import parasail
 import sys
@@ -190,7 +191,7 @@ def find_and_split_reads(
                     continue
 
                 # Scan for split sequence
-                scan_start = min(0, anchor_end)
+                scan_start = max(0, anchor_end)
                 scan_end = max(len(read.sequence), anchor_end + max_offset)
                 scan_region = read.sequence[scan_start:scan_end]
 
@@ -277,11 +278,9 @@ if __name__ == "__main__":
         import multiprocessing
 
         # Split .fq file into {n_core} chunks
-        os.system(
-            # Custom script to split .fq w/ sed in parallel
-            f""" 
-            python scripts/py/splitNfqs.py {args.fq_in} {args.threads} {args.threads}
-            """
+        subprocess.run(
+            ["python", "scripts/py/splitNfqs.py", args.fq_in, str(args.threads), str(args.threads)],
+            check=True,
         )
 
         # Trim each chunked file, in parallel
@@ -339,31 +338,33 @@ if __name__ == "__main__":
         )
 
         # Merge chunked/trimmed fastqs
-        os.system(
-            f"""
-            cat {' '.join(chunked_fqs_out_R1)} > {args.fq_in.replace('.fq.gz','_R1.fq')}
-            cat {' '.join(chunked_fqs_out_R2)} > {args.fq_in.replace('.fq.gz','_R2.fq')}
-            cat {' '.join(chunked_fqs_out_ambiguous)} > {args.fq_in.replace('.fq.gz','_ambiguous.fq')}
-            """
+        subprocess.run(
+            f"cat {' '.join(chunked_fqs_out_R1)} > {args.fq_in.replace('.fq.gz','_R1.fq')}",
+            shell=True, check=True,
+        )
+        subprocess.run(
+            f"cat {' '.join(chunked_fqs_out_R2)} > {args.fq_in.replace('.fq.gz','_R2.fq')}",
+            shell=True, check=True,
+        )
+        subprocess.run(
+            f"cat {' '.join(chunked_fqs_out_ambiguous)} > {args.fq_in.replace('.fq.gz','_ambiguous.fq')}",
+            shell=True, check=True,
         )
 
         if os.path.isfile(args.fq_in.replace(".fq.gz", "_R2.fq")):
-            os.system(
-                f"""
-                rm {' '.join(chunked_fqs_in)} 
-                rm {' '.join(chunked_fqs_out_R1)} 
-                rm {' '.join(chunked_fqs_out_R2)} 
-                rm {' '.join(chunked_fqs_out_ambiguous)}
-                """
-            )
+            for f in chunked_fqs_in + chunked_fqs_out_R1 + chunked_fqs_out_R2 + chunked_fqs_out_ambiguous:
+                if os.path.isfile(f):
+                    os.remove(f)
     else:
         print(f"Value given for '--threads' was not understood. Try again.")
     # end if statement
 
     # Compress output files
-    os.system(
-        f"""
-        pigz --force -p {args.threads} {args.fq_in.replace('.fq.gz','_R*.fq')}
-        pigz --force -p {args.threads} {args.fq_in.replace('.fq.gz','_ambiguous.fq')}
-        """
+    subprocess.run(
+        f"pigz --force -p {args.threads} {args.fq_in.replace('.fq.gz','_R*.fq')}",
+        shell=True, check=True,
+    )
+    subprocess.run(
+        f"pigz --force -p {args.threads} {args.fq_in.replace('.fq.gz','_ambiguous.fq')}",
+        shell=True, check=True,
     )

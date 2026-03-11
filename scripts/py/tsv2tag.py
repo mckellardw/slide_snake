@@ -35,7 +35,7 @@ def parse_tsv(in_tsv, readIDcolumn, tagColumns, exclude_values):
                             exclude_counts[tag] += 1
                     continue
                 read_to_tags[read_id] = tags
-            except:
+            except (IndexError, ValueError):
                 continue
     return read_to_tags, exclude_counts
 

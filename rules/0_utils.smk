@@ -451,6 +451,9 @@ def get_fqs(w, return_type=["list", "dict"], mode=["ONT", "ILMN"]):
         return [R1, R2]
     elif return_type == "dict":
         return {"R1": R1, "R2": R2}
+    else:
+        print(f"get_fqs(): unknown return_type '{return_type}'")
+        return [R1, R2]
 
 
 def get_fwd_primer(w, mode=["ONT", "ILMN"]):
@@ -519,11 +522,12 @@ def get_bc_adapter(w, mode=["ONT", "ILMN"]):
             return "ERROR"
     except Exception:
         if mode == "ILMN":
-            print("TODO")
+            print(f"get_bc_adapter(): failed for recipe {w.RECIPE} in ILMN mode")
         elif mode == "ONT":
-            print("TODO")
+            print(f"get_bc_adapter(): failed for recipe {w.RECIPE} in ONT mode")
         else:
             print("get_bc_adapter(): `mode` not found")
+        return "ERROR"
 
 
 def get_umi_adapter(w, mode=["ONT", "ILMN"]):
@@ -542,11 +546,12 @@ def get_umi_adapter(w, mode=["ONT", "ILMN"]):
             return "ERROR"
     except Exception:
         if mode == "ILMN":
-            print("TODO")
+            print(f"get_umi_adapter(): failed for recipe {w.RECIPE} in ILMN mode")
         elif mode == "ONT":
-            print("TODO")
+            print(f"get_umi_adapter(): failed for recipe {w.RECIPE} in ONT mode")
         else:
             print("get_umi_adapter(): `mode` not found")
+        return "ERROR"
 
 
 # whitelist param handling for different recipes/technologies/chemistries/etc
@@ -858,8 +863,7 @@ def get_recipes(w, mode=["ONT", "ILMN", "list"]):
 def get_recipe_info(w, info_col, mode=["ONT", "ILMN", "list"]):
     try:
         return RECIPE_SHEET[info_col][w.RECIPE]
-    except:
-        # print(f"Couldn't find `{info_col}`")
+    except Exception:
         recipe = unlist(get_recipes(w, mode=mode))
 
         return [RECIPE_SHEET[info_col][x] for x in recipe]
@@ -880,14 +884,20 @@ def megabytes2bytes(mb):
 def build_abs_path(files, abs_path, sep=" "):
     if isinstance(files, str):
         file_abs_path = f"{abs_path}/{files}"
-    elif isinstance(whitelist, list):
+    elif isinstance(files, list):
         file_abs_path = sep.join([f"{abs_path}/{f}" for f in files])
+    else:
+        file_abs_path = str(files)
+    return file_abs_path
 
 
 def unlist(lst, unique=False):
     if not isinstance(lst, list) and not isinstance(lst, dict):
         # not a list or dict; return as a list
         return [lst]
+    elif isinstance(lst, list) and len(lst) == 0:
+        # empty list; return as is
+        return lst
     elif isinstance(lst, list) and len(lst) == 1:
         # list w/ 1 entry; return input as is
         return lst
@@ -907,6 +917,8 @@ def unlist(lst, unique=False):
                 result.extend(unlist(value))
             else:
                 result.append(value)
+    else:
+        result = []
 
     if unique:
         result = list(set(result))
@@ -914,7 +926,7 @@ def unlist(lst, unique=False):
     return result
 
 
-# USed for finding max BC length
+# Used for finding max BC length
 def max_sum_of_entries(lst):
     max_sum = 0
     current_sum = 0

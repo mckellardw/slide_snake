@@ -30,7 +30,7 @@ def calculate_stats(filename, max_lines=None):
             fields = line.strip().split("\t")
 
             for i in range(num_barcodes):
-                barcode_fields = fields[i * 4 : (i + 1) * 4 + 1]
+                barcode_fields = fields[i * 4 : (i + 1) * 4]
                 barcode_num = f"barcode_{i+1}"
 
                 stats[barcode_num]["total_reads"] += 1
