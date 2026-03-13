@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eo pipefail
 
 # Default values
 BAM_FILE=""
@@ -41,27 +42,27 @@ if ! command -v samtools &> /dev/null; then
 fi
 
 # Check if the BAM file is provided
-if [ -z ${BAM_FILE} ]; then
+if [ -z "${BAM_FILE}" ]; then
     echo "Usage: $0 -b input.bam [-o output_directory]"
     exit 1
 fi
 
 # Set default output directory to the same directory as the BAM file if not specified
-if [ -z ${OUTDIR} ]; then
-    OUTDIR=$(dirname ${BAM_FILE})
+if [ -z "${OUTDIR}" ]; then
+    OUTDIR=$(dirname "${BAM_FILE}")
 fi
 
 # Ensure the output directory exists
-mkdir -p ${OUTDIR}
+mkdir -p "${OUTDIR}"
 
 # Check if the BAM file is indexed
-if [ ! -f ${BAM_FILE}.bai ] && [ ! -f ${BAM_FILE}.csi ]; then
+if [ ! -f "${BAM_FILE}.bai" ] && [ ! -f "${BAM_FILE}.csi" ]; then
     echo "Indexing BAM file..."
-    samtools index "$BAM_FILE"
+    samtools index "${BAM_FILE}"
 fi
 
 # Extract chromosome names from the BAM file
-CHROMOSOMES=$(samtools idxstats ${BAM_FILE} | cut -f1)
+CHROMOSOMES=$(samtools idxstats "${BAM_FILE}" | cut -f1)
 
 # Remove asterisk character from CHROMOSOMES
 CHROMOSOMES=$(echo "$CHROMOSOMES" | tr -d '*')
@@ -77,12 +78,12 @@ for CHR in ${CHROMOSOMES}; do
     else
         # echo "$CHR"
         echo "    Writing ${OUTDIR}/${CHR}.bam"
-        samtools view -b ${BAM_FILE} ${CHR} > ${OUTDIR}/${CHR}.bam
+        samtools view -b "${BAM_FILE}" "${CHR}" > "${OUTDIR}/${CHR}.bam"
     fi
 done
 
 # Write unmapped reads to "unmapped.bam"
 echo "Writing unmapped reads to 'unmapped.bam'..."
-samtools view -b -f 4 ${BAM_FILE} > ${OUTDIR}/unmapped.bam
+samtools view -b -f 4 "${BAM_FILE}" > "${OUTDIR}/unmapped.bam"
 
 echo "BAM file split by chromosome into ${OUTDIR}."

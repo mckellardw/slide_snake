@@ -713,7 +713,7 @@ def get_bwa_ref(w, mode=["genome", "rRNA"]):
             out = "No genome reference supported for BWA!"
         elif mode == "rRNA":
             out = SAMPLE_SHEET["bwa_rRNA_ref"][w.SAMPLE]
-    except Exception:
+    except KeyError:
         out = "No reference given! Check your sample sheet!"
 
     return out
@@ -734,7 +734,7 @@ def get_STAR_ref(w, mode="genome"):
             out = SAMPLE_SHEET["STAR_ref"][w.SAMPLE]
         else:
             print(f"Don't know what to do for mode [{mode}]")
-    except Exception:
+    except KeyError:
         out = "No reference given! Check your sample sheet!"
 
     return out
@@ -752,7 +752,7 @@ def get_kallisto_ref(w, mode=["idx", "t2g", "idx_velo", "t2g_velo"]):
             out = SAMPLE_SHEET["kb_idx"][w.SAMPLE]
         elif mode == "t2g":
             out = SAMPLE_SHEET["kb_t2g"][w.SAMPLE]
-    except Exception:
+    except KeyError:
         out = "No reference given! Check your sample sheet!"
 
     return out
@@ -772,7 +772,7 @@ def get_STAR_extra_params(w):
     for key in star_info.keys():
         try:
             star_info[key] = RECIPE_SHEET[key][w.RECIPE]
-        except Exception:
+        except KeyError:
             # values for default
             recipe = get_recipes(w, mode=f"concatenate")
 
@@ -827,7 +827,7 @@ def get_recipes(w, mode=["ONT", "ILMN", "list"]):
     if "ONT" in mode:
         try:
             return RECIPE_ONT_DICT[w.SAMPLE]
-        except Exception:
+        except KeyError:
             print(
                 f"No ONT recipe given for sample '{w.SAMPLE}'! Check your sample sheet!"
             )
@@ -835,7 +835,7 @@ def get_recipes(w, mode=["ONT", "ILMN", "list"]):
     elif "ILMN" in mode:
         try:
             return RECIPE_DICT[w.SAMPLE]
-        except Exception:
+        except KeyError:
             print(
                 f"No ILMN recipe given for sample '{w.SAMPLE}'! Check your sample sheet!"
             )
@@ -863,7 +863,7 @@ def get_recipes(w, mode=["ONT", "ILMN", "list"]):
 def get_recipe_info(w, info_col, mode=["ONT", "ILMN", "list"]):
     try:
         return RECIPE_SHEET[info_col][w.RECIPE]
-    except Exception:
+    except KeyError:
         recipe = unlist(get_recipes(w, mode=mode))
 
         return [RECIPE_SHEET[info_col][x] for x in recipe]
@@ -979,7 +979,7 @@ def get_barcode_config(w):
 
         return recipe_info
 
-    except Exception as e:
+    except (KeyError, TypeError, ValueError) as e:
         print(f"Error getting barcode config: {e}")
         return {}
 
@@ -1003,7 +1003,7 @@ def get_recipe_barcode_strategy(w):
 
         return "single"
 
-    except Exception as e:
+    except (KeyError, TypeError, ValueError) as e:
         print(f"Error determining barcode strategy: {e}")
         return "single"
 

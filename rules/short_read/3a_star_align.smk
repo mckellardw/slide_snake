@@ -149,8 +149,7 @@ rule ilmn_3a_STARsolo_secondPass:
         log="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/pass2.log",
         err="{OUTDIR}/{SAMPLE}/short_read/STARsolo/{RECIPE}/pass2.err",
     resources:
-        # mem=megabytes2bytes(config["MEMLIMIT_MB"]),
-        mem=config["MEMLIMIT"],
+        mem=megabytes2bytes(config["MEMLIMIT_MB"]),
         time="2:00:00",
     threads: config["CORES"]
     conda:

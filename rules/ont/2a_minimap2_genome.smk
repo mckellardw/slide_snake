@@ -156,6 +156,7 @@ rule ont_2a_filter_bam_empty_tags:
     threads: 1
     shell:
         """
+        set -eo pipefail
         samtools view -h {input.BAM} \
         | awk -v tag={params.CELL_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
         | awk -v tag={params.UMI_TAG} -f scripts/awk/bam_filterEmptyTag.awk \

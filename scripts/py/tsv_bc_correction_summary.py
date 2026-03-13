@@ -30,26 +30,27 @@ def calculate_stats(filename, max_lines=None):
             fields = line.strip().split("\t")
 
             for i in range(num_barcodes):
-                barcode_fields = fields[i * 4 : (i + 1) * 4]
+                # Fields per barcode: [uncorrected_bc, corrected_bc/"-", edit_dist, next_match_diff]
+                barcode_fields = fields[1 + i * 4 : 1 + (i + 1) * 4]
                 barcode_num = f"barcode_{i+1}"
 
                 stats[barcode_num]["total_reads"] += 1
 
-                if barcode_fields[2] != "-":  # Corrected barcode
+                if barcode_fields[1] != "-":  # Corrected barcode
                     stats[barcode_num]["corrected_barcodes"] += 1
-                    levenshtein_distance = int(barcode_fields[3])
+                    levenshtein_distance = int(barcode_fields[2])
                     levenshtein_distances[barcode_num]["corrected"].append(
                         levenshtein_distance
                     )
                     levenshtein_tally[barcode_num]["corrected"][
                         levenshtein_distance
                     ] += 1
-                    if barcode_fields[4] != "N":
+                    if barcode_fields[3] != "N":
                         second_match_distances[barcode_num]["corrected"].append(
-                            int(barcode_fields[3]) + int(barcode_fields[4])
+                            int(barcode_fields[2]) + int(barcode_fields[3])
                         )
                 else:  # Uncorrected barcode
-                    levenshtein_distance = int(barcode_fields[3])
+                    levenshtein_distance = int(barcode_fields[2])
                     levenshtein_distances[barcode_num]["uncorrected"].append(
                         levenshtein_distance
                     )
@@ -57,7 +58,7 @@ def calculate_stats(filename, max_lines=None):
                         levenshtein_distance
                     ] += 1
                     second_match_distances[barcode_num]["uncorrected"].append(
-                        int(barcode_fields[3]) + int(barcode_fields[4])
+                        int(barcode_fields[2]) + int(barcode_fields[3])
                     )
 
     # Calculate means

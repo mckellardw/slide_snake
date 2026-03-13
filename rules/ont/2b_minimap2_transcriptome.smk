@@ -18,12 +18,13 @@ rule ont_2b_txome_align_minimap2_transcriptome:
         f"{workflow.basedir}/envs/minimap2.yml"
     shell:
         """
+        set -eo pipefail
         mkdir -p $(dirname {log.log})
 
-        echo "Genome reference:   {params.REF}" > {log.log} 
-        echo "Junction reference: {params.REF}" >> {log.log} 
-        echo "Extra flags:        {params.EXTRA_FLAGS}" >> {log.log} 
-        echo "" >> {log.log} 
+        echo "Genome reference:   {params.REF}" > {log.log}
+        echo "Junction reference: {params.REF}" >> {log.log}
+        echo "Extra flags:        {params.EXTRA_FLAGS}" >> {log.log}
+        echo "" >> {log.log}
 
         minimap2 \
             -ax map-ont \
@@ -120,6 +121,7 @@ rule ont_2b_txome_filter_bam_empty_tags:
     threads: 1
     shell:
         """
+        set -eo pipefail
         samtools view -h {input.BAM} \
         | awk -v tag={params.CELL_TAG} -f scripts/awk/bam_filterEmptyTag.awk \
         | awk -v tag={params.UMI_TAG} -f scripts/awk/bam_filterEmptyTag.awk \

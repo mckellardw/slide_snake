@@ -42,7 +42,11 @@
       "Bash(git diff:*)",
       "Bash(find /mnt/c/Users/david/Documents/Github/slide_snake -name *logo* -o -name *slide_snake*png -o -name *slide_snake*svg)",
       "Bash(grep -cP '\\\\r$' /mnt/c/Users/david/Documents/Github/slide_snake/docs/example_sample_sheet.csv)",
-      "Bash(grep -cP '\\\\r$' /mnt/c/Users/david/Documents/Github/slide_snake/REVIEW.md)"
+      "Bash(grep -cP '\\\\r$' /mnt/c/Users/david/Documents/Github/slide_snake/REVIEW.md)",
+      "Bash(do)",
+      "Bash(sed -i 's/\\\\r$//' \"$f\")",
+      "Bash(do sed:*)",
+      "Bash(grep -rPl r$ --include=*.py --include=*.smk --include=*.sh --include=*.R --include=*.awk --include=*.yml --include=*.yaml --include=*.csv --include=*.md --include=*.txt --include=*.rst --include=*.bat --include=*.fa .)"
     ],
     "additionalDirectories": [
       "/tmp"

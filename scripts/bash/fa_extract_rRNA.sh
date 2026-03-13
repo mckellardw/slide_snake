@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eo pipefail
 
 START_TIME=$(date +%s)
 
@@ -48,13 +49,6 @@ else
 fi
 echo "Sample header: $SAMPLE_HEADER"
 
-# Prepare input stream
-if [[ "$IN_FASTA" == *.gz ]]; then
-    IN_CMD="zcat \"$IN_FASTA\""
-else
-    IN_CMD="cat \"$IN_FASTA\""
-fi
-
 awk_script='
 BEGIN {
     n = split(keywords, kw, ",");
@@ -74,7 +68,12 @@ BEGIN {
 }
 '
 
-eval $IN_CMD | awk -v keywords="$KEYWORDS" "$awk_script" | gzip > "$OUT_FASTA"
+# Stream input (gzipped or plain) directly without eval
+if [[ "$IN_FASTA" == *.gz ]]; then
+    zcat "$IN_FASTA" | awk -v keywords="$KEYWORDS" "$awk_script" | gzip > "$OUT_FASTA"
+else
+    awk -v keywords="$KEYWORDS" "$awk_script" "$IN_FASTA" | gzip > "$OUT_FASTA"
+fi
 
 COUNT=$(zcat "$OUT_FASTA" | grep -c "^>")
 echo "Extracted $COUNT rRNA sequences to $OUT_FASTA"

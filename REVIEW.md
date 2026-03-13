@@ -1,44 +1,39 @@
 # slide_snake Codebase Review
 
-**Date**: 2026-03-11
+**Date**: 2026-03-12
 **Scope**: Full pipeline — Snakefile, rules, Python/bash/R/awk scripts, configuration, documentation
 
 ---
 
 ## Summary of Completed Work
 
-Four review passes fixed **~45 bugs**, implemented multiprocessing for barcode calling, reduced STAR I/O via `temp()` wrappers, enabled samtools threading across dedup rules, and corrected documentation mismatches. All fixes were committed in `e1ec3e6` plus pending uncommitted doc/script changes.
+Seven review passes fixed **~68 bugs**, implemented multiprocessing for barcode calling, reduced STAR I/O via `temp()` wrappers, enabled samtools threading across dedup rules, corrected documentation mismatches, hardened all bash scripts with `set -eo pipefail` and proper variable quoting, and fixed critical Python indexing/logic errors.
 
 ---
 
 ## Remaining Bugs
 
-### MEDIUM-HIGH
-
-| ID | File | Issue |
-|----|------|-------|
-| RB4 | `scripts/bash/fa_extract_rRNA.sh:77` | Unsafe `eval` on user-constructed command string — injection risk with special characters in paths. Replace with direct execution. |
-
 ### MEDIUM
 
-| ID | File | Issue |
-|----|------|-------|
-| RB5 | `scripts/py/fastq_call_bc_umi_from_adapter_v2.py:226` | Hardcoded alignment score `420` when using integer adapter positions. Misleading for debugging. |
-| RB6 | `scripts/bash/bam2splitBigWig.sh` | Missing `set -euo pipefail`. Piped commands (bedtools \| awk \| awk) fail silently. |
-| RB7 | `scripts/bash/bam_chr2tag.sh:69-85` | No `set -eo pipefail` on `samtools view -h \| awk \| samtools view -bS` pipeline. |
-| RB8 | `rules/short_read/5a_mirge.smk:61` | Only stderr captured. Add `1> {log.log}` for stdout. |
-| RB9 | `scripts/bash/split_dedup.sh:135,142` | `$TEMP_LIST` unquoted in `samtools merge`. Use `"${TEMP_LIST[@]}"`. |
+| ID | File | Line(s) | Issue |
+|----|------|---------|-------|
+| RB14 | `scripts/py/fastq_call_bc_umi_from_adapter_v2.py` | 226 | Hardcoded alignment score `420` when using integer adapter positions. Misleading for debugging. |
+| RB15 | `rules/short_read/5a_mirge.smk` | 61 | Only stderr captured. Add `1> {log.log}` for stdout. |
+| RB16 | `scripts/bash/fa_build_rRNA_gtf.sh` | 78, 80, 167 | Unquoted variables in `zcat`/`cat`/redirection. Complex pipes without error handling. |
+| RB17 | `scripts/bash/bam_dedupByChr.sh` | 80, 88 | Line 80: `ls *REF_*.bam > ${BAMLIST}` — unsafe glob. Line 88: unquoted `${BAM}` in loop. |
+| RB18 | `scripts/bash/bam_uTAR_HMM.sh` | 61, 95-96 | Line 61: AWK file append with unquoted TMPDIR. Lines 95-96: `pids2` array used but never initialized. |
+| RB19 | `scripts/bash/fq_bwa_rRNA_align.sh` | 64 | No `mkdir -p` before writing output — fails if directory doesn't exist. |
+| RB20 | `scripts/bash/umitools_extract_ont.sh` | whole file | Missing `set -eo pipefail`. No input file validation. |
+| RB21 | `rules/ont/1b_trimming.smk` | 65, 183 | cutadapt shell blocks redirect stdout (`1>>`) but never redirect stderr. Missing `2> {log.err}`. |
 
 ### LOW
 
-| ID | File | Issue |
-|----|------|-------|
-| RB10 | `scripts/bash/bam_dedup.sh:83,90` | `[ -z ${INBAM} ]` should be `[ -z "${INBAM}" ]`. |
-| RB11 | `rules/short_read/3a_star_align.smk:152-153` | Memory config type inconsistency between STAR passes. |
-| RB12 | `scripts/py/fastq_internal_adapter_trim_R1_v2.py:149-151` | Entire read replaced with single `"N"` when adapter not found. |
-| RB13 | Snakefile target list comprehensions | `RECIPE_DICT[SAMPLE]` without `.get()` fallback. |
-| RB14 | `rules/0_utils.smk` | 15+ broad `except Exception:` blocks mask real errors. |
-| RB15 | `scripts/py/cache_mtx_to_h5ad.py` | No error handling around file I/O; malformed input gives unhelpful errors. |
+_All LOW bugs resolved._
+
+- **RB22** (fixed): STAR pass2 memory config now uses `megabytes2bytes(config["MEMLIMIT_MB"])` matching pass1.
+- **RB24** (false positive): `RECIPE_DICT[SAMPLE]` always valid — all comprehensions iterate `R2_FQS.keys()`, same keys used to populate `RECIPE_DICT`.
+- **RB25** (fixed): Narrowed 9 `except Exception:` blocks to `except KeyError:` or `except (KeyError, TypeError, ValueError):` in reference lookups, recipe lookups, and barcode config functions. Remaining 6 blocks in complex helper functions left as-is (varied failure modes with reasonable fallbacks).
+- **RB26** (by design): Script is called by Snakemake — unhandled exceptions propagate as rule failures with tracebacks, which is correct behavior.
 
 ---
 

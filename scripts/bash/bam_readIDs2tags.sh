@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eo pipefail
 
 # Check if the correct number of arguments is provided
 if [ "$#" -ne 3 ]; then
@@ -6,13 +7,13 @@ if [ "$#" -ne 3 ]; then
     exit 1
 fi
 
-input_bam=$1
-output_bam=$2
-tag_prefix=$3
+input_bam="$1"
+output_bam="$2"
+tag_prefix="$3"
 
 # Convert BAM to SAM, add tags, and convert back to BAM
-samtools view -h $input_bam \
-| awk -v prefix=$tag_prefix '
+samtools view -h "$input_bam" \
+| awk -v prefix="$tag_prefix" '
 BEGIN {OFS="\t"}
 {
     split($1, a, "_");
@@ -24,6 +25,6 @@ BEGIN {OFS="\t"}
     }
 }' \
 | samtools view -bS - \
-> $output_bam
+> "$output_bam"
 
 echo "Tags added to $output_bam"

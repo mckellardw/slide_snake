@@ -1,4 +1,5 @@
 #!/usr/bin/bash
+set -eo pipefail
 # bam_dedup.sh - a bash script that deduplicates .bam files, aligned with STARsolo
 #                - deduplicates chr-by-chr, to reduce run time and memory requirements
 # Usage:
@@ -80,23 +81,23 @@ echo "  UMI tag:           ${UMI_TAG}"
 echo ""
 
 # Check if required parameters are provided
-if [ -z ${INBAM} ] || [ -z ${WHITELIST} ] || [ -z ${CORE} ] || [ -z ${OUTBAM} ] || [ -z ${TMPDIR} ]; then
+if [ -z "${INBAM}" ] || [ -z "${WHITELIST}" ] || [ -z "${CORE}" ] || [ -z "${OUTBAM}" ] || [ -z "${TMPDIR}" ]; then
     echo "Error: Missing required arguments."
     _usage
     exit 1
 fi
 
 # Ensure the temporary directory exists
-mkdir -p ${TMPDIR}
+mkdir -p "${TMPDIR}"
 
-PREFIX=$(echo ${INBAM} | rev | cut -d / -f 1 | cut -d . -f 2- | rev)
+PREFIX=$(echo "${INBAM}" | rev | cut -d / -f 1 | cut -d . -f 2- | rev)
 
 echo "Using ${PREFIX} as file prefix..."
 
 # Check for .bam index file
-if [ ! -f ${INBAM}.bai ]; then
+if [ ! -f "${INBAM}.bai" ]; then
     echo "Indexing input .bam file because you forgot to..."
-    samtools index -@ ${CORE} ${INBAM}
+    samtools index -@ "${CORE}" "${INBAM}"
 fi
 
 # Remove reads that don't have a barcode (CB)
@@ -105,13 +106,13 @@ date
 
 samtools view \
     -h \
-    -@ ${CORE} \
+    -@ "${CORE}" \
     -q 1 \
-    ${INBAM} \
+    "${INBAM}" \
 | grep -v "${CELL_TAG}:Z:-" \
 | grep -v "${UMI_TAG}:Z:-" \
 | samtools view -bS \
-> ${TMPDIR}/filter.bam
+> "${TMPDIR}/filter.bam"
 
 echo
 
@@ -119,7 +120,7 @@ echo
 echo "Indexing filtered .bam file..."
 date
 
-samtools index -@ ${CORE} ${TMPDIR}/filter.bam
+samtools index -@ "${CORE}" "${TMPDIR}/filter.bam"
 
 echo
 
@@ -128,16 +129,16 @@ echo "Deduplicating filtered .bam file..."
 date
 
 umi_tools dedup \
-    -I ${TMPDIR}/filter.bam \
-    --temp-dir=${TMPDIR} \
+    -I "${TMPDIR}/filter.bam" \
+    --temp-dir="${TMPDIR}" \
     --multimapping-detection-method=NH \
     --extract-umi-method=tag \
-    --umi-tag=${UMI_TAG} \
-    --cell-tag=${CELL_TAG} \
+    --umi-tag="${UMI_TAG}" \
+    --cell-tag="${CELL_TAG}" \
     --method=unique \
     --per-cell \
     --unmapped-reads=discard \
-    -S ${TMPDIR}/dedup.bam
+    -S "${TMPDIR}/dedup.bam"
 
 echo
 
@@ -145,5 +146,5 @@ echo
 echo "Sorting and indexing deduplicated .bam file..."
 date
 
-samtools sort ${TMPDIR}/dedup.bam > ${OUTBAM}
-samtools index -@ ${CORE} ${OUTBAM} && rm -r ${TMPDIR}
+samtools sort "${TMPDIR}/dedup.bam" > "${OUTBAM}"
+samtools index -@ "${CORE}" "${OUTBAM}" && rm -r "${TMPDIR}"

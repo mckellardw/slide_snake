@@ -192,7 +192,7 @@ def find_and_split_reads(
 
                 # Scan for split sequence
                 scan_start = max(0, anchor_end)
-                scan_end = max(len(read.sequence), anchor_end + max_offset)
+                scan_end = min(len(read.sequence), anchor_end + max_offset)
                 scan_region = read.sequence[scan_start:scan_end]
 
                 split_score, split_start, split_end = align_parasail(
